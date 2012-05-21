@@ -77,7 +77,7 @@ except AttributeError:
 from icons import AvsP_icon, next_icon, play_icon, skip_icon
 from __translation_new import new_translation_string
 
-version = '2.1.1'
+version = '2.1.2'
 
 # Custom styled text control for avisynth language
 class AvsStyledTextCtrl(stc.StyledTextCtrl):
@@ -571,6 +571,9 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
             self.AutoCompShow(len(word), ' '.join(keywords))
             #~ if len(keywords) == 1:
                 #~ self.FinishAutocomplete()
+        elif self.app.options['findautocomplete'] and pos - startwordpos > 0:
+            self.CmdKeyExecute(stc.STC_CMD_CHARLEFT)
+            wx.CallAfter(self.ShowAutocomplete)
 
     def FinishAutocomplete(self, key=None):
         self.AutoCompComplete()
@@ -587,10 +590,11 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
             boolHighlightQuestionMarks = True
             if preset is None:
                 for key in self.app.options['filterpresets']:
-                    index = key.find('_'+filtername.lower())
-                    if index != -1 and len(key) == index+1 + len(filtername) :
-                        preset = self.app.options['filterpresets'][key][index+1:]
-                        break
+                    if self.app.avsfilterdict[key][1] == AvsStyledTextCtrl.STC_AVS_PLUGIN:
+                        index = key.find('_'+filtername.lower())
+                        if index != -1 and len(key) == index + 1 + len(filtername):
+                            preset = self.app.options['filterpresets'][key][index+1:]
+                            break
             if preset is not None:
                 self.SetSelection(startwordpos, pos)
                 self.ReplaceSelection(preset)
@@ -1549,6 +1553,15 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                     elif word in self.app.avsfilterdict:
                         #~ self.ColourTo(pos, self.keywordstyles[word])
                         self.ColourTo(pos, self.app.avsfilterdict[word][1])
+                        if word in ['load_stdcall_plugin', 'loadcplugin', 'loadplugin']:
+                            lineText = self.GetLine(self.LineFromPosition(pos)).lower()
+                            pattern = word + r'\s*\(\s*"(.+?)\.dll"\s*\)'
+                            matched = re.search(pattern, lineText, re.U)
+                            if matched:
+                                dllname = os.path.basename(matched.group(1))
+                                if dllname.count('_') and dllname not in self.app.options['dllnameunderscored']:
+                                    self.app.options['dllnameunderscored'].add(dllname)
+                                    self.app.defineScriptFilterInfo()
                     elif word in self.app.avskeywords:
                         self.ColourTo(pos, self.STC_AVS_KEYWORD)
                     elif word in self.app.avsmiscwords:
@@ -2209,7 +2222,7 @@ class UserSliderDialog(wx.Dialog):
 
 # Dialog for AviSynth filter information
 class AvsFunctionDialog(wx.Dialog):
-    def __init__(self, parent, filterDict, overrideDict, presetDict, removedSet, autcompletetypeFlags, installedFilternames, functionName=None, CreateDefaultPreset=None, ExportFilterData=None):
+    def __init__(self, parent, filterDict, overrideDict, presetDict, removedSet, autcompletetypeFlags, dllnameunderscored, installedFilternames, functionName=None, CreateDefaultPreset=None, ExportFilterData=None):
         wx.Dialog.__init__(
             self, parent, wx.ID_ANY,
             _('Add or override AviSynth functions in the database'),
@@ -2220,6 +2233,7 @@ class AvsFunctionDialog(wx.Dialog):
         self.presetDict = presetDict.copy()
         self.removedSet = removedSet
         self.autcompletetypeFlags = autcompletetypeFlags
+        self.dllnameunderscored = dllnameunderscored
         self.installedFilternames = installedFilternames
         self.CreateDefaultPreset = CreateDefaultPreset
         self.ExportFilterData = ExportFilterData
@@ -2298,9 +2312,6 @@ class AvsFunctionDialog(wx.Dialog):
             title = title.lower()
             autocompletecheckbox = wx.CheckBox(panel, wx.ID_ANY, _('Include %(title)s in autcompletion lists') % locals())
             autocompletecheckbox.SetValue(self.autcompletetypeFlags[index])
-            listboxSizer = wx.BoxSizer(wx.VERTICAL)
-            listboxSizer.Add(listbox, 1, wx.EXPAND|wx.ALL, 0)
-            listboxSizer.Add(autocompletecheckbox, 0, wx.EXPAND|wx.TOP|wx.BOTTOM, 15)
             # Buttons
             buttonadd = wx.Button(panel, wx.ID_ANY, _('New function'))#, size=(100, -1))
             buttonedit = wx.Button(panel, wx.ID_ANY, _('Edit selected'))
@@ -2327,10 +2338,19 @@ class AvsFunctionDialog(wx.Dialog):
                 buttonselectinstalled = wx.Button(panel, wx.ID_ANY, _('Select installed'))
                 panel.Bind(wx.EVT_BUTTON, lambda event: self.SelectInstalledFilters(), buttonselectinstalled)
                 buttonSizer.Add(buttonselectinstalled, 0, wx.EXPAND|wx.BOTTOM, 5)
+                buttonSizer.AddStretchSpacer()
+                buttonSizer.Add(wx.StaticText(panel, wx.ID_ANY, _('DLL underscored')), 0, wx.ALIGN_CENTER_VERTICAL|wx.TOP, 5)
+                self.textctrl = wx.TextCtrl(panel, wx.ID_ANY, ';'.join(self.dllnameunderscored))
+                buttonSizer.Add(self.textctrl, 0, wx.EXPAND, 5)
+                
             # Size the elements in the panel
-            panelSizer = wx.BoxSizer(wx.HORIZONTAL)
-            panelSizer.Add(listboxSizer, 1, wx.EXPAND|wx.ALL, 5)
-            panelSizer.Add(buttonSizer, 0, wx.ALL, 10)
+            listboxSizer = wx.BoxSizer(wx.HORIZONTAL)
+            listboxSizer.Add(listbox, 1, wx.EXPAND|wx.RIGHT, 15)            
+            listboxSizer.Add(buttonSizer, 0, wx.EXPAND|wx.RIGHT, 5)            
+            panelSizer = wx.BoxSizer(wx.VERTICAL)
+            panelSizer.Add(listboxSizer, 1, wx.EXPAND|wx.ALL, 5)            
+            panelSizer.Add(autocompletecheckbox, 0, wx.EXPAND|wx.ALL, 5)
+            panelSizer.AddSpacer(5)
             panel.SetSizer(panelSizer)
             panelSizer.Layout()
             # Bind items to the panel itself
@@ -3050,7 +3070,14 @@ class AvsFunctionDialog(wx.Dialog):
             checkbox = panel.autocompletecheckbox
             flags[index] = checkbox.GetValue()
         return flags
-
+               
+    def Getdllnameunderscored(self):
+        self.dllnameunderscored.clear()
+        for dllname in re.split(r'\W+', self.textctrl.GetValue()):
+            if dllname.count('_'):
+                self.dllnameunderscored.add(dllname)
+        return self.dllnameunderscored
+        
 # Dialog specifically for AviSynth filter auto-slider information
 class AvsFilterAutoSliderInfo(wx.Dialog):
     def __init__(self, parent, mainFrame, filterName, filterInfo, title=_('Edit filter database')):
@@ -4337,6 +4364,7 @@ class MainFrame(wxp.Frame):
                 'filterpresets': {},
                 'autcompletetypeflags': [True,True,True,True,True],
                 'filterremoved': set(),
+                'dllnameunderscored': set(),
                 'shortcuts': [],
                 'recentdir': '',
                 'recentdirPlugins': '',
@@ -4368,6 +4396,7 @@ class MainFrame(wxp.Frame):
                 'syntaxhighlight': True,
                 'usestringeol': False,
                 'autocomplete': True,
+                'findautocomplete': True,
                 'autocompleteexclusions': set(),
                 'autoparentheses': 1,
                 'presetactivatekey': 'return',
@@ -4477,6 +4506,8 @@ class MainFrame(wxp.Frame):
                 
         # check new key to make options.dat compatible for all 2.x version
         self.options.setdefault('autocompleteexclusions', set())
+        self.options.setdefault('dllnameunderscored', set())
+        self.options.setdefault('findautocomplete', True)
         self.options.setdefault('hidepreview', False)
         self.options.setdefault('multilinetab', False)        
         self.options.setdefault('foldflag', 1)
@@ -4655,10 +4686,20 @@ class MainFrame(wxp.Frame):
         # Add short plugin names to script database
         for lowername,(args,styletype,name) in self.avsfilterdict.items():
             if styletype == styleList[2]:
-                splitname = name.split('_', 1)
-                if len(splitname) == 2:
-                    shortname = splitname[1]
-                    self.avsfilterdict[shortname.lower()] = (args, styletype, shortname)
+                for dllname in self.options['dllnameunderscored']:
+                    if name.lower().startswith(dllname):
+                        shortname = name[len(dllname)+1:]
+                        if shortname.lower() not in self.avsfilterdict or self.avsfilterdict[shortname.lower()][1] != styleList[3]:
+                            self.avsfilterdict[shortname.lower()] = (args, styletype, shortname)
+                        break
+                    else:
+                        shortname = None
+                if not shortname:
+                    splitname = name.split('_', 1)
+                    if len(splitname) == 2:
+                        shortname = splitname[1]
+                        if shortname.lower() not in self.avsfilterdict or self.avsfilterdict[shortname.lower()][1] != styleList[3]:
+                            self.avsfilterdict[shortname.lower()] = (args, styletype, shortname)
         #~ self.optionsFilters.update(self.options['filteroverrides'])
         # Create a list for each letter (for autocompletion)
         filternames = [
@@ -4702,8 +4743,12 @@ class MainFrame(wxp.Frame):
             for name in tempList:
                 name = name.lower()
                 for longName in tempList:
-                    if '_' + name in longName.lower():
+                    longName = longName.lower()
+                    if '_' + name in longName:
                         tempList2.append(name)
+                        dllname = longName.split('_' + name)[0]
+                        if dllname.count('_'):
+                            self.options['dllnameunderscored'].add(dllname)
             extfuncList = []
             for name in tempList:
                 if False: #name.count('_') > 0:
@@ -4822,6 +4867,7 @@ class MainFrame(wxp.Frame):
                 (_('Syntax highlighting'), wxp.OPT_ELEM_CHECK, 'syntaxhighlight', _('Turn on/off avisynth-specific text colors and fonts'), ''),
                 (_('Syntax highlight incomplete strings'), wxp.OPT_ELEM_CHECK, 'usestringeol', _('Syntax highlight strings which are not completed in a single line differently'), ''),
                 (_('Show autocomplete on capital letters'), wxp.OPT_ELEM_CHECK, 'autocomplete', _('Turn on/off automatic autocomplete list when typing words starting with capital letters'), ''),
+                (_('Find within a word to show autocomplete'), wxp.OPT_ELEM_CHECK, 'findautocomplete', _("If current position can't bring up the window, find a matched position in the word to show autocomplete"), ''),
                 (_('Customize autocomplete keyword list...'), wxp.OPT_ELEM_BUTTON, 'autocompleteexclusions', _('Customize the keyword list shown in the autocomplete choice box'), self.OnCustomizeAutoCompList),
                 (_('Autoparentheses level'), wxp.OPT_ELEM_RADIO, 'autoparentheses', _('Determines parentheses to insert upon autocompletion'), [(_('None " "'), 0),(_('Open "("'), 1),(_('Close "()"'), 2)]),
                 (_('Preset activation key'), wxp.OPT_ELEM_RADIO, 'presetactivatekey', _('Determines which key activates the filter preset when the autocomplete box is visible'), [(_('Tab'), 'tab'),(_('Return'), 'return'),(_('None'), None)]),
@@ -5411,6 +5457,7 @@ class MainFrame(wxp.Frame):
                     (_('Move line down'), 'Ctrl+Shift+Down', self.OnMenuEditMoveLineDown, _('Move the current line or selection down by one line')),
                     (''),
                     (_('Copy unmarked script to clipboard'), 'Ctrl+Shift+C', self.OnMenuCopyUnmarkedScript, _('Copy the current script without any AvsP markings (user-sliders, toggle tags) to the clipboard')),
+                    (_('Copy avisynth error to clipboard'), '', self.OnMenuCopyAvisynthError, _('Copy the avisynth error message shown on the preview window to the clipboard')),
                     ),
                 ),
             ),
@@ -6344,6 +6391,13 @@ class MainFrame(wxp.Frame):
             wx.TheClipboard.SetData(text_data)
             wx.TheClipboard.Close()
 
+    def OnMenuCopyAvisynthError(self, event):
+        if self.currentScript.AVI and self.currentScript.AVI.error_message and not wx.TheClipboard.IsOpened():            
+            text_data = wx.TextDataObject(self.currentScript.AVI.error_message)
+            wx.TheClipboard.Open()
+            wx.TheClipboard.SetData(text_data)
+            wx.TheClipboard.Close()
+            
     def OnMenuEditShowScrapWindow(self, event):
         scrap = self.scrapWindow
         if scrap.IsShown():
@@ -9956,10 +10010,12 @@ class MainFrame(wxp.Frame):
             self.options['filterpresets'],
             self.options['filterremoved'],
             self.options['autcompletetypeflags'],
+            self.options['dllnameunderscored'],
             self.installedfilternames,
             functionName=functionName,
             CreateDefaultPreset=self.currentScript.CreateDefaultPreset,
             ExportFilterData=self.ExportFilterData,
+            
         )
         ID = dlg.ShowModal()
         if ID == wx.ID_OK:
@@ -9967,6 +10023,7 @@ class MainFrame(wxp.Frame):
             self.options['filterremoved'] = dlg.GetRemovedSet()
             self.options['filterpresets'] = dlg.GetPresetDict()
             self.options['autcompletetypeflags'] = dlg.GetAutcompletetypeFlags()
+            self.options['dllnameunderscored'] = dlg.Getdllnameunderscored()
             self.defineScriptFilterInfo()
             for i in xrange(self.scriptNotebook.GetPageCount()):
                 script = self.scriptNotebook.GetPage(i)

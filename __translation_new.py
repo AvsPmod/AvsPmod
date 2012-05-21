@@ -1,4 +1,4 @@
-new_translation_string=r'''version = "2.1.1"
+new_translation_string=r'''version = "2.1.2"
 
 messages = {
     "Find" : u"",
@@ -55,6 +55,7 @@ messages = {
     "Edit selected" : u"",
     "Delete selected" : u"",
     "Select installed" : u"",
+    "DLL underscored" : u"",
     "Import from files" : u"",
     "Export customizations" : u"",
     "Clear customizations" : u"",
@@ -150,6 +151,8 @@ messages = {
     "Syntax highlight strings which are not completed in a single line differently" : u"",
     "Show autocomplete on capital letters" : u"",
     "Turn on/off automatic autocomplete list when typing words starting with capital letters" : u"",
+    "Find within a word to show autocomplete" : u"",
+    "If current position can't bring up the window, find a matched position in the word to show autocomplete" : u"",
     "Customize autocomplete keyword list..." : u"",
     "Customize the keyword list shown in the autocomplete choice box" : u"",
     "Autoparentheses level" : u"",
@@ -359,6 +362,8 @@ messages = {
     "Move the current line or selection down by one line" : u"",
     "Copy the current script without any AvsP markings (user-sliders, toggle tags) to the clipboard" : u"",
     "Copy unmarked script to clipboard" : u"",
+    "Copy avisynth error to clipboard" : u"",
+    "Copy the avisynth error message shown on the preview window to the clipboard" : u"",
     "&Video" : u"",
     "Add/Remove bookmark" : u"",
     "Mark the current frame on the frame slider" : u"",
