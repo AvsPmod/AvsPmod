@@ -77,7 +77,7 @@ except AttributeError:
 from icons import AvsP_icon, next_icon, play_icon, skip_icon
 from __translation_new import new_translation_string
 
-version = '2.1.0'
+version = '2.1.1'
 
 # Custom styled text control for avisynth language
 class AvsStyledTextCtrl(stc.StyledTextCtrl):
@@ -9139,7 +9139,7 @@ class MainFrame(wxp.Frame):
                         quality = "0"
                 except ValueError:
                     quality = "70"
-            img.SetOption(wx.IMAGE_OPTION_QUALITY, quality)
+                img.SetOption(wx.IMAGE_OPTION_QUALITY, quality)
             img.SaveFile(filename, self.imageFormats[ext][1])
         else:
             return False
