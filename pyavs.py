@@ -100,7 +100,7 @@ def ExitRoutines():
     DrawDibClose(handleDib[0])
 
 class AvsClip:
-    def __init__(self, script, filename='', env=None, fitHeight=None, fitWidth=None, oldFramecount=240, keepRaw=False):
+    def __init__(self, script, filename='', env=None, fitHeight=None, fitWidth=None, oldFramecount=240, keepRaw=False, matrix='Rec601', interlaced=False):
         # Internal variables
         self.initialized = False
         self.error_message = None
@@ -251,7 +251,12 @@ class AvsClip:
                 arg(self.clip)
             except NameError:
                 arg = avisynth.AVS_Value(self.clip)
-            avsfile = self.env.Invoke("converttorgb32",arg,0)
+            arg1 = avisynth.AVS_Value(matrix)
+            if not self.IsYV12:
+                interlaced = False
+            arg2 = avisynth.AVS_Value(interlaced)
+            args = avisynth.AVS_Value([arg, arg1, arg2])
+            avsfile = self.env.Invoke("converttorgb32", args, 0)
             arg.Release()  #release the clip
             self.clip = avsfile.AsClip(self.env)
         # Add a resize...
@@ -402,15 +407,18 @@ class AvsClip:
         
     def _x_SaveFrame(self, filename, frame=None):
         # Get the frame to display
+        print filename
         if frame == None:
             if self.pInfo == None or self.pBits == None:
                 self._GetFrame(0)
         else:
             self._GetFrame(frame)
-        # Create the file for writing
-        buffer = ctypes.create_string_buffer(filename)
+        #buffer = ctypes.create_string_buffer(filename)
+        if isinstance(filename, unicode):
+            filename = filename.encode(sys.getfilesystemencoding())
         hFile = CreateFile(
-                ctypes.byref(buffer),
+                #ctypes.byref(buffer),
+                filename,
                 GENERIC_WRITE,
                 0,
                 NULL,
@@ -532,7 +540,7 @@ if __name__ == '__main__':
     env = avisynth.avs_create_script_environment(3)
     r=env.Invoke("eval",avisynth.AVS_Value(s),0)
     AVI = AvsClip(r.AsClip(env),env=env)
-    #~ AVI._x_SaveFrame("C:\\workspace\\test_file2.bmp", 100)
+    AVI._x_SaveFrame("C:\\workspace\\test_file2.bmp", 100)
     AVI._GetFrame(100)
     AVI = None
     env.Release()

@@ -1,18 +1,27 @@
-fps = avsp.GetVideoFramerate(index=None)
-bookmarks = avsp.GetBookmarkList()
+fps = avsp.GetVideoFramerate()
+try:
+    bookmarks = avsp.GetBookmarkList(title=True)
+except TypeError:
+    bookmarks = avsp.GetBookmarkList()
 bookmarks.sort()
 filename = avsp.GetSaveFilename(title='Save as')
-if filename!='':
-    file=open(filename,'w')
+if filename:
+    text = []
     chapter = 1
-    for bookmark in bookmarks:
-       	m, s = divmod(bookmark/fps, 60)
-        s2 = s
+    for item in bookmarks:
+        if type(item) is int:
+            bookmark = item
+            title = ''
+        else:
+            bookmark, title = item
+        m, s = divmod(bookmark/fps, 60)
         h, m = divmod(m, 60)
-        ms = (s2-int(s))*1000
-        time = '%02i:%02i:%02i.%03i' % (h ,m, s, ms)
-        file.write('CHAPTER%02i=' % chapter)
-        file.write(time + '\n')
-        file.write('CHAPTER%02iNAME=Chapter %02i\n' % (chapter, chapter))
-        chapter+=1
-    file.close()
+        timecode = 'CHAPTER%02d=%02d:%02d:%06.3f\n' % (chapter, h ,m, s)
+        if not title:
+            title = 'Chapter %02d' % chapter
+        title = 'CHAPTER%02dNAME=%s\n' % (chapter, title)
+        text += [timecode, title]
+        chapter +=1
+    f = open(filename, 'w')
+    f.writelines(text)
+    f.close()

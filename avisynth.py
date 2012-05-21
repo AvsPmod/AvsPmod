@@ -99,21 +99,21 @@ class PIScriptEnvironment:
         self.Release()
     def Invoke(self,name,args,arg_names):
         if isinstance(args,list):
-            a=AVS_Value*len(args)
-            for x in range(len(list)-1):
+            a=(AVS_Value*len(args))()
+            for x in range(len(args)):
                 a[x]=args[x]
-                args[x].Release()
             args=AVS_Value()    
             args.type=97#='a'rray
-            args.d.a=byref(a)
+            args.d.a=ctypes.cast(ctypes.byref(a), ctypes.POINTER(AVS_Value))
             args.array_size=len(a)
         if arg_names==0:
             arg_names=None
         elif isinstance(arg_names,list):
-            a=ctypes.c_char_p*len(arg_names)
-            for x in range(0,len(arg_names)-1):
+            a=(ctypes.c_char_p*len(arg_names))()
+            for x in range(len(arg_names)):
                 a[x]=arg_names[x]
-            arg_names=ctypes.ByRef(a)
+            arg_names=ctypes.cast(ctypes.byref(a), ctypes.POINTER(ctypes.c_char_p))
+            print arg_names
         retval=avs_invoke(self,name,args,arg_names)
         if retval.type==101: #'e'rror
             raise AvisynthError(retval.d.s)
@@ -379,11 +379,12 @@ class AVS_Value(ctypes.Structure,object):
         if val is not None:
             self.AssignVal(val)
     def AssignVal(self,val):
-        if isinstance(val,int):self.SetInt(val)
+        # check 'bool' in front of 'int'      
+        if isinstance(val,bool):self.SetBool(val)
+        elif isinstance(val,int):self.SetInt(val)
         elif isinstance(val,float):self.SetFloat(val)
         elif isinstance(val,str):self.SetString(val)
         elif isinstance(val,unicode):self.SetString(val)
-        elif isinstance(val,bool):self.SetBool(val)
         elif isinstance(val,PClip):self.SetClip(val)
         elif isinstance(val,AVS_Value):val.Copy(self)
         elif isinstance(val,list):
@@ -468,7 +469,7 @@ class AVS_Value(ctypes.Structure,object):
         
 class U(ctypes.Union):
        _fields_ = [("c",ctypes.c_void_p),
-                   ("b",ctypes.c_char),
+                   ("b",ctypes.c_long),
                    ("i",ctypes.c_int),
                    ("f",ctypes.c_float),
                    ("s",ctypes.c_char_p),

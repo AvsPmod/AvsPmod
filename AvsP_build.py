@@ -1,7 +1,7 @@
 # Build script for AvsP
 # Dependencies:
-#     Python (tested with v2.4.2)
-#     py2exe (tested with v0.6.5)
+#     Python
+#     py2exe
 # Scripts:
 #     AvsP_setup.py
 #     AvsP_i18n.py

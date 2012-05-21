@@ -169,15 +169,15 @@ SaveImage(filename='', framenum=None, index=None)
 Saves the video frame specified by the integer framenum as a file specified by the string filename, where the video corresponds with the script at the tab integer index.  If filename is an empty string, then the user is prompted with a dialog box.  If index is None, then the currently selected tab is used.  Returns True if the image was saved, False otherwise.
 
 
-GetBookmarkList()
+GetBookmarkList(title=False)
 =================
 Returns a list containing the video frame bookmarks currently set by the user.  Note that these are the standard frame bookmarks, and do not contain any selection startpoints or endpoints which may exist.
-
+* If title is true, returns a list of tuple (frame, title) 
 
 SetBookmark(bm)
 ===============
 Sets the input integer bm as a video frame bookmark.  If bm is a list, sets each of the values in bm as a video frame bookmark.  Returns True if successful, False otherwise.
-
+* accept bm is a tuple (frame , title) or a list of tuple.
 
 GetSelectionList()
 ==================

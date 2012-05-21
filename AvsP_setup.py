@@ -57,8 +57,7 @@ manifest_extra = {
   </dependency>
 """,}
 
-root_vc90crt = os.path.join(os.environ['SYSTEMROOT'],
-    'WinSxS/x86_Microsoft.VC90.CRT_1fc8b3b9a1e18e3b_9.0.21022.8_x-ww_d08d0375')
+root_vc90crt = 'C:\Python27'
 root_extra = {
     0: [],
     1: [os.path.join(root_vc90crt, 'msvcr90.dll'),
@@ -103,9 +102,9 @@ setup(
             'AvsP_setup.py',
             'AvsP_i18n.py',
             'AvsP.ico',
-            'notes.txt',
             'Microsoft.VC90.CRT.manifest',
             'icons.py',
+            'build_instructions.txt',
         ]),
     ] +
     [(root, [os.path.join(root,name) for name in files]) for root, dirs, files in os.walk('macros')] +

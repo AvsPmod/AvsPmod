@@ -77,7 +77,7 @@ except AttributeError:
 from icons import AvsP_icon, next_icon, play_icon, skip_icon
 from __translation_new import new_translation_string
 
-version = '2.0.6'
+version = '2.0.7'
 
 # Custom styled text control for avisynth language
 class AvsStyledTextCtrl(stc.StyledTextCtrl):
@@ -2093,6 +2093,8 @@ class AvsFunctionDialog(wx.Dialog):
             panel.autocompletecheckbox = autocompletecheckbox
             panel.functiontype = index
         # Buttons
+        button0 = wx.Button(self, wx.ID_ANY, _('Import from files'))
+        self.Bind(wx.EVT_BUTTON, lambda event: self.ImportFromFiles(), button0)
         button1 = wx.Button(self, wx.ID_ANY, _('Export customizations'))
         self.Bind(wx.EVT_BUTTON, lambda event: self.ExportCustomizations(), button1)
         button2 = wx.Button(self, wx.ID_ANY, _('Clear customizations'))
@@ -2100,21 +2102,24 @@ class AvsFunctionDialog(wx.Dialog):
         button3 = wx.Button(self, wx.ID_ANY, _('Clear manual presets'))
         self.Bind(wx.EVT_BUTTON, lambda event: self.ClearPresets(), button3)
         buttonSizer = wx.BoxSizer(wx.HORIZONTAL)
+        buttonSizer.Add(button0, 0, wx.RIGHT, 5)
         buttonSizer.Add(button1, 0, wx.RIGHT, 5)
         buttonSizer.Add(button2, 0, wx.RIGHT, 5)
-        buttonSizer.Add(button3, 0, wx.RIGHT, 5)
+        buttonSizer.Add(button3, 0, wx.RIGHT, 5)        
+        self.checkBox = wx.CheckBox(self, wx.ID_ANY, _("When importing, don't show the choice dialog"))
         # Standard buttons
         okay  = wx.Button(self, wx.ID_OK, _('OK'))
         #~ self.Bind(wx.EVT_BUTTON, self.OnButtonOK, okay)
         cancel = wx.Button(self, wx.ID_CANCEL, _('Cancel'))
         sdtbtns = wx.StdDialogButtonSizer()
+        sdtbtns.Add(self.checkBox)
         sdtbtns.AddButton(okay)
         sdtbtns.AddButton(cancel)
         sdtbtns.Realize()
         # Size the elements
         dlgSizer = wx.BoxSizer(wx.VERTICAL)
         dlgSizer.Add(self.notebook, 1, wx.EXPAND|wx.ALL, 5)
-        dlgSizer.Add(buttonSizer, 0, wx.EXPAND|wx.ALL, 5)
+        dlgSizer.Add(buttonSizer, 0, wx.LEFT, 5)
         dlgSizer.Add(wx.StaticLine(self, style=wx.HORIZONTAL), 0, wx.EXPAND|wx.TOP|wx.BOTTOM, 5)
         dlgSizer.Add(sdtbtns, 0, wx.EXPAND|wx.ALL, 5)
         self.SetSizer(dlgSizer)
@@ -2278,7 +2283,212 @@ class AvsFunctionDialog(wx.Dialog):
         for i in xrange(listbox.GetCount()):
             boolCheck = (listbox.GetString(i).split()[0].lower() in self.installedFilternames)
             listbox.Check(i, boolCheck)
-
+            
+    def ImportFromFiles(self):
+        filenames, filterInfo, unrecognized = [], [], []
+        title = _('Open Customization files, Avisynth scripts or Avsp options files')
+        recentdir = os.path.join(self.GetParent().options['avisynthdir'], 'plugins')
+        filefilter = _('All supported|*.txt;*.avsi;*.avs;*.dat|Customization file (*.txt)|*.txt|AviSynth script (*.avs, *.avsi)|*.avs;*.avsi|AvsP data (*.dat)|*.dat|All files (*.*)|*.*')
+        dlg = wx.FileDialog(self, title, recentdir, '', filefilter, 
+                            wx.OPEN|wx.MULTIPLE|wx.FILE_MUST_EXIST)
+        ID = dlg.ShowModal()
+        if ID == wx.ID_OK:
+            filenames = dlg.GetPaths()            
+        dlg.Destroy()
+        if not filenames:
+            return
+            
+        for filename in filenames:
+            ext = os.path.splitext(filename)[1]
+            try:
+                if ext in ['.avs', '.avsi']:
+                    info = self.PaserAvisynthScript(filename)
+                elif ext == '.txt':
+                    info = self.PaserCustomizations(filename)
+                    info = None
+                elif ext == '.dat':
+                    f = open(filename, 'rb')
+                    data = cPickle.load(f)
+                    f.close()
+                    info = []
+                    for filtername, filterargs, ftype in data['filteroverrides'].values():
+                        info.append((filename, filtername, filterargs, ftype))
+                else:
+                    info = None
+            except:
+                info = None
+            if not info:
+                unrecognized.append(filename)
+            else:
+                filterInfo += info
+        if filterInfo and not self.checkBox.IsChecked():
+            self.SelectImportFilters(filterInfo)
+        for filename, filtername, filterargs, ftype in filterInfo:
+            self.EditFunctionInfo(filtername, filterargs, ftype)
+        if unrecognized:
+            wx.MessageBox('\n'.join(unrecognized), _('Unrecognized files'))
+    
+    def SelectImportFilters(self, filterInfo):
+        choices = []
+        filterInfo.sort()
+        for filename, filtername, filterargs, ftype in filterInfo:
+            choices.append(os.path.basename(filename) + ' -> ' + filtername)
+        dlg = wx.Dialog(self, wx.ID_ANY, _('Select import functions'), style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+        listbox = wx.CheckListBox(dlg, wx.ID_ANY, choices=choices)
+        for i in range(len(choices)):
+            filename, filtername = choices[i].lower().split(' -> ')
+            if filename.find(filtername) != -1:
+                listbox.Check(i)    
+        idAll = wx.NewId()
+        idNone = wx.NewId()
+        idFileAll = wx.NewId()
+        idFileNone = wx.NewId()
+        def OnContextMenuItem(event):
+            id = event.GetId()
+            value = True if id in [idAll, idFileAll] else False
+            if id in [idAll, idNone]:
+                for i in range(len(choices)):
+                    listbox.Check(i, value)
+            else:
+                pos = listbox.GetSelection()
+                if pos != wx.NOT_FOUND:
+                    filename = filterInfo[pos][0]
+                    for i in range(len(choices)):
+                        if filename == filterInfo[i][0]:
+                            listbox.Check(i, value)
+        def OnContextMenu(event):
+            listbox.Bind(wx.EVT_MENU, OnContextMenuItem, id=idAll)
+            listbox.Bind(wx.EVT_MENU, OnContextMenuItem, id=idNone)
+            listbox.Bind(wx.EVT_MENU, OnContextMenuItem, id=idFileAll)
+            listbox.Bind(wx.EVT_MENU, OnContextMenuItem, id=idFileNone)
+            menu = wx.Menu()
+            menu.Append(idAll, _('select all'))
+            menu.Append(idNone, _('select none'))
+            menu.Append(idFileAll, _('select all (file only)'))
+            menu.Append(idFileNone, _('select none (file only)'))
+            listbox.PopupMenu(menu)
+            menu.Destroy()
+        listbox.Bind(wx.EVT_CONTEXT_MENU, OnContextMenu)
+        okay  = wx.Button(dlg, wx.ID_OK, _('OK'))
+        cancel = wx.Button(dlg, wx.ID_CANCEL, _('Cancel'))
+        btns = wx.StdDialogButtonSizer()
+        btns.AddButton(okay)
+        btns.AddButton(cancel)
+        btns.Realize()
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer.Add(listbox, 1, wx.EXPAND|wx.ALL,5)
+        sizer.Add(btns, 0, wx.EXPAND|wx.ALL,5)
+        dlg.SetSizerAndFit(sizer)
+        ID = dlg.ShowModal()
+        for i in range(len(choices)-1, -1, -1):
+            if ID != wx.ID_OK or not listbox.IsChecked(i):
+                del filterInfo[i]
+        dlg.Destroy()
+        
+    def PaserAvisynthScript(self, filename):
+        pattern = r'function\s+(\w+)\s*\((.+?)\)\s*\{(.+?)\}'
+        default = r'default\s*\(\s*%s\s*,\s*(.+?)\s*\)'
+        filterInfo, text = [], []
+        f = open(filename)
+        for line in f:
+            line = line.strip()
+            line = line.strip('\\')
+            if not line.startswith('#'):
+                text.append(line)
+        f.close()
+        text = ' '.join(text)
+        matches = re.findall(pattern, text, re.I|re.S)
+        for filtername, args, body in matches:
+            text = ['(\n']
+            varnameDict = {}
+            for arg in args.split(','):
+                arg = arg.split()
+                if len(arg) == 2:
+                    vartype, varname = arg
+                elif len(arg) == 1:
+                    sep = arg[0].find('"') 
+                    vartype = arg[0][:sep]
+                    varname = arg[0][sep:]
+                else:
+                    return None
+                text.append(vartype)
+                if varname[0] == '"':
+                    text += [' ', varname]
+                    varname = varname[1:-1]
+                    pat = default % varname
+                    ret = re.search(pat, body, re.I|re.S)
+                    if ret:
+                        value = ret.group(1)
+                        if vartype not in ['int', 'float'] or value.isdigit():
+                            text += ['=', value]
+                            varnameDict[varname] = value
+                        else:
+                            for name in varnameDict:
+                                value = value.replace(name, varnameDict[name])
+                            try:
+                                value = str(eval(value))
+                                text += ['=', value]
+                                varnameDict[varname] = value
+                            except:
+                                print _('Error'), 'PaserAvisynthScript() try eval(%s)' % value                                  
+                text.append(',\n')
+            if text[-1] == ',\n':
+                text[-1] = '\n'
+            text.append(')')
+            filterargs = ''.join(text)
+            filterInfo.append((filename, filtername, filterargs, 3))
+        return filterInfo
+        
+    def PaserCustomizations(self, filename):
+        f = open(filename)
+        text = '\n'.join([line.strip() for line in f.readlines()])
+        f.close()
+        filterInfo = []
+        for section in text.split('\n['):
+            title, data = section.split(']\n',1)
+            title = title.strip('[]').lower()
+            if title == 'clipproperties':
+                for item in data.split('\n'):
+                    if not item.strip():
+                        continue
+                    splitstring = item.split('(', 1)
+                    if len(splitstring) == 2:
+                        filtername = splitstring[0].strip()
+                        filterargs = '('+splitstring[1].strip(' ')
+                    else:
+                        filtername = item
+                        filterargs = ''
+                    filterInfo.append((filename, filtername, filterargs, 1))
+            elif title == 'scriptfunctions':
+                for item in data.split('\n'):
+                    splitstring = item.split('(', 1)
+                    if len(splitstring) == 2:
+                        filtername = splitstring[0].strip()
+                        filterargs = '('+splitstring[1].strip(' ')
+                        filterInfo.append((filename, filtername, filterargs, 4))
+            elif title == 'corefilters':
+                for s in data.split('\n\n'):
+                    splitstring = s.split('(', 1)
+                    if len(splitstring) == 2:
+                        filtername = splitstring[0].strip()
+                        filterargs = '('+splitstring[1].strip(' ')
+                        filterInfo.append((filename, filtername, filterargs, 0))
+            elif title == 'plugins':
+                for s in data.split('\n\n'):
+                    splitstring = s.split('(', 1)
+                    if len(splitstring) == 2:
+                        filtername = splitstring[0].strip()
+                        filterargs = '('+splitstring[1].strip(' ')
+                        filterInfo.append((filename, filtername, filterargs, 2))
+            elif title == 'userfunctions':
+                for s in data.split('\n\n'):
+                    splitstring = s.split('(', 1)
+                    if len(splitstring) == 2:
+                        filtername = splitstring[0].strip()
+                        filterargs = '('+splitstring[1].strip(' ')
+                        filterInfo.append((filename, filtername, filterargs, 3))
+        return filterInfo
+                
     def ExportCustomizations(self):
         if len(self.overrideDict) == 0:
             wx.MessageBox(_('No customizations to export!'), _('Error'))
@@ -2347,7 +2557,7 @@ class AvsFunctionDialog(wx.Dialog):
             self.presetDict = {}
             self.RefreshListNames()
         dlg.Destroy()
-
+        
     def RefreshListNames(self):
         for index in xrange(self.notebook.GetPageCount()):
             panel = self.notebook.GetPage(index)
@@ -2371,7 +2581,7 @@ class AvsFunctionDialog(wx.Dialog):
             for i in deleteIndices:
                 listbox.Delete(i)
 
-    def AddNewFunction(self, name='', ftype=3):
+    def AddNewFunction(self, name='', ftype=3, arg=None):
         dlg = self.FilterInfoDialog
         if ftype == -1:
             index = self.notebook.GetSelection()
@@ -2401,7 +2611,7 @@ class AvsFunctionDialog(wx.Dialog):
             #~ dlg.SetAutopreset(True)
             #~ enteredPreset = self.CreateDefaultPreset(name, enteredArgs)
         defaultName = name
-        defaultArgs = '()'
+        defaultArgs = '()' if not arg else arg
         dlg.nameBox.SetValue(defaultName)
         dlg.typeBox.SetSelection(ftype)
         dlg.typeBox.Enable()
@@ -2412,7 +2622,8 @@ class AvsFunctionDialog(wx.Dialog):
         dlg.defaultArgs = defaultArgs
         dlg.defaultName = defaultName
         dlg.enteredName = None
-        ID = dlg.ShowModal()
+        if arg: ID = wx.ID_OK
+        else: ID = dlg.ShowModal()
         if ID == wx.ID_OK:
             newName = dlg.nameBox.GetValue()
             newType = dlg.typeBox.GetSelection()
@@ -2425,8 +2636,8 @@ class AvsFunctionDialog(wx.Dialog):
                     self.notebook.SetSelection(index)
                     listbox = panel.listbox
                     break
-            else:
-                return
+            #else:
+                #return
             extra = ' '
             # Update the override dict
             #~ if (newName != defaultName) or (newArgs != defaultArgs):
@@ -2451,9 +2662,17 @@ class AvsFunctionDialog(wx.Dialog):
             listbox.SetSelection(index)
             listbox.SetFirstItem(index)
 
-    def EditFunctionInfo(self, name=None):
+    def EditFunctionInfo(self, name=None, arg=None, ftype=None):
         dlg = self.FilterInfoDialog
-        panel = self.notebook.GetCurrentPage()
+        if arg:
+            arg = arg.strip()
+            name = unicode(name)
+            for index in xrange(self.notebook.GetPageCount()):
+                panel = self.notebook.GetPage(index)
+                if panel.functiontype == ftype:
+                    break
+        else:
+            panel = self.notebook.GetCurrentPage()
         listbox = panel.listbox
         functiontype = panel.functiontype
         if name is None:
@@ -2462,7 +2681,10 @@ class AvsFunctionDialog(wx.Dialog):
             return
         lowername = name.lower()
         if lowername not in self.filterDict and lowername not in self.overrideDict:
-            self.AddNewFunction(name)
+            if not ftype:
+                self.AddNewFunction(name)
+            else:
+                self.AddNewFunction(name, ftype, arg)
             return
         # Fill out default values
         #~ defaultName = self.filterDict[lowername][0]
@@ -2471,7 +2693,7 @@ class AvsFunctionDialog(wx.Dialog):
         #~ defaultPreset = self.CreateDefaultPreset(name, defaultArgs)
         enteredName = name
         enteredType = functiontype
-        enteredArgs = self.overrideDict.get(lowername, (None, defaultArgs, None))[1]
+        enteredArgs = self.overrideDict.get(lowername, (None, defaultArgs, None))[1] if not arg else arg
         #~ defaultPreset = self.CreateDefaultPreset(name, enteredArgs)
         enteredPreset = self.presetDict.get(lowername)#, defaultPreset)
         if enteredPreset is not None:
@@ -2492,7 +2714,8 @@ class AvsFunctionDialog(wx.Dialog):
         #~ self.defaultPreset = defaultPreset
         dlg.defaultName = defaultName
         dlg.enteredName = enteredName
-        ID = dlg.ShowModal()
+        if arg: ID = wx.ID_OK
+        else: ID = dlg.ShowModal()
         if ID == wx.ID_OK:
             newName = dlg.nameBox.GetValue()
             newType = dlg.typeBox.GetSelection()
@@ -2515,6 +2738,11 @@ class AvsFunctionDialog(wx.Dialog):
                 self.presetDict[lowername] = newPreset
                 extra += '~'
             if newType == enteredType:
+                if arg:
+                    for i in xrange(listbox.GetCount()):
+                        if newName == listbox.GetString(i).split()[0]:
+                            listbox.SetSelection(i)
+                            break
                 listbox.SetString(listbox.GetSelection(), newName+extra)
             else:
                 for index in xrange(self.notebook.GetPageCount()):
@@ -3388,7 +3616,7 @@ class SliderPlus(wx.Panel):
 class MainFrame(wxp.Frame):
     # Initialization functions
     def __init__(self, parent=None, id=wx.ID_ANY, title='AvsPmod', pos=wx.DefaultPosition, size=(700, 550), style=wx.DEFAULT_FRAME_STYLE):
-        wx.Frame.__init__(self, parent, id, pos=pos, size=size, style=style)
+        wxp.Frame.__init__(self, parent, id, pos=pos, size=size, style=style)
         self.version = version
         self.firsttime = False
         pyavs.InitRoutines()
@@ -3605,9 +3833,14 @@ class MainFrame(wxp.Frame):
         self.macroVars = {}
         self.imageFormats = {
             '.bmp': (_('Windows Bitmap (*.bmp)'), wx.BITMAP_TYPE_BMP),
+            '.gif': (_('Animation (*.gif)'), wx.BITMAP_TYPE_GIF),
             '.jpg': (_('JPEG (*.jpg)'), wx.BITMAP_TYPE_JPEG),
-            #~ '.pcx': (_('Zsoft Paintbrush (*.pcx)'), wx.BITMAP_TYPE_PCX),
+            '.pcx': (_('Zsoft Paintbrush (*.pcx)'), wx.BITMAP_TYPE_PCX),
             '.png': (_('Portable Network Graphics (*.png)'), wx.BITMAP_TYPE_PNG),
+            '.pnm': (_('Netpbm (*.pnm)'), wx.BITMAP_TYPE_PNM),
+            '.tif': (_('Tagged Image File (*.tif)'), wx.BITMAP_TYPE_TIF),
+            '.xpm': (_('ASCII Text Array (*.xpm)'), wx.BITMAP_TYPE_XPM),
+            '.ico': (_('Windows Icon (*.ico)'), wx.BITMAP_TYPE_ICO),
         }
         self.markFrameInOut = self.options['trimmarkframes']
         if self.options['trimreversechoice'] == 0:
@@ -3620,6 +3853,9 @@ class MainFrame(wxp.Frame):
             self.videoStatusBarInfo = self.options['videostatusbarinfo']
         self.videoStatusBarInfoParsed, self.showVideoPixelInfo, self.showVideoPixelAvisynth = self.ParseVideoStatusBarInfo(self.videoStatusBarInfo)
         self.foldAllSliders = True
+        self.matrix = 'Rec601'
+        self.interlaced = False        
+        self.bookmarkDict = {}
         # Events
         self.Bind(wx.EVT_CLOSE, self.OnClose)
         self.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.OnNotebookPageChanged)
@@ -3726,6 +3962,7 @@ class MainFrame(wxp.Frame):
         if self.need_to_show_preview:
             self.ShowVideoFrame(self.startupframe, forceRefresh=False)
             #~ self.IdleCall = (self.ShowVideoFrame, (self.startupframe,), {'forceRefresh':False})
+        self.UpdateBookmarkMenu()
         self.Refresh()
         if self.mainSplitter.IsSplit():
             self.SplitVideoWindow()
@@ -4705,7 +4942,6 @@ class MainFrame(wxp.Frame):
         if wx.VERSION > (2, 9):
             mainFrameSizer = wx.BoxSizer(wx.VERTICAL)
             mainFrameSizer.Add(self.mainSplitter, 1, wx.EXPAND)
-            self.videoControls.SetMinSize((-1, self.toolbarHeight))
             mainFrameSizer.Add(self.videoControls, 0, wx.EXPAND)
             self.SetSizer(mainFrameSizer)
         
@@ -4749,7 +4985,23 @@ class MainFrame(wxp.Frame):
                 accelList.append((accel.GetFlags(), accel.GetKeyCode(), id))
                 self.reservedIdDict[id] = (shortcut, cmdKey)
             self.mainFrameAccelTable = wx.AcceleratorTable(accelList)
-        self.menuBookmark = self.createMenu(((''), ('')))
+        self.menuBookmark = self.createMenu(
+            (
+                (''), 
+                (_('sort ascending'), '', self.UpdateBookmarkMenu, _('Sort bookmarks ascending'), wx.ITEM_CHECK, True),
+                (_('show time'), '', self.UpdateBookmarkMenu, _('Show bookmarks with timecode'), wx.ITEM_CHECK, False),
+                (_('show title'), '', self.UpdateBookmarkMenu, _('Show bookmarks with title'), wx.ITEM_CHECK, True),
+            )
+        )
+        self.matrixDict = {
+            _('Rec601'): 'Rec601',
+            _('PC.601'): 'PC.601',
+            _('Rec709'): 'Rec709',
+            _('PC.709'): 'PC.709',
+            _('Progressive'): 'Progressive',
+            _('Interlaced'): 'Interlaced',
+        }
+        reverseMatrixDict = dict([(v,k) for k,v in self.matrixDict.items()])
         self.zoomLabelDict = {
             _('25%'): '25',
             _('50%'): '50',
@@ -4840,6 +5092,15 @@ class MainFrame(wxp.Frame):
             (_('&Video'),
                 (_('Add/Remove bookmark'), 'Ctrl+B', self.OnMenuVideoBookmark, _('Mark the current frame on the frame slider')),
                 (_('Clear all bookmarks'), '', self.OnMenuVideoGotoClearAll, _('Clear all bookmarks')),
+                (_('Titled bookmarks'),
+                    (
+                    (_('Move titled bookmark'), 'Ctrl+M', self.OnMenuVideoBookmarkMoveTitle, _('Move the nearest titled bookmark to the current position. A historic title will be restored if it matches the condition.')),
+                    (_('Restore historic titles'), '', self.OnMenuVideoBookmarkRestoreHistory, _('Restore all historic titles')),
+                    (_('Clear historic titles'), '', self.OnMenuVideoBookmarkClearHistory, _('Clear all historic titles')),
+                    (_('Set title (auto)'), '', self.OnMenuVideoBookmarkAutoTitle, _("Generate titles for untitled bookmarks by the pattern - 'Chapter %02d'")),
+                    (_('Set title (manual)'), '', self.OnMenuVideoBookmarkSetTitle, _('Edit title for bookmarks in a list table')),
+                    ),
+                ),
                 (''),
                 (_('Navigate'),
                     (
@@ -4898,6 +5159,17 @@ class MainFrame(wxp.Frame):
                 (_('Toggle the slider sidebar'), 'Alt+F5', self.OnMenuVideoToggleSliderWindow, _('Show/hide the slider sidebar (double-click the divider for the same effect)')),
                 (_('External player'), 'F6', self.OnMenuVideoExternalPlayer, _('Play the current script in an external program')),
                 (''),
+                (_('YUV -> RGB'),
+                    (
+                    (reverseMatrixDict['Rec601'], '', self.OnMenuVideoYUV2RGB, _('For YUV source, assume it is Rec601 (default)'), wx.ITEM_RADIO, True),
+                    (reverseMatrixDict['PC.601'], '', self.OnMenuVideoYUV2RGB, _('For YUV source, assume it is PC.601'), wx.ITEM_RADIO, False),
+                    (reverseMatrixDict['Rec709'], '', self.OnMenuVideoYUV2RGB, _('For YUV source, assume it is Rec709'), wx.ITEM_RADIO, False),
+                    (reverseMatrixDict['PC.709'], '', self.OnMenuVideoYUV2RGB, _('For YUV source, assume it is PC.709'), wx.ITEM_RADIO, False),
+                    (''),
+                    (reverseMatrixDict['Progressive'], '', self.OnMenuVideoYUV2RGB, _('For YV12 only, assume it is progressive (default)'), wx.ITEM_RADIO, True),
+                    (reverseMatrixDict['Interlaced'], '', self.OnMenuVideoYUV2RGB, _('For YV12 only, assume it is interlaced'), wx.ITEM_RADIO, False),
+                    ),
+                ),
                 (_('Video information'), '', self.OnMenuVideoInfo, _('Show information about the video in a dialog box')),
             ),
             (_('&Options'),
@@ -4908,8 +5180,8 @@ class MainFrame(wxp.Frame):
                 (_('Enable paranoia mode'), '', self.OnMenuOptionsEnableParanoiaMode, _('If checked, the current session is backed up prior to previewing any new script'), wx.ITEM_CHECK, self.options['paranoiamode']),
                 (_('Enable line-by-line update'), '', self.OnMenuOptionsEnableLineByLineUpdate, _('Enable the line-by-line video update mode (update every time the cursor changes line position)'), wx.ITEM_CHECK, self.options['autoupdatevideo']),
                 (''),
-                (_('Associate .avs files with AvsP'), '', self.OnMenuOptionsAssociate, _('Configure this computer to open .avs files with AvsP when double-clicked')),
-                (''),
+                #~ (_('Associate .avs files with AvsP'), '', self.OnMenuOptionsAssociate, _('Configure this computer to open .avs files with AvsP when double-clicked')),
+                #~ (''),
                 (_('AviSynth function definition...'), '', self.OnMenuOptionsFilters, _('Add or override AviSynth functions in the database')),
                 #~ (_('AviSynth function definition...'), '', self.OnMenuOptionsFilters, _('Edit the AviSynth function info for syntax highlighting and calltips')),
                 (_('Fonts and colors...'), '', self.OnMenuOptionsFontsAndColors, _('Edit the various AviSynth script fonts and colors')),
@@ -5212,7 +5484,10 @@ class MainFrame(wxp.Frame):
         return videoWindow
 
     def createVideoControls(self, parent, primary=True):
-        panel = wx.Panel(parent, style=wx.BORDER_NONE, size=(-1, 24))
+        if wx.VERSION < (2, 9):
+            panel = wx.Panel(parent, style=wx.BORDER_NONE, size=(-1, 24))
+        else:
+            panel = wx.Panel(parent, size=(-1, 30))
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         videoControlWidgets = []
         # Create the playback buttons
@@ -5747,8 +6022,154 @@ class MainFrame(wxp.Frame):
         #~ bmenu = self.GetMenuBar().GetMenu(2).FindItemByPosition(1).GetSubMenu()
         #~ framenum = int(bmenu.GetLabel(event.GetId()))
         menuItem = self.GetMenuBar().FindItemById(event.GetId())
-        framenum = int(menuItem.GetLabel())
+        framenum = int(menuItem.GetLabel().split()[0])
         self.ShowVideoFrame(framenum)
+
+    def OnMenuVideoBookmarkMoveTitle(self, event):
+        if type(event) is int:
+            curr = event
+        else:
+            curr = self.GetFrameNumber()
+        bookmarkList = [bookmark for bookmark, bmtype in self.GetBookmarkFrameList() if bmtype == 0]
+        diffList = [(abs(curr - i), i) for i in self.bookmarkDict if self.bookmarkDict[i]]
+        if not diffList:
+            return
+        diff, bookmark = min(diffList)
+        if not diff and bookmark in bookmarkList:
+            return
+        self.bookmarkDict[curr] = self.bookmarkDict[bookmark]
+        if diff:
+            del self.bookmarkDict[bookmark]
+        isUpdated = False
+        if curr not in bookmarkList:
+            self.AddFrameBookmark(curr, 0)
+            isUpdated = True
+        if bookmark in bookmarkList:
+            self.AddFrameBookmark(bookmark, 0)
+            isUpdated = True
+        if not isUpdated:
+            self.UpdateBookmarkMenu()
+            
+    def OnMenuVideoBookmarkRestoreHistory(self, event):
+        bookmarkList = [bookmark for bookmark, bmtype in self.GetBookmarkFrameList() if bmtype == 0]
+        for bookmark in self.bookmarkDict.keys():
+            if bookmark not in bookmarkList and self.bookmarkDict[bookmark]:
+                self.OnMenuVideoBookmarkMoveTitle(bookmark)
+
+    def OnMenuVideoBookmarkClearHistory(self, event):
+        bookmarkList = [bookmark for bookmark, bmtype in self.GetBookmarkFrameList() if bmtype == 0]
+        for bookmark in self.bookmarkDict.keys():
+            if bookmark not in bookmarkList or not self.bookmarkDict[bookmark]:
+                del self.bookmarkDict[bookmark]
+                
+    def OnMenuVideoBookmarkAutoTitle(self, event):
+        bookmarkList = [bookmark for bookmark, bmtype in self.GetBookmarkFrameList() if bmtype == 0]
+        bookmarkList.sort()
+        for i in range(len(bookmarkList)):
+            if bookmarkList[i] not in self.bookmarkDict:
+                self.bookmarkDict[bookmarkList[i]] = _('Chapter') + (' %02d' % (i+1))
+        self.UpdateBookmarkMenu()
+        
+    def OnMenuVideoBookmarkSetTitle(self, event):
+        bookmarkInfo = []
+        historyList = []
+        titleList = []
+        bookmarkList = [bookmark for bookmark, bmtype in self.GetBookmarkFrameList() if bmtype == 0]
+        for bookmark in self.bookmarkDict:
+            if bookmark in bookmarkList:
+                titleList.append(bookmark)
+            else:
+                historyList.append(bookmark)                
+        bookmarkList += historyList
+        if not bookmarkList:
+            return
+        width = len(str(max(bookmarkList))) if bookmarkList else 0
+        fmt = '* %%%dd' % width
+        for bookmark in bookmarkList:
+            if self.currentScript.AVI:
+                sec = bookmark / self.currentScript.AVI.Framerate                    
+                min, sec = divmod(sec, 60)
+                hr, min = divmod(min, 60)
+                timecode = '%02d:%02d:%06.3f' % (hr, min, sec)
+            else:
+                timecode = '??:??:??.???'
+            title = self.bookmarkDict.get(bookmark, '')
+            bookmarkInfo.append((bookmark, timecode, title))
+        bookmarkInfo.sort()
+        dlg = wx.Dialog(self, wx.ID_ANY, _('Set title for bookmarks'), size=(450, 270), style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+        attrTitle = wx.ListItemAttr()
+        attrTitle.SetTextColour(wx.BLUE)
+        attrHistory = wx.ListItemAttr()
+        attrHistory.SetTextColour(wx.RED)
+        # Define the virtual list control
+        class VListCtrl(wxp.ListCtrl):                
+            def OnGetItemText(self, item, column):
+                bookmark, timecode, title = bookmarkInfo[item]
+                if column == 0:
+                    return title
+                elif column == 1:
+                    if bookmark in historyList:
+                        return fmt % bookmark
+                    return str(bookmark)
+                return timecode
+                
+            def OnGetItemAttr(self, item):
+                bookmark, timecode, title = bookmarkInfo[item]
+                if bookmark in titleList:
+                    return attrTitle
+                elif bookmark in historyList:
+                    return attrHistory
+                    
+        listCtrl = VListCtrl(dlg, wx.ID_ANY, style=wx.LC_REPORT|wx.LC_SINGLE_SEL|wx.LC_VIRTUAL|wx.LC_EDIT_LABELS|wx.LC_HRULES|wx.LC_VRULES)
+        listCtrl.InsertColumn(0, _('Title'))
+        listCtrl.InsertColumn(1, _('Frame No.'), wx.LIST_FORMAT_RIGHT)
+        listCtrl.InsertColumn(2, _('Time **'))
+        listCtrl.SetItemCount(len(bookmarkInfo))
+        listCtrl.setResizeColumn(1)
+        listCtrl.SetColumnWidth(1, wx.LIST_AUTOSIZE_USEHEADER)
+        listCtrl.SetColumnWidth(2, wx.LIST_AUTOSIZE)
+        
+        def OnListCtrlActivated(event):
+            listCtrl.EditLabel(event.GetIndex())
+            
+        def OnListCtrlEndLabelEdit(event):
+            i = event.GetIndex()
+            bookmark, timecode, oldTitle = bookmarkInfo[i]
+            newTitle = event.GetLabel().strip()
+            if bookmark not in historyList:
+                if oldTitle and not newTitle:
+                    titleList.remove(bookmark)
+                if not oldTitle and newTitle:
+                    titleList.append(bookmark)
+            bookmarkInfo[i] = (bookmark, timecode, newTitle)
+            
+        listCtrl.Bind(wx.EVT_LIST_ITEM_ACTIVATED, OnListCtrlActivated)
+        listCtrl.Bind(wx.EVT_LIST_END_LABEL_EDIT, OnListCtrlEndLabelEdit)
+        label = wx.StaticText(dlg, wx.ID_ANY, _('Left-click on a selected item or double-click to edit.\n\n'
+                                                '*  RED - a historic title, not a real bookmark.\n'
+                                                '** Time may be unavailable or incorrect before preview refreshed.'
+                                                ))
+        # Standard buttons
+        okay  = wx.Button(dlg, wx.ID_OK, _('OK'))
+        cancel = wx.Button(dlg, wx.ID_CANCEL, _('Cancel'))
+        btns = wx.StdDialogButtonSizer()
+        btns.AddButton(okay)
+        btns.AddButton(cancel)
+        btns.Realize()
+        # Size the elements
+        dlgSizer = wx.BoxSizer(wx.VERTICAL)
+        dlgSizer.Add(listCtrl, 1, wx.EXPAND|wx.ALL, 5)
+        dlgSizer.Add(label, 0, wx.LEFT, 5)
+        dlgSizer.Add(btns, 0, wx.EXPAND|wx.ALL, 5)
+        dlg.SetSizer(dlgSizer)
+        ID = dlg.ShowModal()
+        if ID == wx.ID_OK:
+            for bookmark, timecode, title in bookmarkInfo:
+                self.bookmarkDict[bookmark] = title
+                if not title:
+                    del self.bookmarkDict[bookmark]
+            self.UpdateBookmarkMenu()
+        dlg.Destroy()
 
     def OnMenuVideoGotoLastScrolled(self, event):
         curPos = self.videoSlider.GetValue()
@@ -5890,16 +6311,37 @@ class MainFrame(wxp.Frame):
         self.SetSelectionEndPoint(2)
 
     def OnMenuVideoZoom(self, event, menuItem=None, show=True):
+        vidmenus = [self.videoWindow.contextMenu, self.GetMenuBar().GetMenu(2)]
         if menuItem is None:
             id = event.GetId()
-            vidmenu = self.videoWindow.contextMenu
-            menu = vidmenu.FindItemById(vidmenu.FindItem(_('Zoom'))).GetSubMenu()
-            menuItem = menu.FindItemById(id)
-        if menuItem is None:
-            print>>sys.stderr, _('Error')
-            return
-        menuItem.Check()
-        zoomvalue = self.zoomLabelDict[menuItem.GetLabel()]
+            for vidmenu in vidmenus:
+                menu = vidmenu.FindItemById(vidmenu.FindItem(_('Zoom'))).GetSubMenu()
+                menuItem = menu.FindItemById(id)
+                if menuItem: 
+                    label = menuItem.GetLabel()
+                    zoomvalue = self.zoomLabelDict[label]
+                else:
+                    updateMenu = menu
+            id = updateMenu.FindItem(label)
+            menuItem = updateMenu.FindItemById(id)
+            if menuItem is None:
+                print>>sys.stderr, _('Error'), 'OnMenuVideoZoom(): cannot find menu item by id'
+                return
+            menuItem.Check()
+        else:
+            menuItem.Check()
+            label = menuItem.GetLabel()
+            zoomvalue = self.zoomLabelDict[label]
+            for vidmenu in vidmenus:
+                menu = vidmenu.FindItemById(vidmenu.FindItem(_('Zoom'))).GetSubMenu()
+                if menu != menuItem.GetMenu():
+                    id = menu.FindItem(label)
+                    menuItem = menu.FindItemById(id)
+                    if menuItem is None:
+                        print>>sys.stderr, _('Error'), 'OnMenuVideoZoom(): cannot find menu item by id'
+                        return
+                    menuItem.Check()
+                    break
         if zoomvalue == 'fill':
             self.zoomwindow = True
             self.zoomwindowfit = False
@@ -5968,7 +6410,33 @@ class MainFrame(wxp.Frame):
 
     def OnMenuVideoExternalPlayer(self, event):
         self.RunExternalPlayer()
-
+    
+    def OnMenuVideoYUV2RGB(self, event):
+        id = event.GetId()
+        vidmenus = [self.videoWindow.contextMenu, self.GetMenuBar().GetMenu(2)]
+        for vidmenu in vidmenus:
+            menu = vidmenu.FindItemById(vidmenu.FindItem(_('YUV -> RGB'))).GetSubMenu()
+            menuItem = menu.FindItemById(id)
+            if menuItem: 
+                label = menuItem.GetLabel()
+            else:
+                updateMenu = menu
+        id = updateMenu.FindItem(label)
+        menuItem = updateMenu.FindItemById(id)
+        if not menuItem:
+            print>>sys.stderr, _('Error'), 'OnMenuVideoYUV2RGB(): cannot find menu item by id'
+            return
+        menuItem.Check()
+        value = self.matrixDict[label]
+        if value == 'Progressive':
+            self.interlaced = False
+        elif value == 'Interlaced':
+            self.interlaced = True
+        else:
+            self.matrix = value
+        if self.previewWindowVisible:
+            self.OnMenuVideoRefresh(event)
+            
     def OnMenuVideoInfo(self, event):
         dlg = wx.Dialog(self, wx.ID_ANY, _('Video information'))
         vi = self.GetVideoInfoDict()
@@ -6226,18 +6694,18 @@ class MainFrame(wxp.Frame):
         cPickle.dump(self.options, f, protocol=0)
         f.close()
 
-    def OnMenuOptionsAssociate(self, event):
-        if hasattr(sys,'frozen'):
-            s1 = _('Associating .avs files will write to the windows registry.')
-            s2 = _('Do you wish to continue?')
-            dlg = wx.MessageDialog(self, '%s\n\n%s' % (s1, s2), _('Warning'), wx.YES_NO)
-            ID = dlg.ShowModal()
-            dlg.Destroy()
-            if ID == wx.ID_YES:
-                value = '%s "%s"' % (sys.executable, '%1')
-                _winreg.SetValue(_winreg.HKEY_CLASSES_ROOT, 'avsfile\\shell\\Open\\command', _winreg.REG_SZ, value)
-        else:
-            wx.MessageBox('Cannot run this command as a Python script!', 'Error')
+    #~ def OnMenuOptionsAssociate(self, event):
+    #~    if hasattr(sys,'frozen'):
+    #~        s1 = _('Associating .avs files will write to the windows registry.')
+    #~        s2 = _('Do you wish to continue?')
+    #~        dlg = wx.MessageDialog(self, '%s\n\n%s' % (s1, s2), _('Warning'), wx.YES_NO)
+    #~        ID = dlg.ShowModal()
+    #~        dlg.Destroy()
+    #~        if ID == wx.ID_YES:
+    #~            value = '%s "%s"' % (sys.executable, '%1')
+    #~            _winreg.SetValue(_winreg.HKEY_CLASSES_ROOT, 'avsfile\\shell\\Open\\command', _winreg.REG_SZ, value)
+    #~    else:
+    #~        wx.MessageBox('Cannot run this command as a Python script!', 'Error')
 
     def OnMenuConfigureShortcuts(self, event):
         exceptionIds = []
@@ -6352,7 +6820,7 @@ class MainFrame(wxp.Frame):
         dlg = wx.Dialog(self, wx.ID_ANY, _('About AvsPmod'), size=(220,180))
         bmp = AvsP_icon.getBitmap()
         logo = wx.StaticBitmap(dlg, wx.ID_ANY, bmp)
-        title = wx.StaticText(dlg, wx.ID_ANY, _('AvsPmod version %(version)s') % locals())
+        title = wx.StaticText(dlg, wx.ID_ANY, _('AvsPmod version %(version)s ') % locals())
         font = title.GetFont()
         font.SetPointSize(12)
         font.SetWeight(wx.FONTWEIGHT_BOLD)
@@ -6372,15 +6840,15 @@ class MainFrame(wxp.Frame):
         staticText = wx.StaticText(dlg, wx.ID_ANY, _('This program is freeware under the GPL license.'))
 
 
-        url = 'http://www.gnu.org/copyleft/gpl.html'
-        link2 = wx.StaticText(dlg, wx.ID_ANY, url)
+        url2 = 'http://www.gnu.org/copyleft/gpl.html'
+        link2 = wx.StaticText(dlg, wx.ID_ANY, url2)
         font = link2.GetFont()
         font.SetUnderlined(True)
         link2.SetFont(font)
         link2.SetForegroundColour(wx.Colour(0,0,255))
         link2.SetCursor(wx.StockCursor(wx.CURSOR_HAND))
         def OnClick2(event):
-            os.startfile(url)
+            os.startfile(url2)
         link2.SetToolTip(wx.ToolTip(url))
         link2.Bind(wx.EVT_LEFT_DOWN, OnClick2)
 
@@ -6405,6 +6873,7 @@ class MainFrame(wxp.Frame):
 
     def OnButtonTextSetFocus(self, event):
         self.SetStatusText(_('Input a frame number or time (hr:min:sec) and hit Enter'))
+        event.Skip()
 
     def OnButtonTextKillFocus(self, event):
         frameTextCtrl = event.GetEventObject()
@@ -6414,6 +6883,7 @@ class MainFrame(wxp.Frame):
         except ValueError:
             frame = txt
         if self.FindFocus() != frameTextCtrl:
+            event.Skip()
             return
         if not self.separatevideowindow:
             self.ShowVideoFrame(frame)
@@ -6423,6 +6893,7 @@ class MainFrame(wxp.Frame):
                 self.currentScript.SetFocus()
             else:
                 self.ShowVideoFrame(frame)
+        event.Skip()
 
     def OnSliderChanged(self, event):
         videoSlider = event.GetEventObject()
@@ -7917,6 +8388,10 @@ class MainFrame(wxp.Frame):
                         self.SetBookmarkFrameList(session['bookmarks'])
                 else:
                     self.SetBookmarkFrameList(session['bookmarks'])
+                try:
+                    self.bookmarkDict = copy.deepcopy(session['bookmarkDict'])
+                except:
+                    pass
             # Save the recent dir
             if saverecentdir:
                 dirname = os.path.dirname(filename)
@@ -7989,6 +8464,7 @@ class MainFrame(wxp.Frame):
                 session['previewWindowVisible'] = previewvisible
             session['scripts'] = scripts
             session['bookmarks'] = self.GetBookmarkFrameList()
+            session['bookmarkDict'] = self.bookmarkDict
             # Save info to filename
             f = open(filename, mode='wb')
             cPickle.dump(session, f, protocol=0)
@@ -8014,7 +8490,7 @@ class MainFrame(wxp.Frame):
             #~ filefilter = _('Image files (%(extlist1)s)|*%(extlist2)s') %  locals()
             filefilter = '|'.join(filefilterList)
             defaultdir = self.options['imagesavedir']
-            dlg = wx.FileDialog(self,_('Save current frame'),defaultdir,'',
+            dlg = wx.FileDialog(self,_('Save current frame'), defaultdir, str(self.currentframenum),
                 filefilter,wx.SAVE | wx.OVERWRITE_PROMPT,(0,0))
             dlg.SetFilterIndex(min(self.options['imagechoice'], maxFilterIndex))
             ID = dlg.ShowModal()
@@ -8513,15 +8989,37 @@ class MainFrame(wxp.Frame):
             sliderList.append(self.videoSlider2)
         return sliderList
 
-    def UpdateBookmarkMenu(self):
+    def UpdateBookmarkMenu(self, event=None):
         #~ bookmarks = [bookmark for bookmark, bmtype in self.GetBookmarkFrameList()]
         #~ nBookmarks = len(bookmarks)
-        for i in xrange(self.menuBookmark.GetMenuItemCount()-1):
+        for i in xrange(self.menuBookmark.GetMenuItemCount()-4):
             self.menuBookmark.DestroyItem(self.menuBookmark.FindItemByPosition(0))
         pos = 0
-        for bookmark, bmtype in self.GetBookmarkFrameList():
+        bookmarkList = self.GetBookmarkFrameList()
+        #~for key in self.bookmarkDict.keys():
+            #~if (key, 0) not in bookmarkList:
+                #~del self.bookmarkDict[key]
+        sortItem = self.menuBookmark.FindItemByPosition(1)
+        timecodeItem = self.menuBookmark.FindItemByPosition(2)
+        titleItem = self.menuBookmark.FindItemByPosition(3)
+        if sortItem.IsChecked():
+            bookmarkList.sort()
+        width = len(str(max(bookmarkList)[0])) if bookmarkList else 0
+        fmt = '%%%dd ' % width
+        for bookmark, bmtype in bookmarkList:
             if bmtype == 0:
-                menuItem = self.menuBookmark.Insert(pos, wx.ID_ANY, str(bookmark), _('Jump to specified bookmark'))
+                label = fmt % bookmark
+                if timecodeItem.IsChecked():
+                    if self.currentScript.AVI:
+                        sec = bookmark / self.currentScript.AVI.Framerate
+                        min, sec = divmod(sec, 60)
+                        hr, min = divmod(min, 60)
+                        label += '[%02d:%02d:%06.3f]' % (hr, min, sec)
+                    else:
+                        label += '[??:??:??.???]'
+                if titleItem.IsChecked():
+                    label += ' ' + self.bookmarkDict.get(bookmark, '')
+                menuItem = self.menuBookmark.Insert(pos, wx.ID_ANY, label, _('Jump to specified bookmark'))
                 self.Bind(wx.EVT_MENU, self.OnMenuVideoGotoFrameNumber, menuItem)
                 pos += 1
 
@@ -9453,7 +9951,7 @@ class MainFrame(wxp.Frame):
                     script.AVI.CreateDisplayClip(fitHeight, fitWidth)
                 else:
                     script.AVI = None
-                    script.AVI = pyavs.AvsClip(self.getCleanText(scripttxt), filename, fitHeight=fitHeight, fitWidth=fitWidth, oldFramecount=oldFramecount, keepRaw=self.showVideoPixelAvisynth)
+                    script.AVI = pyavs.AvsClip(self.getCleanText(scripttxt), filename, fitHeight=fitHeight, fitWidth=fitWidth, oldFramecount=oldFramecount, keepRaw=self.showVideoPixelAvisynth, matrix=self.matrix, interlaced=self.interlaced)
                 os.chdir(cwd)
                 if not script.AVI.initialized:
                     if prompt:
@@ -11418,8 +11916,13 @@ class MainFrame(wxp.Frame):
             return False
         return True
 
-    def MacroGetBookmarkFrameList(self):
-        return [value for value, bmtype in self.GetBookmarkFrameList()]
+    def MacroGetBookmarkFrameList(self, title=False):
+        bookmarkList = [value for value, bmtype in self.GetBookmarkFrameList() if bmtype == 0]
+        if title:
+            for i in range(len(bookmarkList)):
+                title = self.bookmarkDict.get(bookmarkList[i], '')
+                bookmarkList[i] = (bookmarkList[i], title)
+        return bookmarkList
 
     def MacroSetBookmark(self, input):
         bmtype = 0
@@ -11432,8 +11935,8 @@ class MainFrame(wxp.Frame):
                 return False
             try:
                 values = [int(item) for item in input]
-            except ValueError:
-                return False
+            except (TypeError, ValueError):
+                return self.MacroSetBookmark2(input)
             lastindex = len(values) - 1
             for i, value in enumerate(values):
                 if i != lastindex:
@@ -11443,6 +11946,38 @@ class MainFrame(wxp.Frame):
             return True
         return False
 
+    def MacroSetBookmark2(self, input):
+        bmtype = 0
+        try:
+            value, title = input
+            value = int(vaue)
+            title = str(title).strip()
+            self.bookmarkDict[value] = title
+            if not title:
+                del self.bookmarkDict[value]
+            self.AddFrameBookmark(value, bmtype)
+            return True
+        except (TypeError, ValueError):
+            if type(input) not in (tuple, list):
+                return False
+            try:
+                items = [(int(value), str(title)) for value, title in input]
+            except (TypeError, ValueError):
+                return False            
+            lastindex = len(items) - 1
+            for i, item in enumerate(items):
+                value, title = item
+                title = title.strip()
+                self.bookmarkDict[value] = title
+                if not title:
+                    del self.bookmarkDict[value]
+                if i != lastindex:
+                    self.AddFrameBookmark(value, bmtype, refreshProgram=False)
+                else:
+                    self.AddFrameBookmark(value, bmtype, refreshProgram=True)
+            return True
+        return False
+        
     def MacroGetSliderSelections(self):
         return self.GetSliderSelections(self.invertSelection)
 
