@@ -1,5 +1,0 @@
-The key files for AvsP are AvsP.py (the main program), wxp.py, and pyavs.py, along with icons stored in AvsP_icon.py, next_icon.py, play_icon.py.  In order to run AvsP as a python script, all you would need to do is install Python and wxPython and double-click AvsP.py (the tested versions are listed on the top of AvsP.py).
-
-In order to compile AvsP into an executable, you need to install py2exe (as well as upx.exe if you wish to compress the executable).  You can use the script AvsP_build.py to run everything, but you first must customize the setup for your own pc by changing any directories inside the scripts AvsP_build.py and AvsP_i18n.py appropriately.
-
-Finally, I wouldn't recommend digging through the source without a text editor that supports both Python syntax highlighting and code folding.  Particularly code folding, since AvsP.py by itself is around 10,000 lines of code.  My weapon of choice is SciTe, most editors based around Scintilla should do the trick.

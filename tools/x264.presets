@@ -20,10 +20,10 @@ x264.exe --bitrate $video_bitrate --zones $credits_frame,$last_frame,q=40 $extra
 x264.exe --preset veryfast --bitrate $video_bitrate --zones $credits_frame,$last_frame,q=40 $extra_options --sar $par_x:$par_y --output "$video_output" "$video_input"
 
 [CRF Very Slow]
-x264.exe --preset veryslow --crf $video_crf --zones $credits_frame,$last_frame,q=40 $extra_options --sar $par_x:$par_y --output "$video_output" "$video_input"
+x264.exe --preset veryslow --crf $video_quality --zones $credits_frame,$last_frame,q=40 $extra_options --sar $par_x:$par_y --output "$video_output" "$video_input"
 
 [CRF Medium]
-x264.exe --crf $video_crf --zones $credits_frame,$last_frame,q=40 $extra_options --sar $par_x:$par_y --output "$video_output" "$video_input"
+x264.exe --crf $video_quality --zones $credits_frame,$last_frame,q=40 $extra_options --sar $par_x:$par_y --output "$video_output" "$video_input"
 
 [CRF Very Fast]
-x264.exe --preset veryfast --crf $video_crf --zones $credits_frame,$last_frame,q=40 $extra_options --sar $par_x:$par_y --output "$video_output" "$video_input"
+x264.exe --preset veryfast --crf $video_quality --zones $credits_frame,$last_frame,q=40 $extra_options --sar $par_x:$par_y --output "$video_output" "$video_input"

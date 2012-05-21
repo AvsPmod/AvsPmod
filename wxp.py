@@ -300,12 +300,15 @@ class ArgsPosterThread:
         self.running = False
         
 class Frame(wx.Frame):
-    def createMenuBar(self, menuBarInfo, shortcutList, oldShortcuts):
+    def createMenuBar(self, menuBarInfo, shortcutList, oldShortcuts, menuBackups=[]):
         '''
         General utility function to create a menu bar of menus
         Input is a list of label/menuInfo tuples
         The function utilizes the createMenu function (defined below)
         '''
+        buckups = menuBackups[:]
+        menuBackups[:] = []
+        index = 0
         self._shortcutBindWindowDict = {}
         menuBar = wx.MenuBar()
         for eachMenuBarInfo in menuBarInfo:
@@ -313,9 +316,12 @@ class Frame(wx.Frame):
             menuInfo = eachMenuBarInfo[1:]
             menu = self.createMenu(menuInfo, menuLabel, shortcutList, oldShortcuts)
             menuBar.Append(menu, menuLabel)
+            if index in buckups:
+                menuBackups.append(self.createMenu(menuInfo, menuLabel, shortcutList, oldShortcuts, True))
+            index += 1
         return menuBar
     
-    def createMenu(self, menuInfo, name='', shortcutList = None, oldShortcuts=None):
+    def createMenu(self, menuInfo, name='', shortcutList = None, oldShortcuts=None, backup=False):
         menu = wx.Menu()
         if shortcutList is None:
             shortcutList = []
@@ -341,7 +347,7 @@ class Frame(wx.Frame):
             label, shortcut, handler, status, attr, state, bindwindow = eachMenuInfo + defaults[nItems:]
             # Special case: submenu
             if handler is None: #not isinstance(handler, FunctionType):
-                submenu = self.createMenu(shortcut, '%s -> %s'% (name, label), shortcutList, oldShortcuts)
+                submenu = self.createMenu(shortcut, '%s -> %s'% (name, label), shortcutList, oldShortcuts, backup)
                 menu.AppendMenu(wx.ID_ANY, label, submenu, status)
                 continue
             elif handler == -1:
@@ -376,7 +382,7 @@ class Frame(wx.Frame):
             self.Bind(wx.EVT_MENU, handler, menuItem)
             # Add the accelerator
             if shortcut is not None:
-                if shortcut == '' or not shortcut[-1].isspace():
+                if not backup and (shortcut == '' or not shortcut[-1].isspace()):
                     shortcutList.append([itemName, shortcut, id])
                 try:
                     bindShortcutIdList = self._shortcutBindWindowDict.setdefault(bindwindow, [])
@@ -528,7 +534,7 @@ class OptionsDialog(wx.Dialog):
                     itemSizer.Add(browseCtrl, 1, wx.EXPAND)
                 elif flag == OPT_ELEM_COLOR:
                     staticText = wx.StaticText(tabPanel, wx.ID_ANY, label)
-                    ctrl = colourselect.ColourSelect(tabPanel, wx.ID_ANY, colour=wx.Color(*optionsValue), size=(50,23))
+                    ctrl = colourselect.ColourSelect(tabPanel, wx.ID_ANY, colour=wx.Colour(*optionsValue), size=(50,23))
                     if tip:
                         ctrl.SetToolTipString(tip)
                     itemSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -548,7 +554,7 @@ class OptionsDialog(wx.Dialog):
                         style = wx.FONTSTYLE_ITALIC
                     font = wx.Font(fontSize, wx.FONTFAMILY_DEFAULT, style, weight, faceName=fontFace)
                     ctrl.SetFont(font)
-                    ctrl.SetForegroundColour(wx.Color(*fontColorTuple))
+                    ctrl.SetForegroundColour(wx.Colour(*fontColorTuple))
                     if tip:
                         ctrl.SetToolTipString(tip)
                     itemSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -744,7 +750,7 @@ class OptionsDialog(wx.Dialog):
         
 class ShortcutsDialog(wx.Dialog):
     def __init__(self, parent, shortcutList, title=_('Edit shortcuts'), exceptionIds=None, submessage=None):
-        wx.Dialog.__init__(self, parent, wx.ID_ANY, title)
+        wx.Dialog.__init__(self, parent, wx.ID_ANY, title, style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
         self.parent = parent
         self.shortcutList = copy.deepcopy(shortcutList)#shortcutList[:]
         if exceptionIds is None:
@@ -752,10 +758,12 @@ class ShortcutsDialog(wx.Dialog):
         # Define the shortcut editing modal dialog (used later)
         self.dlgEdit = self.defineShortcutEditDialog()
         # Define the virtual list control
-        class VListCtrl(ListCtrl):
+        class VListCtrl(ListCtrl):                
             def OnGetItemText(self, item, column):
                 label, shortcut, id = self.parent.shortcutList[item]
                 if column == 0:
+                    if wx.VERSION > (2, 8):
+                        id = shortcut
                     if id in exceptionIds:
                         label = '* %s' % label
                     return label
@@ -763,17 +771,19 @@ class ShortcutsDialog(wx.Dialog):
                     return GetTranslatedShortcut(shortcut)
                 #~ return self.parent.shortcutList[item][column]
         listCtrl = VListCtrl(self, wx.ID_ANY, style=wx.LC_REPORT|wx.LC_SINGLE_SEL|wx.LC_VIRTUAL|wx.LC_HRULES|wx.LC_VRULES)
-        listCtrl.InsertColumn(0, _('Menu label')+' '*50)
+        listCtrl.InsertColumn(0, _('Menu label'))
         listCtrl.InsertColumn(1, _('Keyboard shortcut'))
         nItems = len(self.shortcutList)
         listCtrl.SetItemCount(nItems)
-        listCtrl.SetColumnWidth(0, wx.LIST_AUTOSIZE_USEHEADER)
+        listCtrl.setResizeColumn(1)
+        listCtrl.SetColumnWidth(1, wx.LIST_AUTOSIZE_USEHEADER)        
         listCtrl.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.OnListCtrlActivated)
         self.listCtrl = listCtrl
         # Standard buttons
         okay  = wx.Button(self, wx.ID_OK, _('OK'))
-        self.Bind(wx.EVT_BUTTON, self.OnButtonOK, okay)
+        self.Bind(wx.EVT_BUTTON, self.OnButtonClick, okay)
         cancel = wx.Button(self, wx.ID_CANCEL, _('Cancel'))
+        self.Bind(wx.EVT_BUTTON, self.OnButtonClick, cancel)
         btns = wx.StdDialogButtonSizer()
         btns.AddButton(okay)
         btns.AddButton(cancel)
@@ -786,8 +796,14 @@ class ShortcutsDialog(wx.Dialog):
         message = _('Double-click or hit enter on an item in the list to edit the shortcut.')
         dlgSizer.Add(wx.StaticText(self, wx.ID_ANY, message), 0, wx.ALIGN_CENTER|wx.ALL, 5)
         dlgSizer.Add(btns, 0, wx.EXPAND|wx.ALL, 10)
-        self.SetSizer(dlgSizer)
+        self.SetSizerAndFit(dlgSizer)
+        width = self.GetSize()[0]
+        self.SetSize((width, width*3/4))
         self.sizer = dlgSizer
+        # Misc
+        #okay.SetDefault()
+        # explictly destroy self.dlgEdit as self.OnButtonOK does
+        self.Bind(wx.EVT_CLOSE, self.OnButtonClick)
         
     def GetShortcutList(self):
         return self.shortcutList
@@ -901,10 +917,9 @@ class ShortcutsDialog(wx.Dialog):
                     line1 = _('This shortcut is being used by:')
                     line2 = info[0]
                     line3 = _('Do you wish to continue?')
-                    msgDlg = wx.MessageDialog(self, '%s\n\n%s\n\n\n%s' % (line1, line2 , line3), _('Warning'))
-                    ID = msgDlg.ShowModal()
-                    msgDlg.Destroy()
-                    if ID == wx.ID_OK:
+                    ret = wx.MessageBox('%s\n\n%s\n\n%s' % (line1, line2 , line3), _('Warning'),
+                                        wx.OK|wx.CANCEL|wx.ICON_EXCLAMATION, dlg)
+                    if ret == wx.OK:
                         info[1] = ''
                         #~ self.updateMenuLabel(info[2], '')
                     else:
@@ -933,9 +948,11 @@ class ShortcutsDialog(wx.Dialog):
         newLabel = '%s\t%s' % (label, shortcut)
         menuItem.SetText(newLabel)
         
-    def OnButtonOK(self, event):
-        if True:
-            self.dlgEdit.Destroy()
+    def OnButtonClick(self, event):
+        self.dlgEdit.Destroy()
+        if event.GetEventType() == wx.wxEVT_CLOSE_WINDOW:
+            self.EndModal(wx.ID_CANCEL)
+        else:
             event.Skip()
         
 class EditStringDictDialog(wx.Dialog):

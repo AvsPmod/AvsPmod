@@ -7,8 +7,8 @@ def _(s): return s
 __builtin__._ = _
 
 def main():
-    pythonexe = r'C:\Python25\python.exe'
-    pygettextpath = r'C:\Python25\Tools\i18n\pygettext.py'
+    pythonexe = os.path.join(sys.prefix, 'python.exe')
+    pygettextpath = os.path.join(sys.prefix, 'Tools\i18n\pygettext.py')
     toolsdir = 'tools'
     
     argsList = ['AvsP.py wxp.py pyavs_avifile.py']

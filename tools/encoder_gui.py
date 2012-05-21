@@ -52,7 +52,7 @@ class CompressVideoDialog(wx.Dialog):
     def LoadPresets(self):
         self.presets = {}
         self.presetKeys = []  # keep separate list to preserve order
-        filenames = os.listdir('')
+        filenames = os.listdir(os.getcwd())
         filenames.sort()
         for filename in filenames:
             base, ext = os.path.splitext(filename)
@@ -101,16 +101,19 @@ class CompressVideoDialog(wx.Dialog):
         button = wx.Button(self, wx.ID_ANY, _('calculate'))
         self.Bind(wx.EVT_BUTTON, self.OnButtonCalculate, button)
         self.ctrlDict['video_bitrate'] = textCtrl
-        staticTextCRF = wx.StaticText(self, wx.ID_ANY, _('CRF (0-51):'))
-        textCtrlCRF = wx.TextCtrl(self, size=(50,-1))
-        textCtrlCRF.Bind(wx.EVT_TEXT, self.OnTextChangeCommandLine)
-        self.ctrlDict['video_crf'] = textCtrlCRF
+        self.ctrlDict['x264'] = (_('Quality CRF (0-51):'), 23, 0, 51)
+        self.ctrlDict['xvid'] = (_('Quality CQ (1-31):'), 4, 1, 31)
+        staticTextQty = wx.StaticText(self, wx.ID_ANY, self.ctrlDict['x264'][0], style=wx.ALIGN_RIGHT|wx.ST_NO_AUTORESIZE)
+        self.ctrlDict['quality_label'] = staticTextQty
+        spinCtrlQty = wx.SpinCtrl(self, size=(50,-1), style=wx.SP_ARROW_KEYS|wx.ALIGN_CENTRE)
+        spinCtrlQty.Bind(wx.EVT_TEXT, self.OnTextChangeCommandLine)
+        self.ctrlDict['video_quality'] = spinCtrlQty
         gridsizer = wx.GridBagSizer(hgap=5, vgap=10)
         gridsizer.Add(staticText, pos=(0,0), flag=wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL)
-        gridsizer.Add(staticTextCRF, pos=(1,0), flag=wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL)
+        gridsizer.Add(staticTextQty, pos=(1,0), flag=wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL)
         gridsizer.Add(textCtrl, pos=(0,1))
         gridsizer.Add(button, pos=(0,2))
-        gridsizer.Add(textCtrlCRF, pos=(1,1))
+        gridsizer.Add(spinCtrlQty, pos=(1,1))
 
         sizer_CompressionA.Add((5,-1), 1, wx.EXPAND|wx.ALL, 0)
         sizer_CompressionA.Add(gridsizer, 0, wx.ALIGN_CENTER|wx.ALL, 5)
@@ -245,8 +248,16 @@ class CompressVideoDialog(wx.Dialog):
         output_ext = self.options.setdefault('output_ext', '.mp4')
         self.SetOutputNameText(self.inputname, output_ext)
         default_preset = self.options.setdefault('preset', self.ctrlDict['preset'].GetString(0))
-        if not self.ctrlDict['preset'].SetStringSelection(default_preset):
-            self.ctrlDict['preset'].SetSelection(0)
+        self.ctrlDict['preset'].SetStringSelection(default_preset)
+        encoderName = default_preset.split()[0]
+        label, initial, _min, _max = self.ctrlDict[encoderName]
+        self.ctrlDict['quality_label'].SetLabel(label)
+        self.ctrlDict['video_quality'].SetValue(initial)
+        self.ctrlDict['video_quality'].SetRange(_min, _max)
+        self.ctrlDict['video_bitrate'].SetValue('1000')
+        self.ctrlDict['credits_frame'].SetValue(str(self.framecount-1))
+        self.ctrlDict['par_x'].SetValue('1')
+        self.ctrlDict['par_y'].SetValue('1')
         self.SetDefaultValuesBitrateCalc()
         bitrate = self.bitrateDialog.ComputeBitrate()
         boolAudio = self.bitrateDialog.ctrlDict['audio_input'].GetValue().strip() != '' or self.bitrateDialog.ctrlDict['audio_compress'].GetValue()
@@ -352,7 +363,7 @@ class CompressVideoDialog(wx.Dialog):
         # Retrieve values from gui
         keyInfo = (
             ('video_bitrate', self.ctrlDict),
-            ('video_crf', self.ctrlDict),
+            ('video_quality', self.ctrlDict),
             ('video_input', self.ctrlDict),
             ('video_output', self.ctrlDict),
             ('audio_input', self.bitrateDialog.ctrlDict),
@@ -366,7 +377,11 @@ class CompressVideoDialog(wx.Dialog):
         )
         replaceDict = {}
         for key, keydict in keyInfo:
-            value = keydict[key].GetValue().strip()
+            value = keydict[key].GetValue()
+            try:
+                value = value.strip()
+            except:
+                pass
             if value:
                 replaceDict[key] = value
         # Compute additional values
@@ -388,7 +403,7 @@ class CompressVideoDialog(wx.Dialog):
 
     def SetValidControls(self):
         raw_commandline = self.presets[self.ctrlDict['preset'].GetStringSelection()]
-        for key in ('video_bitrate', 'video_crf', 'credits_frame', 'par_x', 'par_y', 'video_input', 'video_output'):
+        for key in ('video_bitrate', 'video_quality', 'credits_frame', 'par_x', 'par_y', 'video_input', 'video_output'):
             if raw_commandline.count('$'+key) == 0:
                 self.ctrlDict[key].Disable()
             else:
@@ -483,13 +498,13 @@ class CompressVideoDialog(wx.Dialog):
 
     def OnButtonSelectOutput(self, event):
         recentdir = ''
-        outputdir = os.path.dirname(self.ctrlDict['video_output'].GetValue())
+        outputdir, filename = os.path.split(self.ctrlDict['video_output'].GetValue())
         if os.path.isdir(outputdir):
             recentdir = outputdir
         title = _('Save the video as')
         filefilter = ''
         style = wx.SAVE | wx.OVERWRITE_PROMPT
-        dlg = wx.FileDialog(self, title, recentdir, '', filefilter, style)
+        dlg = wx.FileDialog(self, title, recentdir, filename, filefilter, style)
         ID = dlg.ShowModal()
         if ID == wx.ID_OK:
             filename = dlg.GetPath()
@@ -530,7 +545,7 @@ class CompressVideoDialog(wx.Dialog):
         if len(unreplacedList) > 0:
             s1 = _('Unreplaced items remain in the command line:')
             s2 = '\n'.join(unreplacedList)
-            wx.MessageBox('%s\n\n%s' % (s1, s2), _('Error'), style=wx.ICON_ERROR)
+            wx.MessageBox('%s\n\n%s' % (s1, s2), _('Error'), style=wxOK|wx.ICON_ERROR)
             return
         lines = ['@echo off\n']
         startline = 'start /%s /b /w' % self.options['priority']
@@ -595,6 +610,11 @@ class CompressVideoDialog(wx.Dialog):
         event.Skip()
 
     def OnSelectPreset(self, event):
+        encoderName = event.GetString().split()[0]
+        label, initial, min, max = self.ctrlDict[encoderName]
+        self.ctrlDict['quality_label'].SetLabel(label)
+        self.ctrlDict['video_quality'].SetValue(initial)
+        self.ctrlDict['video_quality'].SetRange(min, max)
         commandline = self.ComputeCommandLine()
         self.SetValidControls()
         self.GetUnknownPaths(commandline)

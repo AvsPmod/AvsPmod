@@ -135,10 +135,10 @@ class Avs2aviDialog(wx.Dialog):
             filefilter = _('Avi file (*.avi)|*.avi')
             style = wx.SAVE | wx.OVERWRITE_PROMPT
         recentdir = ''
-        dirname = os.path.dirname(textCtrl.GetValue())
+        dirname, filename = os.path.split(textCtrl.GetValue())
         if os.path.isdir(dirname):
             recentdir = dirname
-        dlg = wx.FileDialog(self, title, recentdir, '', filefilter, style)
+        dlg = wx.FileDialog(self, title, recentdir, filename, filefilter, style)
         ID = dlg.ShowModal()
         if ID == wx.ID_OK:
             filename = dlg.GetPath()
