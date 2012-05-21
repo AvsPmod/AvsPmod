@@ -77,7 +77,7 @@ except AttributeError:
 from icons import AvsP_icon, next_icon, play_icon, skip_icon, ok_icon, smile_icon, question_icon, rectangle_icon
 from __translation_new import new_translation_string
 
-version = '2.1.7'
+version = '2.1.7.1'
 
 # Custom styled text control for avisynth language
 class AvsStyledTextCtrl(stc.StyledTextCtrl):
@@ -7554,9 +7554,9 @@ class MainFrame(wxp.Frame):
                     label = menuItem.GetLabel()
                     if shortcut != '':
                         if True:#wx.VERSION > (2, 8):
-                            shortcutString = u'\t%s\u00a0' % GetTranslatedShortcut(shortcut)
+                            shortcutString = u'\t%s\u00a0' % wxp.GetTranslatedShortcut(shortcut)
                         else:
-                            shortcutString = '\t%s ' % GetTranslatedShortcut(shortcut)
+                            shortcutString = '\t%s ' % wxp.GetTranslatedShortcut(shortcut)
                     newLabel = '%s%s' % (label, shortcut)
                     #~ menuItem.SetText(newLabel)
                     menuItem.SetItemLabel(newLabel)

@@ -1,4 +1,4 @@
-new_translation_string=r'''version = "2.1.7"
+new_translation_string=r'''version = "2.1.7.1"
 
 messages = {
     "Find" : u"",
