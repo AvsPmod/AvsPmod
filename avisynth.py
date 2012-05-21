@@ -3,7 +3,7 @@ import sys
 
 try:
     avidll = ctypes.windll.avisynth
-except WindowsError as err:
+except WindowsError, err:
     message = "%sLoad avisynth.dll failed!\nTry install or re-install Avisynth firstly." % err
     ctypes.windll.user32.MessageBoxA(None, message, 'Windows Error', 0x10L)
     raise

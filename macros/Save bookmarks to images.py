@@ -8,8 +8,8 @@ import threading
 
 def worker(script, filename, extType, quality): 
     AVS = pyavs.AvsClip(script)    
-    if AVS.error_message or not AVS.initialized:
-        avsp.MsgBox(AVS.error_message, 'Error')
+    if AVS.IsErrorClip():
+        wx.CallAfter(avsp.MsgBox, AVS.error_message, 'Error')
     else:
         bmp = wx.EmptyBitmap(AVS.Width, AVS.Height)
         mdc = wx.MemoryDC()
@@ -26,7 +26,7 @@ def worker(script, filename, extType, quality):
                 img.SetOptionInt(wx.IMAGE_OPTION_QUALITY, quality)
                 img.SaveFile(filename % bookmark, extType)
             count += 1            
-        avsp.MsgBox('%d image files created.' % count, 'Information')
+        wx.CallAfter(avsp.MsgBox, '%d image files created.' % count, 'Information')
     
 if avsp.IsScriptSaved():
     filename = avsp.GetSaveFilename()    

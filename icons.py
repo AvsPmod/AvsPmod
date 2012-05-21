@@ -106,3 +106,71 @@ skip_icon = PyEmbeddedImage(
     "REFUWIXt10sKwDAIBNAxuf+RU7PqrhQ/IylUtwbmEaIQkTFxssbR9AY0oAEWwIRopn+XXuvx"
     "nOkGWIgwoBLhegMVCPcjZCNCU8BEhMeQhUjtAQbi+4vorRZUMv0UgBEeBrDCQwBmuBvADncB"
     "KsLNgKpwAJD+FzSgAb8HbDPFMErXwWvCAAAAAElFTkSuQmCC")
+
+#----------------------------------------------------------------------
+checked_icon = PyEmbeddedImage(
+    "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAWElEQVR42s2RQQoAIAgE82c+"
+    "3Z8ZHYwsgxUh2kOHckbYqBVD4xARzYLMTE5gF0jW+acCjeZRgXUECeamDU4J7O2AM4IWwWgH"
+    "eoMzJWoEV77xdwEKW5ygkg43FHEROvSJLgAAAABJRU5ErkJggg==")
+
+#----------------------------------------------------------------------
+unchecked_icon = PyEmbeddedImage(
+    "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAMUlEQVR42mNkoBAwgogDBw78"
+    "J1Wjg4MDI4oBMAFiALL6UQNGDRhuBhCrGQZQDKAEAABsPGgR8pSNpgAAAABJRU5ErkJggg==")
+
+#----------------------------------------------------------------------
+smile_icon = PyEmbeddedImage(
+    "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAwNJ"
+    "REFUOI1lk11Mm3UUxn//f8sKLLQbhQrd+ArQroOaZWMGGMwLlyyZgPFKXUx2Iy6LF7pdeqHR"
+    "zOiWmPkRRW8k3rgY9YJ4sRiMqN0cc+qW0c6NlQJV6Nv3pYwBsgFve7xo3eb2JM/NyTnP8+Tk"
+    "HKW0gweRTpkynTjP1MQvrK7mqNraRiDURV39FvVgr7pfwDQs+WPkRVwqga/CS1mZl7V1zV+p"
+    "ea7EZjFuejn8ymnqG+4J3RVIJsYkHT3EtlAdG+trQBcDCmwNt4W1BZvfLk/zzbe/c7D/C3a3"
+    "tysAZ97ZkEysh117w1BWw+3VHCWuyryFEyhzIFmLzifClJZ6GBx4nsmJpDQ01iqUdnBpuE/E"
+    "elZEXpd3T/UKIPv37xCR0yLypfT1PSaAnHyzV2T5hAx9/py8/EKnKO1Ap2eT4q9YBK8X8BD5"
+    "aQaAkZE4sAEo5scfbuRro3/Dxk0EGrbiLl1n4saEOG/NXaBmswdUEZDl668O8cmn2zlwYDfg"
+    "AhTR2NsMDY1y+EgHkGWTuxi/v5prYxHUheFj0taSQldvAXwFevILJAvoQhIHsAxYzMVMhiMJ"
+    "zFvFOO2sk9U7WUrQJBImtv0PgUCQexsUYAUoIhq7jtdl43I4yOZyOIs2oN2+TtJGBrCZSc3R"
+    "2zNYcMwB6wUCaPqeGiAzs8Tyis18ZoFgqAtdWd3B+OQca1PzdO9poqPLR3//h4XIJQUqnjn4"
+    "Dk/va6a1rY7r8QyWZRJs2ZM/pMH398n2xjV27dyGfsTP0WNnOHsuTVd3M5KDyM/j9Oxt5I3j"
+    "T3L5/AyR0TjWzRWOn/peKaUdpI2MfPZeK93trbQEa/EE/CxOLxI5l0KJpqOtjs2Vbn69aHDp"
+    "yixj0RivnTxLlb9C3T3l+HhcPjrRzo5wLcGmJnwVbtzuUtZtTcq4w2RyibFrSaanZnn1rTM0"
+    "BwPqoWeyzEUZ+OAIU+PfUeUrp7zch21rUsY8hrlAKPw4Lx39mEqf5+Fnuh+WuSRXo6P8efUi"
+    "IkL40U6CoZ3/G/wP/wJ3xTm0DZwlTwAAAABJRU5ErkJggg==")
+    
+#----------------------------------------------------------------------
+question_icon = PyEmbeddedImage(
+    "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAACI0lEQVQ4jYWTwUsbQRTGfzOx"
+    "SWZN06R4CcKeikQLpUJdmlrwppfmouip4KVQaKEI/SN66lGhIF57K7156m1FTSCUSkrQRLAQ"
+    "4mVziDXo7Ganh26KyGo/eAwPvvfm+96bEcTjMfAamIryn8An4Pt1oogpfm5Z1seZmZkHhUIh"
+    "C9DpdHrVarXZ7/ffA+5VciKmwYfZ2dlnY2NjOUCGYSiVUiqfz989OTm5B3y5SpbXip8AxVwu"
+    "l9Vao7XG93183yefz2eBYsS5EQeO45wvLCyYbrf7L1zXNfPz88ZxnHPg4DYLT8fHx6dGR0fv"
+    "NBoNXNdlMBgwPT1NvV6n3W777Xb7G/D1JgurlUplTwgRHB8f02q16PV6nJ6e4nleUKlU9oDV"
+    "22YAsH54eNgFKBaLzM3NsbW1xf7+fhdYv83/VbRWVlZMs9k029vbZnl52QCtOOJITP5mqGxt"
+    "bQ0hBEqpodp3wAYQxDVzgM/A0dLSkimXy6bT6ZidnR1TLpfN4uKiAY4ijjMsGm7hpWVZG7Zt"
+    "PyqVSoUgCJBSMjk5ied51Go1tNZMTEzcD8PQvry8fOH7vgf8GD7leqlUKkopZTKZRClFMpnk"
+    "7OwMgEwmg9aai4sLfN9nMBiEu7u7DeDhCGABdjqdllJKUqkUSilSqRTZbBZjDEEQkEgkEEIg"
+    "pcQYIwEbsAR/f95b4BXQB35H0Qd0pDAdXZSJTgvYBNZFNHk7ZiP/QwD8+gOTQ9W5+jdpxQAA"
+    "AABJRU5ErkJggg==")
+    
+#----------------------------------------------------------------------
+ok_icon = PyEmbeddedImage(
+    "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9i"
+    "ZSBJbWFnZVJlYWR5ccllPAAAAWVJREFUeNpi/P//PwNdgVsnw38QJkuzYxvD/3c/JoIxiE2y"
+    "5idfmv/P2sQAxk+/NoJdwkKs5sV5zQzbj9QyMLAyMDACxb7/f4eqyB1omjsWvzkBNd/+XPR/"
+    "1h6G/zOBePZehv+XPsX/d4J4wRiu6MqnOCCGS0DEW4GKPyb8n30Q6OwDQM2HQJoTUDWDbD37"
+    "we//7GNABUcZ/p967//foZkBjEFskPgsoPgcIH36gz+qZiBggfuHmYHhH1Dqwq2NDLVpNmBJ"
+    "EJuBCehnIFZTsWOomLaRYV8VgwlQ6izMAJB+Y5c2hjOlqboMj59cZvj3j4EBlrYYgbJMQM2y"
+    "MroMXbMvM+xF0wwCQHsZnt/by7DlheCrNAd7WYYfPz4x/AfZCpRhBsaRiIQsw4Q5t7FqRgcg"
+    "l/xf+Zz7/9wbDGAMYrug+ZkQMHYFalj9khuMXUnUDDfEExgznp3kaYYbQqxmRkqzM0CAAQBW"
+    "bMG1YQFlxwAAAABJRU5ErkJggg==")
+
+#----------------------------------------------------------------------
+rectangle_icon = PyEmbeddedImage(
+    "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABXElEQVR42sXSv0vDQBQH8O9d"
+    "ErUVp/ojCAoiiDjU/hAHlzq5WXBRu1pBEAc3J/EPcHIRWpFODv4Bzro4CEXQWRBc1FYpUps0"
+    "lzTnpeqU10UFH2S6y4f3fe8YflnsT4F6sybfnCdwppGXfekjFh1FxIiyECA8IU9ut1CxbqDz"
+    "HhIQXgOT/YtYmtoLA5ZoyEJ5GU2/Co0ZJOC2bJi9SeTTxxRgyWI5B0c+K6CL7qBlwYymsZYu"
+    "EIATdJCDi4qaQWdgKJJCfqYYBhoBcJWDp1XBuYogw+N2PQsD3Smsz3YADi9VB7wKXTPAuDr8"
+    "OpUK81sMwrUwGEliY65IRzg4X1VDfGnPoP1z8MlP4DvCcF8Cm5kjogPxLvfPVmCLGjROb8FR"
+    "EUZicWwvEFtourbcPc2i8voAQ6ffgS3qiI9nsJMthYGgru8v5N2jekg6sQUVw/MFEmPzmDCn"
+    "aeAn9f/AByV0jxHGo4HSAAAAAElFTkSuQmCC")

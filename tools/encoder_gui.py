@@ -1,6 +1,6 @@
 import string
 import re
-import os
+import os, sys
 import cPickle
 import wx
 import MP3Info
@@ -573,7 +573,10 @@ class CompressVideoDialog(wx.Dialog):
         else:
             batchname = 'encode.bat'
             f = open(batchname, 'w')
-            f.writelines(lines)
+            for line in lines:
+                if type(line) == unicode:
+                    line = line.encode(sys.getfilesystemencoding())
+                f.write(line)
             f.close()
             if self.options['append_comments']:
                 avsname = self.ctrlDict['video_input'].GetValue()

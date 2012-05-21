@@ -40,6 +40,8 @@ import thread
 import StringIO
 import cPickle
 
+from icons import checked_icon, unchecked_icon
+
 OPT_ELEM_STRING = 0
 OPT_ELEM_INT = 1
 OPT_ELEM_CHECK = 2
@@ -60,8 +62,30 @@ keyStringList = [
     'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12',
     'Enter', 'Space', 'Escape', 'Tab', 'Insert', 'Backspace', 'Delete', 
     'Home', 'End', 'PgUp', 'PgDn', 'Up', 'Down', 'Left', 'Right',
-    #~ '`', '-', '=', '[', ']', '\\', ';', "'", ',', '.', '/',
+    'Numpad 0', 'Numpad 1', 'Numpad 2', 'Numpad 3', 'Numpad 4', 'Numpad 5', 'Numpad 6', 'Numpad 7', 'Numpad 8', 'Numpad 9',
+    'Numpad +', 'Numpad -', 'Numpad *', 'Numpad /', 'Numpad .', 'Numpad Enter',
+    '`', '-', '=', '\\', '[', ']', ';', "'", ',', '.', '/',
+    '~', '!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '_', '+', '|', '{', '}', ':', '"', '<', '>', '?',
 ]
+
+numpadDict = {
+    'Numpad 0': wx.WXK_NUMPAD0, 
+    'Numpad 1': wx.WXK_NUMPAD1, 
+    'Numpad 2': wx.WXK_NUMPAD2, 
+    'Numpad 3': wx.WXK_NUMPAD3, 
+    'Numpad 4': wx.WXK_NUMPAD4,
+    'Numpad 5': wx.WXK_NUMPAD5, 
+    'Numpad 6': wx.WXK_NUMPAD6, 
+    'Numpad 7': wx.WXK_NUMPAD7, 
+    'Numpad 8': wx.WXK_NUMPAD8, 
+    'Numpad 9': wx.WXK_NUMPAD9,
+    'Numpad +': wx.WXK_NUMPAD_ADD, 
+    'Numpad -': wx.WXK_NUMPAD_SUBTRACT,
+    'Numpad *': wx.WXK_NUMPAD_MULTIPLY,
+    'Numpad /': wx.WXK_NUMPAD_DIVIDE,
+    'Numpad .': wx.WXK_NUMPAD_DECIMAL, 
+    'Numpad Enter': wx.WXK_NUMPAD_ENTER,
+}
 
 (PostArgsEvent, EVT_POST_ARGS) = wx.lib.newevent.NewEvent()
 
@@ -373,7 +397,17 @@ class Frame(wx.Frame):
             except ValueError:
                 pass
             if shortcut != '' and shortcut not in [item[1] for item in shortcutList]:
-                shortcutString = '\t\n%s' % GetTranslatedShortcut(shortcut).replace('+', '+\n')
+                if wx.VERSION > (2, 8):
+                    shortcutString = GetTranslatedShortcut(shortcut)
+                    pos = shortcutString[:-1].rfind('+')
+                    if pos == -1:
+                        shortcutString = '\t\t%s' % shortcutString
+                    else:
+                        shortcutString = '\t%s\t%s' % (shortcutString[:pos+1], shortcutString[pos+1:])
+                    if wx.GetAccelFromString(shortcutString):
+                        print 'fake shortcut error:', shortcutString
+                else:
+                    shortcutString = '\t%s ' % GetTranslatedShortcut(shortcut)
             else:
                 shortcutString = ''
             # Append the menu item
@@ -397,7 +431,7 @@ class Frame(wx.Frame):
                     menuItem.Check(state)
         return menu
         
-    def BindShortcutsToWindows(self, shortcutInfo, forcewindow=None, extraAccelDict={}):
+    def BindShortcutsToWindows(self, shortcutInfo, forcewindow=None):
         idDict = dict([(id, shortcut) for itemName, shortcut, id in shortcutInfo])
         forceAccelList = []
         for window, idList in self._shortcutBindWindowDict.items():
@@ -415,8 +449,13 @@ class Frame(wx.Frame):
                 accel = wx.GetAccelFromString('\t'+accelString)
                 if accel is not None:
                     accelList.append((accel.GetFlags(), accel.GetKeyCode(), id))
-                if window in extraAccelDict:
-                    accelList += extraAccelDict[window]
+                else:
+                    for key in numpadDict:
+                        if accelString.endswith(key):
+                            break
+                    accelString = accelString.replace(key, 'Space')
+                    accel = wx.GetAccelFromString('\t'+accelString)
+                    accelList.append((accel.GetFlags(), numpadDict[key], id))
             if forcewindow is None:
                 accelTable = wx.AcceleratorTable(accelList)
                 window.SetAcceleratorTable(accelTable)
@@ -757,14 +796,31 @@ class ShortcutsDialog(wx.Dialog):
         self.shortcutList = copy.deepcopy(shortcutList)#shortcutList[:]
         if exceptionIds is None:
             exceptionIds = []
+        if type(exceptionIds) is tuple:
+            exceptionShortcuts = exceptionIds[0]            
+            self.advancedShortcuts = advancedShortcuts = exceptionIds[1]
+            self.reservedShortcuts = reservedShortcuts = exceptionIds[2][:]
+            self.advancedInfo = exceptionIds[3]
+            advanced = wx.Button(self, wx.ID_ANY, _('Advanced'))
+            advanced.Bind(wx.EVT_BUTTON, self.OnAdvancedButton)
+        else:
+            advanced = None
         # Define the shortcut editing modal dialog (used later)
         self.dlgEdit = self.defineShortcutEditDialog()
         # Define the virtual list control
         class VListCtrl(ListCtrl):                
             def OnGetItemText(self, item, column):
                 label, shortcut, id = self.parent.shortcutList[item]
-                if column == 0:                    
-                    if id in exceptionIds or (shortcut in exceptionIds and (label, shortcut) not in exceptionIds):
+                if column == 0:
+                    if advanced:
+                        if shortcut in exceptionShortcuts:
+                            label = '* %s' % label
+                        elif shortcut in reservedShortcuts:
+                            if (label, shortcut) in advancedShortcuts[-1]:
+                                label = '~ %s' % label
+                            else:
+                                label = '* %s' % label
+                    elif id in exceptionIds:
                         label = '* %s' % label
                     return label
                 elif column == 1:
@@ -785,6 +841,8 @@ class ShortcutsDialog(wx.Dialog):
         cancel = wx.Button(self, wx.ID_CANCEL, _('Cancel'))
         self.Bind(wx.EVT_BUTTON, self.OnButtonClick, cancel)
         btns = wx.StdDialogButtonSizer()
+        if advanced:
+            btns.Add(advanced)
         btns.AddButton(okay)
         btns.AddButton(cancel)
         btns.Realize()
@@ -805,8 +863,52 @@ class ShortcutsDialog(wx.Dialog):
         # explictly destroy self.dlgEdit as self.OnButtonOK does
         self.Bind(wx.EVT_CLOSE, self.OnButtonClick)
         
+    def OnAdvancedButton(self, event):
+        dlg = wx.Dialog(self, wx.ID_ANY, _('Advanced'), style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+        class CheckListCtrl(wx.ListCtrl, listmix.CheckListCtrlMixin):
+            def __init__(self, parent):
+                wx.ListCtrl.__init__(self, parent, wx.ID_ANY, style=wx.LC_REPORT)
+                listmix.CheckListCtrlMixin.__init__(self, checked_icon.GetBitmap(), unchecked_icon.GetBitmap())
+        checklist = CheckListCtrl(dlg)
+        checklist.InsertColumn(0, _('Shortcut'))
+        checklist.InsertColumn(1, _('Action'))
+        for index in range(0, len(self.advancedShortcuts)-1):
+            shortcut, action = self.advancedShortcuts[index]
+            checklist.InsertStringItem(index, shortcut) 
+            checklist.SetStringItem(index, 1, action)
+            if index % 2:
+                checklist.SetItemBackgroundColour(index, '#E8E8FF')
+            if shortcut in self.reservedShortcuts:
+                checklist.CheckItem(index)
+        checklist.SetColumnWidth(0, wx.LIST_AUTOSIZE)
+        checklist.SetColumnWidth(1, wx.LIST_AUTOSIZE)
+        # Standard buttons
+        okay  = wx.Button(dlg, wx.ID_OK, _('OK'))
+        cancel = wx.Button(dlg, wx.ID_CANCEL, _('Cancel'))
+        btns = wx.StdDialogButtonSizer()
+        btns.AddButton(okay)
+        btns.AddButton(cancel)
+        btns.Realize()
+        # Dialog layout
+        dlgSizer = wx.BoxSizer(wx.VERTICAL)
+        dlgSizer.Add(checklist, 1, wx.EXPAND|wx.ALL, 5)
+        if self.advancedInfo:
+            dlgSizer.Add(wx.StaticText(dlg, wx.ID_ANY, self.advancedInfo), 0, wx.LEFT|wx.BOTTOM, 10)
+        dlgSizer.Add(btns, 0, wx.EXPAND|wx.ALL, 10)
+        dlg.SetSizerAndFit(dlgSizer)
+        width = checklist.GetColumnWidth(0) + checklist.GetColumnWidth(1) + 40
+        dlg.SetSize((width, width*3/4))
+        if wx.ID_OK == dlg.ShowModal():
+            while self.reservedShortcuts:
+                self.reservedShortcuts.pop()
+            for index in range(0, len(self.advancedShortcuts)-1):
+                if checklist.IsChecked(index):
+                    self.reservedShortcuts.append(self.advancedShortcuts[index][0])
+            self.listCtrl.RefreshItems(0, len(self.shortcutList)-1)
+        dlg.Destroy()
+        
     def GetShortcutList(self):
-        return self.shortcutList
+        return self.shortcutList, self.reservedShortcuts
         
     def defineShortcutEditDialog(self):
         dlg = wx.Dialog(self, wx.ID_ANY, _('Edit the keyboard shortcut'))
@@ -858,6 +960,9 @@ class ShortcutsDialog(wx.Dialog):
             dlg.listBoxKey.SetSelection(wx.NOT_FOUND)
         else:
             items = [s.upper() for s in shortcut.split('+')]
+            if not items[-1]:
+                del items[-1]
+                items[-1] += '+'                
             boolCtrl = False
             boolAlt = False
             boolShift = False
