@@ -373,7 +373,7 @@ class Frame(wx.Frame):
             except ValueError:
                 pass
             if shortcut != '' and shortcut not in [item[1] for item in shortcutList]:
-                shortcutString = '\t%s ' % GetTranslatedShortcut(shortcut)
+                shortcutString = '\t\n%s' % GetTranslatedShortcut(shortcut).replace('+', '+\n')
             else:
                 shortcutString = ''
             # Append the menu item
@@ -397,7 +397,7 @@ class Frame(wx.Frame):
                     menuItem.Check(state)
         return menu
         
-    def BindShortcutsToWindows(self, shortcutInfo, forcewindow=None):
+    def BindShortcutsToWindows(self, shortcutInfo, forcewindow=None, extraAccelDict={}):
         idDict = dict([(id, shortcut) for itemName, shortcut, id in shortcutInfo])
         forceAccelList = []
         for window, idList in self._shortcutBindWindowDict.items():
@@ -415,6 +415,8 @@ class Frame(wx.Frame):
                 accel = wx.GetAccelFromString('\t'+accelString)
                 if accel is not None:
                     accelList.append((accel.GetFlags(), accel.GetKeyCode(), id))
+                if window in extraAccelDict:
+                    accelList += extraAccelDict[window]
             if forcewindow is None:
                 accelTable = wx.AcceleratorTable(accelList)
                 window.SetAcceleratorTable(accelTable)
@@ -761,10 +763,8 @@ class ShortcutsDialog(wx.Dialog):
         class VListCtrl(ListCtrl):                
             def OnGetItemText(self, item, column):
                 label, shortcut, id = self.parent.shortcutList[item]
-                if column == 0:
-                    if wx.VERSION > (2, 8):
-                        id = shortcut
-                    if id in exceptionIds:
+                if column == 0:                    
+                    if id in exceptionIds or (shortcut in exceptionIds and (label, shortcut) not in exceptionIds):
                         label = '* %s' % label
                     return label
                 elif column == 1:
@@ -797,8 +797,8 @@ class ShortcutsDialog(wx.Dialog):
         dlgSizer.Add(wx.StaticText(self, wx.ID_ANY, message), 0, wx.ALIGN_CENTER|wx.ALL, 5)
         dlgSizer.Add(btns, 0, wx.EXPAND|wx.ALL, 10)
         self.SetSizerAndFit(dlgSizer)
-        width = self.GetSize()[0]
-        self.SetSize((width, width*3/4))
+        width, height = self.GetSize()
+        self.SetSize((width, height*2))
         self.sizer = dlgSizer
         # Misc
         #okay.SetDefault()

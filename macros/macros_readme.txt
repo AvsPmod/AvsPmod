@@ -33,12 +33,12 @@ GetPluginString(filename='')
 This function is similar to GetSourceString(), with 2 primary differences.  The first difference is that it always uses the template "LoadPlugin(____)", with the assumption that filename is an Avisynth plugin dll.  The second difference is that if filename is empty, the open file dialog box displayed always starts in the AviSynth plugin directory for easy selection, whereas the dialog box in the GetSourceString() function always starts in the most recently used directory.
 
 
-GetFilename(title='Open a script or source')
+GetFilename(title='Open a script or source', filefilter=None)
 ============================================
 Displays an open file dialog box, returning the filename of the selected file if the user clicked "OK", returning an empty string otherwise.
+filefilter=None means to apply those extensions defined at "Options|Extension templates"
 
-
-GetSaveFilename(title='Save as')
+GetSaveFilename(title='Save as', filefilter=_('All files (*.*)|*.*'))
 ================================
 Displays an save file dialog box, returning the entered filename if the user clicked "OK", returning an empty string otherwise.
 

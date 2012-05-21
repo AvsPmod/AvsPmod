@@ -311,10 +311,13 @@ class AvsClip:
             
     def _GetFrame(self, frame):
         if self.initialized:
+            if self.current_frame == frame:
+                return True
             if(frame<0):
                 frame = 0
             if(frame>=self.Framecount):
                 frame = self.Framecount-1
+            self.current_frame = frame
             src=self.clip.GetFrame(frame)
             #~ try:
                 #~ src=self.clip.GetFrame(frame)
@@ -338,6 +341,7 @@ class AvsClip:
     def DrawFrame(self, frame, hdc=None, offset=(0,0), size=None):
         if not self._GetFrame(frame):
             return
+        self.current_frame
         if hdc:
             if size is None:
                 w = self.Width

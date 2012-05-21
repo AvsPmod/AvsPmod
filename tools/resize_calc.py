@@ -34,8 +34,8 @@ class ResizeCalculatorDialog(wx.Dialog):
         hmod = self.options.setdefault('hmod', 16)
         paro_x = self.options.setdefault('paro_x', 1.0)
         paro_y = self.options.setdefault('paro_y', 1.0)
-        minresize = self.options.setdefault('minresize', 50)
-        maxresize = self.options.setdefault('maxresize', 150)
+        minresize = self.options.setdefault('minresize', 25)
+        maxresize = self.options.setdefault('maxresize', 200)
         searcherror = self.options.setdefault('searcherror', 0.3)
         self.options.setdefault('avisynthresize', 'LanczosResize(%width%, %height%)')
         self.ctrlDict['widthi'].SetValue('%i' % self.input_width)
@@ -133,7 +133,7 @@ class ResizeCalculatorDialog(wx.Dialog):
         info = (
             ('paro_x', 'paro_y', _('Target pixel aspect ratio:'), '1', '1', ':'),
             ('wmod', 'hmod', _('Resize block constraints:'), '16', '16', 'x'),
-            ('minresize', 'maxresize', _('Resize percent ranges:'), '50%', '150%', '-'),
+            ('minresize', 'maxresize', _('Resize percent ranges:'), '25%', '200%', '-'),
         )
         for xkey, ykey, label, xvalue, yvalue, divider in info:
             staticText = wx.StaticText(self, wx.ID_ANY, label)

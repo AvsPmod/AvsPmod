@@ -1,17 +1,21 @@
 import re
+import cPickle
 
 fps = avsp.GetVideoFramerate()
 oldBookmarks = avsp.GetBookmarkList()
 filename = avsp.GetFilename('Open a bookmark file', filefilter=
-                            'Supported files|*.txt;*.xml|'
+                            'Supported files|*.txt;*.xml;*.ses|'
                             'Chapters Text files (*.txt)|*.txt|'
                             'Matroska XML files (*.xml)|*.xml|'
+                            'Celltimes files (*.txt)|*.txt|'
+                            'AvsP Session files (*.ses)|*.ses|'
                             'All files (*.*)|*.*')
 if filename:
     f = open(filename)
     lines = f.read()
     f.close()
     bookmarkList = []
+    bookmarkDict = {}
     titleDict = {}
     # pasering chapters text files
     timeList = re.findall(r'(\d+)=(\d+):(\d+):(\d+\.\d+)', lines)
@@ -21,12 +25,9 @@ if filename:
         for index, hr, min, sec in timeList:
             sec = int(hr)*3600 + int(min)*60 + float(sec)
             bookmark = int(round(sec*fps))
-            title = titleDict.get(index, '')
-            bookmarkList.append((bookmark, title))
-            if bookmark in oldBookmarks:
-                bookmarkList.append((bookmark, title))
+            bookmarkDict[bookmark] = titleDict.get(index, '')
     # pasering matroska xml files            
-    if not bookmarkList:
+    if not bookmarkDict:
         sections = re.findall(r'<ChapterAtom>(.*?)</ChapterAtom>', lines, re.I|re.S)
         for text in sections:
             timecode = re.search(r'<ChapterTimeStart>(\d+):(\d+):(\d+\.\d+)</ChapterTimeStart>', text)
@@ -36,26 +37,41 @@ if filename:
             hr, min, sec = timecode.groups()
             sec = int(hr)*3600 + int(min)*60 + float(sec)
             bookmark = int(round(sec*fps))
-            title = title.group(1) if title else ''
-            bookmarkList.append((bookmark, title))
-            if bookmark in oldBookmarks:
-                bookmarkList.append((bookmark, title))
+            bookmarkDict[bookmark] = title.group(1) if title else ''
     # pasering celltime format - frame count content        
-    if not bookmarkList:
+    if not bookmarkDict:
         try:
             for index in lines.strip().split():
-                index = int(index)
-                bookmarkList.append(index)
-                if index in oldBookmarks:
-                    bookmarkList.append(index)
+                bookmarkDict[int(index)] = ''
         except:
-            bookmarkList = []
-    
-    if bookmarkList:        
+            bookmarkDict = {}
+    # pasering AvsP ssesion files
+    if not bookmarkDict:
+        try:
+            f = open(filename, 'rb')
+            session = cPickle.load(f)
+        except:
+            pass
+        f.close()
+        if 'bookmarks' in session:
+            if 'bookMarkDict' in session:
+                for bookmark, btype in session['bookmarks']:
+                    bookmarkDict[bookmark] = session['bookMarkDict'].get(bookmark, '')
+            else:
+                for bookmark, btype in session['bookmarks']:
+                    bookmarkDict[bookmark] = ''
+            
+    if bookmarkDict:
+        bookmarkList = bookmarkDict.items()
+        for bookmark in bookmarkDict:
+            if bookmark in oldBookmarks:
+                if bookmarkDict[bookmark]:
+                    bookmarkList.append((bookmark, bookmarkDict[bookmark]))
+                else:
+                    bookmarkList.remove((bookmark, bookmarkDict[bookmark]))
         ret = avsp.SetBookmark(bookmarkList)
-        if not ret and bookmarkList and type(bookmarkList[0]) is tuple:
-            for index in range(len(bookmarkList)):
-                bookmarkList[index] = bookmarkList[index][0]
+        if not ret and bookmarkList: # back-compitable with v2.0.5 or before
+            bookmarkList = [ bookmark for bookmark, title in bookmarkList]
             avsp.SetBookmark(bookmarkList)
     else:
         avsp.MsgBox('bookmark file unrecognized!', 'Error')
