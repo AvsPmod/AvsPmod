@@ -382,7 +382,7 @@ class CompressVideoDialog(wx.Dialog):
                 value = value.strip()
             except:
                 pass
-            if value:
+            if value != '':
                 replaceDict[key] = value
         # Compute additional values
         replaceDict['last_frame'] = self.framecount - 1
@@ -545,7 +545,7 @@ class CompressVideoDialog(wx.Dialog):
         if len(unreplacedList) > 0:
             s1 = _('Unreplaced items remain in the command line:')
             s2 = '\n'.join(unreplacedList)
-            wx.MessageBox('%s\n\n%s' % (s1, s2), _('Error'), style=wxOK|wx.ICON_ERROR)
+            wx.MessageBox('%s\n\n%s' % (s1, s2), _('Error'), style=wx.OK|wx.ICON_ERROR)
             return
         lines = ['@echo off\n']
         startline = 'start /%s /b /w' % self.options['priority']

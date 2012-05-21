@@ -895,8 +895,8 @@ float "src_height"
 
 SSRC(
 clip,
-int samplerate,
-bool "fast"=true
+int samplerate=48000,
+bool "fast"=false
 )
 
 StackHorizontal(
@@ -1072,6 +1072,32 @@ clip "y"
 )
 
 [PLUGINS]
+
+AGC_HDRAGC(
+clip clip,
+float max_gain=6.3 (0.00 to 8.00), 
+float min_gain=1.0, 
+float coef_gain=0.5 (0.00 to 0.5),
+float max_gain=6.3 (0.00 to 8.00),
+float min_sat=1.19 (0.00 to 2.00),
+float coef_sat=0.9 (0.0 to 2.0)
+int avg_window=16 (0 to 120),
+int response=100, 
+int debug=0, 
+int mode=2 (0 to 2),
+int protect=2 (0 to 2),
+int passes=1 (1 to 9),
+int shift=0, 
+bool shadows=true, 
+int shift_u= -31 (-100 to 100),  
+int shift_v=0 (-100 to 100),
+float corrector=1.31 (0.50 to 1.50), 
+float reducer=2.0 (0.0 to 2.0),
+int avg_lum=2000 (128 to 2000),
+float black_clip=0.0, 
+int freezer=-1
+)
+
 asharp_aSharp(
 float "T"=2.0 (0.0 to 32.0),
 float "D"=4.0 (0.0 to 16.0),
@@ -1144,6 +1170,13 @@ int "vn"=47 (0 to 255),
 int "vm"=255 (0 to 255),
 bool "log"=false,
 bool "scenechroma"=false
+)
+
+deblock_Deblock(
+clip,
+int quant=25 (0 to 60),
+int aOffset=0 (0 to 50),
+int bOffset=0 (0 to 50)
 )
 
 Decomb_Decimate(
@@ -1384,7 +1417,7 @@ int "bt"=3 (-1 to 5),
 int "ow"=bw/3 (2 to bw),
 int "oh"=bh/3 (2 to bh),
 float "kratio"=2.0 (1.5 to 3.0),
-float "sharpen"=0 (0 to 1.0),
+float "sharpen"=0 (0 to 4.0),
 float "scutoff"=0.3,
 float "svr"=1.0 (0 to 4),
 float "smin"=4.0,
@@ -1402,7 +1435,7 @@ float "sigma2"=sigma (0.01 to 10),
 float "sigma3"=sigma (0.01 to 10),
 float "sigma4"=sigma (0.01 to 10),
 float "degrid"=1.0 (0.01 to 10),
-float "dehalo"=0 (0 to 10),
+float "dehalo"=0 (0.0 to 10.0),
 float "hr"=2.0 (0.01 to 10),
 float "ht"=50.0 (0.01 to 100),
 int "ncpu"=1
@@ -1432,11 +1465,31 @@ int "oh"=bh/2 (2 to bh by 2),
 int "wintype"=0 (0 to 2)
 )
 
+framenumber_FrameNumber(
+clip,
+int offset=0,
+int left=0 (0 to 1)
+)
+
 frfun7_frfun7(
 clip,
 float "lambda"=1.1 (0 to 3),
 float "T"=6.0 (0 to 10),
 float "Tuv"=2.0 (0 to 10)
+)
+
+Grid_Grid(
+clip,
+int sf,
+int ef,
+int lineint,
+int bold,
+int vbold,
+int color=$FFFFFF,
+int bcolor,
+int vbcolor,
+bool grid,
+bool axis
 )
 
 hqdn3d_hqdn3d(
@@ -1511,7 +1564,6 @@ int "threshold"=10 (0 to 255),
 int "strength"=100 (0 to 255),
 bool "mask"=false,
 bool "highq"=true,
-bool "debug"=false
 )
 
 Msmooth_MSmooth(
@@ -1521,7 +1573,17 @@ bool "highq"=true,
 bool "chroma"=false,
 bool "mask"=false,
 bool "show"=false,
-bool "debug"=false
+)
+
+Rotate_Rotate(
+clip clip,
+float "angle"=0 (0 to 360),
+int "color"=0,
+int "start"=0,
+int "end"=-1,
+float "endangle",
+int "width"=0,
+int "height"=0,
 )
 
 SangNom_SangNom(
@@ -1813,6 +1875,11 @@ int SearchEffort=-1 (-1 to 30),
 int VerticalFilter=0 (0 to 1)
 )
 
+Toon-v1.0_Toon(
+clip,
+float "strength"=1.0 (0.0 to 1.0),
+)
+
 TTempSmooth_TTempSmooth(
 int "maxr"=3 (1 to 7),
 int "lthresh"=4 (1 to 256),
@@ -1884,4 +1951,11 @@ int "amnt"=255 (0 to 255),
 int "uv"=3 (1 to 3),
 float "scl"=0.25,
 int "opt"=2 (0 to 2)
+)
+
+warpsharp_UnsharpMask(
+clip,
+int strength=64 (0 to 64 by 1),
+int radius=3 (0 to 64 by 1),
+int threshold=8 (0 to 64 by 1)
 )

@@ -27,6 +27,7 @@
 import ctypes
 import sys
 import os
+import wx
 
 import avisynth
 
@@ -100,7 +101,7 @@ def ExitRoutines():
     DrawDibClose(handleDib[0])
 
 class AvsClip:
-    def __init__(self, script, filename='', env=None, fitHeight=None, fitWidth=None, oldFramecount=240, keepRaw=False, matrix='Rec601', interlaced=False):
+    def __init__(self, script, filename='', env=None, fitHeight=None, fitWidth=None, oldFramecount=240, keepRaw=False, matrix='Rec601', interlaced=False, swapuv=False):
         # Internal variables
         self.initialized = False
         self.error_message = None
@@ -251,14 +252,25 @@ class AvsClip:
                 arg(self.clip)
             except NameError:
                 arg = avisynth.AVS_Value(self.clip)
+            if self.IsYUV and swapuv:
+                try:
+                    avsfile = self.env.Invoke("swapuv", arg, 0)
+                    arg.Release()
+                    self.clip = avsfile.AsClip(self.env)
+                except avisynth.AvisynthError, err:
+                    return
+            arg = avisynth.AVS_Value(self.clip)
             arg1 = avisynth.AVS_Value(matrix)
             if not self.IsYV12:
                 interlaced = False
             arg2 = avisynth.AVS_Value(interlaced)
             args = avisynth.AVS_Value([arg, arg1, arg2])
-            avsfile = self.env.Invoke("converttorgb32", args, 0)
-            arg.Release()  #release the clip
-            self.clip = avsfile.AsClip(self.env)
+            try:
+                avsfile = self.env.Invoke("converttorgb32", args, 0)
+                arg.Release()  #release the clip
+                self.clip = avsfile.AsClip(self.env)
+            except avisynth.AvisynthError, err:
+                return
         # Add a resize...
         if fitHeight is not None and self.Height != 0:
             fitWidthTemp = int(round(fitHeight *  (self.Width/float(self.Height))))
@@ -283,8 +295,9 @@ class AvsClip:
                 self.Width, self.Height = fitWidth, fitHeight
         avisynth.CreateBitmapInfoHeader(self.clip,self.bmih)
         self.pInfo=ctypes.pointer(self.bmih)
-        self.BUF=ctypes.c_ubyte*self.bmih.biSizeImage
-        self.pBits=self.BUF()
+        #~ self.BUF=ctypes.c_ubyte*self.bmih.biSizeImage
+        #~ self.pBits=self.BUF()
+        self.pBits = None
         # Initialization complete.
         self.initialized = True
         if __debug__:
@@ -324,15 +337,23 @@ class AvsClip:
             return False
             
     def DrawFrame(self, frame, hdc=None, offset=(0,0), size=None):
-        if not self._GetFrame(frame):
-            return
-        if hdc:
+        #~ if not self._GetFrame(frame):
+            #~ return
+        #~ if hdc:
+        if self.initialized and hdc:
             if size is None:
                 w = self.Width
                 h = self.Height
             else:
-                w, h = size
+                w, h = size        
+            self.pBits = self.clip.GetFrame(frame).GetReadPtr()
             DrawDibDraw(handleDib[0], hdc, offset[0], offset[1], w, h, self.pInfo, self.pBits, 0, 0, -1, -1, 0)
+            if self.clipRaw is not None:
+                frame=self.clipRaw.GetFrame(frame)
+                self.pitch = frame.GetPitch()
+                self.ptrY = frame.GetReadPtr(plane=avisynth.PLANAR_Y)
+                self.ptrU = frame.GetReadPtr(plane=avisynth.PLANAR_U)
+                self.ptrV = frame.GetReadPtr(plane=avisynth.PLANAR_V)
         
     def GetPixelYUV(self, x, y):
         if self.clipRaw is not None:
@@ -407,18 +428,17 @@ class AvsClip:
         
     def _x_SaveFrame(self, filename, frame=None):
         # Get the frame to display
-        print filename
         if frame == None:
             if self.pInfo == None or self.pBits == None:
-                self._GetFrame(0)
+                self.pBits = self.clip.GetFrame(0).GetReadPtr()
         else:
-            self._GetFrame(frame)
-        #buffer = ctypes.create_string_buffer(filename)
+            self.pBits = self.clip.GetFrame(frame).GetReadPtr()
         if isinstance(filename, unicode):
             filename = filename.encode(sys.getfilesystemencoding())
+        buffer = ctypes.create_string_buffer(filename)
         hFile = CreateFile(
-                #ctypes.byref(buffer),
-                filename,
+                ctypes.byref(buffer),
+                #filename,
                 GENERIC_WRITE,
                 0,
                 NULL,
