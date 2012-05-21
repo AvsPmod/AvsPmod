@@ -136,7 +136,7 @@ val args [, ...]
 
 AssumeFPS(
 clip,
-string "preset"= ("ntsc_film"/ "ntsc_video"/ "ntsc_double"/ "ntsc_quad"/ "ntsc_round_film"/ "ntsc_round_video"/ "ntsc_round_double"/ "ntsc_round_quad"/ "film"/ "pal_film"/ "pal_video"/ "pal_double"/ "pal_quad"),
+string preset= ("ntsc_film"/ "ntsc_video"/ "ntsc_double"/ "ntsc_quad"/ "ntsc_round_film"/ "ntsc_round_video"/ "ntsc_round_double"/ "ntsc_round_quad"/ "film"/ "pal_film"/ "pal_video"/ "pal_double"/ "pal_quad"),
 bool "sync_audio"=false
 )
 
@@ -240,7 +240,7 @@ float "height"
 
 ChangeFPS(
 clip,
-string "preset"= ("ntsc_film"/ "ntsc_video"/ "ntsc_double"/ "ntsc_quad"/ "ntsc_round_film"/ "ntsc_round_video"/ "ntsc_round_double"/ "ntsc_round_quad"/ "film"/ "pal_film"/ "pal_video"/ "pal_double"/ "pal_quad"),
+string preset= ("ntsc_film"/ "ntsc_video"/ "ntsc_double"/ "ntsc_quad"/ "ntsc_round_film"/ "ntsc_round_video"/ "ntsc_round_double"/ "ntsc_round_quad"/ "film"/ "pal_film"/ "pal_video"/ "pal_double"/ "pal_quad"),
 bool "linear"=true
 )
 
@@ -321,7 +321,7 @@ string "matrix"="Rec601" ("Rec601"/ "PC.601"/ "Rec709"/ "PC.709")
 
 ConvertFPS(
 clip,
-string "preset"= ("ntsc_film"/ "ntsc_video"/ "ntsc_double"/ "ntsc_quad"/ "ntsc_round_film"/ "ntsc_round_video"/ "ntsc_round_double"/ "ntsc_round_quad"/ "film"/ "pal_film"/ "pal_video"/ "pal_double"/ "pal_quad"),
+string preset= ("ntsc_film"/ "ntsc_video"/ "ntsc_double"/ "ntsc_quad"/ "ntsc_round_film"/ "ntsc_round_video"/ "ntsc_round_double"/ "ntsc_round_quad"/ "film"/ "pal_film"/ "pal_video"/ "pal_double"/ "pal_quad"),
 int "zone",
 int "vbi"= (1 to 49)
 )

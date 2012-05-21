@@ -85,7 +85,7 @@ from icons import AvsP_icon, next_icon, play_icon, skip_icon, spin_icon,\
                   dragdrop_cursor
 from __translation_new import new_translation_string
 
-version = '2.2.0'
+version = '2.2.1'
 
 # Custom styled text control for avisynth language
 class AvsStyledTextCtrl(stc.StyledTextCtrl):
@@ -143,7 +143,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
         self.calltipFilter = None
         self.calltiptext = None
         self.calltipOpenpos = None
-        self.flagTextChanged = False
+        self.flagTextChanged = self.flagCodeFolding = False
         self.keywordStyleList = (
             self.STC_AVS_COREFILTER,
             #~ self.STC_AVS_CLIPPROPERTY,
@@ -158,6 +158,16 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
             self.STC_AVS_USERFUNCTION,
             self.STC_AVS_SCRIPTFUNCTION,
         )
+        self.commentStyle = [self.STC_AVS_COMMENT, self.STC_AVS_BLOCKCOMMENT, self.STC_AVS_ENDCOMMENT]
+        self.nonBraceStyles = [
+            self.STC_AVS_COMMENT,
+            self.STC_AVS_ENDCOMMENT,
+            self.STC_AVS_BLOCKCOMMENT,
+            self.STC_AVS_STRING,
+            self.STC_AVS_TRIPLE,
+            self.STC_AVS_STRINGEOL,
+            self.STC_AVS_USERSLIDER,
+        ]
         # Auto-completion options
         self.AutoCompSetIgnoreCase(1)
         self.AutoCompSetDropRestOfWord(1)
@@ -187,6 +197,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
         self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdateUI)
         self.Bind(stc.EVT_STC_CHANGE, self.OnTextChange)
         self.Bind(stc.EVT_STC_CHARADDED, self.OnTextCharAdded)
+        self.Bind(stc.EVT_STC_NEEDSHOWN, self.OnNeedShown)
         self.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
         self.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
         #~ self.Bind(wx.EVT_FIND, self.OnFindPressed)
@@ -397,16 +408,16 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
 
     def SetTextStyles(self, textstyles, monospaced=False):
         self.SetLexer(stc.STC_LEX_CONTAINER)
-        self.commentStyle = [self.STC_AVS_COMMENT, self.STC_AVS_BLOCKCOMMENT, self.STC_AVS_ENDCOMMENT]
-        self.nonBraceStyles = [
-            self.STC_AVS_COMMENT,
-            self.STC_AVS_ENDCOMMENT,
-            self.STC_AVS_BLOCKCOMMENT,
-            self.STC_AVS_STRING,
-            self.STC_AVS_TRIPLE,
-            self.STC_AVS_STRINGEOL,
-            self.STC_AVS_USERSLIDER,
-        ]
+        #~ self.commentStyle = [self.STC_AVS_COMMENT, self.STC_AVS_BLOCKCOMMENT, self.STC_AVS_ENDCOMMENT]
+        #~ self.nonBraceStyles = [
+            #~ self.STC_AVS_COMMENT,
+            #~ self.STC_AVS_ENDCOMMENT,
+            #~ self.STC_AVS_BLOCKCOMMENT,
+            #~ self.STC_AVS_STRING,
+            #~ self.STC_AVS_TRIPLE,
+            #~ self.STC_AVS_STRINGEOL,
+            #~ self.STC_AVS_USERSLIDER,
+        #~ ]
         styleInfo = (
             (self.STC_AVS_DEFAULT, 'default', ''),
             (self.STC_AVS_COMMENT, 'comment', ',eol'),
@@ -646,7 +657,11 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
         if self.app.options['autocompletevariables']:
             lineCount = self.LineFromPosition(pos)
             line = 0
-            while line < lineCount:
+            while line <= lineCount:
+                if line == lineCount:
+                    line += 1
+                    lineCount = self.GetLineCount()
+                    continue
                 start = self.PositionFromLine(line)
                 eol = self.GetLineEndPosition(line)
                 #~ while unichr(self.GetCharAt(eol-1)) == '\\' or unichr(self.GetCharAt(eol+1)) == '\\':
@@ -1458,6 +1473,9 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
         # Display call tips
         self.UpdateCalltip()
         self.flagTextChanged = False
+        
+        # incompatible, STC_UPDATEUI event doesn't tigger on wx2.9
+        self.CodeFolding()
     
     def CodeFolding(self):    # update folding level
         lineCount = self.GetLineCount()
@@ -1546,6 +1564,16 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
             level = self.GetFoldLevel(line)
             if level & stc.STC_FOLDLEVELHEADERFLAG:
                 self.SetFoldLevel(line + 1, level & stc.STC_FOLDLEVELNUMBERMASK)
+
+    def OnNeedShown(self, event):
+        line = self.LineFromPosition(event.GetPosition())
+        lineEnd = self.LineFromPosition(event.GetPosition()+event.GetLength())
+        while line < lineEnd:
+            level = self.GetFoldLevel(line)
+            if level & stc.STC_FOLDLEVELHEADERFLAG and not self.GetFoldExpanded(line):
+                self.SetFoldExpanded(line, True)
+                self.Expand(line, True)
+            line += 1
 
     def OnKeyUp(self, event):
         pos = self.GetCurrentPos()
@@ -1651,6 +1679,9 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
             state = self.STC_AVS_DEFAULT
         else:
             state = self.GetStyleAt(start)
+            if state == self.STC_AVS_STRINGEOL:
+                start += 1
+                state = self.STC_AVS_DEFAULT
         isCommentC = isCommentNest = isLoadPlugin = False
         self.endstyled = pos = start
         fragment = []
@@ -1832,10 +1863,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
             if pos > end and state in (self.STC_AVS_STRING, self.STC_AVS_TRIPLE):
                 if end+1 <= self.GetTextLength():
                     end += 1
-        self.CodeFolding()
-        if wx.VERSION > (2, 9):
-            self.app.IdleCall.append((self.Refresh, tuple(), dict()))
-
+                    
     def ColourTo(self, pos, style):
         self.SetStyling(pos +1 - self.endstyled, style)
         self.endstyled = pos+1
@@ -1872,6 +1900,9 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                         self.ToggleFold(lineClicked)
 
     def FoldAll(self):
+        if self.GetEndStyled() != self.GetLength():
+            self.OnStyleNeeded(None, forceAll=True)
+            self.CodeFolding()
         lineCount = self.GetLineCount()
         expanding = True
 
@@ -2872,7 +2903,7 @@ class AvsFunctionDialog(wx.Dialog):
         dlg.Destroy()
         
     def ParseAvisynthScript(self, filename):
-        pattern = r'function\s+(\w+)\s*\((.+?)\)\s*\{(.+?)\}'
+        pattern = r'function\s+(\w+)\s*\((.*?)\)\s*\{(.+?)\}'
         default = r'default\s*\(\s*%s\s*,\s*(.+?)\s*\)'
         filterInfo, text = [], []
         f = open(filename)
@@ -2887,37 +2918,38 @@ class AvsFunctionDialog(wx.Dialog):
         for filtername, args, body in matches:
             text = ['(\n']
             varnameDict = {}
-            for arg in args.split(','):
-                arg = arg.split()
-                if len(arg) == 2:
-                    vartype, varname = arg
-                elif len(arg) == 1:
-                    sep = arg[0].find('"') 
-                    vartype = arg[0][:sep]
-                    varname = arg[0][sep:]
-                else:
-                    return None
-                text.append(vartype)
-                if varname[0] == '"':
-                    text += [' ', varname]
-                    varname = varname[1:-1]
-                    pat = default % varname
-                    ret = re.search(pat, body, re.I|re.S)
-                    if ret:
-                        value = ret.group(1)
-                        if vartype not in ['int', 'float'] or value.isdigit():
-                            text += ['=', value]
-                            varnameDict[varname] = value
-                        else:
-                            for name in varnameDict:
-                                value = value.replace(name, varnameDict[name])
-                            try:
-                                value = str(eval(value))
+            if args.strip():
+                for arg in args.split(','):
+                    arg = arg.split()
+                    if len(arg) == 2:
+                        vartype, varname = arg
+                    elif len(arg) == 1:
+                        sep = arg[0].find('"') 
+                        vartype = arg[0][:sep]
+                        varname = arg[0][sep:]
+                    else:
+                        return None
+                    text.append(vartype)
+                    if varname[0] == '"':
+                        text += [' ', varname]
+                        varname = varname[1:-1]
+                        pat = default % varname
+                        ret = re.search(pat, body, re.I|re.S)
+                        if ret:
+                            value = ret.group(1)
+                            if vartype not in ['int', 'float'] or value.isdigit():
                                 text += ['=', value]
                                 varnameDict[varname] = value
-                            except:
-                                print _('Error'), 'ParseAvisynthScript() try eval(%s)' % value                                  
-                text.append(',\n')
+                            else:
+                                for name in varnameDict:
+                                    value = value.replace(name, varnameDict[name])
+                                try:
+                                    value = str(eval(value))
+                                    text += ['=', value]
+                                    varnameDict[varname] = value
+                                except:
+                                    print _('Error'), 'ParseAvisynthScript() try eval(%s)' % value                                  
+                    text.append(',\n')
             if text[-1] == ',\n':
                 text[-1] = '\n'
             text.append(')')
@@ -4132,10 +4164,12 @@ class MainFrame(wxp.Frame):
         self.IdleCall = []
         self.defineFilterInfo()
 
+        self.port = 50009
+        self.instance = wx.SingleInstanceChecker(title+wx.GetUserId())
         boolSingleInstance = self.options.setdefault('singleinstance', False)
         if boolSingleInstance:
-            self.port = 50009
-            self.instance = wx.SingleInstanceChecker(title+wx.GetUserId())
+            #~ self.port = 50009
+            #~ self.instance = wx.SingleInstanceChecker(title+wx.GetUserId())
             if self.instance.IsAnotherRunning():
                 # Send data to the main instance via socket
                 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -4153,6 +4187,9 @@ class MainFrame(wxp.Frame):
                 # Start socket server (in a separate thread) to receive arguments from other instances
                 self.argsPosterThread = wxp.ArgsPosterThread(self)
                 self.argsPosterThread.Start()
+        else:
+            if self.instance.IsAnotherRunning():
+                self.options['exitstatus'] = 0
 
         self.optionsDlgInfo = self.getOptionsDlgInfo()
         #~ if self.options['helpdir'].count('%programdir%') > 0:
@@ -4388,10 +4425,11 @@ class MainFrame(wxp.Frame):
             if self.options['alwaysloadstartupsession'] or len(sys.argv) <= 1 or not self.options['promptexitsave'] or self.options['exitstatus']:
                 if os.path.exists(self.lastSessionFilename):
                     self.LoadSession(self.lastSessionFilename, saverecentdir=False, resize=False, backup=True, startup=True)
-        self.options['exitstatus'] = 1
-        f = open(self.optionsfilename, mode='wb')
-        cPickle.dump(self.options, f, protocol=0)
-        f.close()
+        if not self.options['exitstatus']:
+            self.options['exitstatus'] = 1
+            f = open(self.optionsfilename, mode='wb')
+            cPickle.dump(self.options, f, protocol=0)
+            f.close()
         if len(sys.argv)>1:
             self.ProcessArguments(sys.argv[1:])
         #~ if not self.currentScript.sliderWindowShown:
@@ -4438,7 +4476,7 @@ class MainFrame(wxp.Frame):
                 if self.separatevideowindow:
                     self.Show()
                 vidmenu = self.videoWindow.contextMenu
-                menu = vidmenu.FindItemById(vidmenu.FindItem(_('Zoom'))).GetSubMenu()
+                menu = vidmenu.FindItemById(vidmenu.FindItem(_('&Zoom'))).GetSubMenu()
                 menuItem = menu.FindItemByPosition(self.options['zoomindex'])
                 if menuItem is not None:
                     self.OnMenuVideoZoom(None, menuItem=menuItem, show=False)
@@ -4464,7 +4502,7 @@ class MainFrame(wxp.Frame):
         if self.separatevideowindow:
             self.Show()
         vidmenu = self.videoWindow.contextMenu
-        menu = vidmenu.FindItemById(vidmenu.FindItem(_('Zoom'))).GetSubMenu()
+        menu = vidmenu.FindItemById(vidmenu.FindItem(_('&Zoom'))).GetSubMenu()
         menuItem = menu.FindItemByPosition(self.options['zoomindex'])
         if menuItem is not None:
             self.OnMenuVideoZoom(None, menuItem=menuItem, show=False)
@@ -4597,6 +4635,7 @@ class MainFrame(wxp.Frame):
                 'trimreversechoice': 0,
                 'trimmarkframes': True,
                 'imagechoice': 0,
+                'imagenameformat': '%s%06d',
                 'imagesavedir': '',
                 'zoomindex': 2,
                 'exitstatus': 0,
@@ -4844,7 +4883,7 @@ class MainFrame(wxp.Frame):
                 if key not in self.options['filteroverrides'] and key not in self.options['filterpresets']:
                     del self.options['filterdb'][key]
                     if key in self.options['filterremoved']:
-                        del self.options['filterremoved'][key]
+                        self.options['filterremoved'].remove(key)
                     if value[0] in self.options['autocompleteexclusions']:
                         self.options['autocompleteexclusions'].remove(value[0])                        
                 else:
@@ -4961,6 +5000,7 @@ class MainFrame(wxp.Frame):
         ]
 
     def getFilterInfoFromAvisynth(self):
+        self.dllnameunderscored = set()
         try:
             avisynth
         except NameError:
@@ -4978,7 +5018,6 @@ class MainFrame(wxp.Frame):
             extfunc.Release()
             extfuncList = []
             dllnameList = []
-            self.dllnameunderscored = set()
             start = 0
             end = len(s)            
             while start < end:
@@ -5184,7 +5223,7 @@ class MainFrame(wxp.Frame):
                 (_('Show tabs in multiline style'), wxp.OPT_ELEM_CHECK, 'multilinetab', _('There can be several rows of tabs'), ''),
                 (_('Show tabs in fixed width'), wxp.OPT_ELEM_CHECK, 'fixedwidthtab', _('All tabs will have same width'), ''),
                 (_('Enable scroll wheel through similar tabs'), wxp.OPT_ELEM_CHECK, 'enabletabscrolling', _('Mouse scroll wheel cycles through tabs with similar videos'), ''),
-                (_('Only allow a single instance of AvsPmod'), wxp.OPT_ELEM_CHECK, 'singleinstance', _('Only allow a single instance of AvsPmod'), ''),
+                (_('Only allow a single instance of AvsPmod')+' *', wxp.OPT_ELEM_CHECK, 'singleinstance', _('Only allow a single instance of AvsPmod'), ''),
                 (_('Show warning for bad plugin naming at startup'), wxp.OPT_ELEM_CHECK, 'dllnamewarning', _('Show warning at startup if there are dlls with bad naming in default plugin folder'), ''),
                 (_('Max number of recent filenames'), wxp.OPT_ELEM_INT, 'nrecentfiles', _('This number determines how many filenames to store in the recent files menu'), ''),
                 (_('Custom jump size:'), wxp.OPT_ELEM_INT, 'customjump', _('Jump size used in video menu'), ''),
@@ -5916,7 +5955,7 @@ class MainFrame(wxp.Frame):
                 (_('Avisynth help'), 'F1', self.OnMenuHelpAvisynth, _('Open the avisynth help html')),
                 (_('Open Avisynth plugins folder'), '', self.OnMenuHelpAvisynthPlugins, _('Open the avisynth plugins folder')),
                 (''),
-                (_('&About AvsPmod'), '', self.OnMenuHelpAbout, _('About this program')),
+                (_('About AvsPmod'), '', self.OnMenuHelpAbout, _('About this program')),
             ),
         )
 
@@ -7212,7 +7251,7 @@ class MainFrame(wxp.Frame):
             if menuItem is None:
                 id = event.GetId()
                 for vidmenu in vidmenus:
-                    menu = vidmenu.FindItemById(vidmenu.FindItem(_('Zoom'))).GetSubMenu()
+                    menu = vidmenu.FindItemById(vidmenu.FindItem(_('&Zoom'))).GetSubMenu()
                     menuItem = menu.FindItemById(id)
                     if menuItem:
                         menuItem.Check()
@@ -7231,7 +7270,7 @@ class MainFrame(wxp.Frame):
                 label = menuItem.GetLabel()
                 zoomvalue = self.zoomLabelDict[label]
                 for vidmenu in vidmenus:
-                    menu = vidmenu.FindItemById(vidmenu.FindItem(_('Zoom'))).GetSubMenu()
+                    menu = vidmenu.FindItemById(vidmenu.FindItem(_('&Zoom'))).GetSubMenu()
                     if menu != menuItem.GetMenu():
                         id = menu.FindItem(label)
                         menuItem = menu.FindItemById(id)
@@ -7244,7 +7283,7 @@ class MainFrame(wxp.Frame):
             if menuItem is None:
                 id = event.GetId()
                 vidmenu = self.videoWindow.contextMenu
-                menu = vidmenu.FindItemById(vidmenu.FindItem(_('Zoom'))).GetSubMenu()
+                menu = vidmenu.FindItemById(vidmenu.FindItem(_('&Zoom'))).GetSubMenu()
                 menuItem = menu.FindItemById(id)
             if menuItem is None:
                 print>>sys.stderr, _('Error'), 'OnMenuVideoZoom(): cannot find menu item by id'
@@ -7293,7 +7332,7 @@ class MainFrame(wxp.Frame):
         if True:#wx.VERSION > (2, 8):
             vidmenus = [self.videoWindow.contextMenu, self.GetMenuBar().GetMenu(2)]
             for vidmenu in vidmenus:
-                menu = vidmenu.FindItemById(vidmenu.FindItem(_('Flip'))).GetSubMenu()
+                menu = vidmenu.FindItemById(vidmenu.FindItem(_('&Flip'))).GetSubMenu()
                 menuItem = menu.FindItemById(id)
                 if menuItem: 
                     label = menuItem.GetLabel()
@@ -7309,7 +7348,7 @@ class MainFrame(wxp.Frame):
             menuItem.Check(value not in self.flip)
         else:
             vidmenu = self.videoWindow.contextMenu
-            menu = vidmenu.FindItemById(vidmenu.FindItem(_('Flip'))).GetSubMenu()
+            menu = vidmenu.FindItemById(vidmenu.FindItem(_('&Flip'))).GetSubMenu()
             menuItem = menu.FindItemById(id)
             if menuItem is None:
                 print>>sys.stderr, _('Error'), 'OnMenuVideoFlip(): cannot find menu item by id'
@@ -7329,7 +7368,7 @@ class MainFrame(wxp.Frame):
         if True:#wx.VERSION > (2, 8):
             vidmenus = [self.videoWindow.contextMenu, self.GetMenuBar().GetMenu(2)]
             for vidmenu in vidmenus:
-                menu = vidmenu.FindItemById(vidmenu.FindItem(_('YUV -> RGB'))).GetSubMenu()
+                menu = vidmenu.FindItemById(vidmenu.FindItem(_('&YUV -> RGB'))).GetSubMenu()
                 menuItem = menu.FindItemById(id)
                 if menuItem:
                     label = menuItem.GetLabel()                    
@@ -7351,7 +7390,7 @@ class MainFrame(wxp.Frame):
                 menuItem.Check(not getattr(self, value))
         else:
             vidmenu = self.videoWindow.contextMenu
-            menu = vidmenu.FindItemById(vidmenu.FindItem(_('YUV -> RGB'))).GetSubMenu()
+            menu = vidmenu.FindItemById(vidmenu.FindItem(_('&YUV -> RGB'))).GetSubMenu()
             menuItem = menu.FindItemById(id)
             if menuItem is None:
                 print>>sys.stderr, _('Error'), 'OnMenuVideoYUV2RGB(): cannot find menu item by id'
@@ -7957,7 +7996,7 @@ class MainFrame(wxp.Frame):
                 frame = -2
         if frame == -1:
             frame = self.currentScript.AVI.Framecount - 1
-        if frame < 0 or frame >= self.currentScript.AVI.Framecount:
+        if frame < 0 or (self.currentScript.AVI and frame >= self.currentScript.AVI.Framecount):
             wx.Bell()
             return
         if not self.separatevideowindow:
@@ -8137,6 +8176,8 @@ class MainFrame(wxp.Frame):
     def OnNotebookPageChanged(self, event):
         # Get the newly selected script
         script = self.scriptNotebook.GetPage(event.GetSelection())
+        if not script.previewtxt:
+            script.Colourise(0, script.GetTextLength())
         # Set some related key variables (affects other functions)
         self.currentScript = script
         self.refreshAVI = True
@@ -8397,11 +8438,11 @@ class MainFrame(wxp.Frame):
         #~ elif key == wx.WXK_END:
             #~ if self.trimDialog.IsShown():
                 #~ self.SetSelectionEndPoint(2)
-        elif key >= wx.WXK_NUMPAD1 and key <= wx.WXK_NUMPAD9:
-            i = key - wx.WXK_NUMPAD1
+        elif key >= wx.WXK_NUMPAD0 and key <= wx.WXK_NUMPAD9:
+            i = (key - wx.WXK_NUMPAD1 + 10) % 10
             self.SelectTab(index=i)
-        elif key >= ord('1') and key <= ord('9'):
-            i = key - ord('1')
+        elif key >= ord('0') and key <= ord('9'):
+            i = (key - ord('1') + 10) % 10
             self.SelectTab(index=i)
         else:
             event.Skip()
@@ -8513,7 +8554,7 @@ class MainFrame(wxp.Frame):
             videoWindow.oldOrigin = videoWindow.GetViewStart()
         event.Skip()
 
-    def OnMouseMotionVideoWindow(self, event):
+    def OnMouseMotionVideoWindow(self, event=None):
         if self.cropDialog.IsShown() and event.LeftIsDown():
             script = self.currentScript
             w = script.AVI.Width
@@ -8558,7 +8599,7 @@ class MainFrame(wxp.Frame):
                 self.OnCropDialogSpinTextChange()
         else:
             videoWindow = self.videoWindow
-            if event.Dragging() and event.LeftIsDown() and videoWindow.HasCapture():
+            if event and event.Dragging() and event.LeftIsDown() and videoWindow.HasCapture():
                 newPoint = event.GetPosition()
                 if videoWindow.GetRect().Inside(newPoint):
                     newOriginX = videoWindow.oldOrigin[0] - (newPoint[0] - videoWindow.oldPoint[0])
@@ -8600,7 +8641,10 @@ class MainFrame(wxp.Frame):
                         #~ zoomfactor = wOld / float(w)
                     if zoomfactor != 1:
                         dc.SetUserScale(zoomfactor, zoomfactor)
-                    xpos, ypos = event.GetPosition()
+                    if event:
+                        xpos, ypos = event.GetPosition()
+                    else:
+                        xpos, ypos = videoWindow.ScreenToClient(wx.GetMousePosition())
                     x = dc.DeviceToLogicalX(xpos)
                     y = dc.DeviceToLogicalY(ypos)
                     #~ x, y = min(max(x,0),w-1), min(max(y,0),h-1)
@@ -9078,7 +9122,7 @@ class MainFrame(wxp.Frame):
         id = event.GetId()
         vidmenus = [self.videoWindow.contextMenu, self.GetMenuBar().GetMenu(2)]
         for vidmenu in vidmenus:
-            menu = vidmenu.FindItemById(vidmenu.FindItem(_('Zoom'))).GetSubMenu()
+            menu = vidmenu.FindItemById(vidmenu.FindItem(_('&Zoom'))).GetSubMenu()
             menuItem = menu.FindItemById(id)
             if menuItem:
                 label = menuItem.GetLabel()
@@ -9167,7 +9211,7 @@ class MainFrame(wxp.Frame):
         self.options['scraptext'] = (scrapCtrl.GetText(), scrapCtrl.GetAnchor(), scrapCtrl.GetCurrentPos())
         # Save the zoom factor
         vidmenu = self.videoWindow.contextMenu
-        menu = vidmenu.FindItemById(vidmenu.FindItem(_('Zoom'))).GetSubMenu()
+        menu = vidmenu.FindItemById(vidmenu.FindItem(_('&Zoom'))).GetSubMenu()
         for i, menuItem in enumerate(menu.GetMenuItems()):
             if menuItem.IsChecked():
                 self.options['zoomindex'] = i
@@ -9871,14 +9915,26 @@ class MainFrame(wxp.Frame):
             #~ filefilter = _('Image files (%(extlist1)s)|*%(extlist2)s') %  locals()
             filefilter = '|'.join(filefilterList)
             defaultdir = self.options['imagesavedir']
-            dlg = wx.FileDialog(self,_('Save current frame'), defaultdir, str(self.currentframenum),
+            if self.options['imagenameformat'].startswith('%s'):
+                if not index:
+                    index = self.scriptNotebook.GetSelection()
+                defaultname = os.path.splitext(self.scriptNotebook.GetPageText(index))[0]
+                defaultname = self.options['imagenameformat'] % (defaultname, self.currentframenum)
+            else:
+                defaultname = self.options['imagenameformat'] % self.currentframenum
+            dlg = wx.FileDialog(self,_('Save current frame'), defaultdir, defaultname,
                 filefilter,wx.SAVE | wx.OVERWRITE_PROMPT,(0,0))
             dlg.SetFilterIndex(min(self.options['imagechoice'], maxFilterIndex))
             ID = dlg.ShowModal()
             if ID == wx.ID_OK:
                 filename = dlg.GetPath()
+                prifix = os.path.splitext(os.path.basename(filename))[0]
                 self.options['imagechoice'] = dlg.GetFilterIndex()
                 self.options['imagesavedir'] = os.path.dirname(filename)
+                if prifix.isdigit():
+                    self.options['imagenameformat'] = '%d'
+                else:
+                    self.options['imagenameformat'] = '%s%06d'
             dlg.Destroy()
         if filename:
             script, index = self.getScriptAtIndex(index)
@@ -10479,8 +10535,15 @@ class MainFrame(wxp.Frame):
             line = script.LineFromPosition(pos)
             col = script.GetColumn(pos)
         line += 1
-        self.SetStatusWidths([-1, 0])
-        self.SetStatusText(' '+_('Line: %(line)i  Col: %(col)i') % locals())
+        text = _('Line: %(line)i  Col: %(col)i') % locals()
+        statusBar = self.GetStatusBar()
+        width = min(statusBar.GetClientSize()[0] - statusBar.GetTextExtent(text)[0] - 6,
+                    statusBar.GetTextExtent(text)[0] + 40)
+        width = max(0, width)
+        statusBar.SetStatusWidths([-1, width])
+        statusBar.SetStatusText(text, 1)
+        #~ self.SetStatusWidths([-1, 0])
+        #~ self.SetStatusText(' '+_('Line: %(line)i  Col: %(col)i') % locals())
 
     def SetVideoStatusText(self, frame=None, primary=True, addon=''):
         if self.cropDialog.IsShown():
@@ -10727,6 +10790,10 @@ class MainFrame(wxp.Frame):
             self.Freeze()
             self.scriptNotebook.SetSelection(index)
             self.Thaw()
+        if self.previewWindowVisible:
+            if self.FindFocus() == self.currentScript:
+                self.IdleCall.append((self.SetScriptStatusText, tuple(), {}))
+            self.IdleCall.append((self.OnMouseMotionVideoWindow, tuple(), {}))
         return True
 
     def ShowFunctionDefinitionDialog(self, functionName=None):
@@ -11112,7 +11179,9 @@ class MainFrame(wxp.Frame):
         else:
             if focus:
                 self.videoWindow.SetFocus()
-                self.SetVideoStatusText(framenum)
+                #~ self.SetVideoStatusText(framenum)
+                # Update pixel info if cursor in preiew windows
+                self.IdleCall.append((self.OnMouseMotionVideoWindow, tuple(), {}))
             else:
                 primary = False
                 if self.FindFocus() == self.videoWindow:
@@ -13439,8 +13508,8 @@ class MainFrame(wxp.Frame):
             dlg.controls = []
             entrySizer = wx.BoxSizer(wx.VERTICAL)
             for eachMessage, eachDefault in zip(message, default):
-                staticText = wx.StaticText(dlg, wx.ID_ANY, str(eachMessage))
-                textCtrl = wx.TextCtrl(dlg, wx.ID_ANY, str(eachDefault), size=(400,-1))
+                staticText = wx.StaticText(dlg, wx.ID_ANY, eachMessage)
+                textCtrl = wx.TextCtrl(dlg, wx.ID_ANY, eachDefault, size=(400,-1))
                 entrySizer.Add(staticText, 0, wx.ALL, 2)
                 entrySizer.Add(textCtrl, 1, wx.EXPAND|wx.BOTTOM, 10)
                 dlg.controls.append(textCtrl)
@@ -13738,7 +13807,10 @@ class MainFrame(wxp.Frame):
                     if not str(e).startswith("'return' outside function"):
                         raise
                 # Wrap the macro in a function (allows top-level variables to be treated "globally" within the function)
-                lineList = ['def AvsP_macro_main():'] + ['\t%s' % line for line in macroLines] + ['global last\nlast = AvsP_macro_main()']
+                lineList = []
+                while macroLines and macroLines[0].lstrip().startswith('#'):
+                    lineList.append(macroLines.pop(0))
+                lineList += ['def AvsP_macro_main():'] + ['\t%s' % line for line in macroLines] + ['global last\nlast = AvsP_macro_main()']
                 macrotxt = '\n'.join(lineList)
                 #~ macrotxt = '\n'.join(macroLines)
                 # Execute the macro

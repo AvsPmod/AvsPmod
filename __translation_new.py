@@ -1,4 +1,4 @@
-new_translation_string=r'''version = "2.2.0"
+new_translation_string=r'''version = "2.2.1"
 
 messages = {
     "Find" : u"",
@@ -123,7 +123,7 @@ messages = {
     "fps" : u"",
     "Frame" : u"",
     "A crash detected at the last running!" : u"",
-    "Zoom" : u"",
+    "&Zoom" : u"",
     "Translation file updated with new messages to translate." : u"",
     "Translation file update failed" : u"",
     "Paths" : u"",
@@ -480,7 +480,6 @@ messages = {
     "Set selection startpoint" : u"",
     "Set a selection endpoint (shows the trim editor if not visible)" : u"",
     "Set selection endpoint" : u"",
-    "&Zoom" : u"",
     "Zoom video preview to 25%" : u"",
     "Zoom video preview to 50%" : u"",
     "Zoom video preview to 100% (normal)" : u"",
@@ -549,8 +548,8 @@ messages = {
     "Open the avisynth help html" : u"",
     "Open Avisynth plugins folder" : u"",
     "Open the avisynth plugins folder" : u"",
-    "&About AvsPmod" : u"",
     "About this program" : u"",
+    "About AvsPmod" : u"",
     "Previous frame" : u"",
     "Next frame" : u"",
     "Run the script with an external program" : u"",
@@ -598,8 +597,6 @@ messages = {
     "Time **" : u"",
     "" : u"",
     "Cannot use crop editor unless zoom set to 100% and non-flipped!" : u"",
-    "Flip" : u"",
-    "YUV -> RGB" : u"",
     "Frame size:" : u"",
     "Length:" : u"",
     "Frame rate:" : u"",
@@ -664,7 +661,6 @@ messages = {
     "Associating .avs files will write to the windows registry." : u"",
     "Do you wish to continue?" : u"",
     "Could not find the Avisynth plugins folder!" : u"",
-    "About AvsPmod" : u"",
     "AvsPmod version %(version)s " : u"",
     "An AviSynth script editor" : u"",
     "AvsP Website" : u"",
