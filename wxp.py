@@ -61,7 +61,7 @@ keyStringList = [
     '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
     'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12',
     'Enter', 'Space', 'Escape', 'Tab', 'Insert', 'Backspace', 'Delete', 
-    'Home', 'End', 'PgUp', 'PgDn', 'Up', 'Down', 'Left', 'Right',
+    'Home', 'End', 'PgUp', 'PgDn', 'Up', 'Down', 'Left', 'Right', 'NumLock',
     'Numpad 0', 'Numpad 1', 'Numpad 2', 'Numpad 3', 'Numpad 4', 'Numpad 5', 'Numpad 6', 'Numpad 7', 'Numpad 8', 'Numpad 9',
     'Numpad +', 'Numpad -', 'Numpad *', 'Numpad /', 'Numpad .', 'Numpad Enter',
     '`', '-', '=', '\\', '[', ']', ';', "'", ',', '.', '/',
@@ -69,6 +69,7 @@ keyStringList = [
 ]
 
 numpadDict = {
+    'NumLock' : wx.WXK_NUMLOCK,
     'Numpad 0': wx.WXK_NUMPAD0, 
     'Numpad 1': wx.WXK_NUMPAD1, 
     'Numpad 2': wx.WXK_NUMPAD2, 
@@ -385,6 +386,8 @@ class Frame(wx.Frame):
             elif attr == wx.ITEM_NORMAL:
                 kind = attr
                 id = wx.ID_ANY
+            elif type(attr) is tuple:
+                kind, state, id = attr
             else:
                 kind = wx.ITEM_NORMAL
                 id = attr
@@ -397,10 +400,7 @@ class Frame(wx.Frame):
             except ValueError:
                 pass
             if shortcut != '' and shortcut not in [item[1] for item in shortcutList]:
-                if True:#wx.VERSION > (2, 8):
-                    shortcutString = u'\t%s\u00a0' % GetTranslatedShortcut(shortcut)
-                else:
-                    shortcutString = '\t%s ' % GetTranslatedShortcut(shortcut)
+                shortcutString = u'\t%s\u00a0' % GetTranslatedShortcut(shortcut)
             else:
                 shortcutString = ''
             # Append the menu item
@@ -525,14 +525,11 @@ class OptionsDialog(wx.Dialog):
         self.optionsOriginal = options
         # Create the options tabs
         self.controls = {}
+        self.starList = []
         nb = self.nb = wx.Notebook(self, wx.ID_ANY, style=wx.NO_BORDER)
         for tabInfo in dlgInfo:
             tabPanel = wx.Panel(nb, wx.ID_ANY)
-            nb.AddPage(tabPanel, tabInfo[0], select=True)
-            def OnNotebookPageChanged(event):
-                event.GetEventObject().GetCurrentPage().SetFocus()
-                event.Skip()
-            self.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, OnNotebookPageChanged)
+            nb.AddPage(tabPanel, tabInfo[0], select=True)            
             tabSizer = wx.BoxSizer(wx.VERTICAL)
             boolStar = False
             for label, flag, key, tip, misc in tabInfo[1:]:
@@ -654,8 +651,9 @@ class OptionsDialog(wx.Dialog):
                 tabSizer.Add(itemSizer, 0, wx.EXPAND|wx.ALL, 5)
                 self.controls[key] = (ctrl, flag, nb.GetSelection())
             if boolStar:
-                tabSizer.Add((0,0),1)
-                tabSizer.Add(wx.StaticText(tabPanel, wx.ID_ANY, '    '+_('* Requires program restart for full effect')), 0, wx.TOP, 20)
+                self.starList.append(tabPanel)
+                #~ tabSizer.Add((0,0),1)
+                #~ tabSizer.Add(wx.StaticText(tabPanel, wx.ID_ANY, '    '+_('* Requires program restart for full effect')), 0, wx.TOP, 20)
             tabSizerBorder = wx.BoxSizer()
             tabSizerBorder.Add(tabSizer, 1, wx.EXPAND|wx.ALL, 5)
             tabPanel.SetSizer(tabSizerBorder)
@@ -669,6 +667,8 @@ class OptionsDialog(wx.Dialog):
         self.Bind(wx.EVT_BUTTON, self.OnButtonOK, okay)
         cancel = wx.Button(self, wx.ID_CANCEL, _('Cancel'))
         btns = wx.StdDialogButtonSizer()
+        self.starText = wx.StaticText(self, wx.ID_ANY, _('* Requires program restart for full effect'))
+        btns.Add(self.starText)
         btns.AddButton(okay)
         btns.AddButton(cancel)
         btns.Realize()
@@ -681,6 +681,16 @@ class OptionsDialog(wx.Dialog):
         self.sizer = dlgSizer
         # Misc
         okay.SetDefault()
+        if self.nb.GetPage(0) not in self.starList:
+            self.starText.Hide()
+        self.nb.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.OnNotebookPageChanged)
+        
+    def OnNotebookPageChanged(self, event):
+        if self.nb.GetPage(event.GetSelection()) in self.starList:
+            self.starText.Show()
+        else:
+            self.starText.Hide()
+        event.Skip()
         
     def OnButtonOK(self, event):
         if self.UpdateDict():
@@ -799,7 +809,7 @@ class ShortcutsDialog(wx.Dialog):
         else:
             advanced = None
         # Define the shortcut editing modal dialog (used later)
-        self.dlgEdit = self.defineShortcutEditDialog()
+        #~ self.dlgEdit = self.defineShortcutEditDialog()
         # Define the virtual list control
         class VListCtrl(ListCtrl):                
             def OnGetItemText(self, item, column):
@@ -830,9 +840,9 @@ class ShortcutsDialog(wx.Dialog):
         self.listCtrl = listCtrl
         # Standard buttons
         okay  = wx.Button(self, wx.ID_OK, _('OK'))
-        self.Bind(wx.EVT_BUTTON, self.OnButtonClick, okay)
+        #~ self.Bind(wx.EVT_BUTTON, self.OnButtonClick, okay)
         cancel = wx.Button(self, wx.ID_CANCEL, _('Cancel'))
-        self.Bind(wx.EVT_BUTTON, self.OnButtonClick, cancel)
+        #~ self.Bind(wx.EVT_BUTTON, self.OnButtonClick, cancel)
         btns = wx.StdDialogButtonSizer()
         if advanced:
             btns.Add(advanced)
@@ -853,8 +863,6 @@ class ShortcutsDialog(wx.Dialog):
         self.sizer = dlgSizer
         # Misc
         #okay.SetDefault()
-        # explictly destroy self.dlgEdit as self.OnButtonOK does
-        self.Bind(wx.EVT_CLOSE, self.OnButtonClick)
         
     def OnAdvancedButton(self, event):
         dlg = wx.Dialog(self, wx.ID_ANY, _('Advanced'), style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
@@ -920,7 +928,7 @@ class ShortcutsDialog(wx.Dialog):
         sizer.Add(dlg.listBoxKey, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 15)
         # Standard buttons
         okay  = wx.Button(dlg, wx.ID_OK, _('OK'))
-        dlg.Bind(wx.EVT_BUTTON, self.OnEditButtonOK, okay)
+        #~ dlg.Bind(wx.EVT_BUTTON, self.OnEditButtonOK, okay)
         clear = wx.Button(dlg, wx.ID_NO, _('Clear'))
         dlg.Bind(wx.EVT_BUTTON, self.OnEditButtonClear, clear)
         cancel = wx.Button(dlg, wx.ID_CANCEL, _('Cancel'))
@@ -941,7 +949,7 @@ class ShortcutsDialog(wx.Dialog):
         return dlg
         
     def OnListCtrlActivated(self, event):
-        dlg = self.dlgEdit
+        dlg = self.defineShortcutEditDialog()
         index = event.GetIndex()
         dlg.listIndex = index
         label, shortcut, id = self.shortcutList[index]
@@ -977,21 +985,20 @@ class ShortcutsDialog(wx.Dialog):
         ID = dlg.ShowModal()
         # Set the data
         if ID == wx.ID_OK:
-            pass
+            self.OnEditButtonOK(dlg)
             #~ self.options = dlg.GetDict()
-        #~ dlg.Destroy()
+        dlg.Destroy()
         
-    def OnEditButtonOK(self, event):
+    def OnEditButtonOK(self, dlg):
         # Get the values from the dialog
-        dlg = self.dlgEdit
         boolCtrl = dlg.checkBoxCtrl.GetValue()
         boolAlt = dlg.checkBoxAlt.GetValue()
         boolShift = dlg.checkBoxShift.GetValue()
         keyString = dlg.listBoxKey.GetStringSelection()
         # Check basic invalid cases
-        if keyString == '':
-            wx.MessageBox(_('You must specify a key!'), _('Error'), style=wx.ICON_ERROR)
-            return
+        #~ if keyString == '':
+            #~ wx.MessageBox(_('You must specify a key!'), _('Error'), style=wx.ICON_ERROR)
+            #~ return
         #~ if (len(keyString) == 1 or keyString in ('Home', 'End', 'PgUp', 'PgDn', 'Up', 'Down', 'Left', 'Right')) and (not boolCtrl and not boolAlt and not boolShift):
         #~ if (len(keyString) == 1) and (not boolCtrl and not boolAlt and not boolShift):
             #~ wx.MessageBox(_('You must check at least one modifier!'), _('Error'), style=wx.ICON_ERROR)
@@ -1004,54 +1011,52 @@ class ShortcutsDialog(wx.Dialog):
             shortcut += 'Alt+'
         if boolShift:
             shortcut += 'Shift+'
-        shortcut += keyString
-        # Check if keyboard shortcut already exists
-        oldShortcut = self.shortcutList[dlg.listIndex][1]
-        shortcutUpper = shortcut.upper()
-        if shortcutUpper != oldShortcut.upper():
-            #~ if shortcutUpper in [info[1].upper() for info in self.shortcutList]:
-            for info in self.shortcutList:
-                if shortcutUpper == info[1].upper():
-                    line1 = _('This shortcut is being used by:')
-                    line2 = info[0]
-                    line3 = _('Do you wish to continue?')
-                    ret = wx.MessageBox('%s\n\n%s\n\n%s' % (line1, line2 , line3), _('Warning'),
-                                        wx.OK|wx.CANCEL|wx.ICON_EXCLAMATION, dlg)
-                    if ret == wx.OK:
-                        info[1] = ''
-                        #~ self.updateMenuLabel(info[2], '')
-                    else:
-                        return
-                    break
-            self.shortcutList[dlg.listIndex][1] = shortcut
-            #~ self.updateMenuLabel(self.shortcutList[dlg.listIndex][2], shortcut)
-            self.listCtrl.Refresh()
-        event.Skip()
+        if keyString:
+            shortcut += keyString
+            # Check if keyboard shortcut already exists
+            oldShortcut = self.shortcutList[dlg.listIndex][1]
+            shortcutUpper = shortcut.upper()
+            if shortcutUpper != oldShortcut.upper():
+                #~ if shortcutUpper in [info[1].upper() for info in self.shortcutList]:
+                for info in self.shortcutList:
+                    if shortcutUpper == info[1].upper():
+                        line1 = _('This shortcut is being used by:')
+                        line2 = info[0]
+                        line3 = _('Do you wish to continue?')
+                        ret = wx.MessageBox('%s\n\n%s\n\n%s' % (line1, line2 , line3), _('Warning'),
+                                            wx.OK|wx.CANCEL|wx.ICON_EXCLAMATION, dlg)
+                        if ret == wx.OK:
+                            info[1] = ''
+                            #~ self.updateMenuLabel(info[2], '')
+                        else:
+                            return
+                        break
+        self.shortcutList[dlg.listIndex][1] = shortcut
+        #~ self.updateMenuLabel(self.shortcutList[dlg.listIndex][2], shortcut)
+        self.listCtrl.Refresh()
+        #~ event.Skip()
         
     def OnEditButtonClear(self, event):
-        dlg = self.dlgEdit
-        msgDlg = wx.MessageDialog(self, _('Are you sure you want to clear this shortcut?'), _('Warning'))
-        ID = msgDlg.ShowModal()
-        msgDlg.Destroy()
-        if ID == wx.ID_OK:
-            self.shortcutList[dlg.listIndex][1] = ''
-            dlg.EndModal(wx.ID_NO)
-            self.listCtrl.Refresh()
-        else:
-            dlg.EndModal(wx.ID_CANCEL)
+        dlg = event.GetEventObject().GetParent()
+        dlg.checkBoxCtrl.SetValue(False)
+        dlg.checkBoxAlt.SetValue(False)
+        dlg.checkBoxShift.SetValue(False)
+        dlg.listBoxKey.SetSelection(wx.NOT_FOUND)
+        #~ msgDlg = wx.MessageDialog(self, _('Are you sure you want to clear this shortcut?'), _('Warning'))
+        #~ ID = msgDlg.ShowModal()
+        #~ msgDlg.Destroy()
+        #~ if ID == wx.ID_OK:
+            #~ self.shortcutList[dlg.listIndex][1] = ''
+            #~ dlg.EndModal(wx.ID_NO)
+            #~ self.listCtrl.Refresh()
+        #~ else:
+            #~ dlg.EndModal(wx.ID_CANCEL)
         
     def _x_updateMenuLabel(self, id, shortcut):
         menuItem = self.parent.GetMenuBar().FindItemById(id)
         label = menuItem.GetLabel()
         newLabel = '%s\t%s' % (label, shortcut)
         menuItem.SetText(newLabel)
-        
-    def OnButtonClick(self, event):
-        self.dlgEdit.Destroy()
-        if event.GetEventType() == wx.wxEVT_CLOSE_WINDOW:
-            self.EndModal(wx.ID_CANCEL)
-        else:
-            event.Skip()
         
 class EditStringDictDialog(wx.Dialog):
     def __init__(self, parent, infoDict, title='Edit', keyTitle='Key', valueTitle='Value', editable=False, insertable=False, about='', keyChecker=None, valueChecker=None):
@@ -1257,7 +1262,8 @@ class Slider(wx.Slider):
                 mod = None
             else:
                 #~ minValue = minValue + minValue % mod
-                maxValue = maxValue - (maxValue - minValue) % mod
+                if type(mod) is int:
+                    maxValue = maxValue - (maxValue - minValue) % mod
                 if mod > maxValue - minValue:
                     mod = None
                 else:

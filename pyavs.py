@@ -27,7 +27,6 @@
 import ctypes
 import sys
 import os
-import wx
 
 import avisynth
 
@@ -295,8 +294,8 @@ class AvsClip:
                 self.Width, self.Height = fitWidth, fitHeight
         avisynth.CreateBitmapInfoHeader(self.clip,self.bmih)
         self.pInfo=ctypes.pointer(self.bmih)
-        self.BUF=ctypes.c_ubyte*self.bmih.biSizeImage
-        self.pBits=self.BUF()
+        #~ self.BUF=ctypes.c_ubyte*self.bmih.biSizeImage
+        #~ self.pBits=self.BUF()
         # Initialization complete.
         self.initialized = True
         if __debug__:
@@ -313,21 +312,23 @@ class AvsClip:
         if self.initialized:
             if self.current_frame == frame:
                 return True
-            if(frame<0):
+            if frame < 0:
                 frame = 0
-            if(frame>=self.Framecount):
+            if frame >= self.Framecount:
                 frame = self.Framecount-1
             self.current_frame = frame
             src=self.clip.GetFrame(frame)
+            self.pBits = src.GetReadPtr()
             #~ try:
                 #~ src=self.clip.GetFrame(frame)
             #~ except WindowsError:
                 #~ return False
             src_pitch=src.GetPitch()
-            row_size=src.GetRowSize()
-            height=self.bmih.biHeight
-            dst_pitch=self.bmih.biWidth*self.bmih.biBitCount/8
-            self.env.BitBlt(self.pBits,dst_pitch,src.GetReadPtr(),src_pitch,row_size,height)
+            self.bmih.biWidth = src_pitch*8/self.bmih.biBitCount
+            #~ row_size=src.GetRowSize()
+            #~ height=self.bmih.biHeight
+            #~ dst_pitch=self.bmih.biWidth*self.bmih.biBitCount/8
+            #~ self.env.BitBlt(self.pBits,dst_pitch,src.GetReadPtr(),src_pitch,row_size,height)
             if self.clipRaw is not None:
                 frame=self.clipRaw.GetFrame(frame)
                 self.pitch = frame.GetPitch()
@@ -348,7 +349,7 @@ class AvsClip:
                 h = self.Height
             else:
                 w, h = size 
-            DrawDibDraw(handleDib[0], hdc, offset[0], offset[1], w, h, self.pInfo, self.pBits, 0, 0, -1, -1, 0)
+            DrawDibDraw(handleDib[0], hdc, offset[0], offset[1], w, h, self.pInfo, self.pBits, 0, 0, w, h, 0)
         
     def GetPixelYUV(self, x, y):
         if self.clipRaw is not None:
@@ -425,9 +426,9 @@ class AvsClip:
         # Get the frame to display
         if frame == None:
             if self.pInfo == None or self.pBits == None:
-                self.clip._GetFrame(0)
+                self._GetFrame(0)
         else:
-            self.clip._GetFrame(frame)
+            self._GetFrame(frame)
         if isinstance(filename, unicode):
             filename = filename.encode(sys.getfilesystemencoding())
         buffer = ctypes.create_string_buffer(filename)
@@ -444,11 +445,15 @@ class AvsClip:
         # Write the bitmap file header
         fileheadersize = 14
         bmpheadersize = 40
-        extrabytes = (4 - self.bmih.biWidth % 4) % 4
-        widthPadded = self.bmih.biWidth + extrabytes
-        bitmapsize = (widthPadded * self.bmih.biHeight * self.bmih.biBitCount) / 8
+        #~ extrabytes = (4 - self.bmih.biWidth % 4) % 4
+        #~ widthPadded = self.bmih.biWidth + extrabytes
+        #~ bitmapsize = (widthPadded * self.bmih.biHeight * self.bmih.biBitCount) / 8
+        widthPadded = self.bmih.biWidth
+        self.bmih.biWidth = self.Width
+        src_pitch = widthPadded * self.bmih.biBitCount / 8
+        dst_pitch = self.bmih.biWidth * self.bmih.biBitCount / 8
         bfType = WORD(0x4d42)
-        bfSize = DWORD(fileheadersize + bmpheadersize + bitmapsize)
+        bfSize = DWORD(fileheadersize + bmpheadersize + self.bmih.biSizeImage)
         bfReserved1 = WORD(0)
         bfReserved2 = WORD(0)
         bfOffBits = DWORD(fileheadersize + bmpheadersize)
@@ -497,14 +502,16 @@ class AvsClip:
                 NULL
                 )
         # Write the bitmap bits
-        WriteFile(
-                hFile,
-                self.pBits,
-                bitmapsize,
-                ctypes.byref(dwBytesWritten),
-                NULL
-                )
+        for i in range(self.bmih.biHeight):
+            WriteFile(
+                    hFile,
+                    avisynth.ByRefAt(self.pBits, src_pitch*i),
+                    dst_pitch,
+                    ctypes.byref(dwBytesWritten),
+                    NULL
+                    )
         CloseHandle(hFile)
+        self.bmih.biWidth = widthPadded
         
 if __name__ == '__main__':
     AVI = AvsClip('Version().ConvertToYV12()', 'example.avs')
@@ -559,7 +566,7 @@ if __name__ == '__main__':
     AVI._GetFrame(100)
     AVI = None
     env.Release()
-    #~ env = None
+    env = None
     
     print "Exit program."
 

@@ -9,6 +9,10 @@ class CompressVideoDialog(wx.Dialog):
     def __init__(self, parent, inputname='', framecount=None, framerate=None):
         wx.Dialog.__init__(self, parent, wx.ID_ANY, _('Encode video'))
         self.inputname = inputname
+        if not inputname:
+            index = parent.scriptNotebook.GetSelection()
+            self.outputname = parent.scriptNotebook.GetPageText(index).lstrip('* ')
+            self.inputname = parent.MakePreviewScriptFile(parent.currentScript)
         self.framecount = framecount
         self.framerate = framerate
         self.windowTextColor = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT)
@@ -321,6 +325,10 @@ class CompressVideoDialog(wx.Dialog):
         ctrls['audio_format'].SetStringSelection(default_audio_format)
 
     def SetOutputNameText(self, inputname, ext):
+        if hasattr(self, 'outputname'):
+            dirname = os.path.dirname(inputname)
+            inputname = os.path.join(dirname, self.outputname)
+            del self.outputname
         if inputname != '':
             root = os.path.splitext(inputname)[0]
             outputname = '%s%s' % (root, ext)
@@ -1085,14 +1093,16 @@ class BitrateCalcDialog(wx.Dialog):
 
 def avsp_run():
     # Ensure the script is ready
-    if not avsp.IsScriptSaved():
-        avsp.MsgBox(_('You must save changes before running this tool!'), _('Error'))
-        return
+    #~ if not avsp.IsScriptSaved():
+        #~ avsp.MsgBox(_('You must save changes before running this tool!'), _('Error'))
+        #~ return
     if not avsp.UpdateVideo():
         avsp.MsgBox(_('The current Avisynth script contains errors.'), _('Error'))
         return
     # Show the dialog
     inputname = avsp.GetScriptFilename()
+    if inputname and not avsp.IsScriptSaved():
+        avsp.SaveScript()
     framecount = avsp.GetVideoFramecount()
     framerate = avsp.GetVideoFramerate()
     dlg = CompressVideoDialog(avsp.GetWindow(), inputname, framecount, framerate)

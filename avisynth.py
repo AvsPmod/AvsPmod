@@ -1,12 +1,7 @@
 import ctypes
 import sys
 
-try:
-    avidll = ctypes.windll.avisynth
-except WindowsError, err:
-    message = "%sLoad avisynth.dll failed!\nTry install or re-install Avisynth firstly." % err
-    ctypes.windll.user32.MessageBoxA(None, message, 'Windows Error', 0x10L)
-    raise
+avidll = ctypes.windll.avisynth
     
 #constants
 PLANAR_Y=1<<0
@@ -201,19 +196,19 @@ class PVideoInfo:
     def IsBFF(self): return self.image_type&IT_BFF!=0
     def IsTFF(self): return self.image_type&IT_TFF!=0
     def BitsPerPixel(self):
-        if self.pixel_type==CS_BGR24:return 24
-        elif self.pixel_type==CS_BGR32:return 32
-        elif self.pixel_type==CS_YUY2:return 16
-        elif self.pixel_type==CS_YV12 or self.pixel_type==CS_I420:return 12
+        if self.IsRGB24():return 24
+        elif self.IsRGB32():return 32
+        elif self.IsYUY2():return 16
+        elif self.IsYV12():return 12
         else :return 0
     def BytesFromPixels(self,pixels):return pixels*(self.BitsPerPixel()>>3)
     def RowSize(self): return self.BytesFromPixels(self.width)
     def BMPSize(self):
-        if IsPlanar(self):
+        if self.IsPlanar():
             p = self.height * ((self.RowSize()+3) & ~3)
             p+=p>>1
             return p
-        return self.height * ((Self.RowSize()+3) & ~3)
+        return self.height * ((self.RowSize()+3) & ~3)
     def SamplesPerSecond(self):return self.audio_samples_per_second
     def BytesPerChannel(self):
         if self.sample_type==SAMPLE_INT8:return ctypes.sizeof(ctypes.c_char)
@@ -329,7 +324,7 @@ class PVideoFrame:
             else: return self.p.contents.row_size  
         return self.p.contents.pitch
     def GetHeight(self,plane=PLANAR_Y):
-        if self.p.contents.pitchUV!=0 and (plane==PLANAR_U or PLANAR_V):
+        if self.p.contents.pitchUV!=0 and (plane==PLANAR_U or plane==PLANAR_V):
             return self.p.contents.height/2
         return self.p.contents.height
     def GetReadPtr(self,plane=PLANAR_Y):

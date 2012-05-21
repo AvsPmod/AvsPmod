@@ -119,7 +119,7 @@ ShowVideoFrame(framenum=None, index=None, forceRefresh=False)
 This function refreshes the video preview (unhiding it if it is hidden) using the frame specified by the integer framenum, using the script of the tab located at the integer index.  The function also automatically selects the tab located at index.  If framenum is None, it uses the current frame number from the video preview slider.  If index is None, the frame of the currently selected tab is shown.  If the input forceRefresh equals True, then the script is reloaded before showing the video frame (normally the script is reloaded only when the text has changed).
 
 
-ShowVideoOffset(self, offset=0, units='frames', index=None)
+ShowVideoOffset(offset=0, units='frames', index=None)
 ===========================================================
 Similar to ShowVideoFrame(), except the user specifies an offset instead of the direct frame.  Offset can be positive or negative (for backwards jumping).  The string argument units specifies the units of the offset, and can be either 'frames', 'seconds', 'minutes', or 'hours'.
 
@@ -199,8 +199,21 @@ GetSliderInfo(index=None)
 Returns a list containing information for each slider in the script located at the tab integer index.  If index is None, then the currently selected tab is used.  The slider information consists of 4 items.  The first item is the slider text itself.  The second item is the slider label.  The third item is the list of numbers which the graphical slider represents.  The fourth item is the number of decimal places for the slider numbers as specified by the user.
 
 
-ExecuteMenuCommand(text)
+ExecuteMenuCommand(text, callafter=False)
 ========================
 Executes one of AvsP's menu commands as specified by the input text, which can either be the name of the menu command or the keyboard shortcut.  For example, you can create a new tab in a macro by using either "avsp.ExecuteMenuCommand('File -> New Tab')" or by using "avsp.ExecuteMenuCommand('Ctrl+N')".  In this manner all menu commands are available to AvsP's macro language.  The input text is not case sensitive, but must be spelled precisely in order to work (a complete list of all the commands and shortcuts with precise spelling can be found in the "Options -> Configure shortcuts..." dialog).  Returns True if successful, False otherwise.
+If callafter=True, menu command will run after the current macro has exited.
+
+IsMenuChecked(text)
+===================
+Retrieve the state of a menu item under Macros menu. The parameter 'text' has the same meaning as that one of ExecuteMenuCommand function.
 
 
+GetWindow()
+===========
+Get the handler of avsp's main window. Don't use this except you know what you are doing.
+
+
+last
+====
+This variable contains the return value of the latest excuted macro. It is useful to create reusable macros.

@@ -179,3 +179,10 @@ rectangle_icon = PyEmbeddedImage(
     "OpUK81sMwrUwGEliY65IRzg4X1VDfGnPoP1z8MlP4DvCcF8Cm5kjogPxLvfPVmCLGjROb8FR"
     "EUZicWwvEFtourbcPc2i8voAQ6ffgS3qiI9nsJMthYGgru8v5N2jekg6sQUVw/MFEmPzmDCn"
     "aeAn9f/AByV0jxHGo4HSAAAAAElFTkSuQmCC")
+    
+#----------------------------------------------------------------------
+dragdrop_cursor = PyEmbeddedImage(
+    "iVBORw0KGgoAAAANSUhEUgAAAA4AAAAYCAYAAADKx8xXAAAAhElEQVR42q3TgQ6AIAgE0OP/"
+    "P9qspcM8hNtya6z0jSAyAK1fBnHZC6HiB/YFM5PwhM+NgBeo4A1WMYUVHMIMH+EJpzDCWY0s"
+    "0Q7vw9VvyianNBBsViX43UxxVIMEZ60++g4v+155NA76bvvIMi7PyNs1mhHJXzHOZRnDxv2a"
+    "EaUYdTWLF10UqgXtrhCoAAAAAElFTkSuQmCC")

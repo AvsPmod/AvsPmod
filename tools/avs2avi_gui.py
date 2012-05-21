@@ -43,6 +43,10 @@ class Avs2aviDialog(wx.Dialog):
         line4 = _('FPS: %(fps).1f fps')
         line5 = _('Time left: %(hr)02i:%(min)02i:%(sec)02i')
         self.progressinfo = '%s\n%s\n%s\n%s\n%s' % (line1, line2, line3, line4, line5)
+        if not inputname:
+            index = parent.scriptNotebook.GetSelection()
+            self.outputname = parent.scriptNotebook.GetPageText(index).lstrip('* ')
+            inputname = parent.MakePreviewScriptFile(parent.currentScript)
         self.CreateInterface(inputname)
         
     def CreateInterface(self, inputname):
@@ -243,6 +247,10 @@ class Avs2aviDialog(wx.Dialog):
         self.Destroy()
         
     def SetOutputNameText(self, inputname):
+        if hasattr(self, 'outputname'):
+            dirname = os.path.dirname(inputname)
+            inputname = os.path.join(dirname, self.outputname)
+            del self.outputname
         if inputname != '':
             root = os.path.splitext(inputname)[0]
             outputname = '%s.avi' % root
@@ -313,13 +321,15 @@ class Avs2aviDialog(wx.Dialog):
         
 def avsp_run():
     # Ensure the script is ready
-    if not avsp.IsScriptSaved():
-        avsp.MsgBox(_('The current script has unsaved changes, exiting.'), _('Error'))
-        return
+    #~ if not avsp.IsScriptSaved():
+        #~ avsp.MsgBox(_('The current script has unsaved changes, exiting.'), _('Error'))
+        #~ return
     if not avsp.UpdateVideo():
         avsp.MsgBox(_('The current script contains errors, exiting.'), _('Error'))
         return
     inputname = avsp.GetScriptFilename()
+    if inputname and not avsp.IsScriptSaved():
+        avsp.SaveScript()
     # Show the dialog
     dlg = Avs2aviDialog(avsp.GetWindow(), inputname, title=_('Save as AVI'))
     dlg.Show()

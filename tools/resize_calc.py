@@ -513,17 +513,21 @@ class ResizeCalculatorOptionsDialog(wx.Dialog):
                 pass
         return self.options
         
-def avsp_run():
-    if not avsp.UpdateVideo():
-        avsp.MsgBox(_('The current Avisynth script contains errors.'), _('Error'))
-        return
+def avsp_run():    
+    text = avsp.GetText().strip()
     parent = avsp.GetWindow()
-    text = avsp.GetText()
-    width = avsp.GetVideoWidth()
-    height = avsp.GetVideoHeight()
+    if text:
+        if not avsp.UpdateVideo():
+            avsp.MsgBox(_('The current Avisynth script contains errors.'), _('Error'))
+            return
+        width = avsp.GetVideoWidth()
+        height = avsp.GetVideoHeight()        
+    else:
+        width = 1280
+        height = 720
     dlg = ResizeCalculatorDialog(parent, text, width, height)
     ID = dlg.ShowModal()
-    if ID == wx.ID_OK:
+    if text and ID == wx.ID_OK:
         avsp.InsertText(dlg.GetAvisynthResize(), -2)
         avsp.ShowVideoFrame(forceRefresh=True)
     dlg.Destroy()
