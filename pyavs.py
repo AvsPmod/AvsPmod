@@ -295,9 +295,8 @@ class AvsClip:
                 self.Width, self.Height = fitWidth, fitHeight
         avisynth.CreateBitmapInfoHeader(self.clip,self.bmih)
         self.pInfo=ctypes.pointer(self.bmih)
-        #~ self.BUF=ctypes.c_ubyte*self.bmih.biSizeImage
-        #~ self.pBits=self.BUF()
-        self.pBits = None
+        self.BUF=ctypes.c_ubyte*self.bmih.biSizeImage
+        self.pBits=self.BUF()
         # Initialization complete.
         self.initialized = True
         if __debug__:
@@ -337,23 +336,15 @@ class AvsClip:
             return False
             
     def DrawFrame(self, frame, hdc=None, offset=(0,0), size=None):
-        #~ if not self._GetFrame(frame):
-            #~ return
-        #~ if hdc:
-        if self.initialized and hdc:
+        if not self._GetFrame(frame):
+            return
+        if hdc:
             if size is None:
                 w = self.Width
                 h = self.Height
             else:
-                w, h = size        
-            self.pBits = self.clip.GetFrame(frame).GetReadPtr()
+                w, h = size 
             DrawDibDraw(handleDib[0], hdc, offset[0], offset[1], w, h, self.pInfo, self.pBits, 0, 0, -1, -1, 0)
-            if self.clipRaw is not None:
-                frame=self.clipRaw.GetFrame(frame)
-                self.pitch = frame.GetPitch()
-                self.ptrY = frame.GetReadPtr(plane=avisynth.PLANAR_Y)
-                self.ptrU = frame.GetReadPtr(plane=avisynth.PLANAR_U)
-                self.ptrV = frame.GetReadPtr(plane=avisynth.PLANAR_V)
         
     def GetPixelYUV(self, x, y):
         if self.clipRaw is not None:
@@ -430,9 +421,9 @@ class AvsClip:
         # Get the frame to display
         if frame == None:
             if self.pInfo == None or self.pBits == None:
-                self.pBits = self.clip.GetFrame(0).GetReadPtr()
+                self.clip._GetFrame(0)
         else:
-            self.pBits = self.clip.GetFrame(frame).GetReadPtr()
+            self.clip._GetFrame(frame)
         if isinstance(filename, unicode):
             filename = filename.encode(sys.getfilesystemencoding())
         buffer = ctypes.create_string_buffer(filename)

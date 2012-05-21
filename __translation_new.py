@@ -1,4 +1,4 @@
-new_translation_string=r'''version = "2.0.8"
+new_translation_string=r'''version = "2.0.9.0"
 
 messages = {
     "Find" : u"",
@@ -180,6 +180,8 @@ messages = {
     "Update the video constantly when dragging the frame slider" : u"",
     "Focus the video preview upon refresh" : u"",
     "Switch focus to the video preview window when using the refresh command" : u"",
+    "Always hide the video preview window when loading a session" : u"",
+    "Don't preview when loading a session" : u"",
     "Create a temporary preview script with unsaved changes when previewing the video" : u"",
     "Preview script with unsaved changes" : u"",
     "Prompt to save a script before previewing (inactive if previewing with unsaved changes)" : u"",
@@ -248,6 +250,8 @@ messages = {
     "Minimum number of lines to show when displaying the video preview" : u"",
     "Show keyboard images in the script tabs when video has focus" : u"",
     "Use keyboard images in tabs" : u"",
+    "Show tabs in multiline style" : u"",
+    "There can be several rows of tabs" : u"",
     "Sort bookmarks ascending" : u"",
     "sort ascending" : u"",
     "Show bookmarks with timecode" : u"",
@@ -333,6 +337,10 @@ messages = {
     "Unindent the selected lines" : u"",
     "Block comment" : u"",
     "Comment or uncomment selected lines" : u"",
+    "Toggle current fold" : u"",
+    "Toggle the fold point On/OFF at the current line" : u"",
+    "Toggle all fold" : u"",
+    "Toggle all fold points On/OFF" : u"",
     "AviSynth function" : u"",
     "Autocomplete" : u"",
     "Show list of filternames matching the partial text at the cursor" : u"",
@@ -587,8 +595,9 @@ messages = {
     "AvsP Website" : u"",
     "This program is freeware under the GPL license." : u"",
     "Input a frame number or time (hr:min:sec) and hit Enter. Right-click to retrieve from history." : u"",
-    "copy line" : u"",
-    "paste line" : u"",
+    "copy as time" : u"",
+    "copy" : u"",
+    "paste" : u"",
     "clear history" : u"",
     "Cannot switch tabs while crop editor is open!" : u"",
     "Cannot switch tabs while trim editor is open!" : u"",

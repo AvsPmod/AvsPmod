@@ -77,7 +77,7 @@ except AttributeError:
 from icons import AvsP_icon, next_icon, play_icon, skip_icon
 from __translation_new import new_translation_string
 
-version = '2.0.8'
+version = '2.0.9.0'
 
 # Custom styled text control for avisynth language
 class AvsStyledTextCtrl(stc.StyledTextCtrl):
@@ -127,7 +127,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
         self.CmdKeyClear(stc.STC_KEY_TAB,0)
         self.UsePopUp(0)
         self.showLinenumbers = 1
-        self.enableFolding = 0
+        self.enableFolding = 1
         self.finddata = wx.FindReplaceData(wx.FR_DOWN)
         self.replacedata = wx.FindReplaceData(wx.FR_DOWN)
         self.calltipFilter = None
@@ -159,7 +159,18 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
         #~ self.SetMarginType(0, stc.STC_MARGIN_NUMBER)
         self.SetMarginWidth(0, self.initialMarginWidth)
         self.SetMarginWidth(1, 0)
-        self.SetMarginWidth(2, 0)
+        self.SetMarginType(2, stc.STC_MARGIN_SYMBOL)
+        self.SetMarginMask(2, stc.STC_MASK_FOLDERS)
+        self.SetMarginSensitive(2, True)        
+        self.SetMarginWidth(2, 13)
+        self.MarkerDefine(stc.STC_MARKNUM_FOLDEROPEN,    stc.STC_MARK_MINUS, "white", "black")
+        self.MarkerDefine(stc.STC_MARKNUM_FOLDER,        stc.STC_MARK_PLUS,  "white", "black")
+        self.MarkerDefine(stc.STC_MARKNUM_FOLDERSUB,     stc.STC_MARK_EMPTY, "white", "black")
+        self.MarkerDefine(stc.STC_MARKNUM_FOLDERTAIL,    stc.STC_MARK_EMPTY, "white", "black")
+        self.MarkerDefine(stc.STC_MARKNUM_FOLDEREND,     stc.STC_MARK_EMPTY, "white", "black")
+        self.MarkerDefine(stc.STC_MARKNUM_FOLDEROPENMID, stc.STC_MARK_EMPTY, "white", "black")
+        self.MarkerDefine(stc.STC_MARKNUM_FOLDERMIDTAIL, stc.STC_MARK_EMPTY, "white", "black")
+        #~ self.SetMarginWidth(2, 0)
         self.fitNumberMarginWidth()
         self.SetSavePoint()
         # Event handling
@@ -176,6 +187,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
         self.Bind(stc.EVT_STC_CALLTIP_CLICK, self.OnCalltipClick)
         self.Bind(wx.EVT_KILL_FOCUS, self.OnKillFocus)
         self.Bind(wx.EVT_SET_FOCUS, self.OnSetFocus)
+        self.Bind(stc.EVT_STC_MARGINCLICK, self.OnMarginClick)
         try:
             self.Bind(wx.EVT_MOUSE_CAPTURE_LOST, lambda event: self.ReleaseMouse())
         except AttributeError:
@@ -572,6 +584,12 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
         if boolActivatePreset:
             preset = self.app.options['filterpresets'].get(filtername.lower())
             boolHighlightQuestionMarks = True
+            if preset is None:
+                for key in self.app.options['filterpresets']:
+                    index = key.find('_'+filtername.lower())
+                    if index != -1 and len(key) == index+1 + len(filtername) :
+                        preset = self.app.options['filterpresets'][key][index+1:]
+                        break
             if preset is not None:
                 self.SetSelection(startwordpos, pos)
                 self.ReplaceSelection(preset)
@@ -1276,7 +1294,39 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
         # Display call tips
         self.UpdateCalltip()
         self.flagTextChanged = False
-        return
+        # update folding level
+        lineCount = self.GetLineCount()
+        line = 0
+        while line < lineCount:
+            if self.GetFoldLevel(line) & stc.STC_FOLDLEVELHEADERFLAG:
+                hasBrace = False
+                for pos in range(self.PositionFromLine(line), self.GetLineEndPosition(line)+1):
+                    if unichr(self.GetCharAt(pos)) == '{' and self.GetStyleAt(pos) == self.STC_AVS_OPERATOR:
+                        hasBrace = True
+                        break
+                if hasBrace:
+                    posMatch = self.BraceMatch(pos)
+                    if posMatch != stc.STC_INVALID_POSITION:
+                        lineEnd = self.LineFromPosition(posMatch) + 1
+                        lastChild = self.GetLastChild(line, -1) + 1
+                    else:
+                        lineEnd = lastChild = lineCount                        
+                    level = (self.GetFoldLevel(line) & stc.STC_FOLDLEVELNUMBERMASK) + 1
+                    for lineNum in range(line+1, lineEnd):
+                        self.SetFoldLevel(lineNum, self.GetFoldLevel(lineNum) & 0xF000 | level)
+                    for lineNum in range(lineEnd, lastChild):
+                        self.SetFoldLevel(lineNum, self.GetFoldLevel(lineNum)-1)
+                else:
+                    if not self.GetFoldExpanded(line):
+                        self.SetFoldExpanded(line, True)
+                        self.Expand(line, True)
+                    #~ else:
+                        #~ lineNext = line + 1
+                    for lineNum in range(line+1, self.GetLastChild(line, -1)+1):
+                        self.SetFoldLevel(lineNum, self.GetFoldLevel(lineNum)-1)
+                    self.SetFoldLevel(line, self.GetFoldLevel(line)&stc.STC_FOLDLEVELNUMBERMASK)
+                    #~ line = lineNext - 1
+            line += 1
 
     def OnTextChange(self, event):
         self.fitNumberMarginWidth()
@@ -1295,7 +1345,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
         validChar = isCurrentCap and isBeforeBlank and isAfterBlank
         isCommentStyle = self.commentStyle == self.GetStyleAt(pos - 1)
         if self.app.options['autocomplete'] and validChar and not(self.AutoCompActive()) and not isCommentStyle:
-            keywords = self.app.avsazdict.get(unichr(charCurrent).lower())
+            keywords = self.app.avsazdict.get(unichr(charCurrent).lower(), [])
             for i in range(len(keywords)-1, -1, -1):
                 if keywords[i] in self.app.options['autocompleteexclusions']:
                     del keywords[i]
@@ -1314,6 +1364,9 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
             line = self.LineFromPosition(pos)
             indentText = self.GetTextRange(self.PositionFromLine(line), self.GetLineIndentPosition(line))
             self.ReplaceSelection('\n'+indentText)
+            level = self.GetFoldLevel(line)
+            if level & stc.STC_FOLDLEVELHEADERFLAG:
+                self.SetFoldLevel(line+1, level & stc.STC_FOLDLEVELNUMBERMASK)
         else:
             event.Skip()
 
@@ -1409,6 +1462,9 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                 elif ch in self.app.avsoperators:
                     self.ColourTo(pos - 1, state)
                     self.ColourTo(pos, self.STC_AVS_OPERATOR)
+                    if ch == '{':
+                        line = self.LineFromPosition(pos)
+                        self.SetFoldLevel(line, self.GetFoldLevel(line) | stc.STC_FOLDLEVELHEADERFLAG)
                 else:
                     if isEOD:
                         self.ColourTo(pos - 1, self.STC_AVS_DEFAULT)
@@ -1526,6 +1582,94 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
     def ColourTo(self, pos, style):
         self.SetStyling(pos +1 - self.endstyled, style)
         self.endstyled = pos+1
+
+    def OnMarginClick(self, evt):
+        # fold and unfold as needed
+        if evt.GetMargin() == 2:
+            if evt.GetShift() and evt.GetControl():
+                self.FoldAll()
+            else:
+                lineClicked = self.LineFromPosition(evt.GetPosition())
+
+                if self.GetFoldLevel(lineClicked) & stc.STC_FOLDLEVELHEADERFLAG:
+                    if evt.GetShift():
+                        self.SetFoldExpanded(lineClicked, True)
+                        self.Expand(lineClicked, True, True, 1)
+                    elif evt.GetControl():
+                        if self.GetFoldExpanded(lineClicked):
+                            self.SetFoldExpanded(lineClicked, False)
+                            self.Expand(lineClicked, False, True, 0)
+                        else:
+                            self.SetFoldExpanded(lineClicked, True)
+                            self.Expand(lineClicked, True, True, 100)
+                    else:
+                        self.ToggleFold(lineClicked)
+
+    def FoldAll(self):
+        lineCount = self.GetLineCount()
+        expanding = True
+
+        # find out if we are folding or unfolding
+        for lineNum in range(lineCount):
+            if self.GetFoldLevel(lineNum) & stc.STC_FOLDLEVELHEADERFLAG:
+                expanding = not self.GetFoldExpanded(lineNum)
+                break
+
+        lineNum = 0
+
+        while lineNum < lineCount:
+            level = self.GetFoldLevel(lineNum)
+            if level & stc.STC_FOLDLEVELHEADERFLAG and \
+               (level & stc.STC_FOLDLEVELNUMBERMASK) == stc.STC_FOLDLEVELBASE:
+
+                if expanding:
+                    self.SetFoldExpanded(lineNum, True)
+                    lineNum = self.Expand(lineNum, True)
+                    lineNum = lineNum - 1
+                else:
+                    lastChild = self.GetLastChild(lineNum, -1)
+                    self.SetFoldExpanded(lineNum, False)
+
+                    if lastChild > lineNum:
+                        self.HideLines(lineNum+1, lastChild)
+
+            lineNum = lineNum + 1
+
+    def Expand(self, line, doExpand, force=False, visLevels=0, level=-1):
+        lastChild = self.GetLastChild(line, level)
+        line = line + 1
+
+        while line <= lastChild:
+            if force:
+                if visLevels > 0:
+                    self.ShowLines(line, line)
+                else:
+                    self.HideLines(line, line)
+            else:
+                if doExpand:
+                    self.ShowLines(line, line)
+
+            if level == -1:
+                level = self.GetFoldLevel(line)
+
+            if level & stc.STC_FOLDLEVELHEADERFLAG:
+                if force:
+                    if visLevels > 1:
+                        self.SetFoldExpanded(line, True)
+                    else:
+                        self.SetFoldExpanded(line, False)
+
+                    line = self.Expand(line, doExpand, force, visLevels-1)
+
+                else:
+                    if doExpand and self.GetFoldExpanded(line):
+                        line = self.Expand(line, True, force, visLevels-1)
+                    else:
+                        line = self.Expand(line, False, force, visLevels-1)
+            else:
+                line = line + 1
+
+        return line
 
 # Dialog for choosing AviSynth specific fonts and colors
 class AvsStyleDialog(wx.Dialog):
@@ -2087,7 +2231,11 @@ class AvsFunctionDialog(wx.Dialog):
                 extra = ' '
                 name, args, ftype = self.overrideDict.get(key, (None, None, None))
                 if name is None:
-                    name, args, ftype = self.filterDict[key]
+                    try:
+                        name, args, ftype = self.filterDict[key]
+                    except:
+                        del self.presetDict[key]
+                        continue
                 else:
                     extra += '*'
                 if key in self.presetDict:
@@ -2816,7 +2964,6 @@ class AvsFunctionDialog(wx.Dialog):
                 else:
                     return
 
-
     def DeleteFunction(self):
         listbox = self.notebook.GetCurrentPage().listbox
         index = listbox.GetSelection()
@@ -2831,6 +2978,8 @@ class AvsFunctionDialog(wx.Dialog):
             if ID == wx.ID_YES:
                 if lowername in self.overrideDict:
                     del self.overrideDict[lowername]
+                    if lowername in self.presetDict:
+                        del self.presetDict[lowername]
                 listbox.Delete(index)
             dlg.Destroy()
 
@@ -3687,7 +3836,7 @@ class MainFrame(wxp.Frame):
         if hasattr(sys,'frozen'):
             self.programdir = os.path.dirname(sys.executable)
         else:
-            self.programdir = os.getcwd()
+            self.programdir = os.path.abspath(os.path.dirname(sys.argv[0]))
         if type(self.programdir) != unicode:
             self.programdir = unicode(self.programdir, encoding)
         self.toolsfolder = os.path.join(self.programdir, 'tools')
@@ -4187,6 +4336,7 @@ class MainFrame(wxp.Frame):
                 # VIDEO OPTIONS
                 'dragupdate': False,
                 'focusonrefresh': True,
+                'hidepreview': False,
                 'previewunsavedchanges': True,
                 'promptwhenpreview': False,
                 'separatevideowindow': False,
@@ -4221,6 +4371,7 @@ class MainFrame(wxp.Frame):
                 'allowresize': True,
                 'mintextlines': 2,
                 'usetabimages': True,
+                'multilinetab': False,
                 # TOGGLE OPTIONS
                 'alwaysontop': False,
                 'singleinstance': False,
@@ -4279,8 +4430,10 @@ class MainFrame(wxp.Frame):
         except TypeError:
                 pass
                 
-        # some new key added after v2.0.2, make options.dat compatible for all 2.x version
+        # check new key to make options.dat compatible for all 2.x version
         self.options.setdefault('autocompleteexclusions', set())
+        self.options.setdefault('hidepreview', False)
+        self.options.setdefault('multilinetab', False)
         self.options['textstyles'].setdefault('endcomment', 'face:Verdana,size:10,fore:#C0C0C0,back:#FFFFFF')
         self.options['textstyles'].setdefault('blockcomment', 'face:Comic Sans MS,size:9,fore:#007F00,back:#FFFFFF')
         #~ self.options['textstyles'].setdefault('monospacedtab', False)
@@ -4369,18 +4522,18 @@ class MainFrame(wxp.Frame):
                             self.optionsFilters[filtername.lower()] = (filtername, filterargs, 3)
         # Clean up override dict
         deleteKeys = []
-        for key, value in self.options['filteroverrides'].items():
-            if key.count('_') == 0:
-                tempList = [(k.split('_', 1), v[0]) for k, v in self.optionsFilters.items()]
-                for longKey, v in tempList[:]:
-                    if len(longKey) != 2 or longKey[-1] != key:
-                        tempList.remove((longKey, v))
-                if len(tempList) == 1: 
-                    longKey, longName = tempList[0]
-                    longKey = '_'.join(longKey)
-                    shortname, filterargs, type = value
-                    self.options['filteroverrides'][longKey] = (longName, filterargs, type)
-                    deleteKeys.append(key)
+        #~ for key, value in self.options['filteroverrides'].items():
+            #~ if key.count('_') == 0:
+                #~ tempList = [(k.split('_', 1), v[0]) for k, v in self.optionsFilters.items()]
+                #~ for longKey, v in tempList[:]:
+                    #~ if len(longKey) != 2 or longKey[-1] != key:
+                        #~ tempList.remove((longKey, v))
+                #~ if len(tempList) == 1: 
+                    #~ longKey, longName = tempList[0]
+                    #~ longKey = '_'.join(longKey)
+                    #~ shortname, filterargs, type = value
+                    #~ self.options['filteroverrides'][longKey] = (longName, filterargs, type)
+                    #~ deleteKeys.append(key)
         for key, value in self.options['filteroverrides'].items():
             if key in self.optionsFilters and self.optionsFilters[key] == value:
                 deleteKeys.append(key)
@@ -4498,10 +4651,16 @@ class MainFrame(wxp.Frame):
             tempList = extfunc.d.s.split(' ')
             extfunc.Release()
             # Only include long plugin names in dllname_function format
-            tempList2 = [name.split('_', 1)[-1].lower() for name in tempList if name.count('_') > 0]
+            #~ tempList2 = [name.split('_', 1)[-1].lower() for name in tempList if name.count('_') > 0]
+            tempList2 = []
+            for name in tempList:
+                name = name.lower()
+                for longName in tempList:
+                    if '_' + name in longName.lower():
+                        tempList2.append(name)
             extfuncList = []
             for name in tempList:
-                if name.count('_') > 0:
+                if False: #name.count('_') > 0:
                     extfuncList.append((name, 2))
                 elif name.lower() not in tempList2:
                     extfuncList.append((name, 2))
@@ -4632,6 +4791,7 @@ class MainFrame(wxp.Frame):
             (_('Video 1'),
                 (_('Constantly update video while dragging'), wxp.OPT_ELEM_CHECK, 'dragupdate', _('Update the video constantly when dragging the frame slider'), ''),
                 (_('Focus the video preview upon refresh'), wxp.OPT_ELEM_CHECK, 'focusonrefresh', _('Switch focus to the video preview window when using the refresh command'), ''),
+                (_("Don't preview when loading a session"), wxp.OPT_ELEM_CHECK, 'hidepreview', _('Always hide the video preview window when loading a session'), ''),
                 (_('Preview script with unsaved changes'), wxp.OPT_ELEM_CHECK, 'previewunsavedchanges', _('Create a temporary preview script with unsaved changes when previewing the video'), ''),
                 (_('Prompt to save when previewing'), wxp.OPT_ELEM_CHECK, 'promptwhenpreview', _('Prompt to save a script before previewing (inactive if previewing with unsaved changes)'), ''),
                 (_('Separate video preview window')+' *', wxp.OPT_ELEM_CHECK, 'separatevideowindow', _('Use a separate window for the video preview'), ''),
@@ -4675,7 +4835,7 @@ class MainFrame(wxp.Frame):
 
                 (_('Min text lines on video preview')+' *', wxp.OPT_ELEM_INT, 'mintextlines', _('Minimum number of lines to show when displaying the video preview'), ''),
                 (_('Use keyboard images in tabs'), wxp.OPT_ELEM_CHECK, 'usetabimages', _('Show keyboard images in the script tabs when video has focus'), ''),
-
+                (_('Show tabs in multiline style')+' *', wxp.OPT_ELEM_CHECK, 'multilinetab', _('There can be several rows of tabs'), ''),
             ),
         )
 
@@ -4950,6 +5110,13 @@ class MainFrame(wxp.Frame):
         self.options['shortcuts'] = shortcutList
 
         self.bindShortcutsToAllWindows()
+        if wx.VERSION > (2, 8):
+            for id, shortcut in self.hotkeysList:
+                accel = wx.GetAccelFromString('\t'+shortcut)
+                modifier = accel.GetFlags()
+                keycode = accel.GetKeyCode()
+                self.RegisterHotKey(id, modifier, keycode)
+                self.Bind(wx.EVT_HOTKEY, self.OnHotKey, id=id)
         
         # Create the program's video controls
         self.videoControls = self.createVideoControls(self.programSplitter)
@@ -5065,6 +5232,12 @@ class MainFrame(wxp.Frame):
             ('End',     stc.STC_CMD_LINEEND),
         )
         if wx.VERSION > (2, 8):
+            self.hotkeysList = [
+                (wx.NewId(), 'Escape'),
+                (wx.NewId(), 'Alt+Escape'),
+                (wx.NewId(), 'Ctrl+Escape'),
+                (wx.NewId(), 'Shift+Escape'),
+            ]
             self.reservedIdDict = {}
             accelList = []
             for shortcut, cmdKey in reservedKeys:
@@ -5164,6 +5337,8 @@ class MainFrame(wxp.Frame):
                 (_('Indent selection'), 'Tab', self.OnMenuEditIndentSelection, _('Indent the selected lines')),
                 (_('Unindent selection'), 'Shift+Delete', self.OnMenuEditUnIndentSelection, _('Unindent the selected lines')),
                 (_('Block comment'), 'Ctrl+Q', self.OnMenuEditBlockComment, _('Comment or uncomment selected lines')),
+                (_('Toggle current fold'), '', self.OnMenuEditToggleCurrentFold, _('Toggle the fold point On/OFF at the current line')),
+                (_('Toggle all fold'), '', self.OnMenuEditToggleAllFolds, _('Toggle all fold points On/OFF')),
                 (''),
                 (_('AviSynth function'),
                     (
@@ -5420,7 +5595,10 @@ class MainFrame(wxp.Frame):
 
     def createScriptNotebook(self):
         # Create the notebook
-        nb = wx.Notebook(self.mainSplitter, wx.ID_ANY, style=wx.NO_BORDER)
+        if self.options['multilinetab']:
+            nb = wx.Notebook(self.mainSplitter, wx.ID_ANY, style=wx.NO_BORDER|wx.NB_MULTILINE)
+        else:
+            nb = wx.Notebook(self.mainSplitter, wx.ID_ANY, style=wx.NO_BORDER)
         # Create the right-click menu
         menuInfo = (
             (_('Close'), '', self.OnMenuFileClose),
@@ -6057,6 +6235,14 @@ class MainFrame(wxp.Frame):
     def OnMenuEditBlockComment(self, event):
         script = self.currentScript
         script.BlockComment()
+    
+    def OnMenuEditToggleCurrentFold(self, event):
+        script = self.currentScript
+        script.ToggleFold(script.GetCurrentLine())
+        
+    def OnMenuEditToggleAllFolds(self, event):
+        script = self.currentScript
+        script.FoldAll()
 
     def OnMenuEditMoveLineUp(self, event):
         self.currentScript.MoveSelectionByOneLine(up=True)
@@ -7101,6 +7287,20 @@ class MainFrame(wxp.Frame):
     def OnButtonTextContextMenu(self, event):
         textCtrl = event.GetEventObject()
         menu = wx.Menu()
+
+        def OnContextMenuCopyTime(event):
+            if not wx.TheClipboard.IsOpened():
+                frame = self.GetFrameNumber()
+                try:
+                    m, s = divmod(frame/self.MacroGetVideoFramerate(), 60)
+                except:
+                    return
+                h, m = divmod(m, 60)
+                timecode = '%02d:%02d:%06.3f' % (h ,m, s)
+                wx.TheClipboard.Open()
+                wx.TheClipboard.SetData(wx.TextDataObject(timecode))
+                wx.TheClipboard.Close()
+
         def OnContextMenuCopy(event):
             text = textCtrl.GetStringSelection()
             if not text:
@@ -7135,11 +7335,14 @@ class MainFrame(wxp.Frame):
             menu.Append(id, text)
         menu.AppendSeparator()
         id = wx.NewId()
+        self.Bind(wx.EVT_MENU, OnContextMenuCopyTime, id=id)
+        menu.Append(id, _('copy as time'))
+        id = wx.NewId()
         self.Bind(wx.EVT_MENU, OnContextMenuCopy, id=id)
-        menu.Append(id, _('copy line'))
+        menu.Append(id, _('copy'))
         id = wx.NewId()
         self.Bind(wx.EVT_MENU, OnContextMenuPaste, id=id)
-        menu.Append(id, _('paste line'))
+        menu.Append(id, _('paste'))
         id = wx.NewId()
         self.Bind(wx.EVT_MENU, OnContextMenuClear, id=id)
         menu.Append(id, _('clear history'))
@@ -8112,6 +8315,14 @@ class MainFrame(wxp.Frame):
             except:
                 pass
 
+    def OnHotKey(self, event):
+        for id, shortcut in self.hotkeysList:
+            if event.GetId() == id:
+                if shortcut == 'Escape' and self.FindFocus() == self.currentScript:
+                    self.currentScript.CmdKeyExecute(wx.stc.STC_CMD_CANCEL)
+                self.MacroExecuteMenuCommand(shortcut)
+                break
+                
 # Utility functions
     def ExitProgram(self):
         # Don't exit if saving an avi
@@ -8459,7 +8670,7 @@ class MainFrame(wxp.Frame):
         if boolPrompt:
             tabTitle = self.scriptNotebook.GetPageText(index)
             if script.GetModify():
-                self.HidePreviewWindow()
+                #~ self.HidePreviewWindow()
                 self.scriptNotebook.SetSelection(index)
                 dlg = wx.MessageDialog(self, _('Save changes before closing?'),
                     tabTitle, wx.YES_NO|wx.CANCEL)
@@ -8568,8 +8779,8 @@ class MainFrame(wxp.Frame):
                 f.write(txt)
                 f.close()
             except UnicodeEncodeError:
-                f = codecs.open(filename, 'w', encoding)
-                f.write(txt)
+                #~ f = codecs.open(filename, 'w', encoding)
+                f.write(txt.encode(encoding))
                 f.close()
             #~ script.SaveFile(filename)
             script.SetSavePoint()
@@ -8645,8 +8856,11 @@ class MainFrame(wxp.Frame):
             # Load the session info from filename
             f = open(filename, mode='rb')
             session = cPickle.load(f)
-            f.close()
-            previewWindowVisible = session['previewWindowVisible']
+            f.close()            
+            if self.options['hidepreview'] or self.options['paranoiamode']:
+                previewWindowVisible = False
+            else:
+                previewWindowVisible = session['previewWindowVisible']
             if backup:
                 session['previewWindowVisible'] = False
                 f = open(filename, mode='wb')
@@ -8675,16 +8889,16 @@ class MainFrame(wxp.Frame):
                         txt, txtFromFile = self.GetMarkedScriptFromFile(scriptname, returnFull=True)
                         #~ if txt == self.getCleanText(scripttext):
                         try:
-                            if txt == scripttext:
+                            if txt == scripttext.encode(encoding):
                                 setSavePoint = True
                             else:
                                 setSavePoint = False
-                        except UnicodeDecodeError:
+                        except UnicodeEncodeError:
                             setSavePoint = False
                         if crc is not None:
                             try:
                                 crc2 = md5.new(txtFromFile).digest()
-                            except UnicodeDecodeError:
+                            except UnicodeEncodeError:
                                 crc2 = md5.new(txtFromFile.encode(encoding)).digest()
                             if crc != crc2:
                                 self.reloadList.append((index, scriptname, txt))
@@ -10485,8 +10699,8 @@ class MainFrame(wxp.Frame):
             f.write(newScripttxt)
             f.close()
         except UnicodeEncodeError:
-            f = codecs.open(previewname, 'w', encoding)
-            f.write(newScripttxt)
+            #~ f = codecs.open(previewname, 'w', encoding)
+            f.write(newScripttxt.encode(encoding))
             f.close()
         return previewname
         
@@ -12012,7 +12226,7 @@ class MainFrame(wxp.Frame):
         # Search through self.optionsShortcuts for a match
         if text == '':
             return False
-        for item in self.optionsShortcuts:
+        for item in self.options['shortcuts']:
             if text.lower() == item[index].lower():
                 id = item[2]
                 event = wx.CommandEvent(wx.wxEVT_COMMAND_MENU_SELECTED, id)
@@ -12264,7 +12478,10 @@ class MainFrame(wxp.Frame):
         if script is None:
             return False
         self.refreshAVI = True
-        #~ self.MacroShowVideoFrame(framenum, index)
+        
+        
+        
+        self.MacroShowVideoFrame(framenum, index)
         if self.UpdateScriptAVI(script) is None:
             wx.MessageBox(_('Error loading the script'), _('Error'), style=wx.OK|wx.ICON_ERROR)
             return
