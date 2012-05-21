@@ -30,8 +30,8 @@ manifest = '''
 
 setup(
     version = AvsP.version,
-    description = "AvsP - an AviSynth script editor",
-    name = "AvsP",
+    description = "AvsPmod - an AviSynth script editor",
+    name = "AvsPmod",
     options = {"py2exe":{
         "compressed": 1,
         "optimize": 2,

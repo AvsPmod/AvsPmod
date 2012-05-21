@@ -1,3 +1,0 @@
-[Basic]
-xvid_encraw.exe -i "$video_input" -pass1 "xvid.stats" -bitrate $video_bitrate
-xvid_encraw.exe -i "$video_input" -pass2 "xvid.stats" -bitrate $video_bitrate -avi "$video_output"

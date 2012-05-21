@@ -1,6 +1,21 @@
 # AvsP - an AviSynth editor
-# Copyright 2007 Peter Jang#  http://www.avisynth.org/qwerpoi
-#  This program is free software; you can redistribute it and/or modify#  it under the terms of the GNU General Public License as published by#  the Free Software Foundation; either version 2 of the License, or#  (at your option) any later version.# #  This program is distributed in the hope that it will be useful,#  but WITHOUT ANY WARRANTY; without even the implied warranty of#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the#  GNU General Public License for more details.# #  You should have received a copy of the GNU General Public License#  along with this program; if not, write to the Free Software#  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA, or visit#  http://www.gnu.org/copyleft/gpl.html .
+# Copyright 2007 Peter Jang
+#  http://www.avisynth.org/qwerpoi
+
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+# 
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+# 
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA, or visit
+#  http://www.gnu.org/copyleft/gpl.html .
 
 # Dependencies:
 #     Python (tested with v2.5.1)
@@ -62,7 +77,7 @@ except AttributeError:
 import AvsP_icon, next_icon, play_icon
 from __translation_new import new_translation_string
 
-version = '2.0.2'
+version = '2.0.3'
 
 # Custom styled text control for avisynth language
 class AvsStyledTextCtrl(stc.StyledTextCtrl):
@@ -3331,7 +3346,7 @@ class SliderPlus(wx.Panel):
 # Main program window
 class MainFrame(wxp.Frame):
     # Initialization functions
-    def __init__(self, parent=None, id=wx.ID_ANY, title='AvsP', pos=wx.DefaultPosition, size=(700, 550), style=wx.DEFAULT_FRAME_STYLE):
+    def __init__(self, parent=None, id=wx.ID_ANY, title='AvsPmod', pos=wx.DefaultPosition, size=(700, 550), style=wx.DEFAULT_FRAME_STYLE):
         wx.Frame.__init__(self, parent, id, pos=pos, size=size, style=style)
         self.version = version
         self.firsttime = False
@@ -4819,7 +4834,7 @@ class MainFrame(wxp.Frame):
                 (''),
                 (_('Avisynth help'), 'F1', self.OnMenuHelpAvisynth, _('Open the avisynth help html')),
                 (''),
-                (_('&About AvsP'), '', self.OnMenuHelpAbout, _('About this program')),
+                (_('&About AvsPmod'), '', self.OnMenuHelpAbout, _('About this program')),
             ),
         )
         
@@ -6177,8 +6192,8 @@ class MainFrame(wxp.Frame):
         
     def OnMenuHelpAbout(self, event):
         version = self.version
-        dlg = wx.Dialog(self, wx.ID_ANY, _('About AvsP'), size=(220,180))
-        title = wx.StaticText(dlg, wx.ID_ANY, _('AvsP version %(version)s') % locals())
+        dlg = wx.Dialog(self, wx.ID_ANY, _('About AvsPmod'), size=(220,180))
+        title = wx.StaticText(dlg, wx.ID_ANY, _('AvsPmod version %(version)s') % locals())
         font = title.GetFont()
         font.SetPointSize(12)
         font.SetWeight(wx.FONTWEIGHT_BOLD)
@@ -7195,6 +7210,7 @@ class MainFrame(wxp.Frame):
         cPickle.dump(self.options, f, protocol=0)
         f.close()
         # Clean up
+        wx.TheClipboard.Flush()
         for index in xrange(self.scriptNotebook.GetPageCount()):
             script = self.scriptNotebook.GetPage(index)
             script.AVI = None

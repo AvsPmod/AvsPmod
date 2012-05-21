@@ -16,10 +16,10 @@ import AvsP_i18n
 
 def main():
     # Define names and paths
-    pythonexe = r'D:\Programs\Python25\python.exe'
-    upx = r'D:\Programs\upx\upx.exe'
-    programdirname = 'AvsP'
-    zipname = 'AvsP_v%s.zip' % AvsP.version
+    pythonexe = r'C:\Python25\python.exe'
+    upx = r'C:\Python25\upx\upx.exe'
+    programdirname = 'AvsPmod'
+    zipname = 'AvsPmod_v%s.zip' % AvsP.version
     if os.path.isdir(programdirname):
         shutil.rmtree(programdirname)
 
@@ -39,7 +39,7 @@ def main():
                 subprocess.call([upx, os.path.join(dir,name), '--lzma', '--best'], shell=True)
                 
     # Manage the files
-    os.rename('dist\\run.exe', 'dist\\AvsP.exe')
+    os.rename('dist\\run.exe', 'dist\\AvsPmod.exe')
     shutil.copytree('dist', programdirname)
     shutil.rmtree('build')
     shutil.rmtree('dist')

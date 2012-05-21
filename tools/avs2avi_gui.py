@@ -6,7 +6,7 @@ class Avs2aviDialog(wx.Dialog):
     def __init__(self, parent, inputname='', title='Save as AVI'):
         wx.Dialog.__init__(self, parent, wx.ID_ANY, title)
         self.LoadOptions()
-        self.avs2avipath = self.options.setdefault('avs2avipath', '')
+        self.avs2avipath = self.options.setdefault('avs2avipath', 'avs2avi.exe')
         if not os.path.isfile(self.avs2avipath):
             wx.MessageBox(_('Please select the path to avs2avi.exe'), _('Message'))
             dlg = wx.FileDialog(self, title, '', '', '*.exe', wx.OPEN)
