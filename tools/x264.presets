@@ -1,0 +1,6 @@
+[Default]
+x264.exe --pass 1 --bitrate $video_bitrate --zones $credits_frame,$last_frame,q=40 $extra_options --progress --no-psnr --no-ssim --bframes 3 --subme 1 --ref 1 --output NUL "$video_input"
+x264.exe --pass 2 --bitrate $video_bitrate --zones $credits_frame,$last_frame,q=40 $extra_options --progress --no-psnr --no-ssim --bframes 3 --subme 6 --ref 3 --trellis 1 --b-pyramid --b-rdo --weightb --bime --sar $par_x:$par_y --output "$video_output" "$video_input"
+
+[Single Pass]
+x264.exe --bitrate $video_bitrate --zones $credits_frame,$last_frame,q=40 $extra_options --progress --no-psnr --no-ssim --bframes 3 --subme 5 --ref 3 --trellis 1 --b-pyramid --b-rdo --weightb --bime --sar $par_x:$par_y --output "$video_output" "$video_input"

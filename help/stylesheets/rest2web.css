@@ -1,0 +1,230 @@
+/*
+:Authors: Michael Foord, Justin Fleming
+:Contact: fuzzyman@voidspace.org.uk
+:Date: 2006/04/01 
+:Copyright: Copyright Voidspace.org.uk, 2006
+:License: BSD Revised License
+
+Stylesheet for rest2web - 
+http://www.voidspace.org.uk/python/rest2web/
+*/
+
+@import url(voidspace_docutils2.css);
+@import url(pysrc.css);
+
+h2 {
+  background-color: #CCCCCC;
+  color: #000000;
+}
+
+
+p.headertitle {
+color:#999999;
+font-size:1.2em;
+}
+
+a.image-reference:visited {
+   color: #999999;
+} 
+
+body {
+	font-size: 62.5%;
+	margin: 0em auto;
+	padding: 0em;
+  	font-family: Verdana,Tahoma, Arial,sans-serif;
+}
+
+#wrap {
+	width: 760px;
+	margin: 0em auto;
+}
+
+img {
+	border:0;
+}
+
+/**************/
+/*   HEADER   */
+/**************/
+#header-section {
+	padding:0;
+	margin: 0;
+	margin-bottom:1em;
+	margin-top:0.5em;
+	text-align:center;
+}
+
+#header {
+	clear: both;
+	margin: 0em 0em 0.5em 0em;
+	border-top: solid 0.1em rgb(175,175,175);
+	border-bottom: solid 0.1em rgb(175,175,175);
+	background-color: rgb(235,235,235);	
+	text-transform: uppercase;
+	line-height: 2.0em;
+	height: 2.0em;
+	color: rgb(50,50,50);
+}
+
+#header ul {	
+	margin: 0em;
+	padding: 0em;
+	list-style: none;
+	font-weight: bold;
+	font-size: 1.0em;
+}	
+
+#header li {
+	float: left;
+	white-space: nowrap;
+}
+
+#header li a {
+	display: block;
+	padding: 0em 1.0em 0em 1.0em;
+	background-color: rgb(235,235,235);	
+	text-decoration: none;
+	color: rgb(50,50,50);
+}
+
+#header a:hover {
+	background-color: rgb(220,220,220);			
+	text-transform: uppercase;
+	text-decoration: none;
+	color: rgb(50,50,50);
+}
+
+#header .selected {
+	padding: 0em 0.5em 0em 0.5em;
+	border-right: solid 0.1em rgb(175,175,175);		
+	background-color: rgb(220,220,220);
+	color: rgb(50,50,50);
+}
+
+* html #header a {width:1%;}
+
+/***********************/
+/***   LEFT COLUMN   ***/
+/***********************/
+#left-column {
+	width: 152px;
+	vertical-align: top;
+	background-color: rgb(255,255,255);
+	font-size: 1.1em;
+	color: rgb(50,50,50);
+}
+
+#left-navheader-first {
+	display: block;
+	margin: 1.0em 0em 0em 0em;
+	padding: 0.3em;
+	border-left: solid 0.5em rgb(235,235,235);
+	background-color: rgb(220,220,220);
+	text-transform: uppercase;
+	text-decoration: none;
+	font-weight: bold;
+	color: rgb(50,50,50);
+	text-align:center;
+}
+
+#sidie ul {	
+	width: 95%;
+	padding: 0em;
+	margin: 0em;
+	list-style: none;
+}
+
+#sidie li {
+	margin: 0em 0em 0em 0em;
+}
+.left-navheader {
+	display: block;
+	margin: 1.0em 0em 0.5em 0em;
+	padding: 0.3em 0.7em 0.2em 0.4em;
+	border-left: solid 0.5em rgb(235,235,235);
+	background-color: rgb(220,220,220);
+	text-transform: uppercase;
+	text-decoration: none;
+	font-weight: bold;
+	color: rgb(50,50,50);
+}
+#sidie li a {
+	display: block;
+	padding: 0.3em 0.7em 0.2em 1.2em;
+	border-left: solid 0.5em rgb(235,235,235);
+	border-top: solid 0.1em rgb(200,200,200);
+	background-color: rgb(235,235,235);
+	text-decoration: none;
+	font-weight: normal;
+	color: rgb(50,50,50);
+	height: 1.3em;
+}	
+	
+#sidie li a:hover {
+	border-left: solid 0.5em rgb(175,175,175);
+	background-color: rgb(220,220,220);
+	text-decoration: none;
+	color: rgb(50,50,50);
+}
+
+.sidieimg {
+    text-align: center;
+    margin-top: 10px;
+    margin-left: 10px;
+    vertical-align: middle;
+	background-color: rgb(255,255,255);
+}
+
+/*************************/
+#sidie2 a {
+text-decoration:none;
+}
+.sidie2title {
+margin:0;
+font-weight:bold;
+text-transform:uppercase;
+}
+
+#sidie2 p {
+margin:0;
+}
+#sidie2 p a:hover {
+	background-color: rgb(220,220,220);
+}
+.sidie2indent {
+margin-left:1.5em;
+margin-top:0.5em;
+}
+/*************************/
+
+/*************************/
+/***   MIDDLE COLUMN   ***/
+/*************************/
+
+/* Sections */
+/************/
+#middle-column {
+	width: 592px;
+	background-color: rgb(255,255,255);
+	color: rgb(100,100,100);
+	line-height: 1.3em;
+	font-size: 1.2em;
+}
+
+#middle-column h1 {padding: 6px;}
+
+/*******************/
+/***   FOOTER    ***/
+/*******************/
+#footer {
+	clear: both;
+	height: 2.5em;
+	margin: 1.0em 0em 1.0em 0em;
+	padding: 0.25em 0em 0.3em 0em;
+	border-top: solid 0.1em rgb(150,150,150);
+	border-bottom: solid 0.1em rgb(150,150,100);	
+	background-color: rgb(220,220,220);
+	text-align: center;
+	color: rgb(100,100,100);
+	font-size: 1.0em;
+}

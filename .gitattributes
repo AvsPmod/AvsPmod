@@ -1,0 +1,17 @@
+# Exclude some files from exporting
+.gitignore export-ignore
+.gitattributes export-ignore
+
+# Normalize all text files
+* text=auto
+
+# Explicitly exclude some files from end-of-line conversion 
+*.exe -text
+*.dat -text
+*.ico -text
+*.jpg -text
+*.png -text
+*.gif -text
+*.html -text
+*.css -text
+*.zip -text

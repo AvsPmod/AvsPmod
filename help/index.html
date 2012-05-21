@@ -1,0 +1,275 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+    <title>AvsP home</title>
+    <link rel="stylesheet" href="stylesheets/rest2web.css" type="text/css" />
+    <link rel="stylesheet" href="stylesheets/voidspace_docutils2.css" type="text/css" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+
+<body style="background: url(images/logos/img_background.gif) top center repeat-y;">
+  <div id="wrap">
+    <div id="header">
+      <ul>
+        <li>home</li>
+
+      </ul>
+    </div>
+
+    <table>
+    <tr>
+     <td><img src="images/logos/1.gif" width="1" height="1" alt="" /></td>
+     <!-- main content cell first, with rowspan=2 -->
+     <td valign="top" align="left" rowspan="2">
+     
+    <div id="middle-column">
+        <a name="startcontent" id="startcontent"></a>
+            <div>
+                <div class="document" id="avsp">
+<h1 class="title">AvsP</h1>
+<p>AvsP is a text editor built for <a class="reference" href="http://www.avisynth.org">AviSynth</a>, a video scripting language.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+<div class="line"><strong>Download the latest version</strong> <a class="reference" href="Download.html">here</a></div>
+<div class="line"><br /></div>
+<div class="line">Sample screenshots: <a class="reference" href="images/avsp_videopreview.jpg">1</a> <a class="reference" href="images/avsp_calltip3.jpg">2</a> <a class="reference" href="images/avsp_usersliderseparator.jpg">3</a> <a class="reference" href="images/avsp_trimeditor.jpg">4</a></div>
+<div class="line"><br /></div>
+<div class="line">View the <a class="reference" href="http://www.avisynth.org/qwerpoi/Demo.htm">flash tutorial</a></div>
+<div class="line"><br /></div>
+<div class="line">Read an <a class="reference" href="Overview.html">overview</a> of the program</div>
+<div class="line"><br /></div>
+<div class="line">What people are saying <a class="reference" href="About.html#testimonials">about AvsP</a></div>
+<div class="line"><br /></div>
+<div class="line">See the <a class="reference" href="http://forum.doom9.org/showthread.php?t=115506">discussion</a> at <a class="reference" href="http://www.doom9.org">doom9</a>'s forums</div>
+<div class="line"><br /></div>
+</div>
+<div class="section">
+<h1><a id="changelog" name="changelog">Changelog</a></h1>
+<p>version 2.0.2 (10/27/07)</p>
+<ul class="simple">
+<li>added numerous entries to function database (contributed by Harukalover, danielkun)</li>
+<li>added ability to open multiple scripts in Open dialog (suggested by Underground78)</li>
+<li>new syntax in extension templates for relative paths (suggested by krisq)</li>
+<li>changed database editing for plugins to reduce redundancy with short and long names</li>
+</ul>
+<ul class="simple">
+<li>fixed program hanging on text highlight (thanks miamicanes, Harukalover, foxyshadis)</li>
+<li>fixed issue with translation messages (thanks zemog)</li>
+<li>fixed crash when deleting existing bookmark (thanks AlanHK)</li>
+<li>manually hidden sliders now stay hidden on video refresh (thanks AlanHK)</li>
+<li>fixed minor bug with autocompletion and underscore character</li>
+</ul>
+<p>version 2.0.1 (9/16/07)</p>
+<ul class="simple">
+<li>improved automatic user slider construction (suggested by AlanHK, bidmead)</li>
+<li>added line number traceback for macro errors (suggestedy by foxyshadis)</li>
+<li>disabled error line highlight when line-by-line update enabled (suggested by Zarxrax)</li>
+<li>added warnings to crop editor for invalid crop values (suggested by AlanHK)</li>
+<li>brought back shortcuts for function definitions in script menu (suggested by Alain2)</li>
+<li>added close all tabs function (suggested by Serbianboss)</li>
+<li>added option to disable scroll wheel through tabs (suggested by foxyshadis)</li>
+<li>added option to disable frames for each tab (suggested by Harukalover)</li>
+<li>changed autocomplete to show single item lists (suggested by Alain2)</li>
+<li>changed title for separate video window to full script name (suggeseted by Alain2)</li>
+</ul>
+<ul class="simple">
+<li>fixed minor error when configuring shortcuts (thanks RedDwarf1, krisq)</li>
+<li>fixed next bookmark function to always search forward (thanks AlanHK)</li>
+<li>changed &quot;True&quot; and &quot;False&quot; in database to lowercase (thanks AlanHK)</li>
+<li>fixed typo in options dialog (thanks AlanHK)</li>
+<li>fixed bug with manual activation of filter help (thanks Alain2)</li>
+<li>fixed bug with macro functions GetWidth/Height and zoomed video (thanks Alain2)</li>
+<li>fixed display issue with slider window and zoom window fit (thanks rfmmars)</li>
+</ul>
+<p>version 2.0.0 (8/29/07)</p>
+<ul class="simple">
+<li>fully automatic user sliders (enabled by default in this release)</li>
+<li>added default presets for each filter (suggested by Zarxrax)</li>
+<li>new &quot;Tools&quot; directory designed for AvsP plugins (suggested by Rahima, Fizick)</li>
+<li>new resize calculator tool (suggested by chipzoller)</li>
+<li>new encoder tool supporting any command line encoders (through presets)</li>
+<li>script tabs now keep track of their own frames</li>
+<li>added new side button to toggle sliders</li>
+<li>added reminder images in the script tabs when video has focus</li>
+<li>added several new configurable text colors</li>
+<li>improved filter documentation filename searching</li>
+<li>added configurable web search for filter docs whenever local docs not found</li>
+<li>changed external player to use original script whenever possible</li>
+<li>changed program to open socket for single instance check only when necessary</li>
+<li>improved rules for displaying calltips</li>
+<li>improved macros menu organization with submenus defined by subdirectories</li>
+<li>improved SetBookmark() macro performance with large lists (suggested by AlanHK)</li>
+</ul>
+<ul class="simple">
+<li>fixed calltip bug with parentheses inside string (thanks niiyan)</li>
+<li>fixed calltip bug with filters with zero arguments (thanks niiyan)</li>
+<li>fixed calltip bug with &quot;Frequent calltips&quot; turned off (thanks Alain2)</li>
+<li>fixed asterisk on title bar in separate video window (thanks krisq)</li>
+<li>fixed color customization to allow non-white default background (thanks RedDwarf1)</li>
+<li>fixed open with unicode filename bug (thanks Zarxrax)</li>
+</ul>
+<p>version 1.4.0 (6/5/07)</p>
+<ul class="simple">
+<li>fully automatic user sliders (experimental, turned off by default)</li>
+<li>simplified translation update procedure (suggested by Henrikx)</li>
+<li>added option for single instance (suggested by krisq, foxyshadis)</li>
+<li>added source extension filters to &quot;Open...&quot; dialog (suggested by 3ngel)</li>
+<li>changed default filename to work with unknown extensions (suggested by Zarxrax)</li>
+<li>opening an already opened file prompts for reload if changes exist (suggested by Kuukunen)</li>
+<li>toggle scrap window now works when scrap window focused (thanks AlanHK)</li>
+<li>changed error message when Avisynth fails to load video (thanks lolent)</li>
+<li>added macro for setting bookmarks (suggested by AlanHK)</li>
+<li>sliders no longer generated on error clips</li>
+<li>improved filter calltips to work with script line breaks</li>
+<li>added clear all text option for scrap window</li>
+<li>minor improvements to window layout code</li>
+</ul>
+<ul class="simple">
+<li>fixed translation import problem (thanks Henrikx)</li>
+<li>fixed bug with AvsP installed in directory with unicode characters (thanks Aeolis)</li>
+<li>fixed display bug when resizing the script window with separate video window (thanks Alain2)</li>
+<li>fixed several unicode bugs (thanks Zarxrax)</li>
+<li>fixed crash when avisynth output has no video</li>
+</ul>
+<p>version 1.3.9 (5/5/07)</p>
+<ul class="simple">
+<li>remember the last saved image path (suggested by 3ngel)</li>
+<li>changed &quot;Show calltip&quot; to work when cursor is in filter name (thanks AlanHK)</li>
+<li>changed editor to properly clear undo buffer when loading a file</li>
+<li>merged windows xp and 98 versions</li>
+</ul>
+<ul class="simple">
+<li>fixed parity info reported by AvsP (thanks krisq, ChiDragon)</li>
+<li>fixed crash when switching zoom modes (thanks Alain2)</li>
+<li>fixed unnecessary scrollbars with zoom &quot;fit inside window&quot; (thanks foxyshadis)</li>
+<li>fixed unicode bug when saving script</li>
+<li>fixed unicode bug with recent file list (thanks Henrikx)</li>
+<li>fixed unicode bug with Avisynth install directory (thanks Aeolis, foxyshadis)</li>
+<li>minor fixes to window layout code</li>
+</ul>
+<p>version 1.3.8 (4/24/07)</p>
+<ul class="simple">
+<li>changed display code to retrieve frames directly from Avisynth (contributed by tsp)</li>
+<li>highlight error line in script on error clip</li>
+<li>added new video zoom option to fit entirely inside the window (suggested by Alain2)</li>
+<li>added &quot;always on top&quot; option for main window (suggested by Alain2)</li>
+<li>added method to specify cursor position in filter presets (suggested by krisq)</li>
+<li>allow for global variables in macros (suggested by Eggroll)</li>
+<li>remember last path when configuring doc path/url for function help (suggested by Spuds)</li>
+<li>path to AvsP help directory now configurable (suggested by Fizick)</li>
+<li>dump program error messages to both window and log file for easier bug reporting</li>
+</ul>
+<ul class="simple">
+<li>fixed unicode error on startup (thanks Spuds)</li>
+<li>fixed unicode error on file open (thanks martino)</li>
+<li>fixed bug with avs2avi gui and spaces in avs filename (thanks tony62)</li>
+<li>accurate yuv colors reported in video status bar (thanks jmac698)</li>
+<li>minor fixes to window layout code</li>
+</ul>
+<p>version 1.3.7 (3/07/07)</p>
+<ul class="simple">
+<li>make up/down/left/right video shortcuts editable (suggested by Alain2, avid_avs_user)</li>
+<li>removed modifier restrictions for keyboard shortcuts (suggested by avid_avs_user)</li>
+<li>allow language translation for Ctrl, Alt, Shift (suggested by Henrikx)</li>
+<li>added menu items for trim selection start/end (suggested by avid_avs_user)</li>
+<li>added ability to export/import individual filter presets (suggested by krisq)</li>
+<li>added pixel position and color information to status bar (suggested by nibbles, jmac698)</li>
+<li>added macro to get filter info from avisynth (needs Avisynth 2.5.7+) (contributed by tsp)</li>
+<li>added ability to label user slider separators (suggested by R3Z)</li>
+<li>added ability to free all script videos from memory (suggested by foxyshadis)</li>
+<li>use the source filename as default in the file save dialog (suggested by Zarxrax)</li>
+<li>updated extension-based templates with .dga files and AVCSource() (suggested by unskinnyboy)</li>
+<li>added option to not prompt to unsaved scripts on program exit (suggested by foxyshadis)</li>
+<li>added several help menu items linking to website documentation</li>
+<li>improved subwindow layout management</li>
+<li>improved calltip displaying during window focus/motion</li>
+<li>minor changes to the display code</li>
+</ul>
+<ul class="simple">
+<li>fixed issues with syntax highlighting default style (thanks Alain2)</li>
+<li>fixed bug with unicode characters in script (thanks Spuds)</li>
+<li>added workaround for top-level variables in macros (thanks tsp)</li>
+<li>fixed minor bug when switching from zoom fit to regular zoom</li>
+<li>fixed several subwindow positioning issues</li>
+</ul>
+<p>version 1.3.6 (2/20/07)</p>
+<ul class="simple">
+<li>saved files no longer lose user slider/toggle tag info (suggested by foxyshadis)</li>
+<li>prompt to reload modified files when loading a session (suggested by foxyshadis)</li>
+<li>added visual bookmarks along the video slider (suggested by doxville, avid_avs_user)</li>
+<li>added trim selection editor (suggested by Zarxrax, doxville, avid_avs_user)</li>
+<li>added option to not load bookmarks on startup (suggested by avid_avs_user)</li>
+<li>added crop editor options to insert at cursor, copy to clipboard (suggested by krisq)</li>
+<li>improved end of script detection for crop editor</li>
+<li>reorganized video menu for clarity (suggested by avid_avs_user)</li>
+<li>improved save image dialog with specific extensions (suggested by foxyshadis)</li>
+<li>created windows 98 version (suggested by affter333)</li>
+</ul>
+<ul class="simple">
+<li>fixed crash when creating a new tab while crop editor is shown</li>
+<li>fixed small bug on program exit with multi-monitor setup (thanks foxyshadis)</li>
+<li>fixed several issues with syntax highlighting (thanks Alain2)</li>
+</ul>
+<p>version 1.3.5 (1/14/07)</p>
+<ul class="simple">
+<li>added more font and color options (suggested by Alain2)</li>
+<li>added customizable keyword lists (suggested by Alain2)</li>
+<li>updated filter information with internal clip properties and functions</li>
+<li>improved autocompletion for functions with no arguments</li>
+<li>added several new macro functions (ExecuteMenuCommand, GetBookmarkList, GetAvs2aviDir, GetSliderTexts)</li>
+<li>added slider optimization macro with complete genetic algorithm implementation</li>
+<li>added option to associate .avs files with AvsP (suggested by foxyshadis, JoeTF)</li>
+</ul>
+<ul class="simple">
+<li>fixed minor issue with potential conflicting keyboard shortcuts (thanks Alain2)</li>
+</ul>
+</div>
+</div>
+
+            </div>
+    	</div></td>
+    </tr>
+    <tr>
+     <td valign="top" align="left" width="25%">
+    <div id="left-column">
+        <div id="sidie">
+            <ul>
+                <li class="left-navheader-first">
+                    <a href="index.html" class="left-navheader">Home</a>
+                </li> 
+                <li class="left-navheader">Pages</li>
+
+<li><a href="Overview.html">Overview of AvsP</a></li>
+<li><a href="Download.html">Download</a></li>
+<li><a href="Text.html">Text Features</a></li>
+<li><a href="Video.html">Video Features</a></li>
+<li><a href="UserSliders.html">User Sliders</a></li>
+<li><a href="Macros.html">Macros</a></li>
+<li><a href="Translation.html">Translating AvsP</a></li>
+<li><a href="About.html">About</a></li>
+
+
+            </ul>
+        </div>
+        
+        
+        <p class="sidieimg">
+            <a href="https://www.paypal.com/xclick/business=qwerpoi.avsp@gmail.com&item_name=AvsP&tax=0&currency_code=USD" target="_blank"><img src="images/donation.gif" alt="Donate via PayPal" width="110" height="23" align="left" hspace="0" vspace="25" border="0" /></a>
+        </p>
+        
+        
+        
+    </div>
+    </td>
+    </tr>
+</table>
+
+    <hr />
+        
+    
+    <div id="footer">
+       <a href="http://validator.w3.org/check?uri=referer" title="Validate code as W3C XHTML 1.1 Strict Compliant">W3C XHTML 1.1</a> | <a href="http://jigsaw.w3.org/css-validator/check?uri=referer" title="Validate Style Sheet as W3C CSS 2.0 Compliant">W3C CSS 2.0</a>
+    </div>
+	</div>
+</body>
+</html>

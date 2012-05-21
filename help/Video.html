@@ -1,0 +1,248 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+    <title>Video Features</title>
+    <link rel="stylesheet" href="stylesheets/rest2web.css" type="text/css" />
+    <link rel="stylesheet" href="stylesheets/voidspace_docutils2.css" type="text/css" />
+    <meta http-equiv="Content-Type" content="text/html; charset=ISO8859-1" />
+</head>
+
+<body style="background: url(images/logos/img_background.gif) top center repeat-y;">
+  <div id="wrap">
+    <div id="header">
+      <ul>
+        <li><a href="index.html">home</a></li>
+<li>&gt;</li>
+<li>Video Features</li>
+
+      </ul>
+    </div>
+
+    <table>
+    <tr>
+     <td><img src="images/logos/1.gif" width="1" height="1" alt="" /></td>
+     <!-- main content cell first, with rowspan=2 -->
+     <td valign="top" align="left" rowspan="2">
+     
+    <div id="middle-column">
+        <a name="startcontent" id="startcontent"></a>
+            <div>
+                <div class="document" id="video-features">
+<h1 class="title">Video Features</h1>
+<div class="contents topic">
+<p class="topic-title first"><a id="contents" name="contents">Contents</a></p>
+<ul class="simple">
+<li><a class="reference" href="#the-basics" id="id2" name="id2">The basics</a><ul>
+<li><a class="reference" href="#the-video-toolbar" id="id3" name="id3">The video toolbar</a></li>
+<li><a class="reference" href="#showing-the-preview" id="id4" name="id4">Showing the preview</a></li>
+<li><a class="reference" href="#external-preview" id="id5" name="id5">External preview</a></li>
+</ul>
+</li>
+<li><a class="reference" href="#video-navigation" id="id6" name="id6">Video navigation</a><ul>
+<li><a class="reference" href="#keyboard-shortcuts" id="id7" name="id7">Keyboard shortcuts</a></li>
+<li><a class="reference" href="#bookmark-frames" id="id8" name="id8">Bookmark frames</a></li>
+</ul>
+</li>
+<li><a class="reference" href="#comparing-multiple-scripts" id="id9" name="id9">Comparing multiple scripts</a><ul>
+<li><a class="reference" href="#switching-between-tabs" id="id10" name="id10">Switching between tabs</a></li>
+<li><a class="reference" href="#copying-scripts" id="id11" name="id11">Copying scripts</a></li>
+<li><a class="reference" href="#further-approaches" id="id12" name="id12">Further approaches</a></li>
+</ul>
+</li>
+<li><a class="reference" href="#miscellaneous" id="id13" name="id13">Miscellaneous</a><ul>
+<li><a class="reference" href="#crop-editor" id="id14" name="id14">Crop editor</a></li>
+<li><a class="reference" href="#trim-selection-editor" id="id15" name="id15">Trim selection editor</a></li>
+<li><a class="reference" href="#zoom" id="id16" name="id16">Zoom</a></li>
+<li><a class="reference" href="#customizing-status-bar-message" id="id17" name="id17">Customizing status bar message</a></li>
+<li><a class="reference" href="#save-an-image" id="id18" name="id18">Save an image</a></li>
+<li><a class="reference" href="#line-by-line-video-update" id="id19" name="id19">Line-by-line video update</a></li>
+<li><a class="reference" href="#paranoia-mode" id="id20" name="id20">Paranoia mode</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section">
+<h1><a class="toc-backref" href="#id2" id="the-basics" name="the-basics">The basics</a></h1>
+<p>Once you have written an AviSynth script, you can see the results using the built-in video preview.  AvsP's video preview offers many unique features which makes the program ideal for creating AviSynth scripts.</p>
+<div class="section">
+<h2><a class="toc-backref" href="#id3" id="the-video-toolbar" name="the-video-toolbar">The video toolbar</a></h2>
+<div align="center" class="align-center"><img alt="images/avsp_toolbar.jpg" class="align-center" src="images/avsp_toolbar.jpg" style="height: 111px;" /></div>
+<p>The video toolbar exists near the bottom of the AvsP window.  The controls are more or less self-explanatory - the first button shows or hides the video preview, the second button decreases the video frame position by one, the third button increases the video frame position by one, and the fourth button activates the <a class="reference" href="#external-preview">external preview</a>.  The adjacent text box allows you to jump to a specific frame directly, just type in a number and hit enter.  You can also type in a time, using the &quot;hr:min:sec&quot; format.  You can quickly access this text box using the keyboard shortcut <strong>Ctrl+G</strong>.  The slider bar represents the video frame position, you can jump to any frame simply by dragging the slider and releasing.  (Note: by default, when you drag the slider bar, the video does not update until you release the slider.  You can change this behavior to update constantly while dragging in the <strong>&quot;Options -&gt; Program settings...&quot;</strong> dialog under the <strong>&quot;Video 1&quot;</strong> tab.)</p>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id4" id="showing-the-preview" name="showing-the-preview">Showing the preview</a></h2>
+<p>There are several ways to show the video preview:</p>
+<ul class="simple">
+<li>click the <strong>toggle button</strong> on the video toolbar</li>
+<li>use the menu command <strong>&quot;Video -&gt; Refresh preview&quot;</strong> (shortcut <strong>F5</strong>)</li>
+<li>use the menu command <strong>Video -&gt; Switch video/text focus</strong> (shortcut <strong>Shift+Tab</strong>)</li>
+</ul>
+<p>Perhaps the easiest to remember and use is the toggle button, but you should also be aware that <strong>nearly every control on the on the video toolbar will show the preview</strong> if it is hidden.</p>
+<p>When you activate the preview, AvsP copies the text in the current tab and creates a temporary AviSynth script named &quot;preview.avs&quot; in an appropriate directory. This allows you to preview your script without requiring you to save the changes.  You can always show the video preview, even if your script isn't complete.  For example, if you activate the preview with no text in the script at all, you get this result:</p>
+<div align="center" class="align-center"><img alt="images/avsp_videopreview.jpg" class="align-center" src="images/avsp_videopreview.jpg" style="height: 290px;" /></div>
+<p>This is AviSynth's way of dealing with syntax errors - it outputs a video with the error message written on each frame.  In this way, it's always possible to preview your script, despite syntax errors, missing files, etc.</p>
+<p id="video-mode">The size of this video subwindow can be adjusted by left-clicking and dragging the horizontal bar separating the script and video subwindows.  This is useful for large videos which cover up too much of the script.  If you reduce the size of the video subwindow such that the entire video frame is not visible, scrollbars will automatically appear to allow you to scroll to any section of the video.  You can left-click and drag the video to scroll to different sections as well (similar to a pdf).  To restore the size to fit the height of the video, simply double-click the bar.</p>
+<p>Notice that the program's status bar now shows information about the video - the frame, time, width, height, framerate, etc.  <strong>When the video preview is visible, the program essentially has two modes - the text mode and the video mode.</strong>  In the video mode, keyboard shortcuts work slightly differently.  For example, pressing the right arrow key in video mode increases the video frame position by one.  Holding down the right arrow key increases frames repeatedly, essentially playing the video (although not at the correct framerate).  If you click the text area, AvsP switches to text mode, now the right arrow key controls the cursor as you would expect in a normal text editor.  To switch back to video mode, left-click anywhere on the video preview (you'll see the status bar message change), or refresh the preview using any of the available methods.  You can switch between the two modes quickly using the <strong>Video -&gt; Switch video/text focus</strong> command, using the associated keyboard shortcut <strong>Shift+Tab</strong>.</p>
+<p>To hide the preview, you can do any of the following:</p>
+<ul class="simple">
+<li>use the <strong>toggle button</strong> on the video toolbar</li>
+<li>use the menu command <strong>&quot;Video -&gt; Hide preview&quot;</strong> (shortcut <strong>&quot;Shift+F5&quot;</strong>)</li>
+<li>click the <strong>middle-mouse button</strong> on the video window</li>
+</ul>
+<p>(Note that the video preview's right-click menu is identical to the program's Video menu.)  Also, if you switch text tabs, the video preview will automatically be hidden if the video properties of the script in the new tab does not match the previous properties - in other words, the width, height, and framecount between the two videos must match or else the video preview will be hidden.</p>
+<p>You can make the video preview a separate window in the <strong>&quot;Options -&gt; Program settings...&quot;</strong> dialog, in the <strong>&quot;Video 1&quot;</strong> tab.  This is useful for people with large monitors or multi-monitor setups.</p>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id5" id="external-preview" name="external-preview">External preview</a></h2>
+<p>The external preview feature lets you to see your script play back in real-time in your favorite media player.  You can activate the video preview using any of the following ways:</p>
+<ul class="simple">
+<li>click the <strong>external preview button</strong> on the video toolbar</li>
+<li>use the menu command <strong>&quot;Video -&gt; External player&quot;</strong></li>
+<li>use the keyboard shortcut <strong>F6</strong></li>
+</ul>
+<p>(Note that the video preview's right-click menu is identical to the program's Video menu.)  The first time you use the external preview feature, AvsP will show a dialog box which allows you to select your media player.  You can always go back and choose a different player from the <strong>&quot;Options -&gt; Program settings...&quot;</strong> dialog, in the <strong>&quot;General&quot;</strong> tab.</p>
+</div>
+</div>
+<div class="section">
+<h1><a class="toc-backref" href="#id6" id="video-navigation" name="video-navigation">Video navigation</a></h1>
+<p>AvsP provides plenty of methods and shortcuts to navigate through the video. The most obvious method is the toolbar slider, which allows you to quickly change the video's position using the mouse.  The frame text box is a good way to precisely jump to a specific frame or time, just enter a frame number or time in the &quot;hr:min:sec&quot; format and hit enter (you can quickly access the text box with the keyboard shortcut <strong>Ctrl+G</strong>).</p>
+<div class="section">
+<h2><a class="toc-backref" href="#id7" id="keyboard-shortcuts" name="keyboard-shortcuts">Keyboard shortcuts</a></h2>
+<p>AvsP also provides a number of useful keyboard shortcuts for video navigation.  When the program is in <a class="reference" href="#video-mode">video mode</a>, the following shortcuts are available:</p>
+<ul class="simple">
+<li>the <strong>left/right</strong> arrow keys decrease/increase the video position by <strong>one frame</strong></li>
+<li>the <strong>up/down</strong> arrow keys decrease/increase the video position by <strong>one second</strong></li>
+<li>the <strong>Page Up/Page Down</strong> keys decrease/increase the video position by <strong>one minute</strong></li>
+</ul>
+<p>Note that the number of frames which corresponds to a second or a minute depends on the video's framerate - AvsP does all the appropriate calculations for you.  Also note that you don't need to memorize these shortcuts, you can always check them out in the video preview's right-click menu.  These keyboard shortcuts come in handy when you need to quickly scan through a video for scene changes, filter effects, etc.</p>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id8" id="bookmark-frames" name="bookmark-frames">Bookmark frames</a></h2>
+<p>The bookmark frames feature allows you to keep track of any number of frame positions, avoiding the need to manually copy and paste scraps of text.  When you are on a frame you wish to bookmark, click the <strong>&quot;Video -&gt; Bookmark this frame&quot;</strong> menu item (keyboard shortcut <strong>Ctrl+B</strong>), or simply right-click the video slider handle (the handle is the small rectangle which you drag around).  When you create a bookmark, a black triangle appears directly underneath the slider.  Here's a picture of AvsP with three bookmarks set:</p>
+<div align="center" class="align-center"><img alt="images/avsp_videobookmarks.jpg" class="align-center" src="images/avsp_videobookmarks.jpg" style="height: 340px;" /></div>
+<p>In order to go to one of the bookmarked frames, simply left-click on one of the black triangles.  Nice!  You can see a list of all the bookmarked frames in <strong>&quot;Video -&gt; Navigate -&gt; Go to bookmark&quot;</strong> menu.  Clicking on a particular bookmark will jump to that frame as well.  You can also use the commands <strong>&quot;Video -&gt; Navigate -&gt; Next bookmark&quot;</strong> and <strong>&quot;Video -&gt; Navigate -&gt; Previous bookmark&quot;</strong> (keyboard shortcuts <strong>F2</strong> and <strong>Shift+F2</strong>, respectively) in order to quickly jump from one bookmark to the next.</p>
+<p>In order to delete a bookmark, you can either middle-click the black triangle, or you can go to the bookmark and set it again (in other words, setting a bookmark toggles it between on and off).  You can get rid of all bookmarks quickly using the <strong>&quot;Video -&gt; Clear all bookmarks&quot;</strong> option.</p>
+</div>
+</div>
+<div class="section">
+<h1><a class="toc-backref" href="#id9" id="comparing-multiple-scripts" name="comparing-multiple-scripts">Comparing multiple scripts</a></h1>
+<p>One of the features of AvsP that is hard to appreciate at first glance is its seamless ability to compare the video output of multiple AviSynth scripts.  By having a tabbed text editor with a single attached video preview, AvsP <a class="reference" href="Overview.html#comparing-video">takes the window management out</a> of script comparisons.</p>
+<p>For example, let's say you were working on a script using a complex set of filters.  You preview its video and are not pleased with the result - too much loss of detail, or the colors are dulled, etc.  Simply copy the script into a new tab, delete any filters you think might be causing the problem, then preview the script.  Now when you switch between the two tabs, you can very easily see what the effects of those filters were on the video.</p>
+<div class="section">
+<h2><a class="toc-backref" href="#id10" id="switching-between-tabs" name="switching-between-tabs">Switching between tabs</a></h2>
+<p>Because this type of comparison is such an important part of video editing, AvsP offers several shortcuts to help switch between tabs when comparing video outputs, listed here:</p>
+<ul class="simple">
+<li>keyboard shortcuts <strong>Ctrl+Tab</strong> (next tab) and <strong>Ctrl+Shift+Tab</strong> (previous tab)</li>
+<li>mouse scrolling (<a class="reference" href="#video-mode">video mode</a> only) &lt;-- <em>recommended</em></li>
+<li>keyboard shortcuts <strong>~, 1, 2, 3,</strong> etc. (<a class="reference" href="#video-mode">video mode</a> only)</li>
+</ul>
+<p>It's important to note that when you switch tabs, if the video properties of the script (width, height, and framecount) at the new tab do not match the previous video properties, the video preview is automatically hidden.  This makes it difficult to compare two similar scripts if a non-similar script is in between.  To solve this problem, the mouse scrolling shortcut skips over any non-similar tabs.  In other words, by scrolling the mouse wheel down (or up) once, AvsP will find the next (or previous) tab that has similar video properties and switch to it (in <a class="reference" href="#video-mode">video mode</a> only).  The keyboard shortcuts <strong>~, 1, 2, 3,</strong> etc. correspond to the zero-based position of the tab, where <strong>~</strong> corresponds with the zeroth tab.  In other words, if there are three open tabs, pressing the <strong>~</strong> key selects the first tab, pressing the <strong>1</strong> key selects the second tab, and pressing the <strong>2</strong> key selects the third tab (again, note that this is in <a class="reference" href="#video-mode">video mode</a> only).</p>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id11" id="copying-scripts" name="copying-scripts">Copying scripts</a></h2>
+<p>Using multiple tabs to compare filter chains generally requires you to copy a script and paste it into one or more new tabs.  Since this is a relatively common operation, there are a couple of shortcuts AvsP provides for this operation.  First let's look at the different ways to create a new tab:</p>
+<ul class="simple">
+<li>use the menu command <strong>&quot;File -&gt; New tab&quot;</strong> (shortcut <strong>Ctrl+N</strong>)</li>
+<li>double-click the empty space to the right of the last tab</li>
+<li>drag-and-drop text on the empty space to the right of the last tab</li>
+<li>double-click one of the tabs itself</li>
+</ul>
+<p>An important fact to note is that when creating a new tab using the first or second method, AvsP will copy any selected text from the script in the current tab and paste it into the script in the new tab.  So you could copy a script into a new tab using the keyboard sequence <strong>Ctrl+A</strong> followed by <strong>Ctrl+N</strong>.  The last method mentioned, double-clicking one of the existing tabs, will create a new tab with the entire contents of the double-clicked tab pasted into the new tab, regardless of what text was highlighted.  This method is easy to remember and avoids having to lose any text selections you may have wished to keep.</p>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id12" id="further-approaches" name="further-approaches">Further approaches</a></h2>
+<p>Sometimes you may find that using multiple scripts for video comparison is not the best approach.  This is particularly true when you wish to determine the effect of different values for a specific filter.  Instead of using multiple script comparisons, you should use <a class="reference" href="UserSliders.html">user sliders</a>, an advanced video comparison technique unique to AvsP.  The quick rule of thumb to remember is that <strong>for comparing filter chains, use multiple tabs, for comparing filter strengths, use user sliders.</strong></p>
+</div>
+</div>
+<div class="section">
+<h1><a class="toc-backref" href="#id13" id="miscellaneous" name="miscellaneous">Miscellaneous</a></h1>
+<p>Here are a couple more video-related features which fall into the miscellaneous category.</p>
+<div class="section">
+<h2><a class="toc-backref" href="#id14" id="crop-editor" name="crop-editor">Crop editor</a></h2>
+<p>Cropping a video is one of the more difficult operations in AviSynth.  This is because when you crop a video, you need to see what you are cutting out as well as what's being kept.  AvsP provides a handy crop editor which works with the video preview to let you fine tune your crop values before actually applying the crop filter.  You can activate the crop editor from the menu command <strong>&quot;Video -&gt; Crop editor&quot;</strong>.  This is what it looks like in action:</p>
+<div align="center" class="align-center"><img alt="images/avsp_cropeditor.jpg" class="align-center" src="images/avsp_cropeditor.jpg" style="height: 352px;" /></div>
+<p>The crop editor shows up as a separate dialog box.  From the dialog box, you can enter crop values in pixels for each edge you wish to crop.  You can also go directly to the video preview and drag the crop regions directly by using the left mouse button for quicker adjustments.  The crop regions show up on the video with inverted colors - the non-inverted region of the frame is what will be left after the crop operation is completed.</p>
+<p>Note that the program's status bar message changes when the crop editor is active.  It shows the AviSynth crop values corresponding with the cropped regions (in other words, this is the text that will be inserted into the script if you click OK on the crop editor dialog).  It also shows the resulting video width and height, the corresponding aspect ratio, and the width and height modulo values.  The modulo information is essential because many video formats require the width and height to have specific modulo values.</p>
+<p>When you are done creating the crop regions, click on &quot;Apply&quot; to finish the operation.  The drop-down box labeled &quot;Insert Crop() command:&quot; gives you three different options: insert at the end of the script, insert at the current script cursor position, or copy the Crop() command to the clipboard (without inserting anything into the script).  Most of the time you'll want to use the the first option, since the Crop() command may not make complete sense placed in an earlier part of the script, but the other options are available if you have the need.</p>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id15" id="trim-selection-editor" name="trim-selection-editor">Trim selection editor</a></h2>
+<p>Trimming video is fairly straightforward in AviSynth with the Trim() command.  However, it can get a bit unwieldy when you are trying to trim several sections of video (for example, cutting out commercials from a tv recording).  AvsP provides a trim selection editor to simplify this task.  You can activate the trim selection editor from the menu command <strong>&quot;Video -&gt; Trim selection editor -&gt; Show trim selection editor&quot;</strong>.  This is what it looks like:</p>
+<div align="center" class="align-center"><img alt="images/avsp_trimeditor.jpg" class="align-center" src="images/avsp_trimeditor.jpg" style="height: 351px;" /></div>
+<p>Similar to the <a class="reference" href="Video.html#crop-editor">crop editor</a>, the trim selection editor shows up as a separate dialog box.  When this dialog box is visible, extra buttons appear on the video slider handle, a left arrow button and a right arrow button.  Left-clicking on these buttons allow you to specify selection startpoints and endpoints for trimming.  You can alternatively create selection startpoints and endpoints using the menu commands <strong>&quot;Video -&gt; Trim selection editor -&gt; Set selection startpoint&quot;</strong> and <strong>&quot;Video -&gt; Trim selection editor -&gt; Set selection endpoint&quot;</strong>.  Startpoints and endpoints show up underneath the video slider like video bookmarks - you can left-click a startpoint or endpoint to jump to that frame, middle-click to delete, etc.</p>
+<p>A selection shows up on the video slider as a blue region.  Notice from the screenshot that you can create multiple selections.  One thing to note is that it is possible to create invalid selections - for example, two startpoints but only one endpoint.  You don't need to worry about keeping track of things, just know that the blue regions on the video slider will be the selections used when trimming, regardless of how many extraneous invalid startpoints or endpoints exist.  You can choose to either keep the selected regions or keep the unselected regions (ie, cut out the selected regions) by choosing the appropriate option on the trim selection dialog.</p>
+<p>Also notice in the screenshot the green circle on the upper corner of the video.  This circle represents whether or not the current frame will remain after performing the trim operation - green means it will remain, red means it will get cut out.  This helps to ensure that you don't accidentally cut out good frames (or keep bad ones), since it can get confusing, especially with startpoints and endpoints.  If it turns out that the circle is getting in the way of something you need to see on the video, you can get rid of it by unchecking the &quot;Mark video frames inside/outside selection&quot; option on the trim selection dialog.</p>
+<p>When you are done creating the trim selections, click on &quot;Apply&quot; to finish the operation.  AvsP will then create a sequence of Trim() commands based on your selections.  Similar to the <a class="reference" href="Video.html#crop-editor">crop editor</a>, the &quot;Insert Trim() commands:&quot; drop-down box gives you the choice to insert the trims at the end of the script, at the script cursor, or to the clipboard.  If you choose either of the first two options, the trim commands will be inserted into the script and the video will be refreshed, showing the newly trimmed video.  Furthermore, new bookmarks will be created automatically on the frames where selections were removed, which helps to quickly check out the new transitions.  Also, any bookmarks that existed before trimming are updated if they changed position due to frame removal.</p>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id16" id="zoom" name="zoom">Zoom</a></h2>
+<p>AvsP allows you to zoom the video preview by fixed multiples (x2, x3, x4, etc).  You can access this feature from the menu command <strong>&quot;Video -&gt; Zoom&quot;</strong>.  The zoom affects all video previews, regardless of which tab you select.  You can also choose the option <strong>&quot;Video -&gt; Zoom -&gt; Fill window&quot;</strong>, which will resize the video to fit the height of the preview subwindow, or the option <strong>&quot;Video -&gt; Zoom -&gt; Fit inside window&quot;</strong>, which will resize the video to always fit within the preview window.  Whenever the video is at a zoom of anything besides 100% (normal), there will be a small white triangle next to the upper left corner of the video.  This exists to remind you that the video is being resized, which may be undesirable when you are trying to compare the effects of different video filters.</p>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id17" id="customizing-status-bar-message" name="customizing-status-bar-message">Customizing status bar message</a></h2>
+<p>Whenever the video window is visible and has focus, the program's status bar shows information related to the current video.  You can customize this message from <strong>&quot;Options -&gt; Program settings... -&gt; Video 1 -&gt; Customize video status bar...&quot;</strong>.  By clicking this button, the following dialog box will appear:</p>
+<div align="center" class="align-center"><img alt="images/avsp_customizevideostatusbar.jpg" class="align-center" src="images/avsp_customizevideostatusbar.jpg" style="height: 388px;" /></div>
+<p>To create a custom message, simply modify the text in the dialog box.  The legend shows all the different variables you can use when customizing the message - these variables get replaced with the video's appropriate values when the program is running.  Note that the status bar consists of a left portion and a right portion - these portions are separated by a &quot;\t\t&quot; as you can see in the example.  Also note that you'll need a recent version of AviSynth installed to take advantage of some of these variables - if you find that some variables aren't showing up correctly in the status bar, try installing the latest version of AviSynth.</p>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id18" id="save-an-image" name="save-an-image">Save an image</a></h2>
+<p>AvsP provides a quick way to save an individual image from a video.  To save the currently displayed frame, simply use the menu command <strong>&quot;Video -&gt; Save image as...&quot;</strong> (note that the video preview's right-click menu is identical to the program's Video menu).  You will be prompted for a place to save the file with a dialog box.  <strong>You can save the image with a variety of formats</strong> (.bmp, .jpg, .png).  Note that any inverted colors created by the <a class="reference" href="Video.html#crop-editor">crop editor</a> will not be saved as part of the image file.</p>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id19" id="line-by-line-video-update" name="line-by-line-video-update">Line-by-line video update</a></h2>
+<p>AvsP has an available option where the program refreshes the video preview as you type in your script automatically.  This option is turned off by default, you can turn it on from <strong>&quot;Options -&gt; Enable line-by-line update&quot;</strong>.  When this option is turned on, the video preview gets automatically refreshed every time the text cursor changes line position.  In this way you could create your script without ever having to manually refresh the video preview.  Of course, it's entirely possible to encounter AviSynth error videos if the portion of the script you are working on spans several lines, but this tends to be the exception case rather than the rule when working with AviSynth.</p>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id20" id="paranoia-mode" name="paranoia-mode">Paranoia mode</a></h2>
+<p>Although AviSynth itself is a very stable program, occasionally you will work with AviSynth external filters that are not entirely stable.  When you preview your video with unstable filters, you can cause AviSynth to crash.  When this happens, AvsP will shut down abruptly.  This is a very undesirable situation, because you'll lose any unsaved changes in your scripts as a result of this crash.  In order to prevent this situation, you can enable the &quot;paranoia mode&quot; from <strong>&quot;Options -&gt; Enable paranoia mode&quot;</strong>.  When this mode is enabled, AvsP will <a class="reference" href="Text.html#saving-a-session">save the current session</a> every time before you preview a video.  In this way, if AviSynth crashes and AvsP shuts down, the next time you load up AvsP all your work will still be there.  Of course, this adds a bit of unnecessary overhead to video previewing if you only work with stable filters, but you should enable the paranoia mode if you, well, if you're a paranoid kind of person.</p>
+</div>
+</div>
+</div>
+
+            </div>
+    	</div></td>
+    </tr>
+    <tr>
+     <td valign="top" align="left" width="25%">
+    <div id="left-column">
+        <div id="sidie">
+            <ul>
+                <li class="left-navheader-first">
+                    <a href="index.html" class="left-navheader">Home</a>
+                </li> 
+                <li class="left-navheader">Pages</li>
+
+<li><a href="Overview.html">Overview of AvsP</a></li>
+<li><a href="Download.html">Download</a></li>
+<li><a href="Text.html">Text Features</a></li>
+<li><a href="Video.html">Video Features</a></li>
+<li><a href="UserSliders.html">User Sliders</a></li>
+<li><a href="Macros.html">Macros</a></li>
+<li><a href="Translation.html">Translating AvsP</a></li>
+<li><a href="About.html">About</a></li>
+
+
+            </ul>
+        </div>
+        
+        
+        <p class="sidieimg">
+            <a href="https://www.paypal.com/xclick/business=qwerpoi.avsp@gmail.com&item_name=AvsP&tax=0&currency_code=USD" target="_blank"><img src="images/donation.gif" alt="Donate via PayPal" width="110" height="23" align="left" hspace="0" vspace="25" border="0" /></a>
+        </p>
+        
+        
+        
+    </div>
+    </td>
+    </tr>
+</table>
+
+    <hr />
+        
+    
+    <div id="footer">
+       <a href="http://validator.w3.org/check?uri=referer" title="Validate code as W3C XHTML 1.1 Strict Compliant">W3C XHTML 1.1</a> | <a href="http://jigsaw.w3.org/css-validator/check?uri=referer" title="Validate Style Sheet as W3C CSS 2.0 Compliant">W3C CSS 2.0</a>
+    </div>
+	</div>
+</body>
+</html>

@@ -1,0 +1,424 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+    <title>Macros</title>
+    <link rel="stylesheet" href="stylesheets/rest2web.css" type="text/css" />
+    <link rel="stylesheet" href="stylesheets/voidspace_docutils2.css" type="text/css" />
+    <meta http-equiv="Content-Type" content="text/html; charset=ISO8859-1" />
+</head>
+
+<body style="background: url(images/logos/img_background.gif) top center repeat-y;">
+  <div id="wrap">
+    <div id="header">
+      <ul>
+        <li><a href="index.html">home</a></li>
+<li>&gt;</li>
+<li>Macros</li>
+
+      </ul>
+    </div>
+
+    <table>
+    <tr>
+     <td><img src="images/logos/1.gif" width="1" height="1" alt="" /></td>
+     <!-- main content cell first, with rowspan=2 -->
+     <td valign="top" align="left" rowspan="2">
+     
+    <div id="middle-column">
+        <a name="startcontent" id="startcontent"></a>
+            <div>
+                <div class="document" id="macros">
+<h1 class="title">Macros</h1>
+<div class="contents topic">
+<p class="topic-title first"><a id="contents" name="contents">Contents</a></p>
+<ul class="simple">
+<li><a class="reference" href="#overview" id="id1" name="id1">Overview</a></li>
+<li><a class="reference" href="#usage" id="id2" name="id2">Usage</a></li>
+<li><a class="reference" href="#examples" id="id3" name="id3">Examples</a><ul>
+<li><a class="reference" href="#simple-text-insertion" id="id4" name="id4">Simple text insertion</a></li>
+<li><a class="reference" href="#custom-templates" id="id5" name="id5">Custom templates</a></li>
+<li><a class="reference" href="#batch-scripting" id="id6" name="id6">Batch scripting</a></li>
+</ul>
+</li>
+<li><a class="reference" href="#macro-functions" id="id7" name="id7">Macro functions</a><ul>
+<li><a class="reference" href="#text-related-functions" id="id8" name="id8">Text related functions</a><ul>
+<li><a class="reference" href="#inserttext-txt-pos-1-index-none" id="id9" name="id9">InsertText(txt, pos=-1, index=None)</a></li>
+<li><a class="reference" href="#settext-txt-index-none" id="id10" name="id10">SetText(txt, index=None)</a></li>
+<li><a class="reference" href="#gettext-index-none" id="id11" name="id11">GetText(index=None)</a></li>
+<li><a class="reference" href="#getselectedtext-index-none" id="id12" name="id12">GetSelectedText(index=None)</a></li>
+<li><a class="reference" href="#getsourcestring-filename" id="id13" name="id13">GetSourceString(filename='')</a></li>
+<li><a class="reference" href="#getpluginstring-filename" id="id14" name="id14">GetPluginString(filename='')</a></li>
+<li><a class="reference" href="#getfilename-title-open-a-script-or-source" id="id15" name="id15">GetFilename(title='Open a script or source')</a></li>
+<li><a class="reference" href="#getsavefilename-title-save-as" id="id16" name="id16">GetSaveFilename(title='Save as')</a></li>
+<li><a class="reference" href="#getdirectory-title-select-a-directory" id="id17" name="id17">GetDirectory(title='Select a directory')</a></li>
+<li><a class="reference" href="#gettextentry-message-default-title-enter-information" id="id18" name="id18">GetTextEntry(message, default='', title='Enter information')</a></li>
+<li><a class="reference" href="#writetoscrap-txt-pos-1" id="id19" name="id19">WriteToScrap(txt, pos=-1)</a></li>
+<li><a class="reference" href="#getscraptext" id="id20" name="id20">GetScrapText()</a></li>
+</ul>
+</li>
+<li><a class="reference" href="#tab-related-functions" id="id21" name="id21">Tab related functions</a><ul>
+<li><a class="reference" href="#newtab" id="id22" name="id22">NewTab()</a></li>
+<li><a class="reference" href="#closetab-index-none-boolprompt-false" id="id23" name="id23">CloseTab(index=None, boolPrompt=False)</a></li>
+<li><a class="reference" href="#selecttab-index-none-inc-0" id="id24" name="id24">SelectTab(index=None, inc=0)</a></li>
+<li><a class="reference" href="#gettabcount" id="id25" name="id25">GetTabCount()</a></li>
+<li><a class="reference" href="#getcurrenttabindex" id="id26" name="id26">GetCurrentTabIndex()</a></li>
+</ul>
+</li>
+<li><a class="reference" href="#file-opening-and-saving" id="id27" name="id27">File opening and saving</a><ul>
+<li><a class="reference" href="#openfile-filename" id="id28" name="id28">OpenFile(filename='')</a></li>
+<li><a class="reference" href="#savescript-filename-index-none" id="id29" name="id29">SaveScript(filename='', index=None)</a></li>
+<li><a class="reference" href="#savescriptas-filename-index-none" id="id30" name="id30">SaveScriptAs(filename='', index=None)</a></li>
+<li><a class="reference" href="#getscriptfilename-index-none" id="id31" name="id31">GetScriptFilename(index=None)</a></li>
+<li><a class="reference" href="#isscriptsaved-index-none" id="id32" name="id32">IsScriptSaved(index=None)</a></li>
+</ul>
+</li>
+<li><a class="reference" href="#video-related-functions" id="id33" name="id33">Video related functions</a><ul>
+<li><a class="reference" href="#showvideoframe-framenum-none-index-none-forcerefresh-false" id="id34" name="id34">ShowVideoFrame(framenum=None, index=None, forceRefresh=False)</a></li>
+<li><a class="reference" href="#showvideooffset-self-offset-0-units-frames-index-none" id="id35" name="id35">ShowVideoOffset(self, offset=0, units='frames', index=None)</a></li>
+<li><a class="reference" href="#updatevideo-index-none" id="id36" name="id36">UpdateVideo(index=None)</a></li>
+<li><a class="reference" href="#hidevideowindow" id="id37" name="id37">HideVideoWindow()</a></li>
+<li><a class="reference" href="#getframenumber" id="id38" name="id38">GetFrameNumber()</a></li>
+<li><a class="reference" href="#getvideowidth-index-none" id="id39" name="id39">GetVideoWidth(index=None)</a></li>
+<li><a class="reference" href="#getvideoheight-index-none" id="id40" name="id40">GetVideoHeight(index=None)</a></li>
+<li><a class="reference" href="#getvideoframerate-index-none" id="id41" name="id41">GetVideoFramerate(index=None)</a></li>
+<li><a class="reference" href="#getvideoframecount-index-none" id="id42" name="id42">GetVideoFramecount(index=None)</a></li>
+<li><a class="reference" href="#runexternalplayer-executable-none-args-index-none" id="id43" name="id43">RunExternalPlayer(executable=None, args='', index=None)</a></li>
+<li><a class="reference" href="#saveimage-filename-framenum-none-index-none" id="id44" name="id44">SaveImage(filename='', framenum=None, index=None)</a></li>
+<li><a class="reference" href="#getbookmarklist" id="id45" name="id45">GetBookmarkList()</a></li>
+<li><a class="reference" href="#setbookmark-bm" id="id46" name="id46">SetBookmark(bm)</a></li>
+<li><a class="reference" href="#getselectionlist" id="id47" name="id47">GetSelectionList()</a></li>
+</ul>
+</li>
+<li><a class="reference" href="#miscellaneous" id="id48" name="id48">Miscellaneous</a><ul>
+<li><a class="reference" href="#msgbox-message-title" id="id49" name="id49">MsgBox(message, title='')</a></li>
+<li><a class="reference" href="#progressbox-max-100-message-title-progress" id="id50" name="id50">ProgressBox(max=100, message='', title='Progress')</a></li>
+<li><a class="reference" href="#getsliderinfo-index-none" id="id51" name="id51">GetSliderInfo(index=None)</a></li>
+<li><a class="reference" href="#executemenucommand-text" id="id52" name="id52">ExecuteMenuCommand(text)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section">
+<h1><a class="toc-backref" href="#id1" id="overview" name="overview">Overview</a></h1>
+<p>AvsP allows you to define macros written in the <a class="reference" href="http://www.python.org">Python</a> programming language.  These macros can control nearly every aspect of AvsP, from inserting text to opening and closing tabs to displaying dialogs to retrieve text or filenames from the user.  To take full advantage of macros, you need to have a good understanding of the Python language, but even someone with no Python experience can use macros quite effectively (the Python language is actually similar enough to the AviSynth language such that most AviSynth users can learn the basics of the Python pretty quickly).</p>
+<blockquote>
+<p><strong>Disclaimer</strong></p>
+<p>AvsP's macros are written using the <a class="reference" href="http://www.python.org">Python</a>, which is a full-featured programming language.  That means it's possible for someone to write a macro to do bad things to your computer.  I don't mean to scare people into not using macros, but I must tell you to only download and use macros from trusted sources.  If you don't trust yourself, don't use macros.  Like nearly all freeware, AvsP does not come with any warranty, and I am not responsible for what happens to your computer.  End of line.</p>
+</blockquote>
+</div>
+<div class="section">
+<h1><a class="toc-backref" href="#id2" id="usage" name="usage">Usage</a></h1>
+<p>A macro is simply Python code stored in a text file with a .py file extension.  When you start up AvsP, it automatically detects all .py files in the &quot;<strong>macros</strong>&quot; subdirectory.  These macros show up in the <strong>Macros</strong> program menu.  To run a macro, simply click on the appropriate menu item.</p>
+<p>The macros show up in the menu sorted in alphabetical order.  To help organize the order of your macros, any text like &quot;[...]&quot; are stripped from start in the menu names.  So if you want the macro &quot;Zebra.py&quot; to show up at the top of the menu instead of the bottom, name the file &quot;[000] Zebra.py&quot;.  Take a look at the names of the macros provided with the program to see an example of this in action.</p>
+<p>For further organization, you can create any number of directories in the <strong>macros</strong> directory.  Any macros in these subdirectories will appear in submenus in the <strong>Macros</strong> menu, where the name of a subdirectory becomes the name of its submenu.  The naming rules that apply to macro filenames apply to subdirectory names.</p>
+<p>If you come across the need to store variables between running macros, simply declare the desired variables as global variables.  AvsP will keep the value of any global variables in memory until the program is closed.  For example, let's say you need a counter to keep track of how many times a macro has been run.  You can use a macro like this:</p>
+<pre class="literal-block">
+global x
+try:
+    x += 1
+except NameError:
+    x = 0
+print x
+</pre>
+<p>This macro will set the variable x to 0 the first time it is run, and add 1 to x each subsequent time the macro is run.  If you close and restart AvsP and run the macro again, the variable x will be set to 0.  In this fashion you can design a macro to have different modes, depending on how many times the macro has been run.</p>
+</div>
+<div class="section">
+<h1><a class="toc-backref" href="#id3" id="examples" name="examples">Examples</a></h1>
+<p>Here we'll go over a couple of examples to give you a feel for how macros work.</p>
+<div class="section">
+<h2><a class="toc-backref" href="#id4" id="simple-text-insertion" name="simple-text-insertion">Simple text insertion</a></h2>
+<p>Probably one of the easiest (yet still very useful) macros you could write would be a macro that simply inserts a chunk of predefined text into your script.  Let's say you have a set of filters which you use for cleaning video:</p>
+<pre class="literal-block">
+GuavaComb(mode = &quot;NTSC&quot;)
+PeachSmoother()
+Levels(0,1.2,255,0,255)
+Convolution3D(preset = &quot;movieLQ&quot;)
+</pre>
+<p>Here's the macro which inserts this text into the script at the current cursor position:</p>
+<pre class="literal-block">
+avsp.InsertText(
+'''GuavaComb(mode = &quot;NTSC&quot;)
+PeachSmoother()
+Levels(0,1.2,255,0,255)
+Convolution3D(preset = &quot;movieLQ&quot;)'''
+)
+</pre>
+<p>Note the triple-quotes surrounding the text.  This is a special string which preserves newlines - if you were to use a normal string, you would need to add a &quot;\n&quot; to the end of every line.  To use this macro, copy the text into a text file named &quot;Cleaning filters.py&quot;, put it in your &quot;macros&quot; directory, start up AvsP, and it appears in the Macros menu.  Easy, huh?</p>
+<p><strong>Note:</strong> I am fully aware that you may not need macros to accomplish a task like this, since AviSynth itself provides features such as script importing and user-defined functions.  Just think of this example as an another option to choose from, there can be a couple advantages to using macros for this purpose, such as having menu access or keyboard shortcuts.</p>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id5" id="custom-templates" name="custom-templates">Custom templates</a></h2>
+<p>Extending off of the idea of simple text insertion is the idea of custom templates.  If like using AvsP's extension-based templates with the <a class="reference" href="Text.html#insert-source">Insert source</a> functionality, but find yourself wishing you could have more than one template per extension, you could try using a macro like this:</p>
+<pre class="literal-block">
+# Get the filename via an open dialog box
+filename = avsp.GetFilename()
+
+if filename:
+    # Create a new tab
+    avsp.NewTab()
+    # Create and insert the script into the tab
+    avsp.InsertText(
+        'AviSource(&quot;' + filename + '&quot;)\n'
+        'Sharpen(1.0)\n'
+        'Info()\n'
+    )
+</pre>
+<p>This macro is based off the &quot;Template example&quot; macro supplied with the program.  When you run this macro, it firsts shows a dialog box to get the filename of the video from the user.  If the user clicks OK, then the macro creates a new tab and inserts the specified text into the script.  Of course you can change the text given to avsp.InsertText() to be something more realistic than this example.  Overall, this is pretty functional for about 10 lines of code!</p>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id6" id="batch-scripting" name="batch-scripting">Batch scripting</a></h2>
+<p>Batch scripting refers to the process of generating multiple AviSynth scripts for every file in a directory or set of directories.  AvsP's macro facilities allow you to do this in a relatively easy fashion:</p>
+<pre class="literal-block">
+import os
+
+# Get the directory containing source files
+dirname = avsp.GetDirectory()
+
+if dirname:
+    # Generate each of the avisynth scripts
+    for filename in os.listdir(dirname):
+        fullname = os.path.join(dirname, filename)
+        if os.path.isfile(fullname):
+            # Get the extension-based template string
+            srctxt = avsp.GetSourceString(fullname)
+            # Create the script string
+            scripttxt = srctxt + '\n' + 'Sharpen(1.0)\nInfo()'
+            # Write the script text to a file
+            f = open(fullname + '.avs', 'w')
+            f.write(scripttxt)
+            f.close()
+</pre>
+<p>This macro is based off the &quot;Batch example&quot; macro supplied with the program.  This one uses a bit more Python than the previous examples.  When you run this macro, it firsts shows a dialog to get the name of the directory containing the video sources you wish to make scripts for.  If the user clicks OK, then it goes through the list of files in the directory and creates an AviSynth script for each one.  Here the function avsp.GetSourceString() is used to get the appropriate source filter for each filename (it gets text similar to AvsP's <a class="reference" href="Text.html#insert-source">Insert source</a> functionality).  The interesting thing to note here is that this macro doesn't interact with AvsP's interface at all!  AvsP's macros can pretty much do anything that Python can do, making them a very powerful tool indeed.</p>
+</div>
+</div>
+<div class="section">
+<h1><a class="toc-backref" href="#id7" id="macro-functions" name="macro-functions">Macro functions</a></h1>
+<p>Here is the complete list of AvsP-specific functions available to use in your macros.  This info can also be found in the &quot;macros_readme.txt&quot;, which you can access from AvsP's menu <strong>&quot;Macros -&gt; macros_readme.txt&quot;</strong>.</p>
+<div class="section">
+<h2><a class="toc-backref" href="#id8" id="text-related-functions" name="text-related-functions">Text related functions</a></h2>
+<div class="section">
+<h3><a class="toc-backref" href="#id9" id="inserttext-txt-pos-1-index-none" name="inserttext-txt-pos-1-index-none">InsertText(txt, pos=-1, index=None)</a></h3>
+<p>Inserts the string txt into the script of the tab located at the zero-based integer index at the text position pos.  If the input index is None, the text is inserted into the script of the currently selected tab.  The input pos can be either an integer representing the zero-based position in the text document (a value of -1 is equivalent to the last position) or a tuple representing the zero-based line and column numbers (a value of -1 is equivalent to the last line or column, respectively).  Alternatively, if pos is equal to None, the text is inserted at the current cursor position in the document, replacing any existing selection.  In all cases, the cursor is positioned at the end of the inserted text.  Returns False if insert failed (due to bad inputs), True otherwise.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id10" id="settext-txt-index-none" name="settext-txt-index-none">SetText(txt, index=None)</a></h3>
+<p>Similar to InsertText, but replaces all the text in the script of the tab located at the zero-based integer index with the string txt.  If the input index is None, the text is inserted into the script of the currently selected tab.  Returns False if the operation failed, True otherwise.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id11" id="gettext-index-none" name="gettext-index-none">GetText(index=None)</a></h3>
+<p>Returns the string containing all the text in the script of the tab located at the zero-based integer index.  If the input index is None, the text is retrieved from the script of the currently selected tab.  Returns False if the operation failed.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id12" id="getselectedtext-index-none" name="getselectedtext-index-none">GetSelectedText(index=None)</a></h3>
+<p>Similar to GetText(), but returns only the selected text.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id13" id="getsourcestring-filename" name="getsourcestring-filename">GetSourceString(filename='')</a></h3>
+<p>Returns an approprate source string based on the file extension of the input string filename.  For example, if filename is &quot;D:test.avi&quot;, the function returns the string &quot;AviSource(&quot;D:test.avi&quot;)&quot;.  Any unknown extension is wrapped with &quot;DirectShowSource(____)&quot;.  Templates can be viewed and defined in the options menu of the program.  If filename is empty, the user is promted to select a file with a dialog box.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id14" id="getpluginstring-filename" name="getpluginstring-filename">GetPluginString(filename='')</a></h3>
+<p>This function is similar to GetSourceString(), with 2 primary differences.  The first difference is that it always uses the template &quot;LoadPlugin(____)&quot;, with the assumption that filename is an Avisynth plugin dll.  The second difference is that if filename is empty, the open file dialog box displayed always starts in the AviSynth plugin directory for easy selection, whereas the dialog box in the GetSourceString() function always starts in the most recently used directory.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id15" id="getfilename-title-open-a-script-or-source" name="getfilename-title-open-a-script-or-source">GetFilename(title='Open a script or source')</a></h3>
+<p>Displays an open file dialog box, returning the filename of the selected file if the user clicked &quot;OK&quot;, returning an empty string otherwise.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id16" id="getsavefilename-title-save-as" name="getsavefilename-title-save-as">GetSaveFilename(title='Save as')</a></h3>
+<p>Displays an save file dialog box, returning the entered filename if the user clicked &quot;OK&quot;, returning an empty string otherwise.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id17" id="getdirectory-title-select-a-directory" name="getdirectory-title-select-a-directory">GetDirectory(title='Select a directory')</a></h3>
+<p>Displays a dialog box to select a directory, returning the name of the selected directory if the user clicked &quot;OK&quot;, returning an empty string otherwise.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id18" id="gettextentry-message-default-title-enter-information" name="gettextentry-message-default-title-enter-information">GetTextEntry(message, default='', title='Enter information')</a></h3>
+<p>Displays a dialog box with the string message along with a field for text entry, initially filled with the string default, returning the string from the text entry field if the user clicked &quot;OK&quot;, returning an empty string otherwise.  The message argument can optionally be a Python list of strings - in this case, the dialog box will have the appropriate number of text entries, and the function returns the list of entered strings if the user clicks &quot;OK&quot;,
+and returns an empty list otherwise.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id19" id="writetoscrap-txt-pos-1" name="writetoscrap-txt-pos-1">WriteToScrap(txt, pos=-1)</a></h3>
+<p>This function is identical to InsertText, except that instead of writing to one of the existing tabs, it writes to a scrap window (which is always on top, making it useful to keep track of the text as it changes).  Any inserted text is highlighted temporarily.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id20" id="getscraptext" name="getscraptext">GetScrapText()</a></h3>
+<p>Identical to the GetText function, except that it retrieves all text from the scrap window.</p>
+</div>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id21" id="tab-related-functions" name="tab-related-functions">Tab related functions</a></h2>
+<div class="section">
+<h3><a class="toc-backref" href="#id22" id="newtab" name="newtab">NewTab()</a></h3>
+<p>Creates a new tab (automatically named &quot;New File (x)&quot;, where x is an appropriate integer).  If any text was selected in the most recent tab, it is automatically copied over to the new tab's text.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id23" id="closetab-index-none-boolprompt-false" name="closetab-index-none-boolprompt-false">CloseTab(index=None, boolPrompt=False)</a></h3>
+<p>Closes the tab at integer index, where an index of 0 indicates the first tab. If index is None (the default), the function will close the currently selected tab.  If the argument boolPrompt is True, the program will prompt the user with a dialog box to save the file if there are any unsaved changes.  If boolPrompt is False, the function will not prompt the user and will close the script without saving any changes.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id24" id="selecttab-index-none-inc-0" name="selecttab-index-none-inc-0">SelectTab(index=None, inc=0)</a></h3>
+<p>Selects the tab located at the integer index, where an index of 0 indicates the first tab.  If the index is None, the integer inc is used instead to determine which tab to select, where inc is an offset from the currently selected tab (negative values for inc are allowable).  Returns False upon failure (invalid input), True otherwise.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id25" id="gettabcount" name="gettabcount">GetTabCount()</a></h3>
+<p>Returns the number of scripts currently open.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id26" id="getcurrenttabindex" name="getcurrenttabindex">GetCurrentTabIndex()</a></h3>
+<p>Returns the zero-based index of the currently selected tab.</p>
+</div>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id27" id="file-opening-and-saving" name="file-opening-and-saving">File opening and saving</a></h2>
+<div class="section">
+<h3><a class="toc-backref" href="#id28" id="openfile-filename" name="openfile-filename">OpenFile(filename='')</a></h3>
+<p>If the string filename is a path to an Avisynth script, this function opens the script into a new tab.  If filename is a path to a non-script file, this function inserts the filename as a source (see the InsertSource function for details).  If filename is not supplied, the user is prompted with an Open File dialog box.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id29" id="savescript-filename-index-none" name="savescript-filename-index-none">SaveScript(filename='', index=None)</a></h3>
+<p>Saves all the unsaved changes of the script in the tab located at the integer index.  If index is None, the script in the currently selected tab is used.  The function will prompt the user with a dialog box for the location to save the file if the string filename is not provided and the script does not already exist on the hard drive.  If a file with the same name as filename already exists, it is overwritten without any prompting.  The function returns the filename of the saved file.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id30" id="savescriptas-filename-index-none" name="savescriptas-filename-index-none">SaveScriptAs(filename='', index=None)</a></h3>
+<p>Similar to the function SaveScript(), except that if the filename is an empty string, this function will always prompt the user with a dialog box for the location to save the file, regardeless of whether or not the script exists on the hard drive.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id31" id="getscriptfilename-index-none" name="getscriptfilename-index-none">GetScriptFilename(index=None)</a></h3>
+<p>Returns the name of the script at the tab located at the integer index, where an index of 0 indicates the first tab.  If index is None, the currently selected tab is used.  The returned name is the filename of the script on the hard drive.  If the script has never been saved to the hard drive, the returned name is an empty string.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id32" id="isscriptsaved-index-none" name="isscriptsaved-index-none">IsScriptSaved(index=None)</a></h3>
+<p>Returns a boolean indicating whether the script in the tab located at the integer index has any unsaved changes.  If index is None, the script in the currently selected tab is used.  Returns False if there are any unsaved changes, True otherwise.</p>
+</div>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id33" id="video-related-functions" name="video-related-functions">Video related functions</a></h2>
+<div class="section">
+<h3><a class="toc-backref" href="#id34" id="showvideoframe-framenum-none-index-none-forcerefresh-false" name="showvideoframe-framenum-none-index-none-forcerefresh-false">ShowVideoFrame(framenum=None, index=None, forceRefresh=False)</a></h3>
+<p>This function refreshes the video preview (unhiding it if it is hidden) using the frame specified by the integer framenum, using the script of the tab located at the integer index.  The function also automatically selects the tab located at index.  If framenum is None, it uses the current frame number from the video preview slider.  If index is None, the frame of the currently selected tab is shown.  If the input forceRefresh equals True, then the script is reloaded before showing the video frame (normally the script is reloaded only when the text has changed).</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id35" id="showvideooffset-self-offset-0-units-frames-index-none" name="showvideooffset-self-offset-0-units-frames-index-none">ShowVideoOffset(self, offset=0, units='frames', index=None)</a></h3>
+<p>Similar to ShowVideoFrame(), except the user specifies an offset instead of the direct frame.  Offset can be positive or negative (for backwards jumping).  The string argument units specifies the units of the offset, and can be either 'frames', 'seconds', 'minutes', or 'hours'.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id36" id="updatevideo-index-none" name="updatevideo-index-none">UpdateVideo(index=None)</a></h3>
+<p>This function is similar to ShowVideoFrame(), but does not force the video preview to be shown if it is hidden.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id37" id="hidevideowindow" name="hidevideowindow">HideVideoWindow()</a></h3>
+<p>Hides the video preview window if it is visible (note that the video controls are always visible).</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id38" id="getframenumber" name="getframenumber">GetFrameNumber()</a></h3>
+<p>Returns the current integer frame number of the video preview slider.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id39" id="getvideowidth-index-none" name="getvideowidth-index-none">GetVideoWidth(index=None)</a></h3>
+<p>Returns the width of the video of the script at the tab integer index.  If index is None, then the currently selected tab is used.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id40" id="getvideoheight-index-none" name="getvideoheight-index-none">GetVideoHeight(index=None)</a></h3>
+<p>Returns the height of the video of the script at the tab integer index.  If index is None, then the currently selected tab is used.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id41" id="getvideoframerate-index-none" name="getvideoframerate-index-none">GetVideoFramerate(index=None)</a></h3>
+<p>Returns the framerate of the video of the script at the tab integer index.  If index is None, then the currently selected tab is used.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id42" id="getvideoframecount-index-none" name="getvideoframecount-index-none">GetVideoFramecount(index=None)</a></h3>
+<p>Returns the framecount of the video of the script at the tab integer index.  If index is None, then the currently selected tab is used.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id43" id="runexternalplayer-executable-none-args-index-none" name="runexternalplayer-executable-none-args-index-none">RunExternalPlayer(executable=None, args='', index=None)</a></h3>
+<p>Runs the external program specified by the string argument executable.  The first argument passed to the program is the filename of the preview script generated from the script located at the tab integer index.  If index is None, then the currently selected tab is used.  Additional arguments can be passed to the external program using the string parameter args.  If the specified executable does not exist, then the function returns False, otherwise it runs the executable program with the appropriate arguments and returns True.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id44" id="saveimage-filename-framenum-none-index-none" name="saveimage-filename-framenum-none-index-none">SaveImage(filename='', framenum=None, index=None)</a></h3>
+<p>Saves the video frame specified by the integer framenum as a file specified by the string filename, where the video corresponds with the script at the tab integer index.  If filename is an empty string, then the user is prompted with a dialog box.  If index is None, then the currently selected tab is used.  Returns True if the image was saved, False otherwise.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id45" id="getbookmarklist" name="getbookmarklist">GetBookmarkList()</a></h3>
+<p>Returns a list containing the video frame bookmarks currently set by the user.  Note that these are the standard frame bookmarks, and do not contain any selection startpoints or endpoints which may exist.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id46" id="setbookmark-bm" name="setbookmark-bm">SetBookmark(bm)</a></h3>
+<p>Sets the input integer bm as a video frame bookmark.  If bm is a list, sets each of the values in bm as a video frame bookmark.  Returns True if successful, False otherwise.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id47" id="getselectionlist" name="getselectionlist">GetSelectionList()</a></h3>
+<p>Returns a list containing the video frame selections created by AvsP's trim selection editor, where each element of the list is a 2-element tuple containing the startpoint and the endpoint of a selection.  Note that the trim selection editor must be visible for any selections to exist.</p>
+</div>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id48" id="miscellaneous" name="miscellaneous">Miscellaneous</a></h2>
+<div class="section">
+<h3><a class="toc-backref" href="#id49" id="msgbox-message-title" name="msgbox-message-title">MsgBox(message, title='')</a></h3>
+<p>Displays a simple dialog box with the string message.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id50" id="progressbox-max-100-message-title-progress" name="progressbox-max-100-message-title-progress">ProgressBox(max=100, message='', title='Progress')</a></h3>
+<p>Returns a wxPython dialog control which displays the progress of any given task as a fraction of the input integer max.  In order to display the dialog, use its method Update(value), which takes in the new progress value.  The method Update returns False if the user clicked on the Cancel button, and returns True otherwise.  IMPORTANT: You must use the Destroy() method to destroy the dialog after you are done with it.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id51" id="getsliderinfo-index-none" name="getsliderinfo-index-none">GetSliderInfo(index=None)</a></h3>
+<p>Returns a list containing information for each slider in the script located at the tab integer index.  If index is None, then the currently selected tab is used.  The slider information consists of 4 items.  The first item is the slider text itself.  The second item is the slider label.  The third item is the list of numbers which the graphical slider represents.  The fourth item is the number of decimal places for the slider numbers as specified by the user.</p>
+</div>
+<div class="section">
+<h3><a class="toc-backref" href="#id52" id="executemenucommand-text" name="executemenucommand-text">ExecuteMenuCommand(text)</a></h3>
+<p>Executes one of AvsP's menu commands as specified by the input text, which can either be the name of the menu command or the keyboard shortcut.  For example, you can create a new tab in a macro by using either &quot;avsp.ExecuteMenuCommand('File -&gt; New Tab')&quot; or by using &quot;avsp.ExecuteMenuCommand('Ctrl+N')&quot;.  In this manner all menu commands are available to AvsP's macro language.  The input text is not case sensitive, but must be spelled precisely in order to work (a complete list of all the commands and shortcuts with precise spelling can be found in the &quot;Options -&gt; Configure shortcuts...&quot; dialog).  Returns True if successful, False otherwise.</p>
+</div>
+</div>
+</div>
+</div>
+
+            </div>
+    	</div></td>
+    </tr>
+    <tr>
+     <td valign="top" align="left" width="25%">
+    <div id="left-column">
+        <div id="sidie">
+            <ul>
+                <li class="left-navheader-first">
+                    <a href="index.html" class="left-navheader">Home</a>
+                </li> 
+                <li class="left-navheader">Pages</li>
+
+<li><a href="Overview.html">Overview of AvsP</a></li>
+<li><a href="Download.html">Download</a></li>
+<li><a href="Text.html">Text Features</a></li>
+<li><a href="Video.html">Video Features</a></li>
+<li><a href="UserSliders.html">User Sliders</a></li>
+<li><a href="Macros.html">Macros</a></li>
+<li><a href="Translation.html">Translating AvsP</a></li>
+<li><a href="About.html">About</a></li>
+
+
+            </ul>
+        </div>
+        
+        
+        <p class="sidieimg">
+            <a href="https://www.paypal.com/xclick/business=qwerpoi.avsp@gmail.com&item_name=AvsP&tax=0&currency_code=USD" target="_blank"><img src="images/donation.gif" alt="Donate via PayPal" width="110" height="23" align="left" hspace="0" vspace="25" border="0" /></a>
+        </p>
+        
+        
+        
+    </div>
+    </td>
+    </tr>
+</table>
+
+    <hr />
+        
+    
+    <div id="footer">
+       <a href="http://validator.w3.org/check?uri=referer" title="Validate code as W3C XHTML 1.1 Strict Compliant">W3C XHTML 1.1</a> | <a href="http://jigsaw.w3.org/css-validator/check?uri=referer" title="Validate Style Sheet as W3C CSS 2.0 Compliant">W3C CSS 2.0</a>
+    </div>
+	</div>
+</body>
+</html>

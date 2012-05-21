@@ -1,0 +1,227 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+    <title>Text Features</title>
+    <link rel="stylesheet" href="stylesheets/rest2web.css" type="text/css" />
+    <link rel="stylesheet" href="stylesheets/voidspace_docutils2.css" type="text/css" />
+    <meta http-equiv="Content-Type" content="text/html; charset=ISO8859-1" />
+</head>
+
+<body style="background: url(images/logos/img_background.gif) top center repeat-y;">
+  <div id="wrap">
+    <div id="header">
+      <ul>
+        <li><a href="index.html">home</a></li>
+<li>&gt;</li>
+<li>Text Features</li>
+
+      </ul>
+    </div>
+
+    <table>
+    <tr>
+     <td><img src="images/logos/1.gif" width="1" height="1" alt="" /></td>
+     <!-- main content cell first, with rowspan=2 -->
+     <td valign="top" align="left" rowspan="2">
+     
+    <div id="middle-column">
+        <a name="startcontent" id="startcontent"></a>
+            <div>
+                <div class="document" id="text-features">
+<h1 class="title">Text Features</h1>
+<div class="contents topic">
+<p class="topic-title first"><a id="contents" name="contents">Contents</a></p>
+<ul class="simple">
+<li><a class="reference" href="#inserting-text" id="id1" name="id1">Inserting text</a><ul>
+<li><a class="reference" href="#insert-source" id="id2" name="id2">Insert source</a></li>
+<li><a class="reference" href="#insert-filename" id="id3" name="id3">Insert filename</a></li>
+<li><a class="reference" href="#insert-plugin" id="id4" name="id4">Insert plugin</a></li>
+<li><a class="reference" href="#insert-frame-number" id="id5" name="id5">Insert frame number</a></li>
+<li><a class="reference" href="#drag-and-drop" id="id6" name="id6">Drag-and-drop</a></li>
+<li><a class="reference" href="#open-with" id="id7" name="id7">Open With &gt;</a></li>
+<li><a class="reference" href="#filter-presets" id="id8" name="id8">Filter presets</a></li>
+<li><a class="reference" href="#inserting-text-with-macros" id="id9" name="id9">Inserting text with macros</a></li>
+</ul>
+</li>
+<li><a class="reference" href="#avisynth-awareness" id="id10" name="id10">AviSynth awareness</a><ul>
+<li><a class="reference" href="#syntax-highlighting" id="id11" name="id11">Syntax highlighting</a></li>
+<li><a class="reference" href="#autocompletion" id="id12" name="id12">Autocompletion</a></li>
+<li><a class="reference" href="#calltips" id="id13" name="id13">Calltips</a></li>
+</ul>
+</li>
+<li><a class="reference" href="#miscellaneous" id="id14" name="id14">Miscellaneous</a><ul>
+<li><a class="reference" href="#saving-a-session" id="id15" name="id15">Saving a session</a></li>
+<li><a class="reference" href="#show-function-definition" id="id16" name="id16">Show function definition</a></li>
+<li><a class="reference" href="#export-import-filter-customizations" id="id17" name="id17">Export/Import filter customizations</a></li>
+<li><a class="reference" href="#scrap-window" id="id18" name="id18">Scrap window</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section">
+<h1><a class="toc-backref" href="#id1" id="inserting-text" name="inserting-text">Inserting text</a></h1>
+<p>AvsP works like any standard text editor, and provides all the basic features one would expect, such as Copy, Paste, Find, Replace, Undo, Redo, etc.  <strong>If you know how to use Notepad to create AviSynth scripts, you already know how to use AvsP.</strong>  However, there are a great number of text features AvsP has in order to specifically help with the creation of AviSynth scripts.  The number of features can be a bit overwhelming, so here's a quick summary which highlights the differences of some key text insertion features:</p>
+<ul class="simple">
+<li><a class="reference" href="#insert-source">Extension-based templates</a> allow you to define templates for each file extension</li>
+<li><a class="reference" href="#filter-presets">Filter presets</a> allow you to define templates for each AviSynth filter</li>
+<li><a class="reference" href="#inserting-text-with-macros">Inserting text with macros</a> allows you to define arbitrary templates (advanced)</li>
+</ul>
+<p>Be sure to choose the right feature for the right job, it will make your life a lot easier.</p>
+<div class="section">
+<h2><a class="toc-backref" href="#id2" id="insert-source" name="insert-source">Insert source</a></h2>
+<p>This is the function you're likely to use most to insert filenames.  You can access it a number of ways:</p>
+<ul class="simple">
+<li>from the program menu <strong>&quot;Edit -&gt; Insert -&gt; Insert source...&quot;</strong></li>
+<li>with the keyboard shortcut <strong>F9</strong></li>
+<li>clicking the <strong>middle-mouse button</strong> on the text area</li>
+</ul>
+<p>(Note that the script's right-click menu is identical to the program's Edit menu.)  The function shows a file open dialog box, allowing you to select a file from anywhere on your computer.  If you click &quot;OK&quot;, then it inserts an appropriate AviSynth filter along with the filename in the text at the current cursor position.  For instance, if you select &quot;C:\test.avi&quot;, the text &quot;AviSource(&quot;C:\test.avi&quot;)&quot; gets inserted into the script.  The appropriate AviSynth filter is determined by what is referred to as the extension-based templates,  which can be edited from the menu command <strong>&quot;Options -&gt; Extension templates&quot;</strong>.  Note that any file extensions not defined here are automatically wrapped with &quot;DirectShowSource(***)&quot;.</p>
+<div align="center" class="align-center"><img alt="images/avsp_templates.jpg" class="align-center" src="images/avsp_templates.jpg" style="height: 300px;" /></div>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id3" id="insert-filename" name="insert-filename">Insert filename</a></h2>
+<p>menu command <strong>&quot;Edit -&gt; Insert -&gt; Insert filename..&quot;</strong>, keyboard shortcut <strong>Shift+F9</strong></p>
+<p>Similar to <a class="reference" href="#insert-source">Insert source</a>, this function shows a file open dialog box, allowing you to select any file on your computer.  If you click &quot;OK&quot;, it simply inserts the filename into the text - no AviSynth filter, no surrounding quotes, nothing but the filename.  This function is useful in the special case where you want to insert a filename but you don't want or need the extension-based template.</p>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id4" id="insert-plugin" name="insert-plugin">Insert plugin</a></h2>
+<p>menu command <strong>&quot;Edit -&gt; Insert -&gt; Insert plugin...&quot;</strong>, keyboard shortcut <strong>F10</strong></p>
+<p>Again, this function is similar to <a class="reference" href="#insert-source">Insert source</a>, with two key differences.  First, the file open dialog starts off in the AviSynth plugin directory.  Second, instead of wrapping the filename with an extension-based template the function wraps the filename with &quot;LoadPlugin(***)&quot;.</p>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id5" id="insert-frame-number" name="insert-frame-number">Insert frame number</a></h2>
+<p>menu command <strong>&quot;Edit -&gt; Insert -&gt; Insert frame #</strong>, keyboard shortcut <strong>F11</strong></p>
+<p>This function simply inserts the current frame number from the <a class="reference" href="Video.html">video preview</a> in the text at the current cursor position.  There are of course other ways to do this, but this method is the fastest.</p>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id6" id="drag-and-drop" name="drag-and-drop">Drag-and-drop</a></h2>
+<p>AvsP allows for dragging and dropping of files from a file manager like Windows Explorer.  If the dropped file is an AviSynth script (ie, has a .avs or .avsi extension), the script is opened in a new tab.  Otherwise, the dropped file is inserted as a video source with the appropriate extension-based template (see <a class="reference" href="#insert-source">Insert Source</a> section) at the current cursor position - note that the cursor moves with the mouse during the dropping process.  If you drop a video source file on an area of the program besides the text region, then the file is inserted as a source in a new tab.  If you drop multiple files onto the program, they are all inserted in new tabs.</p>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id7" id="open-with" name="open-with">Open With &gt;</a></h2>
+<p>If AvsP recieves a non-AviSynth script filename from the command line, it treats the file as a video source and inserts text using the appropriate extension-based template.  This means for every file extension you are interested in, you can add AvsP to the extension's &quot;Open With&quot; menu, allowing you to quickly create AviSynth scripts for any video source directly from your file manager.</p>
+<div align="center" class="align-center"><img alt="images/avsp_openwith.jpg" class="align-center" src="images/avsp_openwith.jpg" style="height: 386px;" /></div>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id8" id="filter-presets" name="filter-presets">Filter presets</a></h2>
+<p>Filter presets work with in conjunction with <a class="reference" href="#autocompletion">autocompletion</a> to insert predefined text any time you would autocomplete a filter name.  You can define a preset for each filter defined in AvsP.  You can define presets from <strong>&quot;Options -&gt; AviSynth function definition...&quot;</strong> (see the next section). Whenever you perform an autocomplete action, instead of inserting the filter name, the program will insert the preset text instead (assumming a preset is defined for that filter).  So for example, you can set the preset for TemporalSoften to &quot;TemporalSoften(4,4,8,15,2)&quot; if you find yourself starting with those set of values often.</p>
+<p>When you perform the autocomplete action to insert the preset text, by default the text cursor will appear at the end of the inserted preset text.  You can configure where you want the cursor to appear after preset insertion by using cursor tags within the preset, where a cursor tag is the set of characters &quot;[|]&quot; (without the quotes).  So following the last example, by setting the preset to &quot;TemporalSoften(4,4,8,15[|],2)&quot;, the cursor will appear between the number 15 and the comma whenever the preset is activated (note that all cursor tags are removed when the preset is inserted into the script).  Furthermore, you can use two cursor tags to specify not just the cursor position, but the selected text as well.  So by setting the preset to &quot;TemporalSoften(4,4,8,[|]15[|],2)&quot;, the number 15 will be highlighted whenever the preset is activated, making it easy to modify the value.</p>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id9" id="inserting-text-with-macros" name="inserting-text-with-macros">Inserting text with macros</a></h2>
+<p><a class="reference" href="Macros.html">Macros</a> are covered in a different section, but I'll make a brief mention here.  Once people get some experience using AviSynth, they often develop a catalog of &quot;favorite scripts&quot;.  Sometimes its a combination of filters good for cleaning video captures, or perhaps a script for dealing with badly mastered video with blending or poor IVTC.  Whatever the case may be, AvsP's macros allow you to define menu commands to paste these types of scripts into a tab in a very simple fashion.  Of course, macros can do a whole lot more than that, you can read about it <a class="reference" href="Macros.html">here</a> to find out more.</p>
+</div>
+</div>
+<div class="section">
+<h1><a class="toc-backref" href="#id10" id="avisynth-awareness" name="avisynth-awareness">AviSynth awareness</a></h1>
+<img alt="images/avsp_autocomplete.jpg" src="images/avsp_autocomplete.jpg" style="height: 268px;" />
+<img alt="images/avsp_calltip.jpg" src="images/avsp_calltip.jpg" style="height: 268px;" />
+<p id="presets"><span id="preset"></span>Another way AvsP helps in making AviSynth scripts is by offering features common to professional text editors designed for specific programming languages.  From the first screenshot, you can see how the text has AviSynth-specific colors (referred to as <a class="reference" href="#syntax-highlighting">syntax highlighting</a>), as well as a mechanism to help you enter filter names (referred to as <a class="reference" href="#autocompletion">autocompletion</a>).  From the second screenshot you can see a small popup window showing the arguments to the filter (referred to as <a class="reference" href="#calltips">calltips</a>).  These features help reduce the number of typos and mistakes when creating AviSynth scripts.  The information for these features can be accessed from the menu command <strong>&quot;Options -&gt; AviSynth function definition&quot;</strong>.</p>
+<div align="center" class="align-center"><img alt="images/avsp_optionsfilters.jpg" class="align-center" id="dialog" name="dialog" src="images/avsp_optionsfilters.jpg" style="height: 455px;" /></div>
+<p>On the left there is a list of every AviSynth filter, sorted alphabetically.  You can add new filters with the &quot;Insert&quot; button, delete an existing filter with the &quot;Delete&quot; button, or edit an existing filter name by selecting the item and left-clicking once.  To the right of the filter list are properties specific to the selected filter.  The &quot;Filter arguments&quot; text box determines what is displayed with <a class="reference" href="#calltips">calltips</a>.  The &quot;Preset&quot; text box is optionally used to insert alternate text during <a class="reference" href="#autocompletion">autocompletion</a>.  The &quot;Doc path/url&quot; text box allows you to select a specific documentation file or url associated with the filter.  This file is opened when you left-click a <a class="reference" href="#calltips">calltip</a>.  You can also specify which category the function belongs to.  This determines the font and color of the function in the text (see the next section).</p>
+<p>Similarly, in the <strong>&quot;Keywords and operators&quot;</strong> tab, you can configure the specific keywords and operators to be colorized by the syntax highlighter.  You can also configure a miscellaneous word list, which will be colorized using the &quot;Miscellaneous word&quot; style.  Again, defining these keyword and operator lists do not affect AviSynth itself, it merely determines which words should be colorized by which style.</p>
+<div class="section">
+<h2><a class="toc-backref" href="#id11" id="syntax-highlighting" name="syntax-highlighting">Syntax highlighting</a></h2>
+<p>Syntax highlighting refers to an editor's ability to colorize and mark-up the text based on a specific programming language.  For AvsP, any filter names are colored dark blue and bolded.  Any open and close parentheses are colored blue if it is matched correctly, and colored red if not matched.  In other words, a red parentheses indicates a syntax error, which makes it easy to check complex lines for mistakes without having to count parentheses.  You can turn off syntax highlighting in the <strong>&quot;Options -&gt; Program settings...&quot;</strong> dialog, in the <strong>&quot;Text 1&quot;</strong> tab.  More realistically, you can edit the fonts and colors to your liking in the <strong>&quot;Options -&gt; Fonts and colors...&quot;</strong> dialog:</p>
+<div align="center" class="align-center"><img alt="images/avsp_optionsfonts.jpg" class="align-center" src="images/avsp_optionsfonts.jpg" style="height: 293px;" /></div>
+<p>The screenshot shows only a portion of the available fonts and colors you can configure, there are over 60 different fonts and colors you can customize if you desire.  Clicking on the font button brings up the standard font configuration dialog, where you can choose the font type, style (bold, italic, etc.), and size.   Clicking on a color button brings up the standard color selection dialog.  After clicking &quot;OK&quot; on the dialog box, you'll see the font and color changes updated accordingly in your scripts.</p>
+<p>The last font in the &quot;Basic&quot; tab is the monospaced font.  This font is used when you activate the command <strong>&quot;Options -&gt; Use monospaced font&quot;</strong>.  If you activate this command, then all the text in a script will appear with this font type and font size.  This option is useful if you prefer your script text to have columns which line up.  Note that this style will <em>not</em> override colors or bold and italic attributes, these are still obtained from the other various styles.</p>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id12" id="autocompletion" name="autocompletion">Autocompletion</a></h2>
+<p>Autocompletion is a mechanism for the program to help you enter keywords - in the case of AvsP, the autocompletion helps enter AviSynth filter names.  Autocompletion works like this - when you type a word starting with a capital letter, a small list box shows up under the cursor, as shown in this <a class="reference" href="#avisynth-awareness">picture</a>.  In the example, typing &quot;T&quot; resulted in a list box showing up with all the AviSynth filters starting with the letter &quot;t&quot;.  You can select a filter from the list using the arrow keys or mouse.  If you keep typing the program automatically selects a matching filter name from the list - in the example, typing &quot;w&quot; after typing &quot;T&quot; selected the &quot;Tweak&quot; filter.  By pressing the Enter or Tab key, the filter name is automatically entered into the text (along with an open parentheses - you can change this behavior in the <strong>&quot;Options -&gt; Program settings...&quot;</strong> dialog, in the <strong>&quot;Text 1&quot;</strong> tab).</p>
+<p>An alternate way to show the autocomplete list box is to use the keyboard shortcut <strong>Ctrl+Space</strong> (also available from the menu command <strong>&quot;Edit -&gt; AviSynth function -&gt; Autcomplete&quot;</strong>).  In order to use this method, simply begin typing a filtername (no need to start with a capital letter), then hit Ctrl-Space.  The autocomplete list box will consist of filters which begin with the word fragment typed so far - so if you type &quot;te&quot; and hit Ctrl-Space, the autocomplete list box consists only of the filters &quot;Telecide&quot; and &quot;TemporalSoften&quot;, since those are the only filters which start with &quot;te&quot;.  If you hit Ctrl-Space and there is only one match to the current word fragment, then no list box is shown, and the filter is entered automatically.</p>
+<p>If a <a class="reference" href="#preset">preset</a> exists for a filter, then whenever the autcomplete mechanism is activated for that filter, instead of entering the filtername and an open parentheses into the text, the preset text is entered instead.  This is especially useful for entering text with <a class="reference" href="UserSliders.html">user sliders</a>, since they require independent presets per filter.</p>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id13" id="calltips" name="calltips">Calltips</a></h2>
+<p>Calltips are small windows which popup whenever the text cursor is within a filter's arguments.  The appropriate argument within the calltip is colored black based on the cursor's position.</p>
+<div align="center" class="align-center"><img alt="images/avsp_calltip2.jpg" class="align-center" src="images/avsp_calltip2.jpg" style="height: 143px;" /></div>
+<p>Left-clicking on a calltip triggers AvsP to open the filter's associated documentation file.  The documentation file is found as follows.  First AvsP checks to see if any file or url was defined in the <strong>&quot;Options -&gt; AviSynth function definition&quot;</strong> <a class="reference" href="#dialog">dialog</a>.  If nothing was defined, then AvsP searches in the defined search directories (see below) for any file with the same name as the filter, with a .htm, .html, or .txt extension.  If no documentation was found, then a message box is shown; otherwise, the file or url is opened with the appropriate program.</p>
+<p>You can edit the directories AvsP searches for filter documentation in the <strong>&quot;Options -&gt; Program settings...&quot;</strong> dialog, in the <strong>&quot;General&quot;</strong> tab.</p>
+<div align="center" class="align-center"><img alt="images/avsp_optionsgeneral.jpg" class="align-center" src="images/avsp_optionsgeneral.jpg" style="height: 465px;" /></div>
+<p>The default search paths are:</p>
+<ol class="arabic simple">
+<li>%avisynthdir%\plugins</li>
+<li>%avisynthdir%\docs\english\corefilters</li>
+<li>%avisynthdir%\docs\english\externalfilters</li>
+</ol>
+<p>where %avisynthdir% is the installed AviSynth directory.  Note that the search paths are defined in a single line of text, where each path is separated by a semicolon.  You can add or remove any number of search paths.  You may occasionally run into the case where there doesn't exist a documentation file for a specific filter.  For example, the documentation for Sharpen exists in %avisynthdir%\docs\english\corefilters\Blur.html (since Sharpen is really just a negative Blur).  In this case, the easiest thing to do is make a shortcut for Blur.html and rename the shortcut to Sharpen.html.  This method may be preferable to editing the individual filter doc paths, it's up to you.</p>
+<p>Here's a little trick you can use with calltips.  As an alternative to opening documentation in your default web browser as described above, you can add little comments per filter and have them show up in the calltips.  Here's an example.  In the <strong>&quot;Options -&gt; AviSynth function definition&quot;</strong> dialog, let's edit the &quot;Filter arguments&quot; text for the TemporalSoften filter like this:</p>
+<div align="center" class="align-center"><img alt="images/avsp_optionsfilters2.jpg" class="align-center" src="images/avsp_optionsfilters2.jpg" style="height: 455px;" /></div>
+<p>Now whenever the calltip pops up, it looks like ths:</p>
+<div align="center" class="align-center"><img alt="images/avsp_calltip3.jpg" class="align-center" src="images/avsp_calltip3.jpg" style="height: 205px;" /></div>
+<p>Notice how the filter arguments are still wrapped and lined up appropriately, despite the extra text we added.  Cool!</p>
+</div>
+</div>
+<div class="section">
+<h1><a class="toc-backref" href="#id14" id="miscellaneous" name="miscellaneous">Miscellaneous</a></h1>
+<p>There are a couple more text-related features which should be mentioned here.</p>
+<div class="section">
+<h2><a class="toc-backref" href="#id15" id="saving-a-session" name="saving-a-session">Saving a session</a></h2>
+<p>AvsP allows you to save scripts like any other text editor.  However, if you are working on several scripts at one time and want to save them as a single project, you can use the &quot;save session&quot; feature (from the menu <strong>&quot;File -&gt; Save session...&quot;</strong>, or use the keyboard shortcut <strong>Alt+S</strong>).  This function saves all the scripts in the tabs into a single file with a .ses extension.  It also keeps track of other program information, such as the video frame number and whether the preview was visible or not.  In this way, when you load a session (from the menu <strong>&quot;File -&gt; Load session...&quot;</strong> or keyboard shortcut <strong>Alt+O</strong>), the state of the program is fully restored.</p>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id16" id="show-function-definition" name="show-function-definition">Show function definition</a></h2>
+<p>If you're working with a script and notice some function whose calltip you want to change, or some user-defined function you didn't set up for syntax highlighting yet, there's a quick way to enter the necessary information.  Simply place the cursor on the function or inside its parentheses and click on the menu command <strong>&quot;Edit -&gt; AviSynth function -&gt; Show function definition&quot;</strong>, or use the keyboard shortcut <strong>Ctrl+Shift+D</strong>.  This will bring up the AviSynth function definition <a class="reference" href="#dialog">dialog</a>.  If the function was already defined, it is automatically selected, so you can quickly edit or add any new info.  If the function hasn't yet been defined, you will be prompted first to enter the function name and arguments.  Using this command will allow you to quickly extend AvsP's function database to suit your needs.</p>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id17" id="export-import-filter-customizations" name="export-import-filter-customizations">Export/Import filter customizations</a></h2>
+<p>AvsP allows you to customize a large amount of filter information, such as calltips, autocompletion presets, and documentation paths.  If you want to share these customizations with someone else, you can export your customizations with the <strong>&quot;File -&gt; Export filter customizations&quot;</strong> command.  This command will open a dialog box showing the entire list of AviSynth filters, as seen here:</p>
+<div align="center" class="align-center"><img alt="images/avsp_exportfilters.jpg" class="align-center" src="images/avsp_exportfilters.jpg" style="height: 338px;" /></div>
+<p>You can select any or all filters to export.  When you click on the &quot;OK&quot; button, you will be prompted on where to save your customization file.  You can then send this file to someone else, who can import the file using the <strong>&quot;File -&gt; Import filter customizations&quot;</strong> command.  This command will first prompt you to select the customization file, and then will bring up a very similar dialog box, this time showing all the filters available for importing.  Simply select all the filters you wish to import and click on &quot;OK&quot;.  On the import filter customizations dialog box, there's also a checkbox labeled &quot;Overwrite all data&quot;.  If this is not checked, then the filter database will be updated only with information that does not yet exist in the current database.  If the checkbox is checked, then the filter database will be updated overwriting any existing information.  In general, you should leave this checkbox unchecked unless you are willing to discard your own customizations for the filters you select to import.</p>
+</div>
+<div class="section">
+<h2><a class="toc-backref" href="#id18" id="scrap-window" name="scrap-window">Scrap window</a></h2>
+<p>The scrap window is similar to a text tab in AvsP, but it exists in its own small window separate from the main program, and it does not have any <a class="reference" href="#avisynth-awareness">AviSynth awareness</a> features.  You can show the scrap window using the menu command <strong>&quot;File -&gt; Toggle scrap window&quot;</strong>, or use the keyboard shortcut <strong>Ctrl+P</strong>.  It gives you a place to write down small bits of text, whether its a bitrate you're considering for compression or some decent filter values for a certain script.  The interesting thing about the scrap window is that the text is automatically saved when you close AvsP, so <strong>anything you enter into the scrap window will never be lost</strong>, unless you specifically delete it.  The scrap window becomes particularly useful when you use <a class="reference" href="Macros.html">macros</a>, as it gives you a place to programmatically enter text with visual feedback.</p>
+</div>
+</div>
+</div>
+
+            </div>
+    	</div></td>
+    </tr>
+    <tr>
+     <td valign="top" align="left" width="25%">
+    <div id="left-column">
+        <div id="sidie">
+            <ul>
+                <li class="left-navheader-first">
+                    <a href="index.html" class="left-navheader">Home</a>
+                </li> 
+                <li class="left-navheader">Pages</li>
+
+<li><a href="Overview.html">Overview of AvsP</a></li>
+<li><a href="Download.html">Download</a></li>
+<li><a href="Text.html">Text Features</a></li>
+<li><a href="Video.html">Video Features</a></li>
+<li><a href="UserSliders.html">User Sliders</a></li>
+<li><a href="Macros.html">Macros</a></li>
+<li><a href="Translation.html">Translating AvsP</a></li>
+<li><a href="About.html">About</a></li>
+
+
+            </ul>
+        </div>
+        
+        
+        <p class="sidieimg">
+            <a href="https://www.paypal.com/xclick/business=qwerpoi.avsp@gmail.com&item_name=AvsP&tax=0&currency_code=USD" target="_blank"><img src="images/donation.gif" alt="Donate via PayPal" width="110" height="23" align="left" hspace="0" vspace="25" border="0" /></a>
+        </p>
+        
+        
+        
+    </div>
+    </td>
+    </tr>
+</table>
+
+    <hr />
+        
+    
+    <div id="footer">
+       <a href="http://validator.w3.org/check?uri=referer" title="Validate code as W3C XHTML 1.1 Strict Compliant">W3C XHTML 1.1</a> | <a href="http://jigsaw.w3.org/css-validator/check?uri=referer" title="Validate Style Sheet as W3C CSS 2.0 Compliant">W3C CSS 2.0</a>
+    </div>
+	</div>
+</body>
+</html>

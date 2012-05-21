@@ -1,0 +1,106 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+    <title>Translating AvsP</title>
+    <link rel="stylesheet" href="stylesheets/rest2web.css" type="text/css" />
+    <link rel="stylesheet" href="stylesheets/voidspace_docutils2.css" type="text/css" />
+    <meta http-equiv="Content-Type" content="text/html; charset=ISO8859-1" />
+</head>
+
+<body style="background: url(images/logos/img_background.gif) top center repeat-y;">
+  <div id="wrap">
+    <div id="header">
+      <ul>
+        <li><a href="index.html">home</a></li>
+<li>&gt;</li>
+<li>Translating AvsP</li>
+
+      </ul>
+    </div>
+
+    <table>
+    <tr>
+     <td><img src="images/logos/1.gif" width="1" height="1" alt="" /></td>
+     <!-- main content cell first, with rowspan=2 -->
+     <td valign="top" align="left" rowspan="2">
+     
+    <div id="middle-column">
+        <a name="startcontent" id="startcontent"></a>
+            <div>
+                <div class="document" id="translating-avsp">
+<h1 class="title">Translating AvsP</h1>
+<p>Creating a translation to different language for AvsP for is very easy.  Included with the AvsP download is a file called &quot;__translation.py&quot;.  The first couple of lines in the file look like this:</p>
+<pre class="literal-block">
+# -*- coding: utf-8 -*-
+
+# This file is used to translate the messages used in the AvsP interface.
+# To use it, make sure it is named &quot;translation.py&quot; and is in the
+# same directory as AvsP.exe.  Simply add translated messages next to each
+# message (any untranslated messages will be shown in English).  You can type
+# unicode text directly into this document - if you do, make sure to save it
+# in the appropriate format.  If required, you can change the coding on the
+# first line of this document to a coding appropriate for your translated
+# language. DO NOT translate any words inside formatted strings (ie, any
+# portions of the text which look like %(...)s, %(...)i, etc.)
+
+messages = {
+    &quot;Find&quot; : u&quot;&quot;,
+    &quot;Replace&quot; : u&quot;&quot;,
+    &quot;Could not find docs for filter %(name)s!&quot; : u&quot;&quot;,
+</pre>
+<p>The file contains every translatable message in AvsP.  To translate, simply add translated messages next to each message.  For example, to translate the message &quot;Find&quot;, modify the line to look like this:</p>
+<pre class="literal-block">
+&quot;Find&quot; : u&quot;Finden&quot;,
+</pre>
+<p>(Now you know how to say &quot;find&quot; in German!)  You can even type unicode directly into the file.  Depending on the language and how you enter the text, you may need to change the coding in first line of the file.</p>
+<p>Once you've translated the messages, simply rename the file to &quot;translation.py&quot; and make sure it's in the same directory as AvsP.exe.  The next time you run AvsP you should see all your translated messages!</p>
+<p>If you choose to translate AvsP to a new language, please post a message in the <a class="reference" href="http://forum.doom9.org/showthread.php?t=115506">discussion</a> on doom9's forum, and I will add the link to your translation on the <a class="reference" href="Download.html">download</a> page.</p>
+</div>
+
+            </div>
+    	</div></td>
+    </tr>
+    <tr>
+     <td valign="top" align="left" width="25%">
+    <div id="left-column">
+        <div id="sidie">
+            <ul>
+                <li class="left-navheader-first">
+                    <a href="index.html" class="left-navheader">Home</a>
+                </li> 
+                <li class="left-navheader">Pages</li>
+
+<li><a href="Overview.html">Overview of AvsP</a></li>
+<li><a href="Download.html">Download</a></li>
+<li><a href="Text.html">Text Features</a></li>
+<li><a href="Video.html">Video Features</a></li>
+<li><a href="UserSliders.html">User Sliders</a></li>
+<li><a href="Macros.html">Macros</a></li>
+<li><a href="Translation.html">Translating AvsP</a></li>
+<li><a href="About.html">About</a></li>
+
+
+            </ul>
+        </div>
+        
+        
+        <p class="sidieimg">
+            <a href="https://www.paypal.com/xclick/business=qwerpoi.avsp@gmail.com&item_name=AvsP&tax=0&currency_code=USD" target="_blank"><img src="images/donation.gif" alt="Donate via PayPal" width="110" height="23" align="left" hspace="0" vspace="25" border="0" /></a>
+        </p>
+        
+        
+        
+    </div>
+    </td>
+    </tr>
+</table>
+
+    <hr />
+        
+    
+    <div id="footer">
+       <a href="http://validator.w3.org/check?uri=referer" title="Validate code as W3C XHTML 1.1 Strict Compliant">W3C XHTML 1.1</a> | <a href="http://jigsaw.w3.org/css-validator/check?uri=referer" title="Validate Style Sheet as W3C CSS 2.0 Compliant">W3C CSS 2.0</a>
+    </div>
+	</div>
+</body>
+</html>
