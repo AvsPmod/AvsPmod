@@ -397,15 +397,8 @@ class Frame(wx.Frame):
             except ValueError:
                 pass
             if shortcut != '' and shortcut not in [item[1] for item in shortcutList]:
-                if wx.VERSION > (2, 8):
-                    shortcutString = GetTranslatedShortcut(shortcut)
-                    pos = shortcutString[:-1].rfind('+')
-                    if pos == -1:
-                        shortcutString = '\t\t%s' % shortcutString
-                    else:
-                        shortcutString = '\t%s\t%s' % (shortcutString[:pos+1], shortcutString[pos+1:])
-                    if wx.GetAccelFromString(shortcutString):
-                        print 'fake shortcut error:', shortcutString
+                if True:#wx.VERSION > (2, 8):
+                    shortcutString = u'\t%s\u00a0' % GetTranslatedShortcut(shortcut)
                 else:
                     shortcutString = '\t%s ' % GetTranslatedShortcut(shortcut)
             else:

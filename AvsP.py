@@ -77,7 +77,7 @@ except AttributeError:
 from icons import AvsP_icon, next_icon, play_icon, skip_icon, ok_icon, smile_icon, question_icon, rectangle_icon
 from __translation_new import new_translation_string
 
-version = '2.1.6'
+version = '2.1.7'
 
 # Custom styled text control for avisynth language
 class AvsStyledTextCtrl(stc.StyledTextCtrl):
@@ -659,8 +659,8 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                         preset = self.app.options['filterpresets'].get(keyword)
                         if preset is None:
                             for key in self.app.options['filterpresets']:
-                                if self.app.avsfilterdict[key][1] == AvsStyledTextCtrl.STC_AVS_PLUGIN:
-                                    index = key.find('_'+keyword)
+                                if self.app.avsfilterdict[key][1] == self.STC_AVS_PLUGIN:
+                                    index = key.rfind('_'+keyword)
                                     if index != -1 and len(key) == index + 1 + len(keyword):
                                         preset = self.app.options['filterpresets'][key][index+1:]
                                         break
@@ -700,7 +700,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
             boolHighlightQuestionMarks = True
             if preset is None:
                 for key in self.app.options['filterpresets']:
-                    if self.app.avsfilterdict[key][1] == AvsStyledTextCtrl.STC_AVS_PLUGIN:
+                    if self.app.avsfilterdict[key][1] == self.STC_AVS_PLUGIN:
                         index = key.find('_'+filtername.lower())
                         if index != -1 and len(key) == index + 1 + len(filtername):
                             preset = self.app.options['filterpresets'][key][index+1:]
@@ -1594,13 +1594,13 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                 line -= 1
                 start = self.PositionFromLine(line) - 1
             end = event.GetPosition()
-        if start == -1:
+        if start < 1:
+            start = 0
             state = self.STC_AVS_DEFAULT
         else:
             state = self.GetStyleAt(start)
-        pos = start
-        isCommentC = isCommentNest = False
-        self.endstyled = pos
+        isCommentC = isCommentNest = isLoadPlugin = False
+        self.endstyled = pos = start
         fragment = []
         hexfragment = []
         self.StartStyling(pos, 31)
@@ -1622,9 +1622,11 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                     self.ColourTo(pos-1, state)
                     if unichr(self.GetCharAt(pos+1)) == '"' and unichr(self.GetCharAt(pos+2)) == '"':
                         pos += 2
-                        state = self.STC_AVS_TRIPLE
+                        state = self.STC_AVS_TRIPLE                        
                     else:
                         state = self.STC_AVS_STRING
+                    if isLoadPlugin:
+                        isLoadPlugin = pos
                 elif ch == '$':
                     hexfragment = []
                     state = self.STC_AVS_NUMBERBAD
@@ -1692,15 +1694,16 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                     elif word in self.app.avsfilterdict:
                         #~ self.ColourTo(pos, self.keywordstyles[word])
                         self.ColourTo(pos, self.app.avsfilterdict[word][1])
-                        if self.app.options['dllnameautodetect'] and word in ['load_stdcall_plugin', 'loadcplugin', 'loadplugin']:
-                            lineText = self.GetLine(self.LineFromPosition(pos)).lower()
-                            pattern = word + r'\s*\(\s*"(.+?)\.dll"\s*\)'
-                            matched = re.search(pattern, lineText, re.U)
-                            if matched:
-                                dllname = os.path.basename(matched.group(1))
-                                if dllname.count('_') and dllname not in self.app.options['dllnameunderscored']:
-                                    self.app.options['dllnameunderscored'].add(dllname)
-                                    self.app.defineScriptFilterInfo()
+                        if self.app.options['dllnameautodetect'] and word in ['load_stdcall_plugin', 'loadcplugin', 'loadplugin', 'loadvfapiplugin', 'loadvirtualdubplugin']:
+                            isLoadPlugin = True
+                            #~ lineText = self.GetLine(self.LineFromPosition(pos)).lower()
+                            #~ pattern = word + r'\s*\(\s*"(.+?)\.dll"\s*\)'
+                            #~ matched = re.search(pattern, lineText, re.U)
+                            #~ if matched:
+                                #~ dllname = os.path.basename(matched.group(1))
+                                #~ if dllname.count('_'):
+                                    #~ self.app.options['dllnameunderscored'].add(dllname)
+                                    #~ self.app.defineScriptFilterInfo()
                     elif word in self.app.avskeywords:
                         self.ColourTo(pos, self.STC_AVS_KEYWORD)
                     elif word in self.app.avsmiscwords:
@@ -1722,26 +1725,38 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                     elif ch == '"' or isEOL:
                         if isEOL:
                             if isEOD:
-                                self.ColourTo(pos - 1, self.STC_AVS_STRINGEOL)
+                                self.ColourTo(pos - 1, self.STC_AVS_STRINGEOL)                                
                             else:
                                 self.ColourTo(pos, self.STC_AVS_STRINGEOL)
+                            isLoadPlugin = False
                         else:
                             self.ColourTo(pos, self.STC_AVS_STRING)
+                            if isLoadPlugin:
+                                self.paserDllname(isLoadPlugin, pos)
+                                isLoadPlugin = False
                         state = self.STC_AVS_DEFAULT
                 else:
                     if unichr(self.GetCharAt(pos-1)) == '"' and unichr(self.GetCharAt(pos)) == '"' and unichr(self.GetCharAt(pos+1)) == '"':
                         state = self.STC_AVS_TRIPLE
                         pos += 1
                     elif ch == '"':
-                        self.ColourTo(pos, self.STC_AVS_STRING)
+                        self.ColourTo(pos, self.STC_AVS_STRING)                        
                         state = self.STC_AVS_DEFAULT
+                        if isLoadPlugin:
+                            self.paserDllname(isLoadPlugin, pos)
+                            isLoadPlugin = False
                     elif isEOD:
                         self.ColourTo(pos - 1, self.STC_AVS_STRING)
                         state = self.STC_AVS_DEFAULT
+                        isLoadPlugin = False
             elif state == self.STC_AVS_TRIPLE:
                 if isEOD or (ch == '"' and unichr(self.GetCharAt(pos-1)) == '"' and unichr(self.GetCharAt(pos-2)) == '"'):
                     self.ColourTo(pos, self.STC_AVS_TRIPLE)
                     state = self.STC_AVS_DEFAULT
+                    if isLoadPlugin:
+                        if not isEOD:
+                            self.paserDllname(isLoadPlugin, pos)
+                        isLoadPlugin = False
             elif state == self.STC_AVS_NUMBER:
                 if not ch.isdigit():
                     pos -= 1
@@ -1781,6 +1796,15 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
     def ColourTo(self, pos, style):
         self.SetStyling(pos +1 - self.endstyled, style)
         self.endstyled = pos+1
+        
+    def paserDllname(self, start, end):
+        path = self.GetTextRange(start, end).lower().strip('"')
+        #~ print path
+        if path.endswith('.dll'):
+            dllname = os.path.basename(path[:-4])
+            if dllname.count('_') and dllname not in self.app.options['dllnameunderscored']:
+                self.app.options['dllnameunderscored'].add(dllname)
+                self.app.defineScriptFilterInfo()
 
     def OnMarginClick(self, evt):
         # fold and unfold as needed
@@ -4522,6 +4546,7 @@ class MainFrame(wxp.Frame):
                 #~ 'avsmiscwords': [],
                 'filteroverrides': {},
                 'filterpresets': {},
+                'filterdb': {},
                 'autcompletetypeflags': [True,True,True,True,True],
                 'filterremoved': set(),
                 'shortcuts': [],
@@ -4673,26 +4698,16 @@ class MainFrame(wxp.Frame):
             pass
                 
         # check new key to make options.dat compatible for all 2.x version
-        #~ self.options.setdefault('autocompleteexclusions', set())
-        #~ self.options.setdefault('autocompletelength', 1)
-        #~ self.options.setdefault('dllnameunderscored', set())
-        #~ self.options.setdefault('dllnameautodetect', True)
-        #~ self.options.setdefault('findautocomplete', True)
-        #~ self.options.setdefault('hidepreview', False)
-        #~ self.options.setdefault('multilinetab', False)        
-        #~ self.options.setdefault('foldflag', 1)
-        #~ self.options.setdefault('exitstatus', 0)
-        #~ self.options.setdefault('reservedshortcuts', ['Tab', 'Shift+Tab', 'Ctrl+Z', 'Ctrl+Y', 'Ctrl+X', 'Ctrl+C', 'Ctrl+V', 'Ctrl+A'])
         self.options['textstyles'].setdefault('endcomment', 'face:Verdana,size:10,fore:#C0C0C0,back:#FFFFFF')
         self.options['textstyles'].setdefault('blockcomment', 'face:Comic Sans MS,size:9,fore:#007F00,back:#FFFFFF')
         #~ clr = wx.SystemSettings.GetColour(wx.SYS_COLOUR_3DFACE).GetAsString(wx.C2S_HTML_SYNTAX)
-        clr = '#%2X%2X%2X' % wx.SystemSettings.GetColour(wx.SYS_COLOUR_3DFACE).Get()
-        clr = self.options['textstyles'].setdefault('foldmargin', 'back:%s' % clr)
+        rgb = tuple(map(lambda x: (x+255)/2, wx.SystemSettings.GetColour(wx.SYS_COLOUR_3DFACE).Get()))
+        clr = self.options['textstyles'].setdefault('foldmargin', 'back:#%02X%02X%02X' % rgb)
         self.options['textstyles']['foldmargin'] = clr.split(',')[-1]
 
     def defineFilterInfo(self):
         self.optionsFilters = self.getFilterInfoFromAvisynth()
-        self.installedfilternames = set([key.lower() for key in self.optionsFilters.keys()])
+        self.installedfilternames = set(self.optionsFilters) #set([key.lower() for key in self.optionsFilters.keys()])
         if __debug__:
             self.ExportFilterData(self.optionsFilters, 'tempfilterout.txt', True)
         self.avskeywords = [
@@ -4754,11 +4769,14 @@ class MainFrame(wxp.Frame):
                             filterargs = '('+splitstring[1].strip(' ')
                             #~ if filtername.lower() in self.optionsFilters:
                                 #~ self.optionsFilters[filtername.lower()] = (filtername, filterargs, 2)
-                            self.optionsFilters[filtername.lower()] = (filtername, filterargs, 2)
+                            key = filtername.lower()
+                            self.optionsFilters[key] = (filtername, filterargs, 2)
                             #~ splitname = filtername.split('_', 1)
                             #~ if len(splitname) == 2:
                                 #~ filtername = splitname[1]
                                 #~ self.optionsFilters[filtername.lower()] = (filtername, filterargs, 2)
+                            if key in self.options['filterdb']:
+                                del self.options['filterdb'][key]
                 elif title == 'userfunctions':
                     for s in data.split('\n\n'):
                         splitstring = s.split('(', 1)
@@ -4782,9 +4800,19 @@ class MainFrame(wxp.Frame):
                     #~ deleteKeys.append(key)
         for key, value in self.options['filteroverrides'].items():
             if key in self.optionsFilters and self.optionsFilters[key] == value:
-                deleteKeys.append(key)
+                deleteKeys.append(key) 
         for key in deleteKeys:
-            del self.options['filteroverrides'][key]
+            del self.options['filteroverrides'][key]        
+        for key, value in self.options['filterdb'].items():
+            if key not in self.optionsFilters:
+                if key not in self.options['filteroverrides'] and key not in self.options['filterpresets']:
+                    del self.options['filterdb'][key]
+                    if key in self.options['filterremoved']:
+                        del self.options['filterremoved'][key]
+                    if value[0] in self.options['autocompleteexclusions']:
+                        self.options['autocompleteexclusions'].remove(value[0])                        
+                else:
+                    self.options['filteroverrides'].setdefault(key, value)
         # Define data structures that are used by each script
         self.defineScriptFilterInfo()
 
@@ -4856,7 +4884,7 @@ class MainFrame(wxp.Frame):
         for lowername,(args,styletype,name) in self.avsfilterdict.items():
             if styletype == styleList[2]:
                 shortname = None
-                for dllname in self.options['dllnameunderscored']:
+                for dllname in sorted(self.options['dllnameunderscored'], reverse=True):
                     if name.lower().startswith(dllname):
                         shortname = name[len(dllname)+1:]
                         if shortname.lower() not in self.avsfilterdict or self.avsfilterdict[shortname.lower()][1] != styleList[3]:
@@ -5018,7 +5046,10 @@ class MainFrame(wxp.Frame):
                     if boolIsXXX or boolHasXXX or boolGetXXX:
                         functionType = 1
                         argstring = '()'
-            functionDict[name.lower()] = (name, argstring, functionType)
+            key = name.lower()
+            functionDict[key] = (name, argstring, functionType)
+            if functionType == 2:
+                self.options['filterdb'][key] = (name, argstring, functionType)
         env.Release()
         return functionDict
 
@@ -5385,7 +5416,7 @@ class MainFrame(wxp.Frame):
         # Create the program's menu
         shortcutList = []
         oldShortcuts = ([item[0] for item in self.options['shortcuts']], self.options['shortcuts'])        
-        self.menuBackups = [1, 2] if wx.VERSION > (2, 8) else []
+        self.menuBackups = [1, 2] #if wx.VERSION > (2, 8) else []
         menuBar = self.createMenuBar(self.menuInfo(), shortcutList, oldShortcuts, self.menuBackups)
         self.SetMenuBar(menuBar)
         scriptWindow.contextMenu = self.menuBackups[0] if self.menuBackups else self.GetMenuBar().GetMenu(1)
@@ -5511,7 +5542,7 @@ class MainFrame(wxp.Frame):
         # Bind shortcuts to the video window if necessary
         if self.separatevideowindow:
             self.BindShortcutsToWindows(self.options['shortcuts'], forcewindow=self.videoWindow)
-        if wx.VERSION > (2, 8):
+        if True:#wx.VERSION > (2, 8):
             if self.useEscape:
                 self.Bind(wx.EVT_CHAR_HOOK, self.OnCharHook)
                 if self.separatevideowindow:
@@ -5810,7 +5841,7 @@ class MainFrame(wxp.Frame):
                 (_('Save image as...'), '', self.OnMenuVideoSaveImage, _('Save the current frame as a bitmap')),
                 (''),
                 (_('Refresh preview'), 'F5', self.OnMenuVideoRefresh, _('Force the script to reload and refresh the video frame')),
-                (_('Hide the preview'), 'Shift+F5', self.OnMenuVideoHide, _('Hide the video preview')),
+                (_('Show/Hide the preview'), 'Shift+F5', self.OnMenuVideoToggle, _('Toggle the video preview')),
                 (_('Release all videos from memory'), '', self.OnMenuVideoReleaseMemory, _('Release all open videos from memory')),
                 (_('Switch video/text focus'), 'Escape', self.OnMenuVideoSwitchMode, _('Switch focus between the video preview and the text editor')),
                 (_('Toggle the slider sidebar'), 'Alt+F5', self.OnMenuVideoToggleSliderWindow, _('Show/hide the slider sidebar (double-click the divider for the same effect)')),
@@ -6995,7 +7026,7 @@ class MainFrame(wxp.Frame):
         self.SetSelectionEndPoint(2)
 
     def OnMenuVideoZoom(self, event, menuItem=None, show=True):
-        if wx.VERSION > (2, 8):
+        if True:#wx.VERSION > (2, 8):
             vidmenus = [self.videoWindow.contextMenu, self.GetMenuBar().GetMenu(2)]
             if menuItem is None:
                 id = event.GetId()
@@ -7078,7 +7109,7 @@ class MainFrame(wxp.Frame):
 
     def OnMenuVideoFlip(self, event):
         id = event.GetId()
-        if wx.VERSION > (2, 8):
+        if True:#wx.VERSION > (2, 8):
             vidmenus = [self.videoWindow.contextMenu, self.GetMenuBar().GetMenu(2)]
             for vidmenu in vidmenus:
                 menu = vidmenu.FindItemById(vidmenu.FindItem(_('Flip'))).GetSubMenu()
@@ -7086,6 +7117,7 @@ class MainFrame(wxp.Frame):
                 if menuItem: 
                     label = menuItem.GetLabel()
                     value = self.flipLabelDict[label]
+                    menuItem.Check(value not in self.flip)
                 else:
                     updateMenu = menu
             id = updateMenu.FindItem(label)
@@ -7093,7 +7125,7 @@ class MainFrame(wxp.Frame):
             if menuItem is None:
                 print>>sys.stderr, _('Error'), 'OnMenuVideoFlip(): cannot find menu item by id'
                 return
-            menuItem.Check(not menuItem.IsChecked())
+            menuItem.Check(value not in self.flip)
         else:
             vidmenu = self.videoWindow.contextMenu
             menu = vidmenu.FindItemById(vidmenu.FindItem(_('Flip'))).GetSubMenu()
@@ -7113,7 +7145,7 @@ class MainFrame(wxp.Frame):
     
     def OnMenuVideoYUV2RGB(self, event):
         id = event.GetId()
-        if wx.VERSION > (2, 8):
+        if True:#wx.VERSION > (2, 8):
             vidmenus = [self.videoWindow.contextMenu, self.GetMenuBar().GetMenu(2)]
             for vidmenu in vidmenus:
                 menu = vidmenu.FindItemById(vidmenu.FindItem(_('YUV -> RGB'))).GetSubMenu()
@@ -7521,15 +7553,8 @@ class MainFrame(wxp.Frame):
                     menuItem = self.GetMenuBar().FindItemById(id)
                     label = menuItem.GetLabel()
                     if shortcut != '':
-                        if wx.VERSION > (2, 8):
-                            shortcutString = GetTranslatedShortcut(shortcut)
-                            pos = shortcutString[:-1].rfind('+')
-                            if pos == -1:
-                                shortcutString = '\t\t%s' % shortcutString
-                            else:
-                                shortcutString = '\t%s\t%s' % (shortcutString[:pos+1], shortcutString[pos+1:])
-                            if wx.GetAccelFromString(shortcutString):
-                                print 'fake shortcut error:', shortcutString
+                        if True:#wx.VERSION > (2, 8):
+                            shortcutString = u'\t%s\u00a0' % GetTranslatedShortcut(shortcut)
                         else:
                             shortcutString = '\t%s ' % GetTranslatedShortcut(shortcut)
                     newLabel = '%s%s' % (label, shortcut)
@@ -8767,7 +8792,6 @@ class MainFrame(wxp.Frame):
         and self.FindFocus() == self.currentScript\
         and (self.currentScript.AutoCompActive() or self.currentScript.CallTipActive()):
             self.currentScript.CmdKeyExecute(wx.stc.STC_CMD_CANCEL)
-            print 'CmdKeyExecute(wx.stc.STC_CMD_CANCEL)'
         else:
             self.MacroExecuteMenuCommand(shortcut)
                 

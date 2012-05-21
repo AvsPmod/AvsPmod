@@ -1,4 +1,4 @@
-new_translation_string=r'''version = "2.1.6"
+new_translation_string=r'''version = "2.1.7"
 
 messages = {
     "Find" : u"",
@@ -509,8 +509,8 @@ messages = {
     "Save the current frame as a bitmap" : u"",
     "Force the script to reload and refresh the video frame" : u"",
     "Refresh preview" : u"",
-    "Hide the preview" : u"",
-    "Hide the video preview" : u"",
+    "Show/Hide the preview" : u"",
+    "Toggle the video preview" : u"",
     "Release all open videos from memory" : u"",
     "Release all videos from memory" : u"",
     "Switch focus between the video preview and the text editor" : u"",
@@ -562,7 +562,6 @@ messages = {
     "Open the avisynth plugins folder" : u"",
     "&About AvsPmod" : u"",
     "About this program" : u"",
-    "Toggle the video preview" : u"",
     "Previous frame" : u"",
     "Next frame" : u"",
     "Run the script with an external program" : u"",
