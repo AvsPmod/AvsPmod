@@ -1,8 +1,13 @@
 import ctypes
 import sys
 
-avidll=ctypes.windll.avisynth
-
+try:
+    avidll = ctypes.windll.avisynth
+except WindowsError as err:
+    message = "%sLoad avisynth.dll failed!\nTry install or re-install Avisynth firstly." % err
+    ctypes.windll.user32.MessageBoxA(None, message, 'Windows Error', 0x10L)
+    raise
+    
 #constants
 PLANAR_Y=1<<0
 PLANAR_U=1<<1

@@ -77,7 +77,7 @@ except AttributeError:
 from icons import AvsP_icon, next_icon, play_icon, skip_icon
 from __translation_new import new_translation_string
 
-version = '2.1.4'
+version = '2.1.5'
 
 # Custom styled text control for avisynth language
 class AvsStyledTextCtrl(stc.StyledTextCtrl):
@@ -154,7 +154,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
         self.AutoCompSetAutoHide(1)
         self.AutoCompSetChooseSingle(0)
         self.AutoCompSetCancelAtStart(1)
-        self.AutoCompStops(''' ~!@#$%^&*()+-=[]{};:'",<.>/?\|''')
+        self.AutoCompStops(''' `~!@#$%^&*()+=[]{};:'",<.>/?\|''')
         # Margin options
         #~ self.SetMarginType(0, stc.STC_MARGIN_NUMBER)
         self.SetMarginWidth(0, self.initialMarginWidth)
@@ -211,6 +211,10 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
             self.SetTextStyles(self.app.options['textstyles'], self.app.options['usemonospacedfont'])
         else:
             self.setStylesNoColor()
+        if self.app.options['allowhyphen']:
+            self.SetWordChars('-_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789')
+        else:
+            self.SetWordChars('')
         # General options
         self.SetUseTabs(self.app.options['usetabs'])
         self.SetTabWidth(self.app.options['tabwidth'])
@@ -377,7 +381,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
 
     def SetTextStyles(self, textstyles, monospaced=False):
         self.SetLexer(stc.STC_LEX_CONTAINER)
-        self.commentStyle = self.STC_AVS_COMMENT
+        self.commentStyle = [self.STC_AVS_COMMENT, self.STC_AVS_BLOCKCOMMENT, self.STC_AVS_ENDCOMMENT]
         self.nonBraceStyles = [
             self.STC_AVS_COMMENT,
             self.STC_AVS_ENDCOMMENT,
@@ -390,7 +394,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
         styleInfo = (
             (self.STC_AVS_DEFAULT, 'default', ''),
             (self.STC_AVS_COMMENT, 'comment', ',eol'),
-            (self.STC_AVS_ENDCOMMENT, 'endcomment', ',eol'),
+            (self.STC_AVS_ENDCOMMENT, 'endcomment', ''),
             (self.STC_AVS_BLOCKCOMMENT, 'blockcomment', ''),
             (self.STC_AVS_NUMBER, 'number', ''),
             (self.STC_AVS_STRING, 'string', ''),
@@ -459,22 +463,37 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
         
 
     def setStylesNoColor(self):
+        # unfold and remove fold points if script is already existing
+        for lineNum in range(self.GetLineCount()):
+            if self.GetFoldLevel(lineNum) & stc.STC_FOLDLEVELHEADERFLAG and not self.GetFoldExpanded(lineNum):
+                self.SetFoldExpanded(lineNum, True)
+                self.Expand(lineNum, True)
+            self.SetFoldLevel(lineNum, stc.STC_FOLDLEVELBASE)
         #~ self.SetKeyWords(0, ' '.join(self.FilterNames).lower())
-        self.SetLexer(stc.STC_LEX_OCTAVE)
-        self.commentStyle = stc.STC_MATLAB_COMMENT
+        self.SetLexer(stc.STC_LEX_NULL)
+        #~ self.commentStyle = stc.STC_MATLAB_COMMENT
 
-        mainfont = 'Arial'
-        mainsize = 10
-        commentfont = 'Comic Sans MS'
-        commentsize = 9
-        s_text = {'font': mainfont, 'size': mainsize, 'color': '#000000'}
-        s_comment = {'font': commentfont, 'size': commentsize, 'color': '#007F00'}
-        s_string = {'font': 'Times New Roman', 'size': mainsize, 'color': '#7F007F'}
-        s_filter = {'font': mainfont, 'size': mainsize, 'color': '#00007F'}
-        s_function = {'font': mainfont, 'size': mainsize, 'color': '#0000AA'}
+        #~ mainfont = 'Arial'
+        #~ mainsize = 10
+        #~ commentfont = 'Comic Sans MS'
+        #~ commentsize = 9
+        #~ s_text = {'font': mainfont, 'size': mainsize, 'color': '#000000'}
+        #~ s_comment = {'font': commentfont, 'size': commentsize, 'color': '#007F00'}
+        #~ s_string = {'font': 'Times New Roman', 'size': mainsize, 'color': '#7F007F'}
+        #~ s_filter = {'font': mainfont, 'size': mainsize, 'color': '#00007F'}
+        #~ s_function = {'font': mainfont, 'size': mainsize, 'color': '#0000AA'}
 
         # Global default styles for all languages
-        self.StyleSetSpec(stc.STC_STYLE_DEFAULT,"face:%(font)s,size:%(size)d,fore:%(color)s" % s_text)
+        default = 'font:Arial, size:10, fore:#000000, back:#FFFFFF'
+        self.StyleSetSpec(stc.STC_STYLE_DEFAULT, self.app.options['textstyles'].get('default', default))
+        if self.app.options['usemonospacedfont']:
+            for item in self.app.options['textstyles']['monospaced'].split(','):
+                if item.lower().startswith('face:'):
+                    face = item.split(':')[1]
+                if item.lower().startswith('size:'):
+                    size = int(item.split(':')[1])
+            self.StyleSetFaceName(stc.STC_STYLE_DEFAULT, face)
+            self.StyleSetSize(stc.STC_STYLE_DEFAULT, size)
         self.StyleClearAll()  # Reset all to be like the default
 
     def numlinechars2pixels(self, numlinechars):
@@ -678,7 +697,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
             charBefore = self.GetCharAt(caretPos - 1)
         # Cancel under certain conditions
         boolHasFocus = (self.app.FindFocus() == self)
-        boolIsComment = (self.commentStyle == self.GetStyleAt(caretPos - 1))
+        boolIsComment = (self.GetStyleAt(caretPos - 1) in self.commentStyle)
         if not self.app.options['calltips'] or not boolHasFocus or boolIsComment:
             self.CallTipCancelCustom()
             return
@@ -832,7 +851,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                 if c == '(':
                     nclose -= 1
             if nclose == 0:
-                if self.GetStyleAt(pos) == self.commentStyle:
+                if self.GetStyleAt(pos) in self.commentStyle:
                     return None
                 else:
                     return pos
@@ -1410,29 +1429,37 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
             if level & stc.STC_FOLDLEVELHEADERFLAG:
                 self.SetFoldLevel(line + 1, level & stc.STC_FOLDLEVELNUMBERMASK)
 
-    def OnKeyUp(self,event):
+    def OnKeyUp(self, event):
         pos = self.GetCurrentPos()
-        charCurrent = self.GetCharAt(pos-1)
-        charBefore = self.GetCharAt(pos-2)
-        charAfter= self.GetCharAt(pos)
-        isCurrentCap = unichr(charCurrent).isalpha() and unichr(charCurrent).isupper()#unichr(charCurrent).isalpha() and event.ShiftDown() #
+        #~ charCurrent = self.GetCharAt(pos-1)
+        #~ charBefore = self.GetCharAt(pos-2)
+        #~ charAfter= self.GetCharAt(pos)
+        #~ isCurrentCap = unichr(charCurrent).isalpha() and unichr(charCurrent).isupper()#unichr(charCurrent).isalpha() and event.ShiftDown() #
         #~ isBeforeBlank = unichr(charBefore).isspace() or unichr(charBefore)=='.' or charBefore==0
-        isBeforeBlank = unichr(charBefore).isspace() or unichr(charBefore) in self.app.avsoperators or charBefore==0
-        isAfterBlank = unichr(charAfter).isspace() or unichr(charAfter)=='.' or charAfter==0
-        validChar = isCurrentCap and isBeforeBlank and isAfterBlank
-        isCommentStyle = self.commentStyle == self.GetStyleAt(pos - 1)
-        if self.app.options['autocomplete'] and validChar and not(self.AutoCompActive()) and not isCommentStyle:
-            keywords = self.app.avsazdict.get(unichr(charCurrent).lower(), [])[:]
-            for i in range(len(keywords)-1, -1, -1):
-                if keywords[i] in self.app.options['autocompleteexclusions']:
-                    del keywords[i]
-            if keywords:
-                self.AutoCompShow(1, ' '.join(keywords))
+        #~ isBeforeBlank = unichr(charBefore).isspace() or unichr(charBefore) in self.app.avsoperators or charBefore==0
+        #~ isAfterBlank = unichr(charAfter).isspace() or unichr(charAfter)=='.' or charAfter==0
+        #~ validChar = isCurrentCap and isBeforeBlank and isAfterBlank
+        #~ isCommentStyle = self.commentStyle == self.GetStyleAt(pos - 1)
+        #~ if self.app.options['autocomplete'] and validChar and not(self.AutoCompActive()) and not isCommentStyle:
+            #~ keywords = self.app.avsazdict.get(unichr(charCurrent).lower(), [])[:]
+            #~ for i in range(len(keywords)-1, -1, -1):
+                #~ if keywords[i] in self.app.options['autocompleteexclusions']:
+                    #~ del keywords[i]
+            #~ if keywords:
+                #~ self.AutoCompShow(1, ' '.join(keywords))
+        if event.GetKeyCode() != wx.WXK_ESCAPE and not self.AutoCompActive() and self.GetStyleAt(pos-1) not in self.nonBraceStyles:
+            start = self.WordStartPosition(pos,1)
+            end = self.WordEndPosition(pos,1)
+            if self.app.options['autocomplete'] and pos == end and pos - start == self.app.options['autocompletelength']:                    
+                char = unichr(self.GetCharAt(start))
+                if char.isalpha() and char.isupper():
+                    wx.CallAfter(self.ShowAutocomplete)
         event.Skip()
 
     def OnKeyDown(self,event):
         key = event.GetKeyCode()
-        if key in (wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER, wx.WXK_TAB) and self.AutoCompActive():
+        flags = event.GetModifiers()
+        if not flags and key in (wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER, wx.WXK_TAB) and self.AutoCompActive():
             self.FinishAutocomplete(key=key)
             #~ if key == wx.WXK_TAB:
                 #~ self.app.tab_processed = True
@@ -1448,7 +1475,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                 #~ self.SetFoldLevel(line+1, level & stc.STC_FOLDLEVELNUMBERMASK)
         else:
             event.Skip()
-
+        
     def OnMiddleDown(self,event):
         xypos = event.GetPosition()
         self.GotoPos(self.PositionFromPoint(xypos))
@@ -1483,22 +1510,20 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
 
     def OnStyleNeeded(self, event, forceAll=False):
         if forceAll:
-            start = 0
+            start = -1
             end = self.GetLength()
         else:
             pos = self.GetEndStyled()
-            start = self.PositionFromLine(self.LineFromPosition(pos)) - 1
+            line = self.LineFromPosition(pos)
+            start = self.PositionFromLine(line) - 1
+            while line > 0 and self.GetStyleAt(start) == self.STC_AVS_BLOCKCOMMENT:
+                line -= 1
+                start = self.PositionFromLine(line) - 1
             end = event.GetPosition()
-            #~ print start, pos, end 
-        if start < 1:
-            start = 0
+        if start == -1:
             state = self.STC_AVS_DEFAULT
         else:
             state = self.GetStyleAt(start)
-            if state == self.STC_AVS_BLOCKCOMMENT:
-                while start and self.GetStyleAt(start-1) == self.STC_AVS_BLOCKCOMMENT:
-                    start -= 1
-                state = self.STC_AVS_DEFAULT
         pos = start
         isCommentC = isCommentNest = False
         self.endstyled = pos
@@ -1676,6 +1701,8 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                 if end+1 <= self.GetTextLength():
                     end += 1
         self.CodeFolding()
+        if wx.VERSION > (2, 9):
+            self.app.IdleCall = (self.Refresh, tuple(), dict())
 
     def ColourTo(self, pos, style):
         self.SetStyling(pos +1 - self.endstyled, style)
@@ -4439,6 +4466,10 @@ class MainFrame(wxp.Frame):
                 'imagechoice': 0,
                 'imagesavedir': '',
                 'zoomindex': 2,
+                'dllnameunderscored': set(),
+                'dllnameautodetect': True,
+                'exitstatus': 0,
+                'reservedshortcuts': ['Tab', 'Shift+Tab', 'Ctrl+Z', 'Ctrl+Y', 'Ctrl+X', 'Ctrl+C', 'Ctrl+V', 'Ctrl+A'],
                 # GENERAL OPTIONS
                 'helpdir': r'%programdir%\help',
                 'avisynthdir': '',
@@ -4453,6 +4484,9 @@ class MainFrame(wxp.Frame):
                 'syntaxhighlight': True,
                 'usestringeol': False,
                 'autocomplete': True,
+                'findautocomplete': True,
+                'autocompletelength': 1,
+                'autocompleteexclusions': set(),
                 'autoparentheses': 1,
                 'presetactivatekey': 'return',
                 'wrap': False,
@@ -4461,10 +4495,13 @@ class MainFrame(wxp.Frame):
                 'usetabs': False,
                 'tabwidth': 4,
                 'numlinechars': 1,
+                'foldflag': 1,
+                'allowhyphen': True,
                 # VIDEO OPTIONS
                 'dragupdate': False,
                 'focusonrefresh': True,
                 'previewunsavedchanges': True,
+                'hidepreview': False,
                 'promptwhenpreview': False,
                 'separatevideowindow': False,
                 #~ 'showvideopixelinfo': True,
@@ -4498,6 +4535,7 @@ class MainFrame(wxp.Frame):
                 'allowresize': True,
                 'mintextlines': 2,
                 'usetabimages': True,
+                'multilinetab': False,
                 # TOGGLE OPTIONS
                 'alwaysontop': False,
                 'singleinstance': False,
@@ -4554,18 +4592,20 @@ class MainFrame(wxp.Frame):
                 if type(s) != unicode:
                     self.options['recentfiles'][i] = unicode(s, encoding)
         except TypeError:
-                pass
+            pass
                 
         # check new key to make options.dat compatible for all 2.x version
-        self.options.setdefault('autocompleteexclusions', set())
-        self.options.setdefault('dllnameunderscored', set())
-        self.options.setdefault('dllnameautodetect', True)
-        self.options.setdefault('findautocomplete', True)
-        self.options.setdefault('hidepreview', False)
-        self.options.setdefault('multilinetab', False)        
-        self.options.setdefault('foldflag', 1)
-        self.options.setdefault('exitstatus', 0)
-        self.options.setdefault('allowhyphen', True)
+        #~ self.options.setdefault('autocompleteexclusions', set())
+        #~ self.options.setdefault('autocompletelength', 1)
+        #~ self.options.setdefault('dllnameunderscored', set())
+        #~ self.options.setdefault('dllnameautodetect', True)
+        #~ self.options.setdefault('findautocomplete', True)
+        #~ self.options.setdefault('hidepreview', False)
+        #~ self.options.setdefault('multilinetab', False)        
+        #~ self.options.setdefault('foldflag', 1)
+        #~ self.options.setdefault('exitstatus', 0)
+        #~ self.options.setdefault('allowhyphen', True)
+        #~ self.options.setdefault('reservedshortcuts', ['Tab', 'Shift+Tab', 'Ctrl+Z', 'Ctrl+Y', 'Ctrl+X', 'Ctrl+C', 'Ctrl+V', 'Ctrl+A'])
         self.options['textstyles'].setdefault('endcomment', 'face:Verdana,size:10,fore:#C0C0C0,back:#FFFFFF')
         self.options['textstyles'].setdefault('blockcomment', 'face:Comic Sans MS,size:9,fore:#007F00,back:#FFFFFF')
         clr = wx.SystemSettings.GetColour(wx.SYS_COLOUR_3DFACE).GetAsString(wx.C2S_HTML_SYNTAX)
@@ -4779,13 +4819,13 @@ class MainFrame(wxp.Frame):
         except WindowsError:
             return {}
         intfunc = avisynth.avs_get_var(env,"$InternalFunctions$")
-        intfuncList = [(name, 0) for name in intfunc.d.s.split(' ')]
+        intfuncList = [(name, 0) for name in intfunc.d.s.split()]
         intfunc.Release()
         extfunc = avisynth.avs_get_var(env,"$PluginFunctions$")
         if extfunc.d.s is not None:
             #~ extfuncList = [(name, 2) for name in extfunc.d.s.split(' ')]
             #~ extfunc.Release()
-            tempList = extfunc.d.s.split(' ')
+            tempList = extfunc.d.s.split()
             extfunc.Release()
             # Only include long plugin names in dllname_function format
             #~ tempList2 = [name.split('_', 1)[-1].lower() for name in tempList if name.count('_') > 0]
@@ -4906,7 +4946,8 @@ class MainFrame(wxp.Frame):
                 (_('Frequent calltips'), wxp.OPT_ELEM_CHECK, 'frequentcalltips', _("Always show calltips any time the cursor is within the filter's arguments"), ''),
                 (_('Syntax highlighting'), wxp.OPT_ELEM_CHECK, 'syntaxhighlight', _('Turn on/off avisynth-specific text colors and fonts'), ''),
                 (_('Syntax highlight incomplete strings'), wxp.OPT_ELEM_CHECK, 'usestringeol', _('Syntax highlight strings which are not completed in a single line differently'), ''),
-                (_('Show autocomplete on capital letters'), wxp.OPT_ELEM_CHECK, 'autocomplete', _('Turn on/off automatic autocomplete list when typing words starting with capital letters'), ''),
+                (_('Show autocomplete on capital letters'), wxp.OPT_ELEM_CHECK, 'autocomplete', _('Turn on/off automatic autocomplete list when typing words starting with capital letters'), ''),                
+                (_('       '+'Amount of letters typed'), wxp.OPT_ELEM_INT, 'autocompletelength', _('Show autocomplete list when typing a certain amount of letters'), ''),
                 (_('Find within a word to show autocomplete'), wxp.OPT_ELEM_CHECK, 'findautocomplete', _("If current position can't bring up the window, find a matched position in the word to show autocomplete"), ''),
                 (_('Customize autocomplete keyword list...'), wxp.OPT_ELEM_BUTTON, 'autocompleteexclusions', _('Customize the keyword list shown in the autocomplete choice box'), self.OnCustomizeAutoCompList),
                 (_('Autoparentheses level'), wxp.OPT_ELEM_RADIO, 'autoparentheses', _('Determines parentheses to insert upon autocompletion'), [(_('None " "'), 0),(_('Open "("'), 1),(_('Close "()"'), 2)]),
@@ -5339,19 +5380,23 @@ class MainFrame(wxp.Frame):
         self._shortcutBindWindowDict = {self:[], self.videoWindow:[]}
         useEscape = False
         for label, shortcut, id in self.options['shortcuts']:
+            if not shortcut:
+                continue
             if shortcut.endswith('Escape'):
                 useEscape = True
-            if shortcut and (label, shortcut) not in self.exceptionKeys:
-                if shortcut in self.exceptionKeys:
+            if shortcut in self.exceptionShortcuts:
+                self._shortcutBindWindowDict[self.videoWindow].append(id)
+            elif shortcut in self.options['reservedshortcuts']:
+                if (label, shortcut) not in self.stcShortcuts[-1]:
                     self._shortcutBindWindowDict[self.videoWindow].append(id)
-                else:
-                    self._shortcutBindWindowDict[self].append(id)            
-        self.BindShortcutsToWindows(self.options['shortcuts'], extraAccelDict={self.videoWindow: self.zoomAccelList})
+            else:
+                self._shortcutBindWindowDict[self].append(id)            
+        self.BindShortcutsToWindows(self.options['shortcuts'])
         #~ self.BindShortcutsToWindows(self.optionsShortcuts, forcewindow=self.scrapWindow.textCtrl)
         self.scrapWindow.BindShortcuts()
         # Bind shortcuts to the video window if necessary
         if self.separatevideowindow:
-            self.BindShortcutsToWindows(self.options['shortcuts'], forcewindow=self.videoWindow, extraAccelDict={self.videoWindow: self.zoomAccelList})
+            self.BindShortcutsToWindows(self.options['shortcuts'], forcewindow=self.videoWindow)
         if wx.VERSION > (2, 8):
             if useEscape:
                 self.Bind(wx.EVT_CHAR_HOOK, self.OnCharHook)
@@ -5363,13 +5408,83 @@ class MainFrame(wxp.Frame):
                     self.videoWindow.Unbind(wx.EVT_CHAR_HOOK)
 
     def menuInfo(self):
-        self.exceptionKeys = [
+        self.exceptionShortcuts = [
             'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
             'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
             '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-            'Enter', 'Space', 'Tab', 'Insert', 'Backspace', 'Delete', 
+            'Enter', 'Space', 'Insert', 'Backspace', 'Delete', 
             'Home', 'End', 'PgUp', 'PgDn', 'Up', 'Down', 'Left', 'Right',
-            'Shift+Tab', 'Ctrl+Z', 'Ctrl+X', 'Ctrl+C', 'Ctrl+V', 'Ctrl+A',
+            'Numpad 0', 'Numpad 1', 'Numpad 2', 'Numpad 3', 'Numpad 4', 'Numpad 5', 'Numpad 6', 'Numpad 7', 'Numpad 8', 'Numpad 9',
+            'Numpad +', 'Numpad -', 'Numpad *', 'Numpad /', 'Numpad .', 'Numpad Enter',
+            '`', '-', '=', '\\', '[', ']', ';', "'", ',', '.', '/',
+            '~', '!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '_', '+', '|', '{', '}', ':', '"', '<', '>', '?',
+        ]
+        self.stcShortcuts = [
+            ('Shift+Down',          _('Extend selection to line down position')),
+            ('Ctrl+Down',           _('Scroll down')),
+            ('Alt+Shift+Down',      _('Extend rectangular selection to line down position')),
+            ('Shift+Up',            _('Extend selection to line up position')),
+            ('Ctrl+Up',             _('Scroll up')),
+            ('Alt+Shift+Up',        _('Extend rectangular selection to line up position')),
+            ('Ctrl+[',			    _('Go to previous paragraph')),
+            ('Ctrl+Shift+[',		_('Extend selection to previous paragraph')),
+            ('Ctrl+]',			    _('Go to next paragraph')),
+            ('Ctrl+Shift+]',		_('Extend selection to nex paragraph')),
+            ('Shift+Left',		    _('Extend selection to previous character')),
+            ('Ctrl+Left',		    _('Go to previous word')),
+            ('Ctrl+Shift+Left',	    _('Extend selection to previous word')),
+            ('Alt+Shift+Left',	    _('Extend rectangular selection to previous character')),
+            ('Shift+Right',		    _('Extend selection to next character')),
+            ('Ctrl+Right',		    _('Go to next word')),
+            ('Ctrl+Shift+Right',	_('Extend selection to next word')),
+            ('Alt+Shift+Right',	    _('Extend rectangular selection to next character')),
+            ('Ctrl+/',		        _('Go to previous word part')),
+            ('Ctrl+Shift+/',		_('Extend selection to previous word part')),
+            ('Ctrl+\\',		        _('Go to next word part')),
+            ('Ctrl+Shift+\\',	    _('Extend selection to next word part')),
+            ('Shift+Home', 		    _('Extend selection to start of line')),
+            ('Ctrl+Home', 		    _('Go to start of document')),
+            ('Ctrl+Shift+Home', 	_('Extend selection to start of document')),
+            ('Alt+Home', 		    _('Go to start of line')),
+            ('Alt+Shift+Home', 	    _('Extend selection to start of line')),
+            ('Shift+End', 		    _('Extend selection to end of line')),
+            ('Ctrl+End', 		    _('Go to end of document')),
+            ('Ctrl+Shift+End', 	    _('Extend selection to end of document')),
+            ('Alt+End', 		    _('Go to end of line')),
+            ('Alt+Shift+End', 	    _('Extend selection to end of line')),
+            ('Shift+PgUp',		    _('Extend selection to previous page')),
+            ('Alt+Shift+PgUp',	    _('Extend rectangular selection to previous page')),
+            ('Shift+PgDn',		    _('Extend selection to next page')),
+            ('Alt+Shift+PgDn',	    _('Extend rectangular selection to next page')),
+            ('Shift+Delete',        _('Cut')),
+            ('Ctrl+Delete',         _('Delete to end of word')),
+            ('Ctrl+Shift+Delete',   _('Delete to end of line')),
+            ('Shift+Insert',  	    _('Paste')),
+            ('Ctrl+Insert',  	    _('Copy')),
+            ('Shift+Backspace',	    _('Delete back')),
+            ('Ctrl+Backspace',      _('Delete to start of word')),
+            ('Alt+Backspace',       _('Undo')),
+            ('Ctrl+Shift+Backspace',_('Delete to start of line')),
+            ('Ctrl+Z', 			    _('Undo')),
+            ('Ctrl+Y', 			    _('Redo')),
+            ('Ctrl+X', 			    _('Cut')),
+            ('Ctrl+C', 			    _('Copy')),
+            ('Ctrl+V', 			    _('Paste')),
+            ('Ctrl+A', 			    _('Select all')),
+            ('Tab',		            _('Indent selection')),
+            ('Shift+Tab',		    _('Unindent selection')),
+            ('Shift+Return',        _('Newline')),
+            ('Ctrl+Numpad +', 	    _('Zoom in')),
+            ('Ctrl+Numpad -', 	    _('Zoom out')),
+            ('Ctrl+Numpad /', 	    _('Reset zoom level to normal')),
+            ('Ctrl+L', 			    _('Line cut')),
+            ('Ctrl+Shift+L', 	    _('Line delete')),
+            ('Ctrl+Shift+T', 	    _('Line copy')),
+            ('Ctrl+T', 			    _('Transpose line with the previous')),
+            ('Ctrl+D', 			    _('Line or selection duplicate')),
+            ('Ctrl+U', 			    _('Convert selection to lowercase')),
+            ('Ctrl+Shift+U', 	    _('Convert selection to uppercase')),
+            (
             ('Edit -> Indent selection', 'Tab'),
             ('Edit -> Unindent selection', 'Shift+Tab'),
             ('Edit -> Undo', 'Ctrl+Z'),
@@ -5378,14 +5493,7 @@ class MainFrame(wxp.Frame):
             ('Edit -> Copy', 'Ctrl+C'),
             ('Edit -> Paste', 'Ctrl+V'),
             ('Edit -> Select All', 'Ctrl+A'),
-        ]
-        id_zoomin = wx.NewId()
-        self.Bind(wx.EVT_MENU, self.OnZoomInOut, id=id_zoomin)
-        id_zoomout = wx.NewId()
-        self.Bind(wx.EVT_MENU, self.OnZoomInOut, id=id_zoomout)
-        self.zoomAccelList = [
-            (wx.ACCEL_NORMAL, wx.WXK_NUMPAD_ADD, id_zoomin),
-            (wx.ACCEL_NORMAL, wx.WXK_NUMPAD_SUBTRACT, id_zoomout),
+            ),
         ] 
         self.menuBookmark = self.createMenu(
             (
@@ -5553,12 +5661,15 @@ class MainFrame(wxp.Frame):
                     (
                     (reverseZoomLabelDict['25'], '', self.OnMenuVideoZoom, _('Zoom video preview to 25%'), wx.ITEM_RADIO, False),
                     (reverseZoomLabelDict['50'], '', self.OnMenuVideoZoom, _('Zoom video preview to 50%'), wx.ITEM_RADIO, False),
-                    (reverseZoomLabelDict['100'], '', self.OnMenuVideoZoom, _('Zoom video preview to 100% (normal)'), wx.ITEM_RADIO, True),
+                    (reverseZoomLabelDict['100'], 'Numpad /', self.OnMenuVideoZoom, _('Zoom video preview to 100% (normal)'), wx.ITEM_RADIO, True),
                     (reverseZoomLabelDict['200'], '', self.OnMenuVideoZoom, _('Zoom video preview to 200%'), wx.ITEM_RADIO, False),
                     (reverseZoomLabelDict['300'], '', self.OnMenuVideoZoom, _('Zoom video preview to 300%'), wx.ITEM_RADIO, False),
                     (reverseZoomLabelDict['400'], '', self.OnMenuVideoZoom, _('Zoom video preview to 400%'), wx.ITEM_RADIO, False),
                     (reverseZoomLabelDict['fill'], '', self.OnMenuVideoZoom, _('Zoom video preview to fill the entire window'), wx.ITEM_RADIO, False),
                     (reverseZoomLabelDict['fit'], '', self.OnMenuVideoZoom, _('Zoom video preview to fit inside the window'), wx.ITEM_RADIO, False),
+                    (''),
+                    (_('Zoom in'), 'Numpad +', self.OnZoomInOut, _("Enlarge preview image to next zoom level. Not work under 'Fill window' or 'Fit inside window'")),
+                    (_('Zoom out'), 'Numpad -', self.OnZoomInOut, _("Shrink preview image to previous zoom level. Not work under 'Fill window' or 'Fit inside window'")),
                     ),
                 ),
                 (_('Flip'),
@@ -6769,7 +6880,8 @@ class MainFrame(wxp.Frame):
                 for vidmenu in vidmenus:
                     menu = vidmenu.FindItemById(vidmenu.FindItem(_('Zoom'))).GetSubMenu()
                     menuItem = menu.FindItemById(id)
-                    if menuItem: 
+                    if menuItem:
+                        menuItem.Check()
                         label = menuItem.GetLabel()
                         zoomvalue = self.zoomLabelDict[label]
                     else:
@@ -6884,9 +6996,13 @@ class MainFrame(wxp.Frame):
             for vidmenu in vidmenus:
                 menu = vidmenu.FindItemById(vidmenu.FindItem(_('YUV -> RGB'))).GetSubMenu()
                 menuItem = menu.FindItemById(id)
-                if menuItem: 
+                if menuItem:
                     label = menuItem.GetLabel()                    
                     value = self.yuv2rgbDict[label]
+                    if menuItem.GetKind() == wx.ITEM_RADIO:
+                        menuItem.Check()
+                    else:
+                        menuItem.Check(not getattr(self, value))
                 else:
                     updateMenu = menu
             id = updateMenu.FindItem(label)
@@ -6897,7 +7013,7 @@ class MainFrame(wxp.Frame):
             if menuItem.GetKind() == wx.ITEM_RADIO:
                 menuItem.Check()
             else:
-                menuItem.Check(not menuItem.IsChecked())
+                menuItem.Check(not getattr(self, value))
         else:
             vidmenu = self.videoWindow.contextMenu
             menu = vidmenu.FindItemById(vidmenu.FindItem(_('YUV -> RGB'))).GetSubMenu()
@@ -7126,8 +7242,10 @@ class MainFrame(wxp.Frame):
             self.options['textstyles'] = dlg.GetDict()
             for index in xrange(self.scriptNotebook.GetPageCount()):
                 script = self.scriptNotebook.GetPage(index)
-                script.SetTextStyles(self.options['textstyles'], self.options['usemonospacedfont'])
-            #~ self.UpdateTabStyle()
+                if self.options['syntaxhighlight']:
+                    script.SetTextStyles(self.options['textstyles'], self.options['usemonospacedfont'])
+                else:
+                    script.setStylesNoColor()
         dlg.Destroy()
 
     def OnMenuOptionsTemplates(self, event):
@@ -7204,8 +7322,10 @@ class MainFrame(wxp.Frame):
             menuItem.Check(False)
         for index in xrange(self.scriptNotebook.GetPageCount()):
             script = self.scriptNotebook.GetPage(index)
-            script.SetTextStyles(self.options['textstyles'], self.options['usemonospacedfont'])            
-        #~ self.UpdateTabStyle()
+            if self.options['syntaxhighlight']:
+                script.SetTextStyles(self.options['textstyles'], self.options['usemonospacedfont'])
+            else:
+                script.setStylesNoColor()
 
     def OnMenuOptionsEnableParanoiaMode(self, event):
         id = event.GetId()
@@ -7259,11 +7379,20 @@ class MainFrame(wxp.Frame):
         #~ for window, idList in self._shortcutBindWindowDict.items():
             #~ if window != self:
                 #~ exceptionIds += idList
-        dlg = wxp.ShortcutsDialog(self, self.options['shortcuts'], exceptionIds=self.exceptionKeys, submessage=_('* This shortcut is active only when video window has focus.'))
+        exceptionIds = (
+            self.exceptionShortcuts, 
+            self.stcShortcuts,
+            self.options['reservedshortcuts'], 
+            _('Above keys are built-in editing shortcuts. If item is checked,\n'
+              'it will not be overrided by a menu shortcut in script window.')
+        )
+        dlg = wxp.ShortcutsDialog(self, self.options['shortcuts'], exceptionIds=exceptionIds,
+                                  submessage=_('* This shortcut is active only when video window has focus.\n'
+                                               '~ This shortcut is active only when script window has focus.'))
         ID = dlg.ShowModal()
         # Set the data
         if ID == wx.ID_OK:
-            shortcutList = dlg.GetShortcutList()
+            shortcutList, reservedShortcuts = dlg.GetShortcutList()
             for old, new in zip(self.options['shortcuts'], shortcutList):
                 if old != new:
                     menuString, shortcut, id = new
@@ -7274,6 +7403,7 @@ class MainFrame(wxp.Frame):
                     newLabel = '%s%s' % (label, shortcut)
                     menuItem.SetText(newLabel)
             self.options['shortcuts'] = shortcutList
+            self.options['reservedshortcuts'] = reservedShortcuts
             self.bindShortcutsToAllWindows()
         dlg.Destroy()
 
@@ -8471,61 +8601,21 @@ class MainFrame(wxp.Frame):
             script = self.currentScript
             self.PaintAVIFrame(dc, script, self.currentframenum, isPaintEvent=True)
     
-    #~ def OnReservedKeys(self, event):
-        #~ control = self.FindFocus()
-        #~ shortcut, cmdKey = self.reservedIdDict[event.GetId()]
-        #~ if control == self.currentScript:
-            #~ if shortcut == 'Add':
-                #~ self.currentScript.AddText('+')
-            #~ elif shortcut == 'Subtract':
-                #~ self.currentScript.AddText('-')
-            #~ else:
-                #~ self.currentScript.CmdKeyExecute(cmdKey)
-        #~ elif control == self.videoWindow:
-            #~ if shortcut not in ('Add', 'Subtract'):
-                #~ return
-            #~ vidmenu = self.videoWindow.contextMenu
-            #~ menu = vidmenu.FindItemById(vidmenu.FindItem(_('Zoom'))).GetSubMenu()
-            #~ for i in range(6):
-                #~ menuItem = menu.FindItemByPosition(i)
-                #~ if menuItem.IsChecked():
-                    #~ if shortcut == 'Add' and i < 5:
-                        #~ self.OnMenuVideoZoom(None, menu.FindItemByPosition(i+1))
-                    #~ elif shortcut == 'Subtract' and i > 0:
-                        #~ self.OnMenuVideoZoom(None, menu.FindItemByPosition(i-1))
-                    #~ break
-        #~ else:
-            #~ try:
-                #~ pos = control.GetInsertionPoint()
-                #~ if shortcut == 'Left':
-                    #~ frm, to = control.GetSelection()
-                    #~ if frm != to:
-                        #~ pos = to
-                    #~ if pos > 0:
-                        #~ control.SetInsertionPoint(pos - 1)
-                #~ elif shortcut == 'Right':
-                    #~ if pos < control.GetLastPosition():
-                        #~ control.SetInsertionPoint(pos + 1)
-                #~ elif shortcut == 'Home':
-                    #~ control.SetInsertionPoint(0)
-                #~ elif shortcut == 'End':
-                    #~ control.SetInsertionPoint(control.GetLastPosition())
-                #~ elif shortcut == 'Add':
-                    #~ control.WriteText('+')
-                #~ elif shortcut == 'Subtract':
-                    #~ control.WriteText('-')
-            #~ except:
-                #~ pass
     def OnZoomInOut(self, event):
         id = event.GetId()
-        vidmenu = self.videoWindow.contextMenu
-        menu = vidmenu.FindItemById(vidmenu.FindItem(_('Zoom'))).GetSubMenu()
+        vidmenus = [self.videoWindow.contextMenu, self.GetMenuBar().GetMenu(2)]
+        for vidmenu in vidmenus:
+            menu = vidmenu.FindItemById(vidmenu.FindItem(_('Zoom'))).GetSubMenu()
+            menuItem = menu.FindItemById(id)
+            if menuItem:
+                label = menuItem.GetLabel()
+                break
         for i in range(6):
             menuItem = menu.FindItemByPosition(i)
             if menuItem.IsChecked():
-                if id == self.zoomAccelList[0][2] and i < 5:
+                if label == _('Zoom in') and i < 5:
                     self.OnMenuVideoZoom(None, menu.FindItemByPosition(i+1))
-                elif id == self.zoomAccelList[1][2] and i > 0:
+                elif label == _('Zoom out') and i > 0:
                     self.OnMenuVideoZoom(None, menu.FindItemByPosition(i-1))
                 break
                 
@@ -8536,7 +8626,7 @@ class MainFrame(wxp.Frame):
             return
         shortcut = 'Escape'
         if event.ShiftDown():
-            shortcut = 'Alt+' + shortcut
+            shortcut = 'Shift+' + shortcut
         if event.AltDown():
             shortcut = 'Alt+' + shortcut
         if event.ControlDown():
@@ -10796,8 +10886,12 @@ class MainFrame(wxp.Frame):
                 if updateDisplayClip and False:
                     script.AVI.CreateDisplayClip(fitHeight, fitWidth)
                 else:
+                    self.CaptureMouse()
+                    self.SetCursor(wx.StockCursor(wx.CURSOR_WAIT))
                     script.AVI = None
                     script.AVI = pyavs.AvsClip(self.getCleanText(scripttxt), filename, fitHeight=fitHeight, fitWidth=fitWidth, oldFramecount=oldFramecount, keepRaw=self.showVideoPixelAvisynth, matrix=self.matrix, interlaced=self.interlaced, swapuv=self.swapuv)
+                    self.ReleaseMouse()
+                    self.SetCursor(wx.StockCursor(wx.CURSOR_DEFAULT))
                 os.chdir(cwd)
                 if not script.AVI.initialized:
                     if prompt:
