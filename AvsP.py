@@ -77,7 +77,7 @@ except AttributeError:
 from icons import AvsP_icon, next_icon, play_icon, skip_icon
 from __translation_new import new_translation_string
 
-version = '2.1.2'
+version = '2.1.3'
 
 # Custom styled text control for avisynth language
 class AvsStyledTextCtrl(stc.StyledTextCtrl):
@@ -1553,7 +1553,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                     elif word in self.app.avsfilterdict:
                         #~ self.ColourTo(pos, self.keywordstyles[word])
                         self.ColourTo(pos, self.app.avsfilterdict[word][1])
-                        if word in ['load_stdcall_plugin', 'loadcplugin', 'loadplugin']:
+                        if self.app.options['dllnameautodetect'] and word in ['load_stdcall_plugin', 'loadcplugin', 'loadplugin']:
                             lineText = self.GetLine(self.LineFromPosition(pos)).lower()
                             pattern = word + r'\s*\(\s*"(.+?)\.dll"\s*\)'
                             matched = re.search(pattern, lineText, re.U)
@@ -2222,7 +2222,7 @@ class UserSliderDialog(wx.Dialog):
 
 # Dialog for AviSynth filter information
 class AvsFunctionDialog(wx.Dialog):
-    def __init__(self, parent, filterDict, overrideDict, presetDict, removedSet, autcompletetypeFlags, dllnameunderscored, installedFilternames, functionName=None, CreateDefaultPreset=None, ExportFilterData=None):
+    def __init__(self, parent, filterDict, overrideDict, presetDict, removedSet, autcompletetypeFlags, dllnameunderscored, dllnameautodetect, installedFilternames, functionName=None, CreateDefaultPreset=None, ExportFilterData=None):
         wx.Dialog.__init__(
             self, parent, wx.ID_ANY,
             _('Add or override AviSynth functions in the database'),
@@ -2233,7 +2233,8 @@ class AvsFunctionDialog(wx.Dialog):
         self.presetDict = presetDict.copy()
         self.removedSet = removedSet
         self.autcompletetypeFlags = autcompletetypeFlags
-        self.dllnameunderscored = dllnameunderscored
+        self.dllnameunderscored = '\n'.join(dllnameunderscored)
+        self.dllnameautodetect = dllnameautodetect
         self.installedFilternames = installedFilternames
         self.CreateDefaultPreset = CreateDefaultPreset
         self.ExportFilterData = ExportFilterData
@@ -2338,10 +2339,10 @@ class AvsFunctionDialog(wx.Dialog):
                 buttonselectinstalled = wx.Button(panel, wx.ID_ANY, _('Select installed'))
                 panel.Bind(wx.EVT_BUTTON, lambda event: self.SelectInstalledFilters(), buttonselectinstalled)
                 buttonSizer.Add(buttonselectinstalled, 0, wx.EXPAND|wx.BOTTOM, 5)
-                buttonSizer.AddStretchSpacer()
-                buttonSizer.Add(wx.StaticText(panel, wx.ID_ANY, _('DLL underscored')), 0, wx.ALIGN_CENTER_VERTICAL|wx.TOP, 5)
-                self.textctrl = wx.TextCtrl(panel, wx.ID_ANY, ';'.join(self.dllnameunderscored))
-                buttonSizer.Add(self.textctrl, 0, wx.EXPAND, 5)
+                buttonSizer.Add(wx.StaticLine(panel, wx.ID_ANY, style=wx.HORIZONTAL), 0, wx.EXPAND|wx.TOP|wx.BOTTOM, 5)
+                buttondllunderscored = wx.Button(panel, wx.ID_ANY, _('DLL underscored'))
+                panel.Bind(wx.EVT_BUTTON, lambda event: self.EditDllnameUnderscored(), buttondllunderscored)
+                buttonSizer.Add(buttondllunderscored, 0, wx.EXPAND|wx.TOP, 5)
                 
             # Size the elements in the panel
             listboxSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -2549,6 +2550,27 @@ class AvsFunctionDialog(wx.Dialog):
             boolCheck = (listbox.GetString(i).split()[0].lower() in self.installedFilternames)
             listbox.Check(i, boolCheck)
             
+    def EditDllnameUnderscored(self):
+        dlg = wx.Dialog(self, wx.ID_ANY, _('DLL underscored'))
+        textbox = wx.TextCtrl(dlg, wx.ID_ANY, self.dllnameunderscored, size=(200, 112), style=wx.TE_MULTILINE)
+        checkbox = wx.CheckBox(dlg, wx.ID_ANY, _('Enable auto-detect routine'))
+        checkbox.SetValue(self.dllnameautodetect)
+        okay  = wx.Button(dlg, wx.ID_OK, _('OK'))
+        cancel = wx.Button(dlg, wx.ID_CANCEL, _('Cancel'))
+        btns = wx.StdDialogButtonSizer()
+        btns.AddButton(okay)
+        btns.AddButton(cancel)
+        btns.Realize()
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer.Add(textbox, 0, wx.EXPAND|wx.ALL, 5)        
+        sizer.Add(checkbox, 0, wx.LEFT|wx.BOTTOM, 5)
+        sizer.Add(btns, 0, wx.EXPAND|wx.ALL,5)
+        dlg.SetSizerAndFit(sizer)
+        if dlg.ShowModal() == wx.ID_OK:
+            self.dllnameunderscored = textbox.GetValue().strip()
+            self.dllnameautodetect = checkbox.GetValue()
+        dlg.Destroy()
+
     def ImportFromFiles(self):
         filenames, filterInfo, unrecognized = [], [], []
         title = _('Open Customization files, Avisynth scripts or Avsp options files')
@@ -3071,12 +3093,14 @@ class AvsFunctionDialog(wx.Dialog):
             flags[index] = checkbox.GetValue()
         return flags
                
-    def Getdllnameunderscored(self):
-        self.dllnameunderscored.clear()
-        for dllname in re.split(r'\W+', self.textctrl.GetValue()):
+    def GetDllnameUnderscored(self):
+        dllnameunderscored = set()
+        for line in self.dllnameunderscored.split('\n'):
+            dllname = os.path.splitext(os.path.basename(line.strip()))[0]
             if dllname.count('_'):
-                self.dllnameunderscored.add(dllname)
-        return self.dllnameunderscored
+                dllnameunderscored.add(dllname.lower())
+        return dllnameunderscored
+        
         
 # Dialog specifically for AviSynth filter auto-slider information
 class AvsFilterAutoSliderInfo(wx.Dialog):
@@ -4365,6 +4389,7 @@ class MainFrame(wxp.Frame):
                 'autcompletetypeflags': [True,True,True,True,True],
                 'filterremoved': set(),
                 'dllnameunderscored': set(),
+                'dllnameautodetect': True,
                 'shortcuts': [],
                 'recentdir': '',
                 'recentdirPlugins': '',
@@ -4507,6 +4532,7 @@ class MainFrame(wxp.Frame):
         # check new key to make options.dat compatible for all 2.x version
         self.options.setdefault('autocompleteexclusions', set())
         self.options.setdefault('dllnameunderscored', set())
+        self.options.setdefault('dllnameautodetect', True)
         self.options.setdefault('findautocomplete', True)
         self.options.setdefault('hidepreview', False)
         self.options.setdefault('multilinetab', False)        
@@ -4686,14 +4712,13 @@ class MainFrame(wxp.Frame):
         # Add short plugin names to script database
         for lowername,(args,styletype,name) in self.avsfilterdict.items():
             if styletype == styleList[2]:
+                shortname = None
                 for dllname in self.options['dllnameunderscored']:
                     if name.lower().startswith(dllname):
                         shortname = name[len(dllname)+1:]
                         if shortname.lower() not in self.avsfilterdict or self.avsfilterdict[shortname.lower()][1] != styleList[3]:
                             self.avsfilterdict[shortname.lower()] = (args, styletype, shortname)
                         break
-                    else:
-                        shortname = None
                 if not shortname:
                     splitname = name.split('_', 1)
                     if len(splitname) == 2:
@@ -4739,22 +4764,12 @@ class MainFrame(wxp.Frame):
             extfunc.Release()
             # Only include long plugin names in dllname_function format
             #~ tempList2 = [name.split('_', 1)[-1].lower() for name in tempList if name.count('_') > 0]
-            tempList2 = []
-            for name in tempList:
-                name = name.lower()
-                for longName in tempList:
-                    longName = longName.lower()
-                    if '_' + name in longName:
-                        tempList2.append(name)
-                        dllname = longName.split('_' + name)[0]
-                        if dllname.count('_'):
-                            self.options['dllnameunderscored'].add(dllname)
             extfuncList = []
-            for name in tempList:
-                if False: #name.count('_') > 0:
-                    extfuncList.append((name, 2))
-                elif name.lower() not in tempList2:
-                    extfuncList.append((name, 2))
+            for i in range(0, len(tempList), 2):
+                extfuncList.append((tempList[i+1], 2))
+                dllname = tempList[i+1][:-len(tempList[i])-1]
+                if self.options['dllnameautodetect'] and dllname.count('_'):
+                    self.options['dllnameunderscored'].add(dllname.lower())
             funclist = intfuncList + extfuncList
         else:
             funclist = intfuncList
@@ -10011,6 +10026,7 @@ class MainFrame(wxp.Frame):
             self.options['filterremoved'],
             self.options['autcompletetypeflags'],
             self.options['dllnameunderscored'],
+            self.options['dllnameautodetect'],
             self.installedfilternames,
             functionName=functionName,
             CreateDefaultPreset=self.currentScript.CreateDefaultPreset,
@@ -10023,7 +10039,8 @@ class MainFrame(wxp.Frame):
             self.options['filterremoved'] = dlg.GetRemovedSet()
             self.options['filterpresets'] = dlg.GetPresetDict()
             self.options['autcompletetypeflags'] = dlg.GetAutcompletetypeFlags()
-            self.options['dllnameunderscored'] = dlg.Getdllnameunderscored()
+            self.options['dllnameunderscored'] = dlg.GetDllnameUnderscored()
+            self.options['dllnameautodetect'] = dlg.dllnameautodetect
             self.defineScriptFilterInfo()
             for i in xrange(self.scriptNotebook.GetPageCount()):
                 script = self.scriptNotebook.GetPage(i)

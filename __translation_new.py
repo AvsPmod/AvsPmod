@@ -1,4 +1,4 @@
-new_translation_string=r'''version = "2.1.2"
+new_translation_string=r'''version = "2.1.3"
 
 messages = {
     "Find" : u"",
@@ -79,6 +79,7 @@ messages = {
     "Invalid filter name!" : u"",
     "Renaming not allowed!" : u"",
     "You must use dllname_function naming format for plugins!" : u"",
+    "Enable auto-detect routine" : u"",
     "Open Customization files, Avisynth scripts or Avsp options files" : u"",
     "All supported|*.txt;*.avsi;*.avs;*.dat|Customization file (*.txt)|*.txt|AviSynth script (*.avs, *.avsi)|*.avs;*.avsi|AvsP data (*.dat)|*.dat|All files (*.*)|*.*" : u"",
     "Unrecognized files" : u"",
