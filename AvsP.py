@@ -18,8 +18,8 @@
 #  http://www.gnu.org/copyleft/gpl.html .
 
 # Dependencies:
-#     Python (tested with v2.5.1)
-#     wxPython (tested with v2.6.3.3 unicode)
+#     Python (tested with v2.7.1)
+#     wxPython (tested with v2.8.11 unicode)
 # Scripts:
 #     wxp.py (general wxPython framework classes)
 #     avisynth.py (python Avisynth wrapper)
@@ -77,7 +77,7 @@ except AttributeError:
 from icons import AvsP_icon, next_icon, play_icon, skip_icon
 from __translation_new import new_translation_string
 
-version = '2.0.9.0'
+version = '2.1.0'
 
 # Custom styled text control for avisynth language
 class AvsStyledTextCtrl(stc.StyledTextCtrl):
@@ -127,7 +127,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
         self.CmdKeyClear(stc.STC_KEY_TAB,0)
         self.UsePopUp(0)
         self.showLinenumbers = 1
-        self.enableFolding = 1
+        #~ self.enableFolding = 1
         self.finddata = wx.FindReplaceData(wx.FR_DOWN)
         self.replacedata = wx.FindReplaceData(wx.FR_DOWN)
         self.calltipFilter = None
@@ -163,6 +163,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
         self.SetMarginMask(2, stc.STC_MASK_FOLDERS)
         self.SetMarginSensitive(2, True)        
         self.SetMarginWidth(2, 13)
+        self.SetFoldFlags(self.app.options['foldflag']<<4)
         self.MarkerDefine(stc.STC_MARKNUM_FOLDEROPEN,    stc.STC_MARK_MINUS, "white", "black")
         self.MarkerDefine(stc.STC_MARKNUM_FOLDER,        stc.STC_MARK_PLUS,  "white", "black")
         self.MarkerDefine(stc.STC_MARKNUM_FOLDERSUB,     stc.STC_MARK_EMPTY, "white", "black")
@@ -1300,15 +1301,26 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
         while line < lineCount:
             if self.GetFoldLevel(line) & stc.STC_FOLDLEVELHEADERFLAG:
                 hasBrace = False
+                hasBlock = False
                 for pos in range(self.PositionFromLine(line), self.GetLineEndPosition(line)+1):
                     if unichr(self.GetCharAt(pos)) == '{' and self.GetStyleAt(pos) == self.STC_AVS_OPERATOR:
                         hasBrace = True
                         break
+                if not hasBrace:
+                    for pos in range(self.GetLineEndPosition(line), self.PositionFromLine(line)-1, -1):
+                        if self.GetStyleAt(pos) == self.STC_AVS_BLOCKCOMMENT and self.GetStyleAt(pos-1) != self.STC_AVS_BLOCKCOMMENT:
+                            hasBlock = True
+                            break
                 if hasBrace:
                     posMatch = self.BraceMatch(pos)
                     if posMatch != stc.STC_INVALID_POSITION:
                         lineEnd = self.LineFromPosition(posMatch) + 1
-                        lastChild = self.GetLastChild(line, -1) + 1
+                        lastChild = self.GetLastChild(line, -1) + 1                        
+                        if line+1 == lineEnd:
+                            if not self.GetFoldExpanded(line):
+                                self.SetFoldExpanded(line, True)
+                                self.Expand(line, True)
+                            self.SetFoldLevel(line, self.GetFoldLevel(line) & stc.STC_FOLDLEVELNUMBERMASK)
                     else:
                         lineEnd = lastChild = lineCount                        
                     level = (self.GetFoldLevel(line) & stc.STC_FOLDLEVELNUMBERMASK) + 1
@@ -1316,6 +1328,32 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                         self.SetFoldLevel(lineNum, self.GetFoldLevel(lineNum) & 0xF000 | level)
                     for lineNum in range(lineEnd, lastChild):
                         self.SetFoldLevel(lineNum, self.GetFoldLevel(lineNum)-1)
+                elif hasBlock:
+                    end = pos
+                    while self.GetStyleAt(end+1) == self.STC_AVS_BLOCKCOMMENT:
+                        end += 1
+                    lineEnd = self.LineFromPosition(end) + 1
+                    lastChild = self.GetLastChild(line, -1) + 1 
+                    if line+1 == lineEnd:
+                        self.SetFoldLevel(line, self.GetFoldLevel(line) & stc.STC_FOLDLEVELNUMBERMASK)
+                    else:
+                        for lineNum in range(line+1, self.LineFromPosition(end)+1):
+                            if self.GetFoldLevel(lineNum) & stc.STC_FOLDLEVELHEADERFLAG and not self.GetFoldExpanded(lineNum):
+                                self.SetFoldExpanded(lineNum, True)
+                                self.Expand(lineNum, True)
+                        level = (self.GetFoldLevel(line) & stc.STC_FOLDLEVELNUMBERMASK) + 1
+                        for lineNum in range(line+1, lineEnd):
+                            self.SetFoldLevel(lineNum, self.GetFoldLevel(lineNum) & 0xF000 | level)
+                        for lineNum in range(lineEnd, lastChild):
+                            self.SetFoldLevel(lineNum, self.GetFoldLevel(lineNum)-1)
+                elif self.GetStyleAt(self.PositionFromLine(line)) != self.STC_AVS_ENDCOMMENT and self.GetStyleAt(self.PositionFromLine(line+1)) == self.STC_AVS_ENDCOMMENT:
+                    for lineNum in range(line+1, lineCount):
+                        if self.GetFoldLevel(lineNum) & stc.STC_FOLDLEVELHEADERFLAG and not self.GetFoldExpanded(lineNum):
+                            self.SetFoldExpanded(lineNum, True)
+                            self.Expand(lineNum, True)                    
+                        level = (self.GetFoldLevel(line) & stc.STC_FOLDLEVELNUMBERMASK) + 1
+                    for lineNum in range(line+1, lineCount):                        
+                        self.SetFoldLevel(lineNum, self.GetFoldLevel(lineNum) & 0xF000 | level)
                 else:
                     if not self.GetFoldExpanded(line):
                         self.SetFoldExpanded(line, True)
@@ -1435,6 +1473,8 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                     pos += 1
                     isCommentC = True
                     state = self.STC_AVS_BLOCKCOMMENT
+                    line = self.LineFromPosition(pos)
+                    self.SetFoldLevel(line, self.GetFoldLevel(line) | stc.STC_FOLDLEVELHEADERFLAG)
                 elif ch == '"':
                     self.ColourTo(pos-1, state)
                     if unichr(self.GetCharAt(pos+1)) == '"' and unichr(self.GetCharAt(pos+2)) == '"':
@@ -1451,6 +1491,8 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                         pos += 1
                         isCommentNest = 1
                         state = self.STC_AVS_BLOCKCOMMENT
+                        line = self.LineFromPosition(pos)
+                        self.SetFoldLevel(line, self.GetFoldLevel(line) | stc.STC_FOLDLEVELHEADERFLAG)
                     else:
                         pos += 1
                         state = self.STC_AVS_USERSLIDER
@@ -1512,6 +1554,8 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                     elif word in self.app.avsmiscwords:
                         self.ColourTo(pos, self.STC_AVS_MISCWORD)
                         if word == '__end__':
+                            line = self.LineFromPosition(pos)
+                            self.SetFoldLevel(line, self.GetFoldLevel(line) | stc.STC_FOLDLEVELHEADERFLAG)
                             pos = self.GetLength()
                             self.ColourTo(pos, self.STC_AVS_ENDCOMMENT)
                     else:
@@ -4333,6 +4377,7 @@ class MainFrame(wxp.Frame):
                 'usetabs': False,
                 'tabwidth': 4,
                 'numlinechars': 1,
+                'foldflag': 1,
                 # VIDEO OPTIONS
                 'dragupdate': False,
                 'focusonrefresh': True,
@@ -4433,7 +4478,8 @@ class MainFrame(wxp.Frame):
         # check new key to make options.dat compatible for all 2.x version
         self.options.setdefault('autocompleteexclusions', set())
         self.options.setdefault('hidepreview', False)
-        self.options.setdefault('multilinetab', False)
+        self.options.setdefault('multilinetab', False)        
+        self.options.setdefault('foldflag', 1)
         self.options['textstyles'].setdefault('endcomment', 'face:Verdana,size:10,fore:#C0C0C0,back:#FFFFFF')
         self.options['textstyles'].setdefault('blockcomment', 'face:Comic Sans MS,size:9,fore:#007F00,back:#FFFFFF')
         #~ self.options['textstyles'].setdefault('monospacedtab', False)
@@ -4787,6 +4833,7 @@ class MainFrame(wxp.Frame):
                 (_('Use tabs instead of spaces'), wxp.OPT_ELEM_CHECK, 'usetabs', _('Check to insert actual tabs instead of spaces when using the Tab key'), ''),
                 (_('Tab width'), wxp.OPT_ELEM_INT, 'tabwidth', _('Set the size of the tabs in spaces'), ''),
                 (_('Line margin width'), wxp.OPT_ELEM_INT, 'numlinechars', _('Initial space to reserve for the line margin in terms of number of digits'), ''),
+                (_('Draw lines at fold points')+' *', wxp.OPT_ELEM_CHECK, 'foldflag', _('For code folding, draw a line underneath if the fold point is not expanded'), ''),
             ),
             (_('Video 1'),
                 (_('Constantly update video while dragging'), wxp.OPT_ELEM_CHECK, 'dragupdate', _('Update the video constantly when dragging the frame slider'), ''),
@@ -5111,7 +5158,11 @@ class MainFrame(wxp.Frame):
 
         self.bindShortcutsToAllWindows()
         if wx.VERSION > (2, 8):
-            for id, shortcut in self.hotkeysList:
+            for label, shortcut, id in shortcutList:
+                if shortcut in self.hotkeyDict:
+                    self.hotkeyList.append(shortcut)
+            for shortcut in self.hotkeyList:
+                id = self.hotkeyDict[shortcut]
                 accel = wx.GetAccelFromString('\t'+shortcut)
                 modifier = accel.GetFlags()
                 keycode = accel.GetKeyCode()
@@ -5232,12 +5283,17 @@ class MainFrame(wxp.Frame):
             ('End',     stc.STC_CMD_LINEEND),
         )
         if wx.VERSION > (2, 8):
-            self.hotkeysList = [
-                (wx.NewId(), 'Escape'),
-                (wx.NewId(), 'Alt+Escape'),
-                (wx.NewId(), 'Ctrl+Escape'),
-                (wx.NewId(), 'Shift+Escape'),
-            ]
+            self.hotkeyDict = {
+                'Escape': wx.NewId(),
+                'Ctrl+Escape': wx.NewId(),
+                'Alt+Escape': wx.NewId(), 
+                'Shift+Escape': wx.NewId(),
+                'Ctrl+Alt+Escape': wx.NewId(),
+                'Ctrl+Shift+Escape': wx.NewId(),
+                'Alt+Shift+Escape': wx.NewId(),
+                'Ctrl+Alt+Shift+Escape': wx.NewId(),
+            }
+            self.hotkeyList = []
             self.reservedIdDict = {}
             accelList = []
             for shortcut, cmdKey in reservedKeys:
@@ -7119,6 +7175,22 @@ class MainFrame(wxp.Frame):
                     menuItem.SetText(newLabel)
             self.options['shortcuts'] = shortcutList
             self.bindShortcutsToAllWindows()
+            if wx.VERSION > (2, 8):
+                for shortcut in self.hotkeyList:
+                    id = self.hotkeyDict[shortcut]
+                    self.UnregisterHotKey(id)
+                    self.Unbind(wx.EVT_HOTKEY, id=id)
+                self.hotkeyList = []
+                for label, shortcut, id in shortcutList:
+                    if shortcut in self.hotkeyDict:
+                        self.hotkeyList.append(shortcut)
+                for shortcut in self.hotkeyList:
+                    id = self.hotkeyDict[shortcut]
+                    accel = wx.GetAccelFromString('\t'+shortcut)
+                    modifier = accel.GetFlags()
+                    keycode = accel.GetKeyCode()
+                    self.RegisterHotKey(id, modifier, keycode)
+                    self.Bind(wx.EVT_HOTKEY, self.OnHotKey, id=id) 
         dlg.Destroy()
 
     def OnMenuOptionsSettings(self, event):
@@ -7289,14 +7361,14 @@ class MainFrame(wxp.Frame):
         menu = wx.Menu()
 
         def OnContextMenuCopyTime(event):
+            frame = self.GetFrameNumber()
+            try:
+                m, s = divmod(frame/self.MacroGetVideoFramerate(), 60)
+            except:
+                return
+            h, m = divmod(m, 60)
+            timecode = '%02d:%02d:%06.3f' % (h ,m, s)
             if not wx.TheClipboard.IsOpened():
-                frame = self.GetFrameNumber()
-                try:
-                    m, s = divmod(frame/self.MacroGetVideoFramerate(), 60)
-                except:
-                    return
-                h, m = divmod(m, 60)
-                timecode = '%02d:%02d:%06.3f' % (h ,m, s)
                 wx.TheClipboard.Open()
                 wx.TheClipboard.SetData(wx.TextDataObject(timecode))
                 wx.TheClipboard.Close()
@@ -8316,7 +8388,7 @@ class MainFrame(wxp.Frame):
                 pass
 
     def OnHotKey(self, event):
-        for id, shortcut in self.hotkeysList:
+        for shortcut, id in self.hotkeyDict.items():
             if event.GetId() == id:
                 if shortcut == 'Escape' and self.FindFocus() == self.currentScript:
                     self.currentScript.CmdKeyExecute(wx.stc.STC_CMD_CANCEL)
@@ -9054,7 +9126,21 @@ class MainFrame(wxp.Frame):
             if ext not in extlist:
                 ext = '.bmp'
                 filename = '%s%s' % (filename, ext)
-            bmp.SaveFile(filename, self.imageFormats[ext][1])
+            #~ bmp.SaveFile(filename, self.imageFormats[ext][1])
+            img = bmp.ConvertToImage()
+            if ext==".jpg":
+                quality = self.MacroGetTextEntry("JPEG Quality (0-100)", "70", "JPEG Quality")
+                if quality == "":
+                    quality = "70"
+                try:
+                    if int(quality) > 100:
+                        quality = "100"
+                    if int(quality) < 0:
+                        quality = "0"
+                except ValueError:
+                    quality = "70"
+            img.SetOption(wx.IMAGE_OPTION_QUALITY, quality)
+            img.SaveFile(filename, self.imageFormats[ext][1])
         else:
             return False
         return True

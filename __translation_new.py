@@ -1,4 +1,4 @@
-new_translation_string=r'''version = "2.0.9.0"
+new_translation_string=r'''version = "2.1.0"
 
 messages = {
     "Find" : u"",
@@ -175,6 +175,8 @@ messages = {
     "Tab width" : u"",
     "Initial space to reserve for the line margin in terms of number of digits" : u"",
     "Line margin width" : u"",
+    "Draw lines at fold points" : u"",
+    "For code folding, draw a line underneath if the fold point is not expanded" : u"",
     "Video 1" : u"",
     "Constantly update video while dragging" : u"",
     "Update the video constantly when dragging the frame slider" : u"",

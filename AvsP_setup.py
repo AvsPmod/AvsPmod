@@ -109,7 +109,7 @@ setup(
     ] +
     [(root, [os.path.join(root,name) for name in files]) for root, dirs, files in os.walk('macros')] +
     [(root, [os.path.join(root,name) for name in files]) for root, dirs, files in os.walk('help')] +
-    [(root, [os.path.join(root,name) for name in files if os.path.splitext(name)[1] in ('.py', '.presets')]) for root, dirs, files in os.walk('tools')],
+    [(root, [os.path.join(root,name) for name in files if os.path.splitext(name)[1] in ('.py', '.presets', '.exe', '.dat')]) for root, dirs, files in os.walk('tools')],
     windows = [
         {
             "script": "run.py",
