@@ -1,3 +1,8 @@
+AvsPmod is a modified version of AvsP which provides some bug fixes and enhancements.
+You can follow development at this forum thread: http://forum.doom9.org/showthread.php?t=153248
+
+Below is the original AvsP Readme:
+---------------------------------------------
 
 DESCRIPTION
 ===========

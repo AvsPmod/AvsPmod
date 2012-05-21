@@ -95,10 +95,10 @@ VersionString()
 [COREFILTERS]
 AddBorders(
 clip,
-int left,
-int top,
-int right,
-int bottom,
+int left=0,
+int top=0,
+int right=0,
+int bottom=0,
 int "color"=$000000
 )
 
@@ -109,12 +109,12 @@ clip b [, ...]
 
 Amplify(
 clip,
-float amount [, ...]
+float amount=0 [, ...]
 )
 
 AmplifydB(
 clip,
-float amount [, ...]
+float amount=0 [, ...]
 )
 
 Animate(
@@ -200,29 +200,29 @@ float "src_height"
 
 Blackness(
 clip clip,
-int "length",
-int "width",
-int "height",
+int "length"=240,
+int "width"=640,
+int "height"=480,
 string "pixel_type"="RGB32" ("RGB24"/ "RGB32"/ "YUY2"/ "YV12"),
-float "fps",
-int "fps_denominator",
-int "audio_rate",
-bool "stereo",
-bool "sixteen_bit",
+float "fps"=24,
+int "fps_denominator"=1,
+int "audio_rate"=44100,
+bool "stereo"=False,
+bool "sixteen_bit"=True,
 int "color"=$000000
 )
 
 BlankClip(
 clip clip,
-int "length",
-int "width",
-int "height",
+int "length"=240,
+int "width"=640,
+int "height"=480,
 string "pixel_type"="RGB32" ("RGB24"/ "RGB32"/ "YUY2"/ "YV12"),
-float "fps",
-int "fps_denominator",
-int "audio_rate",
-bool "stereo",
-bool "sixteen_bit",
+float "fps"=24,
+int "fps_denominator"=1,
+int "audio_rate"=44100,
+bool "stereo"=False,
+bool "sixteen_bit"=True,
 int "color"=$000000
 )
 
@@ -255,9 +255,9 @@ clip b
 )
 
 ColorBars(
-int "width",
-int "height",
-string "pixel_type"
+int "width"=640,
+int "height"=480,
+string "pixel_type"="RGB32" ("")
 )
 
 ColorKeyMask(
@@ -309,9 +309,9 @@ bool "show"
 
 ConditionalReader(
 clip,
-string filename="" (*.*),
+string filename="" ("*.*"),
 string variablename,
-bool "show"
+bool "show"=False
 )
 
 ConvertBackToYUY2(
@@ -358,21 +358,21 @@ bool "interlaced"=false
 
 Crop(
 clip,
-int left,
-int top,
-int -right,
-int -bottom,
-bool "align"=false
+int left=0,
+int top=0,
+int -right=0,
+int -bottom=0,
+bool "align"=False
 )
 
 CropBottom(
 clip,
-int count
+int count=0
 )
 
 DelayAudio(
 clip,
-float seconds
+float seconds=0
 )
 
 DeleteFrame(
@@ -482,10 +482,10 @@ float "p"=30.0 (1 to 100)
 
 GeneralConvolution(
 clip,
-int "bias",
-string "matrix"="0 0 0 0 1 0 0 0 0",
+int "bias"=0,
+string "matrix"="0 0 0 0 1 0 0 0 0" (""),
 float "divisor"=1.0,
-bool "auto"=true
+bool "auto"=True
 )
 
 GetChannel(
@@ -510,7 +510,7 @@ string "matrix"="Rec601" ("Rec601"/ "Rec709"/ "Average")
 
 Histogram(
 clip,
-string "mode"="classic" ("classic"/ "levels"/ "color"/ "luma"/ "stereo"/ "stereooverlay")
+string "mode"="classic" ("classic"/ "levels"/ "color"/ "luma"/ "stereo"/ "stereooverlay"/ "audiolevels")
 )
 
 ImageReader(
@@ -582,10 +582,10 @@ bool "use_chroma"=true
 
 Letterbox(
 clip,
-int top,
-int bottom,
-int "x1",
-int "x2",
+int top=0,
+int bottom=0,
+int "x1"=0,
+int "x2"=0,
 int "color"=$000000
 )
 
@@ -810,7 +810,7 @@ bool mode
 
 Sharpen(
 clip,
-float amount= (0.00 to 1.00)
+float amount=0 (0.00 to 1.00)
 )
 
 ShowAlpha(
@@ -1887,6 +1887,57 @@ int "opt"=2 (0 to 2)
 )
 
 [USERFUNCTIONS]
+FFCopyrightInfringement(
+string source= ("*.*") [, ...]
+)
+
+FFImageSource(
+string source= ("*.*") [, ...],
+int "width"=-1,
+int "height"=-1,
+string "resizer"="BICUBIC" ("FAST_BILINEAR"/ "BILINEAR"/ "BICUBIC"/ "X"/ "POINT"/ "AREA"/ "BICUBLIN"/ "GAUSS"/ "SINC"/ "LANCZOS"/ "SPLINE"),
+string "colorspace"= ("YV12"/ "YUY2"/ "RGB24"/ "RGB32")
+)
+
+FFmpegSource2(
+string source= ("*.*") [, ...],
+int "vtrack"=-1,
+int "atrack"=-2,
+bool "cache"=True,
+string "cachefile",
+int "fpsnum"=-1,
+int "fpsden"=1,
+string "pp",
+int "threads"=-1,
+string "timecodes",
+int "seekmode"=1,
+bool "overwrite"=False,
+int "width"=-1,
+int "height"=-1,
+string "resizer"="BICUBIC" ("FAST_BILINEAR"/ "BILINEAR"/ "BICUBIC"/ "X"/ "POINT"/ "AREA"/ "BICUBLIN"/ "GAUSS"/ "SINC"/ "LANCZOS"/ "SPLINE"),
+string "colorspace"= ("YV12"/ "YUY2"/ "RGB24"/ "RGB32"),
+int "rffmode"=0,
+int "adjustdelay"=-1
+)
+
+GradFun2DBmod(
+clip input,
+float "thr"=1.2,
+float "thrC",
+int "mode"=2,
+float "str"=0.8,
+float "strC"=0,
+int "temp"=50,
+int "adapt"=64,
+string "custom",
+bool "mask"=True,
+int "radius"=2,
+int "range"=2,
+bool "show"=False,
+int "screenW"=1280,
+int "screenH"=1024
+)
+
 LimitedSharpen(
 clip,
 float "ss_x"=1.5 (1.0 to 2.0),
@@ -1921,6 +1972,39 @@ bool "soft"=false,
 int "edgemode"=0 (0 to 2),
 bool "special"=false,
 int "exborder"=0 (0 to 4)
+)
+
+LSFmod(
+clip input,
+int "strength"=100,
+int "Smode"=3,
+int "Smethod"=2,
+int "kernel"=11,
+string "preblur"="OFF" ("OFF"/ "ON"),
+bool "secure"=True,
+clip "source",
+int "Szrp"=16,
+int "Spwr"=4,
+int "SdmpLo"=4,
+int "SdmpHi"=48,
+int "Lmode"=1,
+int "overshoot"=1,
+int "undershoot"=1,
+int "overshoot2"=2,
+int "undershoot2"=2,
+int "soft"=0,
+bool "soothe"=True,
+int "keep"=20,
+int "edgemode"=0,
+bool "edgemaskHQ"=False,
+float "ss_x"=1.25,
+float "ss_y"=1.25,
+int "dest_x",
+int "dest_y",
+bool "show"=True,
+int "screenW"=1280,
+int "screenH"=1024,
+string "defaults"="fast" ("fast"/ "old"/ "slow")
 )
 
 MvBob(

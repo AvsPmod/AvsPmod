@@ -1,4 +1,4 @@
-new_translation_string=r'''version = "2.0.3"
+new_translation_string=r'''version = "2.0.5"
 
 messages = {
     "Find" : u"",
@@ -316,7 +316,7 @@ messages = {
     "Copy the current script without any AvsP markings (user-sliders, toggle tags) to the clipboard" : u"",
     "Copy unmarked script to clipboard" : u"",
     "&Video" : u"",
-    "Bookmark this frame" : u"",
+    "Add/Remove bookmark" : u"",
     "Mark the current frame on the frame slider" : u"",
     "Clear all bookmarks" : u"",
     "Navigate" : u"",
@@ -419,6 +419,8 @@ messages = {
     "Macros" : u"",
     "Avisynth help" : u"",
     "Open the avisynth help html" : u"",
+    "Open Avisynth plugins folder" : u"",
+    "Open the avisynth plugins folder" : u"",
     "&About AvsPmod" : u"",
     "About this program" : u"",
     "Toggle the video preview" : u"",
@@ -429,6 +431,7 @@ messages = {
     "Tools" : u"",
     "Run selected macro" : u"",
     "View the readme for making macros" : u"",
+    "Open the macros folder" : u"",
     "Close" : u"",
     "Save" : u"",
     "Save as..." : u"",
@@ -469,6 +472,7 @@ messages = {
     "Sample type:" : u"",
     "bits" : u"",
     "samples" : u"",
+    "Could not find the macros folder!" : u"",
     "Could not find %(readme)s!" : u"",
     "Failed to import the selected tool" : u"",
     "You must restart for changes to take effect!" : u"",
@@ -510,6 +514,7 @@ messages = {
     "Associating .avs files will write to the windows registry." : u"",
     "Do you wish to continue?" : u"",
     "* This shortcut is active only when video window has focus." : u"",
+    "Could not find the Avisynth plugins folder!" : u"",
     "About AvsPmod" : u"",
     "AvsPmod version %(version)s" : u"",
     "An AviSynth script editor" : u"",

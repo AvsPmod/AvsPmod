@@ -1,0 +1,29 @@
+[2 Pass Very Slow]
+x264.exe --pass 1 --preset veryslow --bitrate $video_bitrate --zones $credits_frame,$last_frame,q=40 $extra_options --output NUL "$video_input"
+x264.exe --pass 2 --preset veryslow --bitrate $video_bitrate --zones $credits_frame,$last_frame,q=40 $extra_options --sar $par_x:$par_y --output "$video_output" "$video_input"
+
+[2 Pass Medium]
+x264.exe --pass 1 --bitrate $video_bitrate --zones $credits_frame,$last_frame,q=40 $extra_options --output NUL "$video_input"
+x264.exe --pass 2 --bitrate $video_bitrate --zones $credits_frame,$last_frame,q=40 $extra_options --sar $par_x:$par_y --output "$video_output" "$video_input"
+
+[2 Pass Very Fast]
+x264.exe --pass 1 --preset veryfast --bitrate $video_bitrate --zones $credits_frame,$last_frame,q=40 $extra_options --output NUL "$video_input"
+x264.exe --pass 2 --preset veryfast --bitrate $video_bitrate --zones $credits_frame,$last_frame,q=40 $extra_options --sar $par_x:$par_y --output "$video_output" "$video_input"
+
+[1 Pass Very Slow]
+x264.exe --preset veryslow --bitrate $video_bitrate --zones $credits_frame,$last_frame,q=40 $extra_options --sar $par_x:$par_y --output "$video_output" "$video_input"
+
+[1 Pass Medium]
+x264.exe --bitrate $video_bitrate --zones $credits_frame,$last_frame,q=40 $extra_options --sar $par_x:$par_y --output "$video_output" "$video_input"
+
+[1 Pass Very Fast]
+x264.exe --preset veryfast --bitrate $video_bitrate --zones $credits_frame,$last_frame,q=40 $extra_options --sar $par_x:$par_y --output "$video_output" "$video_input"
+
+[CRF Very Slow]
+x264.exe --preset veryslow --crf $video_crf --zones $credits_frame,$last_frame,q=40 $extra_options --sar $par_x:$par_y --output "$video_output" "$video_input"
+
+[CRF Medium]
+x264.exe --crf $video_crf --zones $credits_frame,$last_frame,q=40 $extra_options --sar $par_x:$par_y --output "$video_output" "$video_input"
+
+[CRF Very Fast]
+x264.exe --preset veryfast --crf $video_crf --zones $credits_frame,$last_frame,q=40 $extra_options --sar $par_x:$par_y --output "$video_output" "$video_input"
