@@ -1,4 +1,4 @@
-new_translation_string=r'''version = "2.1.7.1"
+new_translation_string=r'''version = "2.1.8"
 
 messages = {
     "Find" : u"",
@@ -194,6 +194,8 @@ messages = {
     "Update the video constantly when dragging the frame slider" : u"",
     "Focus the video preview upon refresh" : u"",
     "Switch focus to the video preview window when using the refresh command" : u"",
+    "Refresh preview automatically" : u"",
+    "Refresh preview when switch focus on video window or change a value in slider window" : u"",
     "Always hide the video preview window when loading a session" : u"",
     "Don't preview when loading a session" : u"",
     "Create a temporary preview script with unsaved changes when previewing the video" : u"",
@@ -768,6 +770,7 @@ messages = {
     "Invalid slider text: slider label already exists" : u"",
     "Invalid slider text: invalid number" : u"",
     "Reset to initial value: %(value_formatted)s" : u"",
+    "Reset to initial value: %(value2_formatted)s" : u"",
     "Reset to default value: %(value_formatted)s" : u"",
     "Invalid hexadecimal color!" : u"",
     "Must specify a max value!" : u"",

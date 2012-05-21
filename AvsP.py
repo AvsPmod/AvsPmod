@@ -74,10 +74,10 @@ try:
     import avisynth
 except AttributeError:
     import pyavs_avifile as pyavs
-from icons import AvsP_icon, next_icon, play_icon, skip_icon, ok_icon, smile_icon, question_icon, rectangle_icon
+from icons import AvsP_icon, next_icon, play_icon, skip_icon, spin_icon, ok_icon, smile_icon, question_icon, rectangle_icon
 from __translation_new import new_translation_string
 
-version = '2.1.7.1'
+version = '2.1.8'
 
 # Custom styled text control for avisynth language
 class AvsStyledTextCtrl(stc.StyledTextCtrl):
@@ -620,10 +620,14 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
             while line < lineCount:
                 start = self.PositionFromLine(line)
                 eol = self.GetLineEndPosition(line)
-                while unichr(self.GetCharAt(eol-1)) == '\\' or unichr(self.GetCharAt(eol+1)) == '\\':
+                #~ while unichr(self.GetCharAt(eol-1)) == '\\' or unichr(self.GetCharAt(eol+1)) == '\\':
+                    #~ line += 1
+                    #~ if line >= lineCount:
+                        #~ break
+                    #~ eol = self.GetLineEndPosition(line)
+                while line < lineCount - 1 and (self.FindText(self.PositionFromLine(line), eol, r'\\[ ]*$', stc.STC_FIND_REGEXP) != -1 or \
+                                                self.FindText(eol+1, self.GetLineEndPosition(line+1), r'^[ ]*\\', stc.STC_FIND_REGEXP) != -1):
                     line += 1
-                    if line >= lineCount:
-                        break
                     eol = self.GetLineEndPosition(line)
                 start = self.FindText(start, eol, r'\<', stc.STC_FIND_REGEXP)
                 while start != -1 and self.GetStyleAt(start) == self.STC_AVS_BLOCKCOMMENT:
@@ -1630,17 +1634,16 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                 elif ch == '$':
                     hexfragment = []
                     state = self.STC_AVS_NUMBERBAD
-                elif ch == '[': 
-                    if unichr(self.GetCharAt(pos+1)) == '*':
-                        end = self.GetTextLength()
-                        pos += 1
-                        isCommentNest = 1
-                        state = self.STC_AVS_BLOCKCOMMENT
-                        line = self.LineFromPosition(pos)
-                        self.SetFoldLevel(line, self.GetFoldLevel(line) | stc.STC_FOLDLEVELHEADERFLAG)
-                    else:
-                        pos += 1
-                        state = self.STC_AVS_USERSLIDER
+                elif ch == '[' and unichr(self.GetCharAt(pos+1)) == '*':
+                    end = self.GetTextLength()
+                    pos += 1
+                    isCommentNest = 1
+                    state = self.STC_AVS_BLOCKCOMMENT
+                    line = self.LineFromPosition(pos)
+                    self.SetFoldLevel(line, self.GetFoldLevel(line) | stc.STC_FOLDLEVELHEADERFLAG)
+                elif ch == '[' and unichr(self.GetCharAt(pos+1)) == '<':
+                    pos += 1
+                    state = self.STC_AVS_USERSLIDER
                 elif ch.isalpha() or ch == '_' or ch in self.app.avssingleletters:
                     fragment = [ch]
                     state = self.STC_AVS_IDENTIFIER
@@ -1694,16 +1697,8 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                     elif word in self.app.avsfilterdict:
                         #~ self.ColourTo(pos, self.keywordstyles[word])
                         self.ColourTo(pos, self.app.avsfilterdict[word][1])
-                        if self.app.options['dllnameautodetect'] and word in ['load_stdcall_plugin', 'loadcplugin', 'loadplugin', 'loadvfapiplugin', 'loadvirtualdubplugin']:
+                        if self.app.options['dllnameautodetect'] and word == 'loadplugin':
                             isLoadPlugin = True
-                            #~ lineText = self.GetLine(self.LineFromPosition(pos)).lower()
-                            #~ pattern = word + r'\s*\(\s*"(.+?)\.dll"\s*\)'
-                            #~ matched = re.search(pattern, lineText, re.U)
-                            #~ if matched:
-                                #~ dllname = os.path.basename(matched.group(1))
-                                #~ if dllname.count('_'):
-                                    #~ self.app.options['dllnameunderscored'].add(dllname)
-                                    #~ self.app.defineScriptFilterInfo()
                     elif word in self.app.avskeywords:
                         self.ColourTo(pos, self.STC_AVS_KEYWORD)
                     elif word in self.app.avsmiscwords:
@@ -1732,7 +1727,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                         else:
                             self.ColourTo(pos, self.STC_AVS_STRING)
                             if isLoadPlugin:
-                                self.paserDllname(isLoadPlugin, pos)
+                                self.parseDllname(isLoadPlugin, pos)
                                 isLoadPlugin = False
                         state = self.STC_AVS_DEFAULT
                 else:
@@ -1743,7 +1738,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                         self.ColourTo(pos, self.STC_AVS_STRING)                        
                         state = self.STC_AVS_DEFAULT
                         if isLoadPlugin:
-                            self.paserDllname(isLoadPlugin, pos)
+                            self.parseDllname(isLoadPlugin, pos)
                             isLoadPlugin = False
                     elif isEOD:
                         self.ColourTo(pos - 1, self.STC_AVS_STRING)
@@ -1755,7 +1750,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                     state = self.STC_AVS_DEFAULT
                     if isLoadPlugin:
                         if not isEOD:
-                            self.paserDllname(isLoadPlugin, pos)
+                            self.parseDllname(isLoadPlugin, pos)
                         isLoadPlugin = False
             elif state == self.STC_AVS_NUMBER:
                 if not ch.isdigit():
@@ -1779,7 +1774,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                     hexfragment = []
                     state = self.STC_AVS_DEFAULT
             elif state == self.STC_AVS_USERSLIDER:
-                if isEOL or (ch == ']'): #and unichr(self.GetCharAt(pos-1)) == '>'):
+                if isEOL or (ch == ']' and unichr(self.GetCharAt(pos-1)) == '>'):
                     if isEOL:
                         self.ColourTo(pos, self.STC_AVS_NUMBERBAD)
                     else:
@@ -1797,7 +1792,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
         self.SetStyling(pos +1 - self.endstyled, style)
         self.endstyled = pos+1
         
-    def paserDllname(self, start, end):
+    def parseDllname(self, start, end):
         path = self.GetTextRange(start, end).lower().strip('"')
         #~ print path
         if path.endswith('.dll'):
@@ -2748,9 +2743,9 @@ class AvsFunctionDialog(wx.Dialog):
             ext = os.path.splitext(filename)[1]
             try:
                 if ext in ['.avs', '.avsi']:
-                    info = self.PaserAvisynthScript(filename)
+                    info = self.ParseAvisynthScript(filename)
                 elif ext == '.txt':
-                    info = self.PaserCustomizations(filename)
+                    info = self.ParseCustomizations(filename)
                 elif ext == '.dat':
                     f = open(filename, 'rb')
                     data = cPickle.load(f)
@@ -2834,7 +2829,7 @@ class AvsFunctionDialog(wx.Dialog):
                 del filterInfo[i]
         dlg.Destroy()
         
-    def PaserAvisynthScript(self, filename):
+    def ParseAvisynthScript(self, filename):
         pattern = r'function\s+(\w+)\s*\((.+?)\)\s*\{(.+?)\}'
         default = r'default\s*\(\s*%s\s*,\s*(.+?)\s*\)'
         filterInfo, text = [], []
@@ -2879,7 +2874,7 @@ class AvsFunctionDialog(wx.Dialog):
                                 text += ['=', value]
                                 varnameDict[varname] = value
                             except:
-                                print _('Error'), 'PaserAvisynthScript() try eval(%s)' % value                                  
+                                print _('Error'), 'ParseAvisynthScript() try eval(%s)' % value                                  
                 text.append(',\n')
             if text[-1] == ',\n':
                 text[-1] = '\n'
@@ -2888,7 +2883,7 @@ class AvsFunctionDialog(wx.Dialog):
             filterInfo.append((filename, filtername, filterargs, 3))
         return filterInfo
         
-    def PaserCustomizations(self, filename):
+    def ParseCustomizations(self, filename):
         f = open(filename)
         text = '\n'.join([line.strip() for line in f.readlines()])
         f.close()
@@ -4604,6 +4599,7 @@ class MainFrame(wxp.Frame):
                 'focusonrefresh': True,
                 'previewunsavedchanges': True,
                 'hidepreview': False,
+                'refreshpreview': True,
                 'promptwhenpreview': False,
                 'separatevideowindow': False,
                 #~ 'showvideopixelinfo': True,
@@ -5110,6 +5106,7 @@ class MainFrame(wxp.Frame):
             (_('Video 1'),
                 (_('Constantly update video while dragging'), wxp.OPT_ELEM_CHECK, 'dragupdate', _('Update the video constantly when dragging the frame slider'), ''),
                 (_('Focus the video preview upon refresh'), wxp.OPT_ELEM_CHECK, 'focusonrefresh', _('Switch focus to the video preview window when using the refresh command'), ''),
+                (_('Refresh preview automatically'), wxp.OPT_ELEM_CHECK, 'refreshpreview', _('Refresh preview when switch focus on video window or change a value in slider window'), ''),
                 (_("Don't preview when loading a session"), wxp.OPT_ELEM_CHECK, 'hidepreview', _('Always hide the video preview window when loading a session'), ''),
                 (_('Preview script with unsaved changes'), wxp.OPT_ELEM_CHECK, 'previewunsavedchanges', _('Create a temporary preview script with unsaved changes when previewing the video'), ''),
                 (_('Prompt to save when previewing'), wxp.OPT_ELEM_CHECK, 'promptwhenpreview', _('Prompt to save a script before previewing (inactive if previewing with unsaved changes)'), ''),
@@ -5884,7 +5881,7 @@ class MainFrame(wxp.Frame):
 
     def buttonInfo(self):
         bmpPlay = wx.BitmapFromImage(play_icon.getImage().Scale(16,16))
-        self.bmpRightTriangle = wx.BitmapFromImage(play_icon.getImage().Scale(10,10))
+        self.bmpRightTriangle = spin_icon.GetBitmap() #wx.BitmapFromImage(play_icon.getImage().Scale(10,10))
         self.bmpLeftTriangle = self.bmpRightTriangle.ConvertToImage().Mirror().ConvertToBitmap()
         bmpRight = wx.BitmapFromImage(next_icon.getImage().Scale(16,16))
         bmpLeft = bmpRight.ConvertToImage().Mirror().ConvertToBitmap()
@@ -8225,6 +8222,8 @@ class MainFrame(wxp.Frame):
             if wx.VERSION > (2, 9):
                 self.OnCropDialogSpinTextChange()
         else:
+            if self.refreshAVI:
+                self.ShowVideoFrame()
             videoWindow = self.videoWindow
             videoWindow.CaptureMouse()
             videoWindow.SetCursor(wx.StockCursor(wx.CURSOR_HAND))
@@ -8380,6 +8379,7 @@ class MainFrame(wxp.Frame):
         if videoWindow.HasCapture():
             videoWindow.ReleaseMouse()
             videoWindow.SetCursor(wx.StockCursor(wx.CURSOR_DEFAULT))
+        event.Skip()
 
     def OnCropDialogSpinTextChange(self, event=None):
         script = self.currentScript
@@ -11020,7 +11020,7 @@ class MainFrame(wxp.Frame):
                     #~ forceRefresh = True
                     #~ updateDisplayClip = True
         boolNewAVI = False
-        if self.refreshAVI or forceRefresh:
+        if self.refreshAVI and self.options['refreshpreview'] or forceRefresh:
             scripttxt = script.GetText()#.replace('\r','')
             if scripttxt != script.previewtxt or forceRefresh:
                 # Replace any user-inserted sliders (defined with self.regexp)
@@ -11045,12 +11045,10 @@ class MainFrame(wxp.Frame):
                 if updateDisplayClip and False:
                     script.AVI.CreateDisplayClip(fitHeight, fitWidth)
                 else:
-                    self.CaptureMouse()
-                    self.SetCursor(wx.StockCursor(wx.CURSOR_WAIT))
+                    wx.BeginBusyCursor()
                     script.AVI = None
                     script.AVI = pyavs.AvsClip(self.getCleanText(scripttxt), filename, fitHeight=fitHeight, fitWidth=fitWidth, oldFramecount=oldFramecount, keepRaw=self.showVideoPixelAvisynth, matrix=self.matrix, interlaced=self.interlaced, swapuv=self.swapuv)
-                    self.ReleaseMouse()
-                    self.SetCursor(wx.StockCursor(wx.CURSOR_DEFAULT))
+                    wx.EndBusyCursor()
                 os.chdir(cwd)
                 if not script.AVI.initialized:
                     if prompt:
@@ -11887,9 +11885,8 @@ class MainFrame(wxp.Frame):
                         mod = None
                     else:
                         invalidNumber = False
-                        for number in (minValue, maxValue, value):
-                            if int(number) % mod != 0:
-                                invalidNumber = True
+                        if (int(value) - int(minValue)) % mod != 0 or (int(maxValue) - int(minValue)) % mod != 0:
+                            invalidNumber = True
                         if invalidNumber or mod > maxValue - minValue:
                             mod = None
                     if mod is not None:
@@ -11949,8 +11946,33 @@ class MainFrame(wxp.Frame):
         if sizer is None:
             sizer = script.sliderSizer
         parent = script.sliderWindow
+        isRescaled = False
+        if mod:            
+            m = re.search(r'([\d.+-]+)%', labelTxt)
+            try:
+                minValue2 = int(m.group(1))
+                isRescaled = True
+            except:
+                self.IdleCall.append((wx.MessageBox, (_('Invalid slider tag for rescaling!\nAccept only +, -, or an integer.'), _('Warning'), wx.OK|wx.ICON_EXCLAMATION, self), {})) 
+        elif labelTxt[-1] == '+':
+            minValue2 = 0
+            mod = (maxValue - minValue) / 100.
+            isRescaled = True
+        elif labelTxt[-1] == '-':
+            minValue2 = -100
+            mod = (maxValue - minValue) / 200.
+            isRescaled = True
+        if isRescaled:
+            def Rescale(val):
+                return minValue2 + (val - minValue)/mod
         # Construct the format string based on nDecimal
         strTemplate = '%.'+str(nDecimal)+'f'
+        strTemplate2 = '(%.'+str(nDecimal)+'f)'
+        def OnScroll(event):
+            value = slider.GetValue()
+            valTxtCtrl.SetLabel(strTemplate % value)
+            if isRescaled:
+                valTxtCtrl2.SetLabel(strTemplate2 % Rescale(value))
         # Create the slider
         slider = wxp.Slider(parent, wx.ID_ANY,
             value, minValue, maxValue,
@@ -11959,7 +11981,8 @@ class MainFrame(wxp.Frame):
             name=labelTxt,
             nDecimal=nDecimal,
             mod=mod,
-            onscroll= lambda event: valTxtCtrl.SetLabel(strTemplate % slider.GetValue())
+            #~ onscroll= lambda event: valTxtCtrl.SetLabel(strTemplate % slider.GetValue())
+            onscroll = OnScroll,
         )
         # Slider event binding
         slider.Bind(wx.EVT_LEFT_UP, self.OnLeftUpUserSlider)
@@ -11972,11 +11995,32 @@ class MainFrame(wxp.Frame):
         valTxtCtrl.SetCursor(wx.StockCursor(wx.CURSOR_HAND))
         value_formatted = strTemplate % value
         valTxtCtrl.SetToolTip(wx.ToolTip(_('Reset to initial value: %(value_formatted)s') % locals()))
+        if isRescaled:
+            minTxtCtrl2 = wx.StaticText(parent, wx.ID_ANY, strTemplate2 % minValue2)
+            minTxtCtrlSizer = wx.BoxSizer(wx.VERTICAL)
+            minTxtCtrlSizer.Add(minTxtCtrl, 0, wx.ALIGN_CENTER)
+            minTxtCtrlSizer.Add(minTxtCtrl2, 0, wx.ALIGN_CENTER)
+            maxTxtCtrl2 = wx.StaticText(parent, wx.ID_ANY, strTemplate2 % Rescale(maxValue))
+            maxTxtCtrlSizer = wx.BoxSizer(wx.VERTICAL)
+            maxTxtCtrlSizer.Add(maxTxtCtrl, 0, wx.ALIGN_CENTER)
+            maxTxtCtrlSizer.Add(maxTxtCtrl2, 0, wx.ALIGN_CENTER)
+            value2_formatted = strTemplate2 % Rescale(value)
+            valTxtCtrl2 = wx.StaticText(parent, wx.ID_ANY, value2_formatted)
+            valTxtCtrlSizer = wx.BoxSizer(wx.VERTICAL)
+            valTxtCtrlSizer.Add(valTxtCtrl, 0, wx.ALIGN_CENTER)
+            valTxtCtrlSizer.Add(valTxtCtrl2, 0, wx.ALIGN_CENTER)
+            valTxtCtrl2.SetForegroundColour(wx.RED)
+            valTxtCtrl2.SetCursor(wx.StockCursor(wx.CURSOR_HAND))
+            valTxtCtrl2.SetToolTip(wx.ToolTip(_('Reset to initial value: %(value2_formatted)s') % locals()))
         def OnTextLeftDown(event):
             valTxtCtrl.SetLabel(value_formatted)
+            if isRescaled:
+                valTxtCtrl2.SetLabel(value2_formatted)
             slider.SetValue(value)
             self.UserSliderVideoUpdate(slider)
         valTxtCtrl.Bind(wx.EVT_LEFT_DOWN, OnTextLeftDown)
+        if isRescaled:
+            valTxtCtrl2.Bind(wx.EVT_LEFT_DOWN, OnTextLeftDown)
         #~ leftCtrl = wxButtons.GenButton(parent, wx.ID_ANY, '<', size=(16,16))
         leftCtrl = wxButtons.GenBitmapButton(parent, wx.ID_ANY, self.bmpLeftTriangle, size=(16,16))
         leftCtrl.SetBezelWidth(1)
@@ -11990,6 +12034,8 @@ class MainFrame(wxp.Frame):
         def OnLeftTimer(event):
             newvalue = slider.Decrement()
             valTxtCtrl.SetLabel(strTemplate % newvalue)
+            if isRescaled:
+                valTxtCtrl2.SetLabel(strTemplate2 % Rescale(newvalue))
             if leftCtrl.up:
                 leftTimer.Stop()
                 self.UserSliderVideoUpdate(slider)
@@ -12001,6 +12047,8 @@ class MainFrame(wxp.Frame):
         def OnButtonDecLeftDown(event):
             newvalue = slider.Decrement()
             valTxtCtrl.SetLabel(strTemplate % newvalue)
+            if isRescaled:
+                valTxtCtrl2.SetLabel(strTemplate2 % Rescale(newvalue))
             self.fc = wx.FutureCall(300, leftTimer.Start, 100)
             #~ leftTimer.Start(100)
             event.Skip()
@@ -12024,6 +12072,8 @@ class MainFrame(wxp.Frame):
         def OnRightTimer(event):
             newvalue = slider.Increment()
             valTxtCtrl.SetLabel(strTemplate % newvalue)
+            if isRescaled:
+                valTxtCtrl2.SetLabel(strTemplate2 % Rescale(newvalue))
             if rightCtrl.up:
                 rightTimer.Stop()
                 self.UserSliderVideoUpdate(slider)
@@ -12035,6 +12085,8 @@ class MainFrame(wxp.Frame):
         def OnButtonIncLeftDown(event):
             newvalue = slider.Increment()
             valTxtCtrl.SetLabel(strTemplate % newvalue)
+            if isRescaled:
+                valTxtCtrl2.SetLabel(strTemplate2 % Rescale(newvalue))
             self.fc = wx.FutureCall(300, rightTimer.Start, 100)
             #~ rightTimer.Start(100)
             event.Skip()
@@ -12048,12 +12100,19 @@ class MainFrame(wxp.Frame):
         rightCtrl.Bind(wx.EVT_LEFT_UP, OnButtonIncLeftUp)
         # Add the elements to the sliderSizer
         sizer.Add(labelTxtCtrl, (row,0), wx.DefaultSpan, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 10)
-        sizer.Add(minTxtCtrl, (row,1), wx.DefaultSpan, wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
+        if isRescaled:
+            sizer.Add(minTxtCtrlSizer, (row,1), wx.DefaultSpan, wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
+        else:
+            sizer.Add(minTxtCtrl, (row,1), wx.DefaultSpan, wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
         sizer.Add(leftCtrl, (row,2), wx.DefaultSpan, wx.ALIGN_CENTER_VERTICAL|wx.LEFT, 5)
         sizer.Add(slider, (row,3), wx.DefaultSpan, wx.ALIGN_CENTER_VERTICAL|wx.EXPAND)
         sizer.Add(rightCtrl, (row,4), wx.DefaultSpan, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
-        sizer.Add(maxTxtCtrl, (row,5), wx.DefaultSpan, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 10)
-        sizer.Add(valTxtCtrl, (row,6), wx.DefaultSpan, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 0)
+        if isRescaled:
+            sizer.Add(maxTxtCtrlSizer, (row,5), wx.DefaultSpan, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 10)
+            sizer.Add(valTxtCtrlSizer, (row,6), wx.DefaultSpan, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 0)
+        else:
+            sizer.Add(maxTxtCtrl, (row,5), wx.DefaultSpan, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 10)
+            sizer.Add(valTxtCtrl, (row,6), wx.DefaultSpan, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 0)
         #sizer.Add((10, -1), (row,7))
 
         #~ script.sliderSizer.Layout()
@@ -12465,14 +12524,14 @@ class MainFrame(wxp.Frame):
         # Create window elements
         labelTxtCtrl = self.MakeArgNameStaticText(parent, argname, filterName, script, argIndex)
 
-        textCtrl = wx.TextCtrl(parent, wx.ID_ANY, strValue)
+        textCtrl = wx.TextCtrl(parent, wx.ID_ANY, strValue, style=wx.TE_PROCESS_ENTER)
         def OnTextChange(event):
             self.SetNewAvsValue(textCtrl, textCtrl.GetValue(), refreshvideo=False)
             #~ script.oldAutoSliderInfo = None
             event.Skip()
         def OnTextEnter(event):
             self.SetNewAvsValue(textCtrl, textCtrl.GetValue())
-            event.Skip()
+            #~ event.Skip()
         textCtrl.Bind(wx.EVT_TEXT, OnTextChange)
         textCtrl.Bind(wx.EVT_TEXT_ENTER, OnTextEnter)
         textCtrl.filterName = filterName

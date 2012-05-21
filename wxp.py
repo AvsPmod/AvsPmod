@@ -1256,15 +1256,15 @@ class Slider(wx.Slider):
             if mod > maxValue - minValue:
                 mod = None
             else:
-                minValue = minValue + minValue % mod
-                maxValue = maxValue - maxValue % mod
+                #~ minValue = minValue + minValue % mod
+                maxValue = maxValue - (maxValue - minValue) % mod
                 if mod > maxValue - minValue:
                     mod = None
                 else:
                     nDecimal = 0
                     self.uMinValue = minValue
                     self.uMaxValue = maxValue
-                    self.uValue = min(value + value % mod, maxValue)
+                    self.uValue = min(value + (value - minValue) % mod, maxValue)
         self.uSelStart = 0
         self.uSelEnd = 0
         self.nDecimal = nDecimal

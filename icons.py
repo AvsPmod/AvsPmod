@@ -108,6 +108,11 @@ skip_icon = PyEmbeddedImage(
     "KsLNgKpwAJD+FzSgAb8HbDPFMErXwWvCAAAAAElFTkSuQmCC")
 
 #----------------------------------------------------------------------
+spin_icon = PyEmbeddedImage(
+    "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAMElEQVR42mNkoBAwDm8D/hNj"
+    "ASEDCLqSGAPwqiPWAJxq6eICisKAolggCowawMAAAGI5BxGNrXGkAAAAAElFTkSuQmCC")
+
+#----------------------------------------------------------------------
 checked_icon = PyEmbeddedImage(
     "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAWElEQVR42s2RQQoAIAgE82c+"
     "3Z8ZHYwsgxUh2kOHckbYqBVD4xARzYLMTE5gF0jW+acCjeZRgXUECeamDU4J7O2AM4IWwWgH"
