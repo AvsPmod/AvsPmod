@@ -17,4 +17,6 @@ lib/*
 tools/*
 !tools/*.py
 !tools/*.presets
-
+AvsPmod/
+tempfilterout.txt
+_last_session_.ses
