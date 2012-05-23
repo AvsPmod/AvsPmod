@@ -302,14 +302,67 @@ class ArgsPosterThread:
         
     def IsRunning(self):
         return self.running
-        
+    
     def Run(self):
+        
+        # Prevent open sockets from being inherited by child processes
+        # see http://bugs.python.org/issue3006
+        # code taken from CherryPy
+        #
+        # Copyright (c) 2004-2011, CherryPy Team (team@cherrypy.org)
+        # All rights reserved.
+        # 
+        # Redistribution and use in source and binary forms, with or without modification, 
+        # are permitted provided that the following conditions are met:
+        # 
+        #     * Redistributions of source code must retain the above copyright notice, 
+        #       this list of conditions and the following disclaimer.
+        #     * Redistributions in binary form must reproduce the above copyright notice, 
+        #       this list of conditions and the following disclaimer in the documentation 
+        #       and/or other materials provided with the distribution.
+        #     * Neither the name of the CherryPy Team nor the names of its contributors 
+        #       may be used to endorse or promote products derived from this software 
+        #       without specific prior written permission.
+        # 
+        # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
+        # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+        # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
+        # DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE 
+        # FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
+        # DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
+        # SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER 
+        # CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, 
+        # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+        # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+        try:
+            import fcntl
+        except ImportError:
+            try:
+                from ctypes import windll, WinError
+            except ImportError:
+                def prevent_socket_inheritance(sock):
+                    """Dummy function, since neither fcntl nor ctypes are available."""
+                    pass
+            else:
+                def prevent_socket_inheritance(sock):
+                    """Mark the given socket fd as non-inheritable (Windows)."""
+                    if not windll.kernel32.SetHandleInformation(sock.fileno(), 1, 0):
+                        raise WinError()
+        else:
+            def prevent_socket_inheritance(sock):
+                """Mark the given socket fd as non-inheritable (POSIX)."""
+                fd = sock.fileno()
+                old_flags = fcntl.fcntl(fd, fcntl.F_GETFD)
+                fcntl.fcntl(fd, fcntl.F_SETFD, old_flags | fcntl.FD_CLOEXEC)
+
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        prevent_socket_inheritance(sock)
         sock.bind(('localhost',self.app.port))
         sock.listen(5)
         try:
             while self.keepGoing:
                 newSocket, address = sock.accept()
+                prevent_socket_inheritance(newSocket)
                 while True:
                     receivedData = newSocket.recv(8192)
                     if not receivedData: break
@@ -323,7 +376,7 @@ class ArgsPosterThread:
         finally:
             sock.close()
         self.running = False
-        
+
 class Frame(wx.Frame):
     def createMenuBar(self, menuBarInfo, shortcutList, oldShortcuts, menuBackups=[]):
         '''
