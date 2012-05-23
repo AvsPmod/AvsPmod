@@ -8555,7 +8555,7 @@ class MainFrame(wxp.Frame):
         event.Skip()
 
     def OnMouseMotionVideoWindow(self, event=None):
-        if self.cropDialog.IsShown() and event.LeftIsDown():
+        if self.cropDialog.IsShown() and event and event.LeftIsDown():
             script = self.currentScript
             w = script.AVI.Width
             h = script.AVI.Height
