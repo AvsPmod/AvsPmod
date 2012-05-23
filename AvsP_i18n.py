@@ -7,11 +7,11 @@ def _(s): return s
 __builtin__._ = _
 
 def main():
-    pythonexe = os.path.join(sys.prefix, 'python.exe')
+    pythonexe = sys.executable 
     pygettextpath = os.path.join(sys.prefix, 'Tools\i18n\pygettext.py')
     toolsdir = 'tools'
     
-    argsList = ['AvsP.py wxp.py pyavs_avifile.py']
+    argsList = ['AvsP.py wxp.py pyavs.py pyavs_avifile.py']
     # Get additional files to translate from the tools directory
     sys.path.insert(0, toolsdir)
     try:
@@ -27,7 +27,7 @@ def main():
     newlines = ['messages = {\n']
     for args in argsList:
         if len(args) != 3:
-            os.system('%s "%s" %s' % (pythonexe, pygettextpath, args))
+            os.system('""%s" "%s" %s"' % (pythonexe, pygettextpath, args))
         else:
             filename, menuLabel, statusString = args
             filename += '.py'
@@ -38,10 +38,11 @@ def main():
             newlines.append(s)
             s = '    "%s" : u"",\n' % (statusString)
             newlines.append(s)
-            os.system('%s "%s" %s' % (pythonexe, pygettextpath, fullname))
+            os.system('""%s" "%s" %s"' % (pythonexe, pygettextpath, fullname))
         f = open('messages.pot', 'r')
         lines = f.readlines()
         f.close()
+        os.remove('messages.pot')
         for line in lines:
             line = line.strip()
             if line.startswith('msgid '):
@@ -56,7 +57,7 @@ def main():
     newlines.append('}')
     
     f = open('__translation_new.py', 'w')
-    f.write("new_translation_string=r'''")
+    f.write("new_translation_string = r'''")
     f.write('version = "%s"\n\n' % AvsP.version)
     f.writelines(newlines)
     f.write("'''")
