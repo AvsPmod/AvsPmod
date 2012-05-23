@@ -1,12 +1,13 @@
 import os
 import sys
 import __builtin__
-import AvsP
 
 def _(s): return s
 __builtin__._ = _
 
-def main():
+def main(version=None):
+    if version is None:
+        from AvsP import version
     pythonexe = sys.executable 
     pygettextpath = os.path.join(sys.prefix, 'Tools\i18n\pygettext.py')
     toolsdir = 'tools'
@@ -58,7 +59,7 @@ def main():
     
     f = open('__translation_new.py', 'w')
     f.write("new_translation_string = r'''")
-    f.write('version = "%s"\n\n' % AvsP.version)
+    f.write('version = "%s"\n\n' % version)
     f.writelines(newlines)
     f.write("'''")
     f.close()

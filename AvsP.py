@@ -49,20 +49,15 @@ import __builtin__
 if hasattr(sys,'frozen'):
     programdir = os.path.dirname(sys.executable)
     sys.path.insert(0, programdir)
-try:
-    import translation
-    messages = translation.messages
-    def _(s):
+messages = None
+def _(s):
+    if messages:
         s2 = messages.get(s, s)
         if s2:
             return s2
-        else:
-            return s
-except (ImportError, AttributeError):
-    def _(s): return s
+    return s
 __builtin__._ = _
 encoding = sys.getfilesystemencoding()
-
 
 import wx
 from wx import stc
@@ -83,9 +78,18 @@ except AttributeError:
 from icons import AvsP_icon, next_icon, play_icon, skip_icon, spin_icon,\
                   ok_icon, smile_icon, question_icon, rectangle_icon,\
                   dragdrop_cursor
-from __translation_new import new_translation_string
 
 version = '2.2.1'
+
+try:
+    from __translation_new import new_translation_string
+except ImportError:
+    if hasattr(sys,'frozen'):
+        raise
+    else:
+        import AvsP_i18n
+        AvsP_i18n.main(version)
+        from __translation_new import new_translation_string
 
 # Custom styled text control for avisynth language
 class AvsStyledTextCtrl(stc.StyledTextCtrl):
@@ -4163,7 +4167,27 @@ class MainFrame(wxp.Frame):
         self.getOptionsDict()        
         self.IdleCall = []
         self.defineFilterInfo()
-
+        
+        # load translation file
+        self.translations_dir = 'translations'
+        self.options['lang'] = self.options.get('lang', 'eng') # remove this line later
+        if self.options['lang'] != 'eng':
+            sys.path.append(self.translations_dir)
+            sys.dont_write_bytecode = True
+            try:
+                translation = __import__('translation_' + self.options['lang'])
+            except ImportError:
+                translation = None
+            else:
+                try:
+                    global messages
+                    messages = translation.messages
+                except AttributeError:
+                    pass
+            finally:
+                sys.dont_write_bytecode = False
+        
+        # single-instance socket
         self.port = 50009
         self.instance = wx.SingleInstanceChecker(title+wx.GetUserId())
         boolSingleInstance = self.options.setdefault('singleinstance', False)
@@ -4521,21 +4545,29 @@ class MainFrame(wxp.Frame):
         self.ReloadModifiedScripts()
         self.scriptNotebook.SetSelection(index)
         self.currentScript.SetFocus()
-
+        
         # Update the translation file if necessary
-        try:
-            try:
-                translation_version = translation.version
-            except AttributeError:
-                translation_version = None
-            if translation_version != version:
-                if self.UpdateTranslationFile():
-                    wx.MessageBox(_('Translation file updated with new messages to translate.'))
-                else:
-                    wx.MessageBox(_('Translation file update failed'))
-        except NameError, err:
-            pass
-
+        if self.options['lang'] != 'eng':
+            if translation:
+                try:
+                    try:
+                        translation_version = translation.version
+                    except AttributeError:
+                        translation_version = None
+                    if translation_version != version:
+                        if self.UpdateTranslationFile():
+                            wx.MessageBox(_('%s translation file updated with new messages to translate') 
+                                            % self.options['lang'], _('Translation updated'))
+                        else:
+                            wx.MessageBox(_('%s translation file updated.  No new messages to translate.') 
+                                            % self.options['lang'], _('Translation updated'))
+                except NameError, err:
+                    pass
+            else:
+                wx.MessageBox(_("%s language couldn't be loaded") % self.options['lang'], 
+                              _('Error'), style=wx.OK|wx.ICON_ERROR)
+                self.options['lang'] = 'eng'
+    
     def ProcessArguments(self, args):
         if args:
             self.HidePreviewWindow()
@@ -4698,6 +4730,7 @@ class MainFrame(wxp.Frame):
                 'autoslidermakeunknown': True,
                 'autosliderexclusions': '',
                 # MISC OPTIONS
+                'lang': 'eng',
                 'startupsession': True,
                 'alwaysloadstartupsession': False,
                 'promptexitsave': True,
@@ -5216,6 +5249,7 @@ class MainFrame(wxp.Frame):
                 ((_('Save *.avs scripts with AvsPmod markings'), wxp.OPT_ELEM_CHECK, 'savemarkedavs', _('Save AvsPmod-specific markings (user sliders, toggle tags, etc) as a commented section in the *.avs file'), dict() ), ),
             ),
             (_('Misc'),
+                ((_('Language *'), wxp.OPT_ELEM_LIST, 'lang', _('Choose the language used for the interface'), dict(choices=self.getTranslations()) ), ),
                 #~((_('Load bookmarks on startup'), wxp.OPT_ELEM_CHECK, 'loadstartupbookmarks', _('Load video bookmarks from the previous session on program startup'), dict() ), ),
                 #~ ((_('Show full pathname in program title'), wxp.OPT_ELEM_CHECK, 'showfullname', _('Show the full pathname of the current script in the program title'), dict() ), ),
                 #~ ((_('Use custom AviSynth lexer'), wxp.OPT_ELEM_CHECK, 'usecustomlexer', _('Use the custom AviSynth syntax highlighting lexer (may be slower)'), dict() ), ),
@@ -5234,12 +5268,13 @@ class MainFrame(wxp.Frame):
     def UpdateTranslationFile(self):
         newmark = ' # New in v%s' % version
         # Get the text from the translation file
-        filename = os.path.join(self.programdir, 'translation.py')
-        if not os.path.isfile(filename):
-            return False
-        f = open(filename, 'r')
-        txt = f.read()
-        f.close()
+        filename = os.path.join(self.programdir, self.translations_dir, 'translation_%s.py' % self.options['lang'])
+        if os.path.isfile(filename):
+            f = open(filename, 'r')
+            txt = f.read()
+            f.close()
+        else:
+            txt = ''
         # Setup the new text...
         oldMessageDict = {}
         oldMessageDict2 = {}
@@ -5249,19 +5284,24 @@ class MainFrame(wxp.Frame):
             newlines = (
             '# -*- coding: utf-8 -*-\n'
             '\n'
-            '# This file is used to translate the messages used in the AvsP interface.\n'
-            '# To use it, make sure it is named "translation.py" and is in the\n'
-            '# same directory as AvsP.exe.  Simply add translated messages next to each\n'
-            '# message (any untranslated messages will be shown in English).  You can type\n'
-            '# unicode text directly into this document - if you do, make sure to save it\n'
-            '# in the appropriate format.  If required, you can change the coding on the\n'
-            '# first line of this document to a coding appropriate for your translated\n'
-            '# language. DO NOT translate any words inside formatted strings (ie, any\n'
-            '# portions of the text which look like %(...)s, %(...)i, etc.)\n'
-            '').split('\n')
+            '# This file is used to translate the messages used in the AvsPmod interface.\n'
+            '# To use it, make sure it is named "translation_lng.py" where "lng" is the \n'
+            '# three-letter code corresponding to the language that is translated to \n'
+            '# (see <http://www.loc.gov/standards/iso639-2/php/code_list.php>), \n'
+            '# and is placed in the "%s" subdirectory.\n' % self.translations_dir +
+            '# \n'
+            '# Simply add translated messages next to each message (any untranslated \n'
+            '# messages will be shown in English).  You can type unicode text directly \n'
+            '# into this document - if you do, make sure to save it in the appropriate \n'
+            '# format.  If required, you can change the coding on the first line of this \n'
+            '# document to a coding appropriate for your translated language. DO NOT \n'
+            '# translate any words inside formatted strings (ie, any portions of the \n'
+            '# text which look like %(...)s, %(...)i, etc.)\n'
+            ).split('\n')
         else:
             newlines = []
             boolStartLines = True
+            re_mark = re.compile(r'(.*(?<![\'"])[\'"],)\s*#')
             for line in txt.split('\n'):
                 # Copy the start lines
                 if line.strip() and not line.lstrip('\xef\xbb\xbf').strip().startswith('#'):
@@ -5272,7 +5312,8 @@ class MainFrame(wxp.Frame):
                 splitline = line.split(' : ', 1)
                 if len(splitline) == 2:
                     key = splitline[0].strip()
-                    oldMessageDict[key] = line
+                    match = re_mark.match(line)
+                    oldMessageDict[key] = match.group(1) if match else line
                     # Heuristically add extra keys for similar enough messages
                     if splitline[1].strip().startswith('u"'):
                         rawkey = key.strip('"')
@@ -5311,12 +5352,19 @@ class MainFrame(wxp.Frame):
         f = open(filename, 'w')
         f.write('\n'.join(newlines))
         f.close()
-
-        if allMessagesMatched:
-            return False
-        else:
-            return True
-
+        return not allMessagesMatched
+    
+    def getTranslations(self):
+        '''Return the list of 'translation_lng.py' files within the translations subfolder'''
+        translation_list = {'eng'}
+        re_lng = re.compile(r'translation_(\w{3})\.py[co]?', re.I)
+        if os.path.isdir(self.translations_dir):
+            for file in os.listdir(self.translations_dir): 
+                match = re_lng.match(file)
+                if match:
+                    translation_list.add(match.group(1))
+        return sorted(translation_list)
+    
     def createWindowElements(self):
         # Create the program's status bar
         statusBar = self.CreateStatusBar(2)

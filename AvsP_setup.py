@@ -70,7 +70,6 @@ data_files = [
             'filterdb.dat',
             'readme.md',
             'changelog.txt',
-            'translation_readme.txt',
             'copying.txt',
             ]
         ),
@@ -132,7 +131,8 @@ for i, (dsr, files) in enumerate(data_files):
 # Add whole directories, optionally filtering by extension and including explicitly some files
 # If a directory doesn't exist within the current one, search in its parent
 dirs = (
-    ('help', None, None), 
+    ('help', None, None),
+    ('translations', None, None), 
     ('macros', None, None), 
     ('tools', ('.py', '.presets'), ('avs2avi.exe', 'avs2avi_src.zip'))
        )
