@@ -26,6 +26,7 @@ import wx.lib.buttons as wxButtons
 import  wx.lib.mixins.listctrl  as  listmix
 import  wx.lib.filebrowsebutton as filebrowse
 import  wx.lib.colourselect as  colourselect
+from wx.lib.agw.floatspin import FloatSpin
 from wx import stc
 import string
 import keyword
@@ -42,18 +43,24 @@ import cPickle
 
 from icons import checked_icon, unchecked_icon
 
-OPT_ELEM_STRING = 0
+OPT_ELEM_CHECK = 0
 OPT_ELEM_INT = 1
-OPT_ELEM_CHECK = 2
-OPT_ELEM_FLOAT = 3
-OPT_ELEM_RADIO = 4
-OPT_ELEM_FILE = 5
+OPT_ELEM_FLOAT = 1
+OPT_ELEM_SPIN = 1
+OPT_ELEM_STRING = 2
+OPT_ELEM_FILE = 3
+OPT_ELEM_FILE_OPEN = 3
+OPT_ELEM_FILE_SAVE = 4
+OPT_ELEM_FILE_URL = 5
 OPT_ELEM_DIR = 6
-OPT_ELEM_COLOR = 7
-OPT_ELEM_FONT = 8
-OPT_ELEM_FILE_URL = 9
-OPT_ELEM_DIR_URL = 10
-OPT_ELEM_BUTTON = 11
+OPT_ELEM_DIR_URL = 7
+OPT_ELEM_RADIO = 8
+OPT_ELEM_LIST = 9
+OPT_ELEM_SLIDER = 10
+OPT_ELEM_COLOR = 11
+OPT_ELEM_FONT = 12
+OPT_ELEM_BUTTON = 13
+OPT_ELEM_SEP = 14
 
 keyStringList = [
     'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
@@ -168,7 +175,7 @@ class MenuItemInfo(object):
 class StdoutStderrWindow:
     """
     A class that can be used for redirecting Python's stdout and
-    stderr streams.  It will do nothing until something is wrriten to
+    stderr streams.  It will do nothing until something is written to
     the stream at which point it will create a Frame with a text area
     and write the text there.
     """
@@ -302,7 +309,7 @@ class ArgsPosterThread:
         
     def IsRunning(self):
         return self.running
-    
+        
     def Run(self):
         
         # Prevent open sockets from being inherited by child processes
@@ -376,7 +383,7 @@ class ArgsPosterThread:
         finally:
             sock.close()
         self.running = False
-
+        
 class Frame(wx.Frame):
     def createMenuBar(self, menuBarInfo, shortcutList, oldShortcuts, menuBackups=[]):
         '''
@@ -572,171 +579,388 @@ class Frame(wx.Frame):
         return button
         
 class OptionsDialog(wx.Dialog):
-    def __init__(self, parent, dlgInfo, options, title=_('Program Settings'), startPageIndex=0):
+    def __init__(self, parent, dlgInfo, options, title=_('Program Settings'), startPageIndex=0, starText=True):
+        '''Init the OptionsDialog window
+        
+        Create a wx.Notebook from the tabs specified in 'dlgInfo' and the 
+        current/default values in 'options'. If there's only one tab, create 
+        a simple wx.Panel.
+        
+        'starText': show a message next to the window's standard buttons if 
+        some condition is satisfied. 'startext' == True imposes a min window 
+        width.
+        
+        '''
         wx.Dialog.__init__(self, parent, wx.ID_ANY, title)
         self.options = options.copy()
         self.optionsOriginal = options
         # Create the options tabs
         self.controls = {}
         self.starList = []
-        nb = self.nb = wx.Notebook(self, wx.ID_ANY, style=wx.NO_BORDER)
+        notebook = len(dlgInfo) > 1
+        if notebook:
+            nb = self.nb = wx.Notebook(self, wx.ID_ANY, style=wx.NO_BORDER)
         for tabInfo in dlgInfo:
-            tabPanel = wx.Panel(nb, wx.ID_ANY)
-            nb.AddPage(tabPanel, tabInfo[0], select=True)            
+            if notebook:
+                tabPanel = wx.Panel(nb, wx.ID_ANY)
+                nb.AddPage(tabPanel, tabInfo[0], select=True)  
+            else:
+                tabPanel = wx.Panel(self, wx.ID_ANY)
             tabSizer = wx.BoxSizer(wx.VERTICAL)
+            tabSizer.Add((-1,5), 0)
             boolStar = False
-            for label, flag, key, tip, misc in tabInfo[1:]:
-                try:
-                    optionsValue = self.options[key]
-                    if optionsValue is None:
+            for line in tabInfo[1:]:
+                colSizer = wx.BoxSizer(wx.HORIZONTAL)
+                for label, flag, key, tip, misc in line:
+                    try:
+                        optionsValue = self.options[key]
+                        if optionsValue is None:
+                            optionsValue = ''
+                    except KeyError:
                         optionsValue = ''
-                except KeyError:
-                    optionsValue = ''
-                if flag is None:
-                    itemSizer.Add((-1,10), 0)
-                elif flag in (OPT_ELEM_FILE, OPT_ELEM_FILE_URL):
-                    browseCtrl = filebrowse.FileBrowseButton(tabPanel, wx.ID_ANY, size=(400,-1),
-                        labelText=label,
-                        toolTip=tip,
-                        initialValue=optionsValue,
-                        fileMask=misc,
-                        buttonText = _('Browse'),
-                    )
-                    ctrl = browseCtrl.textControl
-                    itemSizer = wx.BoxSizer(wx.HORIZONTAL)
-                    itemSizer.Add(browseCtrl, 1, wx.EXPAND)
-                elif flag in (OPT_ELEM_DIR, OPT_ELEM_DIR_URL):
-                    browseCtrl = filebrowse.DirBrowseButton(tabPanel, wx.ID_ANY, size=(400,-1),
-                        labelText=label,
-                        toolTip=tip,
-                        startDirectory=optionsValue,
-                        buttonText = _('Browse'),
-                    )
-                    browseCtrl.SetValue(optionsValue)
-                    ctrl = browseCtrl.textControl
-                    itemSizer = wx.BoxSizer(wx.HORIZONTAL)
-                    itemSizer.Add(browseCtrl, 1, wx.EXPAND)
-                elif flag == OPT_ELEM_COLOR:
-                    staticText = wx.StaticText(tabPanel, wx.ID_ANY, label)
-                    ctrl = colourselect.ColourSelect(tabPanel, wx.ID_ANY, colour=wx.Colour(*optionsValue), size=(50,23))
-                    if tip:
-                        ctrl.SetToolTipString(tip)
-                    itemSizer = wx.BoxSizer(wx.HORIZONTAL)
-                    itemSizer.Add(staticText, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
-                    itemSizer.Add(ctrl, 0)
-                elif flag == OPT_ELEM_FONT:
-                    #~ staticText = wx.StaticText(tabPanel, wx.ID_ANY, label)
-                    ctrl = wxButtons.GenButton(tabPanel, wx.ID_ANY, label=label)
-                    ctrl.SetUseFocusIndicator(False)
-                    self.Bind(wx.EVT_BUTTON, self.OnButtonFont, ctrl)
-                    fontFace, fontSize, fontWeight, fontStyle, fontColorTuple = optionsValue
-                    weight = wx.FONTWEIGHT_NORMAL
-                    if fontWeight == 'bold':
-                        weight = wx.FONTWEIGHT_BOLD
-                    style = wx.FONTSTYLE_NORMAL
-                    if fontStyle == 'italic':
-                        style = wx.FONTSTYLE_ITALIC
-                    font = wx.Font(fontSize, wx.FONTFAMILY_DEFAULT, style, weight, faceName=fontFace)
-                    ctrl.SetFont(font)
-                    ctrl.SetForegroundColour(wx.Colour(*fontColorTuple))
-                    if tip:
-                        ctrl.SetToolTipString(tip)
-                    itemSizer = wx.BoxSizer(wx.HORIZONTAL)
-                    #~ itemSizer.Add(staticText, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
-                    itemSizer.Add(ctrl, 0)
-                elif flag == OPT_ELEM_INT:
-                    staticText = wx.StaticText(tabPanel, wx.ID_ANY, label)
-                    ctrl = wx.TextCtrl(tabPanel, wx.ID_ANY, value=str(optionsValue), size=(50,-1))
-                    if tip:
-                        staticText.SetToolTipString(tip)
-                        ctrl.SetToolTipString(tip)
-                    itemSizer = wx.BoxSizer(wx.HORIZONTAL)
-                    itemSizer.Add(staticText, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
-                    itemSizer.Add(ctrl, 0)
-                elif flag == OPT_ELEM_CHECK:
-                    ctrl = wx.CheckBox(tabPanel, wx.ID_ANY, label)
-                    ctrl.SetValue(optionsValue)
-                    if tip:
-                        ctrl.SetToolTipString(tip)
-                    itemSizer = wx.BoxSizer(wx.HORIZONTAL)
-                    border = 2
-                    if type(misc) == int:
-                        itemSizer.Add((misc, -1), 0)
-                        border = 0
-                    itemSizer.Add(ctrl, 0, wx.ALL, border)
-                elif flag == OPT_ELEM_RADIO:
-                    choices = [s for s,v in misc]
-                    ctrl = wx.RadioBox(tabPanel, wx.ID_ANY, label=label, choices=choices, style=wx.RA_SPECIFY_ROWS, majorDimension=1)
-                    ctrl.items = misc
-                    ctrl.SetSelection(0)
-                    for s, v in misc:
-                        if v == optionsValue:
-                            ctrl.SetStringSelection(s)
-                            break
-                    if tip:
-                        ctrl.SetToolTipString(tip)
-                    itemSizer = wx.BoxSizer(wx.HORIZONTAL)
-                    itemSizer.Add(ctrl, 0)
-                elif flag == OPT_ELEM_BUTTON:
-                    #~ staticText = wx.StaticText(tabPanel, wx.ID_ANY, label)
-                    #~ ctrl = wxButtons.GenButton(tabPanel, wx.ID_ANY, label=label)
-                    ctrl = wx.Button(tabPanel, wx.ID_ANY, label=label)
-                    #~ ctrl.SetUseFocusIndicator(False)
-                    handler = misc
-                    self.Bind(wx.EVT_BUTTON, handler, ctrl)
-                    if tip:
-                        ctrl.SetToolTipString(tip)
-                    itemSizer = wx.BoxSizer(wx.HORIZONTAL)
-                    #~ itemSizer.Add(staticText, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
-                    itemSizer.Add(ctrl, 0, wx.TOP|wx.BOTTOM, 5)
-                else: #elif flag == OPT_ELEM_STRING:
-                    staticText = wx.StaticText(tabPanel, wx.ID_ANY, label)
-                    ctrl = wx.TextCtrl(tabPanel, wx.ID_ANY, value=optionsValue)
-                    if tip:
-                        staticText.SetToolTipString(tip)
-                        ctrl.SetToolTipString(tip)
-                    itemSizer = wx.BoxSizer(wx.HORIZONTAL)
-                    itemSizer.Add(staticText, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
-                    itemSizer.Add(ctrl, 1, wx.EXPAND|wx.BOTTOM, 5)
-                #~ if label.startswith('*'):
-                if label.rstrip(' :').endswith('*'):
-                    boolStar = True
-                tabSizer.Add(itemSizer, 0, wx.EXPAND|wx.ALL, 5)
-                self.controls[key] = (ctrl, flag, nb.GetSelection())
+                    
+                    # Set the controls
+                    # possible values for 'label_position' and 'orientation' parameters: wx.HORIZONTAL, wx.VERTICAL
+                    
+                    if flag is None:
+                        # horizontal blank space separator
+                        # misc: {height}
+                        height = misc['height'] if 'height' in misc else 10
+                        itemSizer = wx.BoxSizer(wx.VERTICAL)
+                        itemSizer.Add((-1,height), 0)
+                    
+                    elif flag == OPT_ELEM_SEP:
+                        # horizontal separator formed by a text line and a horizontal line
+                        # misc: {width, expand}
+                        width = misc['width'] if 'width' in misc else -1
+                        expand = (wx.EXPAND if misc['expand'] else 0) if 'expand' in misc else wx.EXPAND
+                        itemSizer = wx.BoxSizer(wx.VERTICAL)
+                        if label:
+                            staticText = wx.StaticText(tabPanel, wx.ID_ANY, label)
+                            itemSizer.Add(staticText, 0, wx.EXPAND|wx.ALL, 2)
+                        else:
+                            itemSizer.AddSpacer((-1, 3))
+                        staticLine = wx.StaticLine(tabPanel, wx.ID_ANY, size=(width, -1))
+                        itemSizer.Add(staticLine, 0, expand|wx.TOP|wx.BOTTOM, 2)
+                    
+                    elif flag == OPT_ELEM_CHECK:
+                        # simple check box, with the label on the right
+                        # misc: {width, ident}
+                        width = misc['width'] if 'width' in misc else -1
+                        ctrl = wx.CheckBox(tabPanel, wx.ID_ANY, label, size=(width,-1))
+                        ctrl.SetValue(bool(optionsValue))
+                        if tip:
+                            ctrl.SetToolTipString(tip)
+                        itemSizer = wx.BoxSizer(wx.VERTICAL)
+                        if 'ident' in misc:
+                            identSizer = wx.BoxSizer(wx.HORIZONTAL)
+                            identSizer.Add((misc['ident'], -1), 0)
+                            identSizer.Add(ctrl, 1, wx.TOP|wx.BOTTOM, 1)
+                            itemSizer.AddStretchSpacer()
+                            itemSizer.Add(identSizer, 0, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL)
+                        else:
+                            itemSizer.Add((-1,2), 1, wx.EXPAND)
+                            itemSizer.Add(ctrl, 0, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL|wx.TOP|wx.BOTTOM, 2)
+                        
+                    elif flag in (OPT_ELEM_SPIN, OPT_ELEM_INT, OPT_ELEM_FLOAT):
+                        # numeric field, with arrows to increment and decrement the value
+                        # misc: (width, expand, label_position, min_val, max_val, digits, increment)
+                        width = misc['width'] if 'width' in misc else 50
+                        expand = misc['expand'] if 'expand' in misc else False
+                        label_position = misc['label_position'] if 'label_position' in misc else wx.HORIZONTAL
+                        min_val = misc['min_val'] if 'min_val' in misc else None
+                        max_val = misc['max_val'] if 'max_val' in misc else None
+                        digits = misc['digits'] if 'digits' in misc else 0
+                        increment = misc['increment'] if 'increment' in misc else 1  
+                        ctrl = FloatSpin(tabPanel, wx.ID_ANY, size=(width, -1), 
+                                    min_val=min_val, max_val=max_val, 
+                                    value=optionsValue, digits=digits, increment=increment)
+                        itemSizer = wx.BoxSizer(label_position)
+                        staticText = wx.StaticText(tabPanel, wx.ID_ANY, label)
+                        if tip:
+                            staticText.SetToolTipString(tip)
+                            ctrl._textctrl.SetToolTipString(tip)
+                        if label_position == wx.HORIZONTAL:
+                            itemSizer.Add(staticText, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 6)
+                            expand_flags = (1, 0) if expand else (0, 0)
+                            itemSizer.Add(ctrl, expand_flags[0], expand_flags[1]|wx.ALIGN_CENTER_VERTICAL|wx.TOP|wx.BOTTOM, 2)
+                        else:
+                            itemSizer.AddStretchSpacer()
+                            itemSizer.Add(staticText, 0, wx.LEFT|wx.RIGHT|wx.TOP|wx.BOTTOM, 2)
+                            expand_flags = (0, wx.EXPAND) if expand else (0, 0)
+                            itemSizer.Add(ctrl, expand_flags[0], expand_flags[1]|wx.ALIGN_CENTER_VERTICAL|wx.TOP|wx.BOTTOM, 2)
+                            itemSizer.AddStretchSpacer()
+                        
+                    elif flag == OPT_ELEM_SLIDER:
+                        # select a number with a draggable handle
+                        # misc: (width, expand, label_position, orientation, minValue, maxValue, TickFreq)
+                        width = misc['width'] if 'width' in misc else 200
+                        expand = misc['expand'] if 'expand' in misc else False
+                        label_position = misc['label_position'] if 'label_position' in misc else wx.HORIZONTAL
+                        orientation = misc['orientation'] if 'orientation' in misc else wx.HORIZONTAL
+                        minValue = misc['minValue'] if 'minValue' in misc else 0
+                        maxValue = misc['maxValue'] if 'maxValue' in misc else 100
+                        TickFreq = misc['TickFreq'] if 'TickFreq' in misc else 50
+                        size = (width, -1) if orientation == wx.HORIZONTAL else (-1, width)
+                        style = wx.SL_LABELS | orientation
+                        if TickFreq: style |= wx.SL_AUTOTICKS 
+                        ctrl = wx.Slider(tabPanel, wx.ID_ANY, size=size, 
+                                    minValue=minValue, maxValue=maxValue, 
+                                    value=optionsValue, style=style)
+                        ctrl.SetTickFreq(TickFreq)
+                        staticText = wx.StaticText(tabPanel, wx.ID_ANY, label)
+                        if tip:
+                            staticText.SetToolTipString(tip)
+                            ctrl.SetToolTipString(tip)
+                        itemSizer = wx.BoxSizer(label_position)
+                        if label_position == wx.HORIZONTAL:
+                            itemSizer.Add(staticText, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
+                            expand_flags = (1, 0) if expand else (0, 0)
+                            itemSizer.Add(ctrl, expand_flags[0], expand_flags[1]|wx.ALIGN_CENTER_VERTICAL)
+                        else:
+                            itemSizer.AddStretchSpacer()
+                            itemSizer.Add(staticText, 0, wx.LEFT|wx.RIGHT|wx.TOP|wx.BOTTOM, 2)
+                            expand_flags = (0, wx.EXPAND) if expand else (0, 0)
+                            itemSizer.Add(ctrl, expand_flags[0], expand_flags[1]|wx.ALIGN_CENTER_VERTICAL)
+                            itemSizer.AddStretchSpacer()
+                    
+                    elif flag in (OPT_ELEM_FILE, OPT_ELEM_FILE_OPEN, OPT_ELEM_FILE_SAVE, OPT_ELEM_FILE_URL):
+                        # text field with additional browse for file button
+                        # misc: {width, expand, label_position, fileMask, startDirectory, buttonText, buttonWidth}
+                        width = misc['width'] if 'width' in misc else 400
+                        expand = misc['expand'] if 'expand' in misc else True
+                        label_position = misc['label_position'] if 'label_position' in misc else wx.HORIZONTAL
+                        fileMode = wx.SAVE if flag == OPT_ELEM_FILE_SAVE else wx.OPEN
+                        fileMask = misc['fileMask'] if 'fileMask' in misc else '*.*'
+                        startDirectory = misc['startDirectory'] if 'startDirectory' in misc else ''
+                        buttonText = misc['buttonText'] if 'buttonText' in misc else _('Browse')
+                        buttonWidth = misc['buttonWidth'] if 'buttonWidth' in misc else -1
+                        itemSizer = wx.BoxSizer(wx.VERTICAL)
+                        itemSizer.AddStretchSpacer()
+                        if label_position == wx.VERTICAL:
+                            staticText = wx.StaticText(tabPanel, wx.ID_ANY, label)
+                            staticText.SetToolTipString(tip)
+                            itemSizer.Add(staticText, 0, wx.LEFT|wx.RIGHT|wx.TOP|wx.BOTTOM, 2)
+                            label = ''
+                        ctrl = filebrowse.FileBrowseButton(tabPanel, wx.ID_ANY, size=(width,-1),
+                            labelText=label,
+                            toolTip=tip,
+                            fileMode=fileMode, 
+                            fileMask=fileMask,
+                            startDirectory=startDirectory, 
+                            buttonText=buttonText,
+                            #dialogTitle = ''
+                        )
+                        ctrl.SetValue(optionsValue)         
+                        ctrl.Sizer.Children[0].SetBorder(0)
+                        if not label: 
+                            ctrl.Sizer.Children[0].Sizer.Children[1].SetBorder(0)
+                            label = staticText.Label
+                        elif tip:
+                            ctrl.label.SetToolTipString(tip)
+                        ctrl.Sizer.Children[0].Sizer.Children[2].SetInitSize(buttonWidth, -1)
+                        itemSizer.Add(ctrl, 0, (wx.EXPAND if expand else 0)|wx.ALIGN_CENTER_VERTICAL|wx.TOP|wx.BOTTOM, 2)
+                        itemSizer.AddStretchSpacer()
+                    
+                    elif flag in (OPT_ELEM_DIR, OPT_ELEM_DIR_URL):
+                        # text field with additional browse for directory button
+                        # misc: (width, expand, label_position, startDirectory, buttonText, buttonWidth)
+                        width = misc['width'] if 'width' in misc else 400
+                        expand = misc['expand'] if 'expand' in misc else True
+                        label_position = misc['label_position'] if 'label_position' in misc else wx.HORIZONTAL
+                        startDirectory = misc['startDirectory'] if 'startDirectory' in misc else ''
+                        buttonText = misc['buttonText'] if 'buttonText' in misc else _('Browse')
+                        buttonWidth = misc['buttonWidth'] if 'buttonWidth' in misc else -1         
+                        itemSizer = wx.BoxSizer(wx.VERTICAL)
+                        itemSizer.AddStretchSpacer()
+                        if label_position == wx.VERTICAL:
+                                staticText = wx.StaticText(tabPanel, wx.ID_ANY, label)
+                                staticText.SetToolTipString(tip)
+                                itemSizer.Add(staticText, 0, wx.LEFT|wx.RIGHT|wx.TOP|wx.BOTTOM, 2)
+                                label = ''
+                        ctrl = filebrowse.DirBrowseButton(tabPanel, wx.ID_ANY, size=(width,-1),
+                            labelText=label,
+                            toolTip=tip,
+                            startDirectory=optionsValue,
+                            newDirectory=True, 
+                            buttonText=buttonText,
+                            #dialogTitle = ''
+                        )
+                        ctrl.SetValue(optionsValue)         
+                        ctrl.Sizer.Children[0].SetBorder(0)
+                        if not label: 
+                            ctrl.Sizer.Children[0].Sizer.Children[1].SetBorder(0)
+                            label = staticText.Label
+                        elif tip:
+                            ctrl.label.SetToolTipString(tip)
+                        ctrl.Sizer.Children[0].Sizer.Children[2].SetInitSize(buttonWidth, -1)
+                        itemSizer.Add(ctrl, 0, (wx.EXPAND if expand else 0)|wx.ALIGN_CENTER_VERTICAL|wx.TOP|wx.BOTTOM, 2)
+                        itemSizer.AddStretchSpacer()
+                    
+                    elif flag == OPT_ELEM_RADIO:
+                        # select an option from the displayed ones
+                        # misc: {width, expand, orientation, dimensions, choices}
+                        width = misc['width'] if 'width' in misc else -1
+                        expand = 1 if 'expand' in misc and misc['expand'] else 0
+                        orientation = (wx.RA_SPECIFY_COLS if 'orientation' in misc and 
+                                       misc['orientation'] == wx.VERTICAL else wx.RA_SPECIFY_ROWS)
+                        dimensions = misc['dimensions'] if 'dimensions' in misc else 1
+                        choices = [s for s,v in misc['choices']]
+                        ctrl = wx.RadioBox(tabPanel, wx.ID_ANY, size=(width,-1), label=label, 
+                                           choices=choices, style=orientation, majorDimension=dimensions)
+                        ctrl.items = misc['choices']
+                        ctrl.SetSelection(0)
+                        for s, v in misc['choices']:
+                            if v == optionsValue:
+                                ctrl.SetStringSelection(s)
+                                break
+                        if tip:
+                            ctrl.SetToolTipString(tip)
+                        itemSizer = wx.BoxSizer(wx.HORIZONTAL)
+                        itemSizer.Add(ctrl, expand, wx.ALIGN_CENTER_VERTICAL|wx.TOP|wx.BOTTOM, 2)
+                    
+                    elif flag == OPT_ELEM_LIST:
+                        # select an option from a drop-down list
+                        # misc: {width, expand, label_position, choices, writable}
+                        width = misc['width'] if 'width' in misc else -1
+                        expand = misc['expand'] if 'expand' in misc else False
+                        label_position = misc['label_position'] if 'label_position' in misc else wx.HORIZONTAL
+                        list_type = wx.CB_DROPDOWN if 'writable' in misc and misc['writable'] else wx.CB_READONLY
+                        ctrl = wx.ComboBox(tabPanel, wx.ID_ANY, size=(width,-1), choices=misc['choices'], 
+                                           value=optionsValue, style=list_type)
+                        itemSizer = wx.BoxSizer(label_position)
+                        staticText = wx.StaticText(tabPanel, wx.ID_ANY, label)
+                        if tip:
+                            staticText.SetToolTipString(tip)
+                            ctrl.SetToolTipString(tip)
+                        if label_position == wx.HORIZONTAL:
+                            itemSizer.Add(staticText, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
+                            expand_flags = (1, 0) if expand else (0, 0)
+                            itemSizer.Add(ctrl, expand_flags[0], expand_flags[1]|wx.ALIGN_CENTER_VERTICAL|wx.TOP|wx.BOTTOM, 2)
+                        else:
+                            itemSizer.AddStretchSpacer()
+                            itemSizer.Add(staticText, 0, wx.LEFT|wx.RIGHT|wx.TOP|wx.BOTTOM, 2)
+                            expand_flags = (0, wx.EXPAND) if expand else (0, 0)
+                            itemSizer.Add(ctrl, expand_flags[0], expand_flags[1]|wx.ALIGN_CENTER_VERTICAL|wx.TOP|wx.BOTTOM, 2)
+                            itemSizer.AddStretchSpacer()
+                    
+                    elif flag == OPT_ELEM_BUTTON:
+                        # button with an associated handler
+                        # misc: {width, handler}
+                        width = misc['width'] if 'width' in misc else -1
+                        handler = misc['handler']
+                        ctrl = wx.Button(tabPanel, wx.ID_ANY, size=(width,-1), label=label)
+                        self.Bind(wx.EVT_BUTTON, handler, ctrl)
+                        if tip:
+                            ctrl.SetToolTipString(tip)
+                        itemSizer = wx.BoxSizer(wx.VERTICAL)
+                        #~ staticText = wx.StaticText(tabPanel, wx.ID_ANY, label)
+                        #~ ctrl = wxButtons.GenButton(tabPanel, wx.ID_ANY, label=label)
+                        #~ ctrl.SetUseFocusIndicator(False)
+                        #~ itemSizer.Add(staticText, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
+                        itemSizer.Add(ctrl, 0, wx.ALIGN_CENTER_VERTICAL|wx.TOP|wx.BOTTOM, 2)
+                    
+                    elif flag == OPT_ELEM_COLOR: #  Currently not used
+                        staticText = wx.StaticText(tabPanel, wx.ID_ANY, label)
+                        ctrl = colourselect.ColourSelect(tabPanel, wx.ID_ANY, colour=wx.Colour(*optionsValue), size=(50,23))
+                        if tip:
+                            ctrl.SetToolTipString(tip)
+                        itemSizer = wx.BoxSizer(wx.HORIZONTAL)
+                        itemSizer.Add(staticText, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
+                        itemSizer.Add(ctrl, 0)
+                    
+                    elif flag == OPT_ELEM_FONT: #  Currently not used
+                        #~ staticText = wx.StaticText(tabPanel, wx.ID_ANY, label)
+                        ctrl = wxButtons.GenButton(tabPanel, wx.ID_ANY, label=label)
+                        ctrl.SetUseFocusIndicator(False)
+                        self.Bind(wx.EVT_BUTTON, self.OnButtonFont, ctrl)
+                        fontFace, fontSize, fontWeight, fontStyle, fontColorTuple = optionsValue
+                        weight = wx.FONTWEIGHT_NORMAL
+                        if fontWeight == 'bold':
+                            weight = wx.FONTWEIGHT_BOLD
+                        style = wx.FONTSTYLE_NORMAL
+                        if fontStyle == 'italic':
+                            style = wx.FONTSTYLE_ITALIC
+                        font = wx.Font(fontSize, wx.FONTFAMILY_DEFAULT, style, weight, faceName=fontFace)
+                        ctrl.SetFont(font)
+                        ctrl.SetForegroundColour(wx.Colour(*fontColorTuple))
+                        if tip:
+                            ctrl.SetToolTipString(tip)
+                        itemSizer = wx.BoxSizer(wx.HORIZONTAL)
+                        #~ itemSizer.Add(staticText, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
+                        itemSizer.Add(ctrl, 0)
+                    
+                    else: #elif flag == OPT_ELEM_STRING:
+                        # regular text field
+                        # misc: {width, expand, label_position}
+                        width = misc['width'] if 'width' in misc else -1
+                        expand = misc['expand'] if 'expand' in misc else True
+                        label_position = misc['label_position'] if 'label_position' in misc else wx.HORIZONTAL
+                        staticText = wx.StaticText(tabPanel, wx.ID_ANY, label)
+                        ctrl = wx.TextCtrl(tabPanel, wx.ID_ANY, size=(width,-1), value=optionsValue)
+                        if tip:
+                            staticText.SetToolTipString(tip)
+                            ctrl.SetToolTipString(tip)
+                        itemSizer = wx.BoxSizer(label_position)
+                        if label_position == wx.HORIZONTAL:
+                            itemSizer.Add(staticText, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
+                            expand_flags = (1, 0) if expand else (0, 0)
+                            itemSizer.Add(ctrl, expand_flags[0], expand_flags[1]|wx.ALIGN_CENTER_VERTICAL|wx.TOP|wx.BOTTOM, 2)
+                        else:
+                            itemSizer.AddStretchSpacer()
+                            itemSizer.Add(staticText, 0, wx.LEFT|wx.RIGHT|wx.TOP|wx.BOTTOM, 2)
+                            expand_flags = (0, wx.EXPAND) if expand else (0, 0)
+                            itemSizer.Add(ctrl, expand_flags[0], expand_flags[1]|wx.ALIGN_CENTER_VERTICAL|wx.TOP|wx.BOTTOM, 2)
+                            itemSizer.AddStretchSpacer()
+                    
+                    #~ if label.startswith('*'):
+                    if label.rstrip(' :').endswith('*'):
+                        boolStar = True
+                    if flag != OPT_ELEM_SEP: self.controls[key] = (ctrl, flag, nb.GetSelection() if notebook else -1)
+                    colSizer.Add(itemSizer, 1, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL|wx.LEFT|wx.RIGHT, 4)
+                tabSizer.Add(colSizer, 0, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL|wx.TOP|wx.BOTTOM, 4)
             if boolStar:
-                self.starList.append(tabPanel)
+                self.starList.append(tabPanel if notebook else 1)
                 #~ tabSizer.Add((0,0),1)
                 #~ tabSizer.Add(wx.StaticText(tabPanel, wx.ID_ANY, '    '+_('* Requires program restart for full effect')), 0, wx.TOP, 20)
-            tabSizerBorder = wx.BoxSizer()
-            tabSizerBorder.Add(tabSizer, 1, wx.EXPAND|wx.ALL, 5)
+            tabSizerBorder = wx.BoxSizer(wx.VERTICAL)
+            tabSizerBorder.Add(tabSizer, 1, wx.EXPAND|wx.LEFT|wx.RIGHT, 4)
+            tabSizerBorder.Add((-1,4), 0, wx.EXPAND)
             tabPanel.SetSizer(tabSizerBorder)
             tabSizerBorder.Layout()
-        if startPageIndex >=0 and startPageIndex < nb.GetPageCount():
-            nb.SetSelection(startPageIndex)
-        else:
-            nb.SetSelection(0)
+        if notebook:
+            if startPageIndex >=0 and startPageIndex < nb.GetPageCount():
+                nb.SetSelection(startPageIndex)
+            else:
+                nb.SetSelection(0)
         # Standard buttons
         okay = wx.Button(self, wx.ID_OK, _('OK'))
         self.Bind(wx.EVT_BUTTON, self.OnButtonOK, okay)
         cancel = wx.Button(self, wx.ID_CANCEL, _('Cancel'))
         btns = wx.StdDialogButtonSizer()
-        self.starText = wx.StaticText(self, wx.ID_ANY, _('* Requires program restart for full effect'))
-        btns.Add(self.starText)
+        if starText:
+            self.starText = wx.StaticText(self, wx.ID_ANY, _('* Requires program restart for full effect'))
+            btns.Add(self.starText, 0, wx.ALIGN_CENTER_VERTICAL)
         btns.AddButton(okay)
         btns.AddButton(cancel)
         btns.Realize()
         # Size the elements
         dlgSizer = wx.BoxSizer(wx.VERTICAL)
-        dlgSizer.Add(nb, 0, wx.EXPAND|wx.ALL, 5)
+        if notebook:
+            dlgSizer.Add(nb, 0, wx.EXPAND|wx.ALL, 5)
+        else:
+            dlgSizer.Add(tabPanel, 0, wx.EXPAND|wx.ALL, 0)
         dlgSizer.Add(btns, 0, wx.EXPAND|wx.ALL, 10)
         self.SetSizer(dlgSizer)
         dlgSizer.Fit(self)
         self.sizer = dlgSizer
+        self.Center()
         # Misc
         okay.SetDefault()
-        if self.nb.GetPage(0) not in self.starList:
-            self.starText.Hide()
-        self.nb.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.OnNotebookPageChanged)
+        if starText:
+            if (notebook and self.nb.GetPage(0) not in self.starList) or (not notebook and not self.starList):
+                self.starText.Hide()
+            if notebook: self.nb.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.OnNotebookPageChanged)
         
     def OnNotebookPageChanged(self, event):
         if self.nb.GetPage(event.GetSelection()) in self.starList:
@@ -794,11 +1018,10 @@ class OptionsDialog(wx.Dialog):
                 else:
                     self.ShowWarning(ctrl, _('Invalid directory!'), tabIndex)
                     return False
-            elif flag in (OPT_ELEM_FILE, OPT_ELEM_FILE_URL):
+            elif flag in (OPT_ELEM_FILE, OPT_ELEM_FILE_OPEN, OPT_ELEM_FILE_SAVE, OPT_ELEM_FILE_URL):
                 entry = ctrl.GetValue()
-                if entry == '' or os.path.isfile(entry):
-                    newValue = entry
-                elif flag == OPT_ELEM_FILE_URL and entry.lstrip().startswith('http://'):
+                if entry == '' or os.path.isfile(entry) or flag == OPT_ELEM_FILE_SAVE or (
+                   flag == OPT_ELEM_FILE_URL and entry.lstrip().startswith('http://')):
                     newValue = entry
                 else:
                     self.ShowWarning(ctrl, _('Invalid filename!'), tabIndex)
@@ -816,18 +1039,17 @@ class OptionsDialog(wx.Dialog):
                     italic = 'italic'
                 color = ctrl.GetForegroundColour()
                 newValue = (font.GetFaceName(), font.GetPointSize(), bold, italic, color.Get())
-            elif flag == OPT_ELEM_INT:
-                entry = ctrl.GetValue()
-                try:
-                    newValue = int(entry)
-                except ValueError:
-                    self.ShowWarning(ctrl, _('Value must be an integer!'), tabIndex)
-                    return False
             elif flag == OPT_ELEM_CHECK:
+                newValue = ctrl.GetValue()
+            elif flag in (OPT_ELEM_INT, OPT_ELEM_FLOAT, OPT_ELEM_SPIN):
+                newValue = ctrl.GetValue() if ctrl.GetDigits() else int(ctrl.GetValue())
+            elif flag == OPT_ELEM_SLIDER:
                 newValue = ctrl.GetValue()
             elif flag == OPT_ELEM_RADIO:
                 index = ctrl.GetSelection()
                 newValue = ctrl.items[index][1]
+            elif flag == OPT_ELEM_LIST:
+                newValue = ctrl.GetValue()
             elif flag == OPT_ELEM_BUTTON:
                 newValue = self.optionsOriginal[key]
             else: # flag == OPT_ELEM_STRING:
@@ -836,12 +1058,12 @@ class OptionsDialog(wx.Dialog):
         return True
         
     def ShowWarning(self, ctrl, message, tabIndex):
-        self.nb.SetSelection(tabIndex)
-        color = ctrl.GetBackgroundColour()
-        ctrl.SetBackgroundColour('pink')
+        if tabIndex != -1: self.nb.SetSelection(tabIndex)
+        color = ctrl.textControl.GetBackgroundColour()
+        ctrl.textControl.SetBackgroundColour('pink')
         ctrl.Refresh()
         wx.MessageBox(message, 'Error')
-        ctrl.SetBackgroundColour(color)
+        ctrl.textControl.SetBackgroundColour(color)
         ctrl.Refresh()
         ctrl.SetFocus()
         
