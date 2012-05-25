@@ -4190,8 +4190,8 @@ class MainFrame(wxp.Frame):
         # single-instance socket
         self.port = 50009
         self.instance = wx.SingleInstanceChecker(title+wx.GetUserId())
-        boolSingleInstance = self.options.setdefault('singleinstance', False)
-        if boolSingleInstance:
+        self.boolSingleInstance = self.options.setdefault('singleinstance', False)
+        if self.boolSingleInstance:
             #~ self.port = 50009
             #~ self.instance = wx.SingleInstanceChecker(title+wx.GetUserId())
             if self.instance.IsAnotherRunning():
@@ -9300,6 +9300,8 @@ class MainFrame(wxp.Frame):
             script = self.scriptNotebook.GetPage(index)
             script.AVI = None
         pyavs.ExitRoutines()
+        if self.boolSingleInstance:
+            self.argsPosterThread.Stop()
         self.Destroy()
 
     def NewTab(self, copyselected=True, select=True, splits=None):

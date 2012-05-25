@@ -12,6 +12,8 @@
 *.bak
 *.bat
 *.sh
+*.diff
+*.patch
 src/*
 lib/*
 tools/*
