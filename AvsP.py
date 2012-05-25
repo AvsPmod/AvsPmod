@@ -13758,12 +13758,24 @@ class MainFrame(wxp.Frame):
             return ''
         return values
   
-    def MacroMsgBox(self, txt, title=''):
+    def MacroMsgBox(self, message, title='', cancel=False):
+        r'''MsgBox(message, title='', cancel=False)
+        
+        Displays a simple dialog box with the text string 'message' and title 'title', 
+        and an additional cancel button if 'cancel' is True.  Returns True if the user 
+        presses 'OK' and the cancel button is present, or always True if it's not.
+        
+        '''
+        style = wx.OK
         if title == _('Error'):
-            wx.MessageBox(txt, title, style=wx.OK|wx.ICON_ERROR)
-        else:
-            wx.MessageBox(txt, title)
-
+            style |= wx.ICON_ERROR
+        elif title == _('Warning'):
+            style |= wx.ICON_EXCLAMATION
+        if cancel:
+            style |= wx.CANCEL
+        action = wx.MessageBox(message, title, style)
+        return True if action == wx.OK else False
+    
     def MacroProgressBox(self, max=100, message='', title=_('Progress')):
         return wx.ProgressDialog(
             title, message, max,
