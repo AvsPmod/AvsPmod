@@ -2710,19 +2710,20 @@ class AvsFunctionDialog(wx.Dialog):
             if enteredName is None:
                 lowername = newName.lower()
                 if lowername in self.overrideDict or lowername in self.filterDict:
-                    wx.MessageBox(_('Filter name already exists!'), _('Error'))
+                    wx.MessageBox(_('Filter name already exists!'), _('Error'), style=wx.OK|wx.ICON_ERROR)
                     textCtrl0.SetFocus()
                     return
                 if not newName or newName[0].isdigit() or re.findall('\W', newName):
-                    wx.MessageBox(_('Invalid filter name!'), _('Error'))
+                    wx.MessageBox(_('Invalid filter name!'), _('Error'), style=wx.OK|wx.ICON_ERROR)
                     textCtrl0.SetFocus()
                     return
             elif newName.lower() != enteredName.lower():
-                wx.MessageBox(_('Renaming not allowed!'), _('Error'))
+                wx.MessageBox(_('Renaming not allowed!'), _('Error'), style=wx.OK|wx.ICON_ERROR)
                 textCtrl0.SetFocus()
                 return
             if dlg.typeBox.GetCurrentSelection() == 2 and newName.count('_') == 0:
-                wx.MessageBox(_('You must use dllname_function naming format for plugins!'), _('Error'))
+                wx.MessageBox(_('You must use dllname_function naming format for plugins!'), 
+                              _('Error'), style=wx.OK|wx.ICON_ERROR)
                 textCtrl0.SetFocus()
                 return
             event.Skip()
@@ -3014,7 +3015,7 @@ class AvsFunctionDialog(wx.Dialog):
                 
     def ExportCustomizations(self):
         if len(self.overrideDict) == 0:
-            wx.MessageBox(_('No customizations to export!'), _('Error'))
+            wx.MessageBox(_('No customizations to export!'), _('Error'), style=wx.OK|wx.ICON_ERROR)
             return
         title = _('Save filter customizations')
         recentdir = self.GetParent().programdir
@@ -7882,7 +7883,7 @@ class MainFrame(wxp.Frame):
             os.startfile(helpfile)
             return True
         # Give a message if not a file or a url
-        wx.MessageBox('Could not find avisynth help file!', 'ERROR')
+        wx.MessageBox('Could not find avisynth help file!', _('Error'), style=wx.OK|wx.ICON_ERROR)
 
     def OnMenuHelpAvisynthPlugins(self, event):
         plugindir = self.options['recentdirPlugins']
@@ -9307,10 +9308,12 @@ class MainFrame(wxp.Frame):
 
     def NewTab(self, copyselected=True, select=True, splits=None):
         if self.cropDialog.IsShown():
-            wx.MessageBox(_('Cannot create a new tab while crop editor is open!'), _('Error'), style=wx.OK|wx.ICON_ERROR)
+            wx.MessageBox(_('Cannot create a new tab while crop editor is open!'), 
+                          _('Error'), style=wx.OK|wx.ICON_ERROR)
             return False
         if self.trimDialog.IsShown():
-            wx.MessageBox(_('Cannot create a new tab while trim editor is open!'), _('Error'), style=wx.OK|wx.ICON_ERROR)
+            wx.MessageBox(_('Cannot create a new tab while trim editor is open!'), 
+                          _('Error'), style=wx.OK|wx.ICON_ERROR)
             return False
         self.Freeze()
         # Store the current selected text
@@ -14044,7 +14047,8 @@ class MainFrame(wxp.Frame):
                         except:
                             pass
                         break
-                wx.MessageBox('%s\n\n%s%s' % (_('Error in the macro:'), sys.exc_info()[1], extra), 'ERROR')
+                wx.MessageBox('%s\n\n%s%s' % (_('Error in the macro:'), sys.exc_info()[1], extra), 
+                              _('Error'), style=wx.OK|wx.ICON_ERROR)
         else:
             wx.MessageBox(_("Couldn't find %(macrofilename)s") % locals(), _('Error'), style=wx.OK|wx.ICON_ERROR)
     
