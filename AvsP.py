@@ -45,6 +45,7 @@ import ctypes
 import _winreg
 import _md5 as md5
 import __builtin__
+from collections import OrderedDict, Iterable, Sequence, MutableSequence
 
 if hasattr(sys,'frozen'):
     programdir = os.path.dirname(sys.executable)
@@ -13534,59 +13535,226 @@ class MainFrame(wxp.Frame):
         dlg.Destroy()
         return dirname
 
-    def MacroGetTextEntry(self, message, default='', title=_('Enter information')):
-        try:
-            # Assume message is a string
-            message.isspace()
-            dlg = wx.TextEntryDialog(self, message, title, default, style=wx.OK|wx.CANCEL)
-            ID = dlg.ShowModal()
-            if ID == wx.ID_OK:
-                txt = dlg.GetValue()
-            else:
-                txt = ''
-            dlg.Destroy()
-            return txt
-        except AttributeError:
-            # Assumen message is a list of strings
-            dlg = wx.Dialog(self, wx.ID_ANY, title)
-            # Get the defaults
-            nItems = len(message)
-            nDefaults = len(default)
-            if nDefaults < nItems:
-                default += [''] * (nItems - nDefaults)
-            # Build the dialog elements
-            dlg.controls = []
-            entrySizer = wx.BoxSizer(wx.VERTICAL)
-            for eachMessage, eachDefault in zip(message, default):
-                staticText = wx.StaticText(dlg, wx.ID_ANY, eachMessage)
-                textCtrl = wx.TextCtrl(dlg, wx.ID_ANY, eachDefault, size=(400,-1))
-                entrySizer.Add(staticText, 0, wx.ALL, 2)
-                entrySizer.Add(textCtrl, 1, wx.EXPAND|wx.BOTTOM, 10)
-                dlg.controls.append(textCtrl)
-            # Standard buttons
-            okay  = wx.Button(dlg, wx.ID_OK, _('OK'))
-            cancel = wx.Button(dlg, wx.ID_CANCEL, _('Cancel'))
-            btns = wx.StdDialogButtonSizer()
-            btns.AddButton(okay)
-            btns.AddButton(cancel)
-            btns.Realize()
-            # Size the elements
-            dlgSizer = wx.BoxSizer(wx.VERTICAL)
-            dlgSizer.Add(entrySizer, 0, wx.EXPAND|wx.ALL, 5)
-            dlgSizer.Add(btns, 0, wx.EXPAND|wx.ALL, 10)
-            dlg.SetSizer(dlgSizer)
-            dlgSizer.Fit(dlg)
-            dlg.sizer = dlgSizer
-            okay.SetDefault()
-            # Show the dialog
-            ID = dlg.ShowModal()
-            text = []
-            if ID == wx.ID_OK:
-                for control in dlg.controls:
-                    text.append(control.GetValue())
-            dlg.Destroy()
-            return text
+    def MacroGetTextEntry(self, message=[''], default=[''], title=_('Enter information'), types=[''], width=400):
+        r'''GetTextEntry(message='', default='', title='Enter information', types='text', width=400)
+        
+        Multiple entry dialog box.  In its more simple form displays a dialog box with 
+        the string 'message' along with a field for text entry, initially filled with 
+        the string 'default', returning the string from the text entry field if the 
+        user clicked "OK", an empty string otherwise.
+        
+        title: title of the dialog box.
+        
+        The 'message', 'default' and 'types' parameters are list of lists.  If a list 
+        were to contain only one component then it's not mandatory to wrap it as list.
+        
+        message: list of the lines of the dialog box, in which every component is a 
+        list of the corresponding text strings to the entries in that line.  There must 
+        be as many strings as desired entries.
+        
+        default: list of lists holding tuples with the default values for each entry.  
+        In the same way as lists, if a tuple were to contain only one element then 
+        it's not necessary to wrap it.  Each tuple and the whole parameter are optional 
+        except for list entry type.
+        
+        types: list of lists containing the types of each entry.  Each value and the 
+        whole parameter are optional.  Every omitted entry type defaults to a regular 
+        text field.
+        
+        Types available:
+        
+        - 'text': regular text field.
+          'default' values: 1-tuple with the initial field text.
+        
+        - 'file_open': text field with additional browse for file button ("open" 
+              dialog).
+          'default' values: 1-tuple or 2-tuple, with the initial field text and an 
+              optional file wildcard with this syntax: 
+              "BMP files (*.bmp)|*.bmp|GIF files (*.gif)|*.gif"
+        
+        - 'file_save': same as 'file_open', but with a "save" dialog.
+        
+        - 'dir': text field with additional browse for directory button.
+          'default' values: 1-tuple with the initial field text.
+        
+        - 'list_read_only': drop-down list.  The 'default' tuple is mandatory.
+          'default' values: n+1 tuple, where the first n elements are the strings 
+              than compose the list and the last one is the entry selected by default.
+        
+        - 'list_writable': same as above but with the text field direcly writable, so 
+              the return value is not limited to a selection from the list.
+        
+        - 'check': simple check box, returning True if checked.
+          'default' values: 1-tuple with the predetermined boolean value, False as 
+              default.
+        
+        - 'spin': numeric entry, with arrows to increment and decrement the value.
+          'default' values: up-to-5-tuple, containing the default, minimum, maximum, 
+              decimal digits shown and increment when using the arrows. With zero 
+              decimal digits returns int, float otherwise. 
+              Default: (0, None, None, 0, 1)
+        
+        - 'slider_h': horizontal slider. Similar to 'spin', but with a draggable handle.
+          'default' values: up-to-4-tuple containing the default, minimum, maximum and 
+              space between ticks marks that can be displayed alongside the slider. 
+              Default: (50, 0, 100, no ticks)
+        
+        - 'slider_v': vertical slider, same as above.
+        
+        - 'sep': separator formed by a text string and a horizontal line.
+          'default' values: 1-tuple with an optional fixed line length (by default 
+              it extends through all the dialog's width).  Note that an invisible 
+              separator can be created by setting 'message' to '' and 'default' to 
+              0.  To include the 'default' parameter but don't give a fixed length 
+              (e.g. there's more entries following that one) set the tuple to None 
+              or any not-convertible-to-int value, like ''.
+        
+        A not recognized type string, including '', defaults to 'text' type.
+        
+        width: horizontal length of the dialog box.  The width is distributed uniformly 
+        between the entries in each line.
+        
+        Return values: list of entered values if the user clicks "OK", empty list 
+        otherwise.
+        
+        '''
+        # Complete the 'default' and 'types' lists
+        optionsDlgInfo = [['']]
+        options = OrderedDict()
+        cont = 0
+        if not isinstance(message, MutableSequence): message = [message]
+        if not isinstance(default, MutableSequence): default = [default] 
+        if not isinstance(types, MutableSequence): types = [types] 
+        default += [''] * (len(message) - len(default))
+        types +=  [''] * (len(message) - len(types))
+        for eachMessageLine, eachDefaultLine, eachTypeLine in zip(message, default, types):
+            if not isinstance(eachMessageLine, MutableSequence): eachMessageLine = [eachMessageLine] 
+            if not isinstance(eachDefaultLine, MutableSequence): eachDefaultLine = [eachDefaultLine] 
+            if not isinstance(eachTypeLine, MutableSequence): eachTypeLine = [eachTypeLine] 
+            lineLen=len(eachMessageLine)
+            eachDefaultLine += [''] * (lineLen - len(eachDefaultLine))
+            eachTypeLine +=  [''] * (lineLen - len(eachTypeLine))
+            rowOptions = []
+            for eachMessage, eachDefault, eachType in zip(eachMessageLine, eachDefaultLine, eachTypeLine):
+                if not isinstance(eachDefault, Sequence) or isinstance(eachDefault, basestring):
+                    eachDefault = (eachDefault,)
 
+                #  Set 'optionsDlgInfo' and 'options' from the kind of more user friendly 'message', 'default' and 'types'
+                
+                if eachType in ('file_open', 'file_save'):
+                    flag = (wxp.OPT_ELEM_FILE_OPEN if eachType == 'file_open' 
+                            else wxp.OPT_ELEM_FILE_SAVE )
+                    key = 'mgte' + str(cont)
+                    cont += 1
+                    misc = dict(width=width / lineLen, 
+                        fileMask=eachDefault[1] if len(eachDefault) > 1 else '*.*', 
+                        startDirectory=os.path.dirname(self.MacroGetScriptFilename()), 
+                        buttonText='...', buttonWidth=30, label_position=wx.VERTICAL, 
+                        expand=True)
+                    colOptions = [eachMessage, flag, key, '', misc]
+                    options[key] = eachDefault[0]
+                
+                elif eachType == 'dir':
+                    flag = wxp.OPT_ELEM_DIR
+                    key = 'mgte' + str(cont)
+                    cont += 1
+                    misc = dict(width=width / lineLen, 
+                        startDirectory=os.path.dirname(self.MacroGetScriptFilename()), 
+                        buttonText='...', buttonWidth=30, label_position=wx.VERTICAL, 
+                        expand=True)
+                    colOptions = [eachMessage, flag, key, '', misc]
+                    options[key] = eachDefault[0]
+                
+                elif eachType in ('list_writable', 'list_read_only'):
+                    flag = wxp.OPT_ELEM_LIST
+                    key = 'mgte' + str(cont)
+                    cont += 1
+                    misc = dict(width=width / lineLen, choices=eachDefault[:-1], 
+                        writable=True if eachType == 'list_writable' else False, 
+                        label_position=wx.VERTICAL, expand=True)
+                    colOptions = [eachMessage, flag, key, '', misc]
+                    options[key] = eachDefault[-1]
+                
+                elif eachType == 'check':
+                    flag = wxp.OPT_ELEM_CHECK
+                    key = 'mgte' + str(cont)
+                    cont += 1
+                    misc = dict(width=width / lineLen)
+                    colOptions = [eachMessage, flag, key, '', misc]
+                    options[key] = eachDefault[0] if eachDefault[0] else False
+                
+                elif eachType == 'spin':
+                    flag = wxp.OPT_ELEM_SPIN
+                    key = 'mgte' + str(cont)
+                    cont += 1
+                    misc = dict(width=width / lineLen, label_position=wx.VERTICAL, 
+                                expand=True)
+                    params = ('min_val', 'max_val', 'digits', 'increment')
+                    for i, param in enumerate(eachDefault[1:]):
+                        if isinstance(param, basestring):
+                            try:
+                                misc[params[i]] = int(param)
+                            except:
+                                misc[params[i]] = float(param)
+                        else:
+                            misc[params[i]] = param
+                    colOptions = [eachMessage, flag, key, '', misc]
+                    options[key] = float(eachDefault[0]) if eachDefault[0] else 0
+                
+                elif eachType in ('slider_h', 'slider_v'):
+                    flag = wxp.OPT_ELEM_SLIDER
+                    key = 'mgte' + str(cont)
+                    cont += 1
+                    if eachType == 'slider_v':
+                        orientation = wx.VERTICAL
+                        width = 150
+                    else:
+                        orientation = wx.HORIZONTAL
+                        width = width / lineLen
+                    misc = dict(width=width, label_position=wx.VERTICAL, 
+                                orientation=orientation, expand=True)
+                    params = ('minValue', 'maxValue', 'TickFreq')
+                    for i, param in enumerate(eachDefault[1:]):
+                        misc[params[i]] = int(param)
+                    colOptions = [eachMessage, flag, key, '', misc]
+                    options[key] = int(eachDefault[0]) if eachDefault[0] != '' else 50
+                
+                elif eachType == 'sep':
+                    flag = wxp.OPT_ELEM_SEP
+                    try:
+                        sep_width = int(eachDefault[0])
+                    except:
+                        misc = dict()
+                    else:
+                        misc = dict(width=sep_width, expand=False)
+                    colOptions = [eachMessage, flag, 'mgte_sep', '', misc]
+                
+                else:
+                    flag = ''
+                    key = 'mgte' + str(cont)
+                    cont += 1
+                    misc = dict(width=width / lineLen, label_position=wx.VERTICAL)
+                    colOptions = [eachMessage, flag, key, '', misc]
+                    options[key] = str(eachDefault[0])
+                
+                rowOptions.append(colOptions)        
+            optionsDlgInfo[0].append(rowOptions)
+        
+        # Open the dialog box and get the values
+        dlg = wxp.OptionsDialog(self, optionsDlgInfo, options, title, starText=False)
+        ID = dlg.ShowModal()
+        values = []
+        if ID == wx.ID_OK:
+            values_dic = dlg.GetDict()
+            for key in options.keys():
+                values.append(values_dic[key])
+        dlg.Destroy()
+        if len(message) == 1:
+            if values:
+                return values[0]
+            return ''
+        return values
+  
     def MacroMsgBox(self, txt, title=''):
         if title == _('Error'):
             wx.MessageBox(txt, title, style=wx.OK|wx.ICON_ERROR)
