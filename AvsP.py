@@ -39,6 +39,7 @@ import re
 import random, subprocess, math, copy
 import socket
 import thread
+import time
 import StringIO
 import textwrap
 import ctypes
@@ -5974,6 +5975,7 @@ class MainFrame(wxp.Frame):
                 (_('Release all videos from memory'), '', self.OnMenuVideoReleaseMemory, _('Release all open videos from memory')),
                 (_('Switch video/text focus'), 'Escape', self.OnMenuVideoSwitchMode, _('Switch focus between the video preview and the text editor')),
                 (_('Toggle the slider sidebar'), 'Alt+F5', self.OnMenuVideoToggleSliderWindow, _('Show/hide the slider sidebar (double-click the divider for the same effect)')),
+                (_('Run analysis pass'), '', self.OnMenuVideoRunAnalysisPass, _('Request every video frame once (analysis pass for two-pass filters)')),
                 (_('External player'), 'F6', self.OnMenuVideoExternalPlayer, _('Play the current script in an external program')),
                 (''),
                 (_('Video information'), '', self.OnMenuVideoInfo, _('Show information about the video in a dialog box')),
@@ -7499,7 +7501,31 @@ class MainFrame(wxp.Frame):
     def OnMenuVideoToggleSliderWindow(self, event):
         #~ self.OnLeftDClickVideoSplitter(None)
         self.ToggleSliderWindow(vidrefresh=True)
-
+    
+    def OnMenuVideoRunAnalysisPass(self, event):
+        self.refreshAVI = True
+        if self.UpdateScriptAVI(forceRefresh=True) is None:
+            wx.MessageBox(_('Error loading the script'), _('Error'), style=wx.OK|wx.ICON_ERROR)
+            return False
+        script = self.currentScript
+        if script.AVI.IsErrorClip():
+            wx.MessageBox(script.AVI.error_message, _('Error'), style=wx.OK|wx.ICON_ERROR)
+            return False
+        progress = wx.ProgressDialog(message=_('Starting analysis pass...'), title=_('Run analysis pass'), 
+                                     style=wx.PD_CAN_ABORT|wx.PD_ELAPSED_TIME|wx.PD_REMAINING_TIME)
+        frame_count = script.AVI.Framecount
+        last_frame = frame_count - 1
+        start = time.time()
+        for i in range(frame_count):
+            script.AVI.clip.GetFrame(i)
+            if time.time() - start > 0.1:
+                start = time.time()
+                if not progress.Update(i*100/frame_count, 'Frame %s/%s' % (i, last_frame))[0]:
+                    progress.Destroy()
+                    return False
+        progress.Destroy()
+        return True
+    
     def OnMenuVideoExternalPlayer(self, event):
         self.RunExternalPlayer()
             
