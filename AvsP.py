@@ -4735,6 +4735,7 @@ class MainFrame(wxp.Frame):
                 'lang': 'eng',
                 'startupsession': True,
                 'alwaysloadstartupsession': False,
+                'closeneversaved': False,
                 'promptexitsave': True,
                 'savemarkedavs': True,
                 'loadstartupbookmarks': True,
@@ -5247,6 +5248,7 @@ class MainFrame(wxp.Frame):
                 ((_('Backup session when previewing'), wxp.OPT_ELEM_CHECK, 'paranoiamode', _('If checked, the current session is backed up prior to previewing any new script'), dict() ), ),
                 ((_('Prompt to save when previewing'), wxp.OPT_ELEM_CHECK, 'promptwhenpreview', _('Prompt to save a script before previewing (inactive if previewing with unsaved changes)'), dict() ), ),
                 ((_('Preview scripts with unsaved changes'), wxp.OPT_ELEM_CHECK, 'previewunsavedchanges', _('Create a temporary preview script with unsaved changes when previewing the video'), dict() ), ),
+                ((_("Don't prompt to save scripts without file"), wxp.OPT_ELEM_CHECK, 'closeneversaved', _("When closing a tab, don't prompt to save the script if it doesn't already exist on the filesystem"), dict() ), ),
                 ((_('Prompt to save scripts on program exit'), wxp.OPT_ELEM_CHECK, 'promptexitsave', _('Prompt to save each script with unsaved changes when exiting the program'), dict() ), ),
                 ((_('Save *.avs scripts with AvsPmod markings'), wxp.OPT_ELEM_CHECK, 'savemarkedavs', _('Save AvsPmod-specific markings (user sliders, toggle tags, etc) as a commented section in the *.avs file'), dict() ), ),
             ),
@@ -6584,7 +6586,7 @@ class MainFrame(wxp.Frame):
         self.OpenFile()
 
     def OnMenuFileClose(self, event):
-        self.CloseTab(boolPrompt=True)
+        self.CloseTab(prompt=True)
 
     def OnMenuFileCloseAllTabs(self, event):
         self.CloseAllTabs()
@@ -8337,7 +8339,7 @@ class MainFrame(wxp.Frame):
     def OnMiddleDownNotebook(self, event):
         ipage = self.scriptNotebook.HitTest(event.GetPosition())[0]
         if ipage != wx.NOT_FOUND:
-            self.CloseTab(ipage, boolPrompt=True)
+            self.CloseTab(ipage, prompt=True)
             
     def OnLeftDownNotebook(self, event):
         pos = event.GetPosition()
@@ -9562,17 +9564,31 @@ class MainFrame(wxp.Frame):
                 badMenuItem = menu.FindItemByPosition(pos)
                 menu.Delete(badMenuItem.GetId())
 
-    def CloseTab(self, index=None, boolPrompt=False):
+    def CloseTab(self, index=None, prompt=False, discard=False, boolPrompt=False):
+        r'''CloseTab(index=None, prompt=False, discard=False)
+        
+        Closes the tab at integer 'index', where an index of 0 indicates the first 
+        tab. If 'index' is None (the default), the function will close the currently 
+        selected tab.  
+        
+        If the argument 'discard' is True any unsaved changes are lost.  Otherwise, 
+        if 'prompt' is True the program will prompt the user with a dialog box to 
+        save the file if there are any unsaved changes.  If 'prompt' is False, the 
+        function will not prompt the user and will close the script only saving 
+        changes on scripts that already exist on the filesytem.
+        
+        '''
+        # 'boolPrompt' was renamed to 'prompt' 
         # Get the script and corresponding index
         script, index = self.getScriptAtIndex(index)
         if script is None:
             return False
         # Prompt user to save changes if necessary
-        if boolPrompt:
-            tabTitle = self.scriptNotebook.GetPageText(index)
-            if script.GetModify():
+        if not discard and script.GetModify():
+            if (prompt or boolPrompt) and not (
+                    self.options['closeneversaved'] and not script.filename):
                 #~ self.HidePreviewWindow()
-                self.scriptNotebook.SetSelection(index)
+                tabTitle = self.scriptNotebook.GetPageText(index)
                 dlg = wx.MessageDialog(self, _('Save changes before closing?'),
                     tabTitle, wx.YES_NO|wx.CANCEL)
                 ID = dlg.ShowModal()
@@ -9581,11 +9597,9 @@ class MainFrame(wxp.Frame):
                     self.SaveScript(script.filename, index)
                 elif ID == wx.ID_CANCEL:
                     return False
-        else:
-            if script.filename:
+            elif script.filename:
                 self.SaveScript(script.filename, index)
         # Delete the tab from the notebook
-        boolSelected = (index == self.scriptNotebook.GetSelection())
         script.AVI = None #self.scriptNotebook.GetPage(index).AVI = None # clear memory
         # If only 1 tab, make another
         if self.scriptNotebook.GetPageCount() == 1:
@@ -9596,12 +9610,6 @@ class MainFrame(wxp.Frame):
         if self.options['multilinetab']:
             rows = self.scriptNotebook.GetRowCount()
         self.scriptNotebook.DeletePage(index)
-        if boolSelected:
-            if index==0:
-                newIndex = 0
-            else:
-                newIndex = index-1
-            self.scriptNotebook.SetSelection(newIndex)
         self.UpdateTabImages()
         if self.options['multilinetab']:
             if rows != self.scriptNotebook.GetRowCount():
