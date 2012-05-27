@@ -66,7 +66,7 @@ def main():
                 for i, individual in enumerate(self.population):
                     self.evaluate(individual)
                     if pb is not None:
-                        if not pb.Update(i):
+                        if not pb.Update(i)[0]:
                             pb.Destroy()
                             return False
                 # Dump the best data from this generation
@@ -105,7 +105,7 @@ def main():
                         count = len(newpopulation)
                         if pb is not None:
                             i = min(count-1, self.n-1)
-                            if not pb.Update(i):
+                            if not pb.Update(i)[0]:
                                 pb.Destroy()
                                 return False
                     # Update the internally stored population

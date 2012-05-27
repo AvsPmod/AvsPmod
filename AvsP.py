@@ -13785,6 +13785,20 @@ class MainFrame(wxp.Frame):
         return True if action == wx.OK else False
     
     def MacroProgressBox(self, max=100, message='', title=_('Progress')):
+        r'''ProgressBox(max=100, message='', title='Progress')
+        
+        Returns a wxPython dialog control which displays the progress of any given 
+        task as a fraction of the input integer 'max'.
+        
+        In order to display the dialog, use its method Update(value, message), which 
+        takes in the new progress value and optionally a new message.  The method 
+        Update returns a tuple where its first component is False if the user clicked 
+        on the Cancel button, True otherwise.
+        
+        IMPORTANT: You must use the Destroy() method to destroy the dialog after you 
+        are done with it.
+        
+        '''
         return wx.ProgressDialog(
             title, message, max,
             style=wx.PD_CAN_ABORT|wx.PD_ELAPSED_TIME|wx.PD_REMAINING_TIME

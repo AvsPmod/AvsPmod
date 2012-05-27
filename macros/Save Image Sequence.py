@@ -22,7 +22,7 @@ for frame in range(0,totalframes):
         break
     avsp.SaveImage(filename=dirname+"\\"+str(frame).zfill(zeros)+ext, framenum=frame)
     # Update the progress box, exit if user canceled
-    if not pbox.Update(frame+1, str(frame+1) + " / " + str(totalframes)):
+    if not pbox.Update(frame+1, str(frame+1) + " / " + str(totalframes))[0]:
         break
 # Destroy the progress box
 pbox.Destroy()

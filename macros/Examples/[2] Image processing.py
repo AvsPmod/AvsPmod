@@ -51,7 +51,7 @@ if dirname and avsp.GetText() == '':
         newname = os.path.join(dirname, filename+'.png')
         avsp.SaveImage(newname)
         # Update the progress box, exit if user canceled
-        if not pbox.Update(i):
+        if not pbox.Update(i)[0]:
             break
     # Destroy the progress box
     pbox.Destroy()
