@@ -9657,13 +9657,20 @@ class MainFrame(wxp.Frame):
         for index in xrange(self.scriptNotebook.GetPageCount()):
             self.CloseTab(0)
     
-
     def SaveScript(self, filename='', index=None):
+        r'''SaveScriptAs(filename='', index=None)
+        
+        Similar to the function SaveScript(), except that if the filename is an empty 
+        string, this function will always prompt the user with a dialog box for the 
+        location to save the file, regardless of whether or not the script exists on 
+        the hard drive.
+        
+        '''
         script, index = self.getScriptAtIndex(index)
         if script is None:
             return None
         # Get filename via dialog box if not specified
-        if not filename or not (filename.endswith('.avs') or filename.endswith('.avsi')):            
+        if not filename:           
             filefilter = _('AviSynth script (*.avs, *.avsi)|*.avs;*.avsi|All files (*.*)|*.*')
             initialdir = None
             initialname = self.scriptNotebook.GetPageText(index).lstrip('* ')
@@ -9672,19 +9679,29 @@ class MainFrame(wxp.Frame):
             else:
                 stringList = [s.strip('"') for s in re.findall('".+?"', script.GetText())]
                 #~ extList = ['.%s' % s for s in self.options['templates'].keys()]
-                sourceFilterList = [s.split('(')[0].strip().lower() for s in self.options['templates'].values()]
-                sourceFilterList.append('directshowsource')
+                sourceFilterList = {'directshowsource'}
+                noMediaFileList = ('import', 'loadplugin', 'loadcplugin', 'load_stdcall_plugin', 
+                                   'loadvirtualdubplugin', 'loadvfapiplugin')
+                re_templates = re.compile(r'\b(\w+)\s*\([^)]*?\[?\*{3}', re.I)
+                for template in self.options['templates'].values():
+                    re_obj = re_templates.search(template)
+                    if re_obj:
+                        function_name = re_obj.group(1).lower() 
+                        if function_name not in noMediaFileList:
+                            sourceFilterList.add(function_name)
                 findpos = -1
                 lastpos = script.GetLength()
                 for s in stringList:
-                    if os.path.isfile(s) and os.path.splitext(s)[1].lower() not in ('.dll', '.avs'):
+                    if os.path.isfile(s) and os.path.splitext(s)[1].lower() not in ('.dll', '.avs', '.txt', '.log'):
                         findpos = script.FindText(findpos+1, lastpos, s)
                         openpos = script.GetOpenParenthesesPos(findpos)
                         if openpos is not None:
                             wordstartpos = script.WordStartPosition(openpos,1)
+                            if openpos == wordstartpos:
+                                wordstartpos = script.WordStartPosition(script.WordStartPosition(openpos,0),1)
                             if wordstartpos != -1:
                                 sourceFilter = script.GetTextRange(wordstartpos, openpos)
-                                if sourceFilter.lower() in sourceFilterList:
+                                if sourceFilter.strip().lower() in sourceFilterList:
                                     initaldir, initialname = os.path.split(s)
                                     initialname = '%s.avs' % os.path.splitext(initialname)[0]
                                     break
@@ -9739,7 +9756,7 @@ class MainFrame(wxp.Frame):
         else:
             return None
         return filename
-
+    
     def getScriptAtIndex(self, index):
         if index is None:
             script = self.currentScript
