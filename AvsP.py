@@ -14024,18 +14024,29 @@ class MainFrame(wxp.Frame):
                 title = self.bookmarkDict.get(bookmarkList[i], '')
                 bookmarkList[i] = (bookmarkList[i], title)
         return bookmarkList
-
+    
     def MacroSetBookmark(self, input):
+        r'''SetBookmark(input)
+        
+        Sets 'input' as a video frame bookmark.  If 'input' is a list, sets each of 
+        its values as a video frame bookmark.  Each bookmark can be a single integer 
+        or a tuple (frame , title).  Returns True if successful, False otherwise.
+        
+        '''
+        # This function accepting sequences is a bad idea.  The caller should just use 
+        # a 'for' bucle instead.
         bmtype = 0
         try:
             value = int(input)
             self.AddFrameBookmark(value, bmtype)
             return True
         except (TypeError, ValueError):
-            if type(input) not in (tuple, list):
-                return False
             try:
-                values = [int(item) for item in input]
+                values = []
+                for item in input:
+                    if isinstance(item, basestring):
+                        return self.MacroSetBookmark2(input)
+                    values.append(int(item))
             except (TypeError, ValueError):
                 return self.MacroSetBookmark2(input)
             lastindex = len(values) - 1
@@ -14046,29 +14057,32 @@ class MainFrame(wxp.Frame):
                     self.AddFrameBookmark(value, bmtype, refreshProgram=True)
             return True
         return False
-
+    
     def MacroSetBookmark2(self, input):
+        r'''Set bookmarks from tuples (frame, title)'''
         bmtype = 0
         try:
             value, title = input
-            value = int(vaue)
-            title = str(title).strip()
+            value = int(value)
+            if not isinstance(title, basestring): return False
+            title = title.strip()
             self.bookmarkDict[value] = title
             if not title:
                 del self.bookmarkDict[value]
             self.AddFrameBookmark(value, bmtype)
             return True
         except (TypeError, ValueError):
-            if type(input) not in (tuple, list):
+            if not isinstance(input, Iterable):
                 return False
             try:
-                items = [(int(value), str(title)) for value, title in input]
+                items = [(int(value), title.strip()) for value, title in input 
+                         if isinstance(title, basestring)]
+                if len(items) != len(input): return False
             except (TypeError, ValueError):
                 return False            
             lastindex = len(items) - 1
             for i, item in enumerate(items):
                 value, title = item
-                title = title.strip()
                 self.bookmarkDict[value] = title
                 if not title:
                     del self.bookmarkDict[value]
