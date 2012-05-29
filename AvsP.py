@@ -13542,10 +13542,20 @@ class MainFrame(wxp.Frame):
         if script.AVI is None or script.AVI.IsErrorClip():
             return False
         return True
-
+    
     def MacroWriteToScrap(self, txt, pos=-1):
+        r'''WriteToScrap(txt, pos=-1)
+        
+        This function is identical to InsertText, except that instead of writing to 
+        one of the existing tabs, it writes to a scrap window (which is always on top, 
+        making it useful to keep track of the text as it changes).  Any inserted text 
+        is highlighted temporarily.
+        
+        '''
         if not self.scrapWindow.IsShown():
             win = self.FindFocus()
+            if win is None:
+                win = self.currentScript
             self.scrapWindow.Show()
             win.SetFocus()
         if self.InsertText(txt, pos, index=-1):
