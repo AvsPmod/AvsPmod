@@ -13591,16 +13591,24 @@ class MainFrame(wxp.Frame):
         txt = script.GetText().replace(old, new)
         script.SetText(txt)
         script.GotoPos(script.GetLength())
-
+    
     def MacroSetText(self, txt, index=None):
+        r'''SetText(txt, index=None)
+        
+        Similar to InsertText, but replaces all the text in the script of the tab 
+        located at the zero-based integer 'index' with the string 'txt'.  If the 
+        input 'index' is None, the text is inserted into the script of the currently 
+        selected tab.  Returns False if the operation failed, True otherwise.
+        
+        '''
         # Get the desired script
         script, index = self.getScriptAtIndex(index)
-        if script is None:
+        if script is None or not isinstance(txt, basestring):
             return False
         # Replace the script's text
-        script.SetText(str(txt))
+        script.SetText(txt)
         return True
-
+    
     def MacroGetText(self, index=None):
         script, index = self.getScriptAtIndex(index)
         if script is None:
