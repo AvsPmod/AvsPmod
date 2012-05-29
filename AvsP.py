@@ -4607,7 +4607,6 @@ class MainFrame(wxp.Frame):
                 'mkv': 'DirectShowSource(***)',
                 'wmv': 'DirectShowSource(***)',
                 'avs': 'Import(***)',
-                'dll': 'LoadPlugin(***)',
                 'bmp': 'ImageReader(***)',
                 'jpg': 'ImageReader(***)',
                 'png': 'ImageReader(***)',
@@ -10171,6 +10170,16 @@ class MainFrame(wxp.Frame):
                     self.ShowVideoFrame()
 
     def GetSourceString(self, filename='', return_filename=False):
+        r'''GetSourceString(filename='')
+        
+        Returns an appropriate source string based on the file extension of the input 
+        string 'filename'.  For example, if 'filename' is "D:\test.avi", the function 
+        returns the string "AviSource("D:\test.avi")".  Any unknown extension is wrapped 
+        with "DirectShowSource(____)".  Templates can be viewed and defined in the 
+        options menu of the program.  If 'filename' is empty, the user is prompted to 
+        select a file with a dialog box.
+        
+        '''
         extlist = self.options['templates'].keys()
         extlist.sort()
         if not filename or not os.path.isfile(filename):
@@ -10185,13 +10194,17 @@ class MainFrame(wxp.Frame):
             else:
                 filename = None
             dlg.Destroy()
-        if filename is not None:
+        if filename is not None and os.path.isfile(filename):
             dirname = os.path.dirname(filename)
             if os.path.isdir(dirname):
                 self.options['recentdir'] = dirname
             ext = os.path.splitext(filename)[1][1:].lower()
-            strsource = self.options['templates'].get(ext, u'DirectShowSource(***)')
+            strsource = self.options['templates'].get(ext)
             # TODO: fix unicode bug here?
+            if not strsource:
+                strsource = self.GetPluginString(filename)
+                if not strsource:
+                   strsource = u'DirectShowSource(***)'
             strsource = strsource.replace(u'[***]', u'"%s"' % os.path.basename(filename))
             strsource = strsource.replace(u'***', u'"%s"' % filename)
         else:
@@ -10213,9 +10226,26 @@ class MainFrame(wxp.Frame):
                 self.ShowVideoFrame()
 
     def GetPluginString(self, filename=''):
+        r'''GetPluginString(filename='')
+        
+        Returns an appropriate load plugin string based on the file extension of the 
+        input string 'filename'.  For example, if 'filename' is "D:\plugin.dll", the 
+        function returns the string "LoadPlugin("D:\plugin.dll")".  VirtualDub and 
+        VFAPI (TMPGEnc) plugins are also supported.  If 'filename' is empty, the user 
+        is prompted to select a file with a dialog box, always started in the AviSynth 
+        plugin directory for easy selection.
+        
+        '''
+        # It would be a good idea to deprecate this function as macro in favour of 
+        # using 'GetSourceString' for both sources and plugins (already does so)
+        
         #~ script = self.currentScript
         if not filename or not os.path.isfile(filename):
-            filefilter = _('AviSynth plugin (*.dll)|*.dll|All files (*.*)|*.*')
+            filefilter = (_('All supported plugins') + ' (*.dll;*.vdf;*.vdplugin;*.vfp)|*.dll;*.vdf;*.vdplugin;*.vfp|' + 
+                          _('AviSynth plugins') + ' (*.dll)|*.dll|' + 
+                          _('VirtualDub plugins') + ' (*.vdf;*.vdplugin)|*.vdf;*.vdplugin|' + 
+                          _('VFAPI plugins') + ' (*.vfp)|*.vfp|' + 
+                          _('All files') + ' (*.*)|*.*')
             plugindir = self.options['recentdirPlugins']
             if not os.path.isdir(plugindir):
                 plugindir = os.path.join(self.options['avisynthdir'], 'plugins')
@@ -10227,8 +10257,17 @@ class MainFrame(wxp.Frame):
                 filename = None
             dlg.Destroy()
         if filename:
-            txt = 'LoadPlugin("%s")' % filename
-            dirname = os.path.dirname(filename)
+            dirname, name = os.path.split(filename)
+            basename, ext = os.path.splitext(name)
+            ext = ext.lower()
+            if ext == '.dll':
+                txt = 'LoadPlugin("%s")' % filename
+            elif ext in ('.vdf', '.vdplugin'):
+                txt = 'LoadVirtualDubPlugin("%s", "%s", 0)' % (filename, basename)
+            elif ext == '.vfp':
+                txt = 'LoadVFAPIPlugin("%s", "%s")' % (filename, basename)
+            else:
+                txt = ''
             if os.path.isdir(dirname):
                 self.options['recentdirPlugins'] = dirname
         else:
