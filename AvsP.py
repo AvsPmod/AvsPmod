@@ -10004,8 +10004,8 @@ class MainFrame(wxp.Frame):
                 if os.path.isdir(dirname):
                     self.options['recentdirSession'] = dirname
             return True
-
-    def SaveCurrentImage(self, filename='', index=None):
+    
+    def SaveCurrentImage(self, filename='', index=None, quality=None):
         script, index = self.getScriptAtIndex(index)
         if script is None or script.AVI is None:
             wx.MessageBox(_('No image to save'), _('Error'), style=wx.OK|wx.ICON_ERROR)
@@ -10069,17 +10069,18 @@ class MainFrame(wxp.Frame):
             #~ bmp.SaveFile(filename, self.imageFormats[ext][1])
             img = bmp.ConvertToImage()
             if ext==".jpg":
-                quality = self.MacroGetTextEntry("JPEG Quality (0-100)", "70", "JPEG Quality")
-                if quality == "":
-                    quality = "70"
-                try:
-                    if int(quality) > 100:
-                        quality = "100"
-                    if int(quality) < 0:
-                        quality = "0"
-                except ValueError:
-                    quality = "70"
-                img.SetOption(wx.IMAGE_OPTION_QUALITY, quality)
+                if quality is None:
+                    quality = self.MacroGetTextEntry('Introduce the JPEG Quality (0-100)', 
+                                   (70, 0, 100), 'JPEG Quality', 'spin', 100)
+                    if quality == '':
+                        quality = 70
+                else:
+                    quality = int(quality)
+                if quality > 100:
+                    quality = 100
+                elif quality < 0:
+                    quality = 0
+                img.SetOption(wx.IMAGE_OPTION_QUALITY, str(quality))
             img.SaveFile(filename, self.imageFormats[ext][1])
         else:
             return False
@@ -13906,21 +13907,32 @@ class MainFrame(wxp.Frame):
         if script is None:
             return False
         return script.filename
-
-    def MacroSaveImage(self, filename='', framenum=None, index=None):
+    
+    def MacroSaveImage(self, filename='', framenum=None, index=None, quality=None):
+        r'''SaveImage(filename='', framenum=None, index=None, quality=None)
+        
+        Saves the video frame specified by the integer 'framenum' as a file specified 
+        by the string 'filename', where the video corresponds with the script at the 
+        tab integer 'index'.  
+        
+        If 'filename' is an empty string, then the user is prompted with a dialog box.  
+        If 'index' is None, then the currently selected tab is used.  A quality level 
+        (0-100) can be specified for JPEG output. If the quality is not specified, it 
+        gets prompted from a dialog window.
+        
+        Returns True if the image was saved, False otherwise.
+        
+        '''
         script, index = self.getScriptAtIndex(index)
         if script is None:
             return False
         self.refreshAVI = True
-        
-        
-        
         self.MacroShowVideoFrame(framenum, index)
         if self.UpdateScriptAVI(script) is None:
             wx.MessageBox(_('Error loading the script'), _('Error'), style=wx.OK|wx.ICON_ERROR)
             return
-        return self.SaveCurrentImage(filename, index)
-
+        return self.SaveCurrentImage(filename, index, quality=quality)
+    
     def MacroGetVideoWidth(self, index=None):
         script, index = self.getScriptAtIndex(index)
         if script is None:
