@@ -13476,16 +13476,28 @@ class MainFrame(wxp.Frame):
                         self.GetEventHandler().ProcessEvent(event)
                     return True
         return False
-
+    
     def MacroSaveScript(self, filename='', index=None):
+        r'''SaveScript(filename='', index=None)
+        
+        Saves all the unsaved changes of the script in the tab located at the integer 
+        'index'.  If 'index' is None, the script in the currently selected tab is used.
+        
+        The function will prompt the user with a dialog box for the location to save 
+        the file if the string 'filename' is not provided and the script does not 
+        already exist on the hard drive.  If a file with the same name as 'filename' 
+        already exists, it is overwritten without any prompting.  The function returns 
+        the filename of the saved file.
+        
+        '''
         script, index = self.getScriptAtIndex(index)
         if script is None:
             return ''
         if filename == '':
             filename = script.filename
-        self.SaveScript(script.filename, index)
+        self.SaveScript(filename, index)
         return script.filename
-
+    
     def MacroIsScriptSaved(self, index=None):
         script, index = self.getScriptAtIndex(index)
         if script is None:
