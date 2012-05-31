@@ -133,7 +133,7 @@ for i, (dsr, files) in enumerate(data_files):
 dirs = (
     ('help', None, None),
     ('translations', None, None), 
-    ('macros', None, None), 
+    ('macros', ('.py'), None), 
     ('tools', ('.py', '.presets'), ('avs2avi.exe', 'avs2avi_src.zip'))
        )
 for dir, ext_filter, include in dirs:
@@ -159,7 +159,7 @@ setup(
     license = license,
     options = {"py2exe":{
         "compressed": True,
-        "optimize": 2,
+        "optimize": 1,
         "includes": ['glob', 'shutil'],
         "excludes": ["translation", "Tkconstants", "Tkinter", "tcl", '_ssl', 'pyreadline'],
         "dll_excludes": ['MSVCP90.dll', 'w9xpopen.exe', 'mswsock.dll', 'powrprof.dll'],

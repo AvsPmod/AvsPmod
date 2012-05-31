@@ -46,7 +46,10 @@ def main():
     # Create the program executable using py2exe
     if os.system('""%s" -OO AvsP_setup.py py2exe -d %s"' % (pythonexe, programdirname)):
         return
-   
+    
+    # Create/update 'macros_readme.txt' in the macros subdirectory
+    AvsP.GenerateMacroReadme(os.path.join(programdirname, 'macros', 'macros_readme.txt'))
+    
     # Set the large address aware flag in the executable
     if not os.path.isfile(editbin):
         editbin = isinpath('editbin.exe')

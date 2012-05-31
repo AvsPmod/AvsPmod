@@ -2380,6 +2380,25 @@ def AsyncCallWrapper(wrapped):
     functools.update_wrapper(wrapper, wrapped)
     return wrapper
 
+# Generate macros_readme.txt
+def GenerateMacroReadme(file=None):
+    ''' Return the macros_readme.txt content as a single string.  Additionally, if 'file' 
+    is not None, write the string to 'file' if it's a string, 'macros/macros_readme.txt' 
+    otherwise.
+    
+    '''
+    doc = MainFrame.AvsP_functions(MainFrame).__doc__
+    if file:
+        if not isinstance(file, basestring):
+            file = os.path.join('macros', 'macros_readme.txt')
+        dir = os.path.dirname(file)
+        if not os.path.isdir(dir):
+            os.makedirs(dir)
+        file = open(file, 'w')
+        file.write(doc)
+        file.close()
+    return doc
+
 # Dialog and validator for defining user slider
 class UserSliderValidator(wx.PyValidator):
     def __init__(self, ctrlDict, labels):
@@ -9386,6 +9405,13 @@ class MainFrame(wxp.Frame):
     
     @AsyncCallWrapper
     def NewTab(self, copyselected=True, select=True, splits=None):
+        r'''NewTab(copyselected=True)
+        
+        Creates a new tab (automatically named "New File (x)", where x is an appropriate 
+        integer).  If any text was selected in the most recent tab and 'copyselected' is 
+        True, it is automatically copied over to the new tab's text.
+        
+        '''
         if self.cropDialog.IsShown():
             wx.MessageBox(_('Cannot create a new tab while crop editor is open!'), 
                           _('Error'), style=wx.OK|wx.ICON_ERROR)
@@ -9442,6 +9468,15 @@ class MainFrame(wxp.Frame):
     
     @AsyncCallWrapper
     def OpenFile(self, filename='', scripttext=None, setSavePoint=True, splits=None, framenum=None):#, index=None):
+        r'''OpenFile(filename='')
+        
+        If the string 'filename' is a path to an Avisynth script, this function opens 
+        the script into a new tab.  If 'filename' is a path to a non-script file, the 
+        filename is inserted as a source (see the InsertSource function for details).  
+        If 'filename' is not supplied, the user is prompted with an Open File dialog 
+        box.
+        
+        '''
         # Get filename via dialog box if not specified
         if not filename:
             #~ filefilter = _('AviSynth script (*.avs, *.avsi)|*.avs;*.avsi|All files (*.*)|*.*')
@@ -10146,9 +10181,26 @@ class MainFrame(wxp.Frame):
         #~ if show:
             #~ self.ShowVideoFrame(forceRefresh=True)
             #self.videoWindow.Refresh()
-
+    
     @AsyncCallWrapper
     def InsertText(self, txt, pos=-1, index=None):
+        r'''InsertText(txt, pos=-1, index=None)
+        
+        Inserts the string 'txt' into the script of the tab located at the zero-based 
+        integer 'index' at the text position 'pos'.
+        
+        If the input 'index' is None, the text is inserted into the script of the 
+        currently selected tab.  The input 'pos' can be either an integer representing 
+        the zero-based position in the text document (a value of -1 is equivalent 
+        to the last position) or a tuple representing the zero-based line and column 
+        numbers (a value of -1 is equivalent to the last line or column, respectively).  
+        Alternatively, if 'pos' is equal to None, the text is inserted at the current 
+        cursor position in the document, replacing any existing selection.  In all 
+        cases, the cursor is positioned at the end of the inserted text.
+        
+        Returns False if insert failed (due to bad inputs), True otherwise.
+        
+        '''
         # Get the desired script
         if index == -1:
             script = self.scrapWindow.textCtrl
@@ -10711,6 +10763,11 @@ class MainFrame(wxp.Frame):
     
     @AsyncCallWrapper
     def GetFrameNumber(self):
+        r'''GetFrameNumber()
+        
+        Returns the current integer frame number of the video preview slider.
+        
+        '''
         return self.videoSlider.GetValue()
 
     def InsertUserSlider(self):
@@ -10980,6 +11037,15 @@ class MainFrame(wxp.Frame):
     
     @AsyncCallWrapper
     def SelectTab(self, index=None, inc=0):
+        r'''SelectTab(index=None, inc=0)
+        
+        Selects the tab located at the integer 'index', where an index of 0 indicates 
+        the first tab.  If the 'index' is None, the integer 'inc' is used instead 
+        to determine which tab to select, where inc is an offset from the currently 
+        selected tab (negative values for inc are allowable).  Returns False upon 
+        failure (invalid input), True otherwise.
+        
+        '''
         nTabs = self.scriptNotebook.GetPageCount()
         if nTabs == 1:
             self.scriptNotebook.SetSelection(0)
@@ -11220,6 +11286,12 @@ class MainFrame(wxp.Frame):
     
     @AsyncCallWrapper
     def HidePreviewWindow(self):
+        r'''HideVideoWindow()
+        
+        Hides the video preview window if it is visible (note that the video controls 
+        are always visible).
+        
+        '''
         if not self.separatevideowindow:
             self.mainSplitter.Unsplit()
         else:
@@ -13467,10 +13539,16 @@ class MainFrame(wxp.Frame):
         text = f.readline().strip('#').strip()
         f.close()
         return text
-        
+    
     # Macro-related functions
     @AsyncCallWrapper
     def MacroIsMenuChecked(self, text):
+        r'''IsMenuChecked(text)
+        
+        Retrieve the state of a menu item under Macros menu. The parameter 'text' has 
+        the same meaning as that one of ExecuteMenuCommand function.
+        
+        '''
         if text.count('->') > 0:
             # text is the menu command name
             index = 0
@@ -13504,6 +13582,23 @@ class MainFrame(wxp.Frame):
     
     @AsyncCallWrapper
     def MacroExecuteMenuCommand(self, text, callafter=False):
+        r'''ExecuteMenuCommand(text, callafter=False)
+        
+        Executes one of AvsP's menu commands as specified by the input 'text', which 
+        can either be the name of the menu command or the keyboard shortcut.  
+        
+        For example, you can create a new tab in a macro by using either 
+        "avsp.ExecuteMenuCommand('File -> New Tab')" or by using 
+        "avsp.ExecuteMenuCommand('Ctrl+N')".  In this manner all menu commands are 
+        available to AvsP's macro language.  The input text is not case sensitive, 
+        but must be spelled precisely in order to work (a complete list of all the 
+        commands and shortcuts with precise spelling can be found in the 
+        "Options -> Configure shortcuts..." dialog).  If callafter=True, the menu 
+        command will run after the current macro has exited.
+        
+        Returns True if successful, False otherwise.
+        
+        '''
         if text.count('->') > 0:
             # text is the menu command name
             index = 0
@@ -13564,6 +13659,14 @@ class MainFrame(wxp.Frame):
     
     @AsyncCallWrapper
     def MacroIsScriptSaved(self, index=None):
+        r'''IsScriptSaved(index=None)
+        
+        Returns a boolean indicating whether the script in the tab located at the 
+        integer 'index' has any unsaved changes.  If 'index' is None, the script in 
+        the currently selected tab is used.  Returns False if there are any unsaved 
+        changes, True otherwise.
+        
+        '''
         script, index = self.getScriptAtIndex(index)
         if script is None:
             return False
@@ -13571,6 +13674,15 @@ class MainFrame(wxp.Frame):
     
     @AsyncCallWrapper
     def MacroGetScriptFilename(self, index=None):
+        r'''GetScriptFilename(index=None)
+        
+        Returns the name of the script at the tab located at the integer 'index', 
+        where an index of 0 indicates the first tab.  If 'index' is None, the 
+        currently selected tab is used.  The returned name is the filename of the 
+        script on the hard drive.  If the script has never been saved to the hard 
+        drive, the returned name is an empty string.
+        
+        '''
         script, index = self.getScriptAtIndex(index)
         if script is None:
             return None
@@ -13578,6 +13690,20 @@ class MainFrame(wxp.Frame):
     
     @AsyncCallWrapper
     def MacroShowVideoFrame(self, framenum=None, index=None, forceRefresh=False):
+        r'''ShowVideoFrame(framenum=None, index=None, forceRefresh=False)
+        
+        This function refreshes the video preview (unhiding it if it is hidden) using 
+        the frame specified by the integer 'framenum', using the script of the tab 
+        located at the integer 'index'.  The function also automatically selects the 
+        tab located at 'index'.
+        
+        If 'framenum' is None, it uses the current frame number from the video preview 
+        slider.  If 'index' is None, the frame of the currently selected tab is shown.  
+        If the input 'forceRefresh' equals True, then the script is reloaded before 
+        showing the video frame (normally the script is reloaded only when the text 
+        has changed).
+        
+        '''
         # Get the desired script
         script, index = self.getScriptAtIndex(index)
         if script is None:
@@ -13590,6 +13716,14 @@ class MainFrame(wxp.Frame):
     
     @AsyncCallWrapper
     def MacroShowVideoOffset(self, offset=0, units='frames', index=None):
+        r'''ShowVideoOffset(offset=0, units='frames', index=None)
+        
+        Similar to ShowVideoFrame(), except the user specifies an offset instead of 
+        the direct frame.  Offset can be positive or negative (for backwards jumping).  
+        The string argument 'units' specifies the units of the offset, and can be either 
+        'frames', 'seconds', 'minutes', or 'hours'.
+        
+        '''
         # Get the desired script
         script, index = self.getScriptAtIndex(index)
         if script is None:
@@ -13601,6 +13735,12 @@ class MainFrame(wxp.Frame):
     
     @AsyncCallWrapper
     def MacroUpdateVideo(self, index=None):
+        r'''UpdateVideo(index=None)
+        
+        This function is similar to ShowVideoFrame(), but does not force the video 
+        preview to be shown if it is hidden.
+        
+        '''
         script, index = self.getScriptAtIndex(index)
         if script is None:
             return False
@@ -13655,6 +13795,12 @@ class MainFrame(wxp.Frame):
     
     @AsyncCallWrapper
     def MacroGetScrapText(self):
+        r'''WriteToScrap(txt, pos=-1)
+        
+        Identical to the GetText function, except that it retrieves all text from the 
+        scrap window.
+        
+        '''
         return self.scrapWindow.GetText()
     
     @AsyncCallWrapper
@@ -13684,6 +13830,14 @@ class MainFrame(wxp.Frame):
     
     @AsyncCallWrapper
     def MacroGetText(self, index=None):
+        r'''GetText(index=None)
+        
+        Returns the string containing all the text in the script of the tab located 
+        at the zero-based integer 'index'.  If the input 'index' is None, the text 
+        is retrieved from the script of the currently selected tab.  Returns False 
+        if the operation failed.
+        
+        '''
         script, index = self.getScriptAtIndex(index)
         if script is None:
             return False
@@ -13691,6 +13845,11 @@ class MainFrame(wxp.Frame):
     
     @AsyncCallWrapper
     def MacroGetSelectedText(self, index=None):
+        r'''GetSelectedText(index=None)
+        
+        Similar to GetText(), but returns only the selected text.
+        
+        '''
         script, index = self.getScriptAtIndex(index)
         if script is None:
             return False
@@ -13698,6 +13857,13 @@ class MainFrame(wxp.Frame):
     
     @AsyncCallWrapper
     def MacroGetFilename(self, title=_('Open a script or source'), filefilter=None):
+        r'''GetFilename(title='Open a script or source', filefilter=None)
+        
+        Displays an open file dialog box, returning the filename of the selected file 
+        if the user clicked "OK", returning an empty string otherwise.  filefilter=None 
+        means to apply those extensions defined at "Options|Extension templates"
+        
+        '''
         if filefilter is None:
             extlist = self.options['templates'].keys()
             extlist.sort()
@@ -13719,6 +13885,12 @@ class MainFrame(wxp.Frame):
     
     @AsyncCallWrapper
     def MacroGetSaveFilename(self, title=_('Save as'), filefilter = _('All files (*.*)|*.*')):
+        r'''GetSaveFilename(title='Save as', filefilter=_('All files (*.*)|*.*'))
+        
+        Displays an save file dialog box, returning the entered filename if the user 
+        clicked "OK", returning an empty string otherwise.
+        
+        '''
         dlg = wx.FileDialog(self, title,
             self.options['recentdir'], '', filefilter, wx.SAVE|wx.OVERWRITE_PROMPT)
         ID = dlg.ShowModal()
@@ -13734,6 +13906,12 @@ class MainFrame(wxp.Frame):
     
     @AsyncCallWrapper
     def MacroGetDirectory(self, title=_('Select a directory')):
+        r'''GetDirectory(title='Select a directory')
+        
+        Displays a dialog box to select a directory, returning the name of the selected 
+        directory if the user clicked "OK", returning an empty string otherwise.
+        
+        '''
         # Get the avisynth directory from the user with a dialog box
         dlg = wx.DirDialog(self, title, self.options['recentdir'])
         ID = dlg.ShowModal()
@@ -14010,10 +14188,20 @@ class MainFrame(wxp.Frame):
     
     @AsyncCallWrapper
     def MacroGetScriptCount(self):
+        r'''GetTabCount()
+        
+        Returns the number of scripts currently open.
+        
+        '''
         return self.scriptNotebook.GetPageCount()
     
     @AsyncCallWrapper
     def MacroGetCurrentIndex(self):
+        r'''GetCurrentTabIndex()
+        
+        Returns the zero-based index of the currently selected tab.
+        
+        '''
         return self.scriptNotebook.GetSelection()
 
     def _x_MacroGetTabFilename(self, index=None):
@@ -14050,6 +14238,12 @@ class MainFrame(wxp.Frame):
     
     @AsyncCallWrapper
     def MacroGetVideoWidth(self, index=None):
+        r'''GetVideoWidth(index=None)
+        
+        Returns the width of the video of the script at the tab integer 'index'.  If 
+        'index' is None, then the currently selected tab is used.
+        
+        '''
         script, index = self.getScriptAtIndex(index)
         if script is None:
             return False
@@ -14062,6 +14256,12 @@ class MainFrame(wxp.Frame):
     
     @AsyncCallWrapper
     def MacroGetVideoHeight(self, index=None):
+        r'''GetVideoHeight(index=None)
+        
+        Returns the height of the video of the script at the tab integer 'index'.  If 
+        'index' is None, then the currently selected tab is used.
+        
+        '''
         script, index = self.getScriptAtIndex(index)
         if script is None:
             return False
@@ -14074,6 +14274,12 @@ class MainFrame(wxp.Frame):
     
     @AsyncCallWrapper
     def MacroGetVideoFramerate(self, index=None):
+        r'''GetVideoFramerate(index=None)
+        
+        Returns the framerate of the video of the script at the tab integer 'index'.  
+        If 'index' is None, then the currently selected tab is used.
+        
+        '''
         script, index = self.getScriptAtIndex(index)
         if script is None:
             return False
@@ -14086,6 +14292,12 @@ class MainFrame(wxp.Frame):
     
     @AsyncCallWrapper
     def MacroGetVideoFramecount(self, index=None):
+        r'''GetVideoFramecount(index=None)
+        
+        Returns the framecount of the video of the script at the tab integer 'index'.  
+        If 'index' is None, then the currently selected tab is used.
+        
+        '''
         script, index = self.getScriptAtIndex(index)
         if script is None:
             return False
@@ -14098,6 +14310,20 @@ class MainFrame(wxp.Frame):
     
     @AsyncCallWrapper
     def MacroRunExternalPlayer(self, executable=None, args='', index=None):
+        r'''RunExternalPlayer(executable=None, args='', index=None)
+        
+        Runs the external program specified by the string argument 'executable'.
+        
+        The first argument passed to the program is the filename of the preview script 
+        generated from the script located at the tab integer 'index'.  If 'index' is 
+        None, then the currently selected tab is used.  Additional arguments can be 
+        passed to the external program using the string parameter 'args'.  
+        
+        If the specified executable does not exist, then the function returns False, 
+        otherwise it runs the executable program with the appropriate arguments and 
+        returns True.
+        
+        '''
         if executable is None:
             executable = self.options['externalplayer']
         script, index = self.getScriptAtIndex(index)
@@ -14109,6 +14335,14 @@ class MainFrame(wxp.Frame):
     
     @AsyncCallWrapper
     def MacroGetBookmarkFrameList(self, title=False):
+        r'''GetBookmarkList(title=False)
+        
+        Returns a list containing the video frame bookmarks currently set by the 
+        user.  Note that these are the standard frame bookmarks, and do not contain 
+        any selection startpoints or endpoints which may exist. If 'title' is True, 
+        returns a list of tuple (frame, title).
+        
+        '''
         bookmarkList = [value for value, bmtype in self.GetBookmarkFrameList() if bmtype == 0]
         if title:
             for i in range(len(bookmarkList)):
@@ -14187,6 +14421,14 @@ class MainFrame(wxp.Frame):
     
     @AsyncCallWrapper
     def MacroGetSliderSelections(self):
+        r'''GetSelectionList()
+        
+        Returns a list containing the video frame selections created by AvsP's trim 
+        selection editor, where each element of the list is a 2-element tuple containing 
+        the startpoint and the endpoint of a selection.  Note that the trim selection 
+        editor must be visible for any selections to exist.
+        
+        '''
         return self.GetSliderSelections(self.invertSelection)
 
     def _x_MacroGetAvs2aviDir(self):
@@ -14200,6 +14442,18 @@ class MainFrame(wxp.Frame):
     
     @AsyncCallWrapper
     def MacroGetSliderInfo(self, index=None):
+        r'''GetSliderInfo(index=None)
+        
+        Returns a list containing information for each slider in the script located 
+        at the tab integer 'index'.  If 'index' is None, then the currently selected 
+        tab is used.
+        
+        The slider information consists of 4 items.  The first item is the slider text 
+        itself.  The second item is the slider label.  The third item is the list of 
+        numbers which the graphical slider represents.  The fourth item is the number 
+        of decimal places for the slider numbers as specified by the user.
+        
+        '''
         script, index = self.getScriptAtIndex(index)
         self.UpdateScriptTagProperties(script)
         #~ self.UpdateScriptAVI(script, forceRefresh=True)
@@ -14227,67 +14481,195 @@ class MainFrame(wxp.Frame):
             info.append((text, label, numlist, nDecimal))
         return info
 
-    def ExecuteMacro(self, macrofilename='', return_env=False):
-        class AvsP_functions:
+    @staticmethod
+    def FormatDocstring(method=None, docstring=None):
+        '''Format docstrings, adapted from PEP 257'''
+        if docstring is None:
+            docstring = method.__doc__
+        if not docstring:
+            return ''
+        # Convert tabs to spaces (following the normal Python rules)
+        # and split into a list of lines:
+        lines = docstring.expandtabs().splitlines()
+        # Determine minimum indentation (first line doesn't count):
+        indent = sys.maxint
+        for line in lines[1:]:
+            stripped = line.lstrip()
+            if stripped:
+                indent = min(indent, len(line) - len(stripped))
+        # Remove indentation (first line is special):
+        trimmed = [lines[0].strip()]
+        if indent < sys.maxint:
+            for line in lines[1:]:
+                trimmed.append(line[indent:].rstrip())
+        doc = '\n'.join(trimmed).split('\n', 1)
+        return doc[0] + '\n' + '='*len(doc[0]) + '\n' + doc[1] + '\n'
+    
+    
+    class AvsP_functions(object):
+        
+        def __init__(self, self_frame):
+            self.__doc__ = self_frame.FormatDocstring(docstring='''AVSPMOD MACRO API
+                
+                    AvsP allows you to define your own macros using the Python programming 
+                language.  In order to use this functionality, simply write your own Python 
+                code in a text file and save it in the "macros" directory with the extension 
+                ".py".  The next time you start AvsP.exe, your macro will appear in the 
+                "Macros" menu (the macros are sorted alphabetically).  The extension and 
+                any initial open-close brackets are removed in the displayed name - the file 
+                "[001] My Macro.py" shows up in the menu as "My Macro", in order to help 
+                order the macros in the menu.  Separators can be inserted in the menu by 
+                creating empty macro files with name "[001] ---.py".  To help further 
+                organize your macros, you can put macros in any subdirectories you create 
+                in the "macros" folder, which will automatically create submenus in the 
+                "Macros" menu.
+                
+                    Macro files can also be used to add options to the macro menu that can 
+                be read by any macro through the IsMenuChecked macro function.  To include 
+                a check option, create an empty macro and prefix its name with "ccc", e.g. 
+                "[001] ccc option name.py".  To add exclusive choices, create a macro for 
+                each option with the prefix "rrr".
+                
+                    Macros can optionally run in its own thread if the script includes a 
+                commentary line like "# run macro in new thread" (without quotes).  This 
+                makes possible to wait for the end of external commands started from the 
+                macro without locking AvsPmod.
+                
+                    You need to have a pretty good understanding of Python to write your own 
+                macros (plenty of documentation and tutorials for Python can be found on the 
+                web).  Several examples are provided in the "macros" directory to show basic 
+                usage, many more things are possible.  The following is a description of the 
+                functions provided in the local module avsp to give you control over the 
+                program itself (see the examples for appropriate usage).  This information 
+                can also be retrieved from the module or functions' docstring (help(avsp) or 
+                help(avsp.FunctionName)).\n
+                ''')
             # Text setting and retrieving
-            InsertText = self.InsertText
-            SetText = self.MacroSetText
-            #~ ReplaceText = self.MacroReplaceText
-            GetText = self.MacroGetText
-            GetSelectedText = self.MacroGetSelectedText
-            GetSourceString = self.GetSourceString
-            GetPluginString = self.GetPluginString
-            GetFilename = self.MacroGetFilename
-            GetSaveFilename = self.MacroGetSaveFilename
-            GetDirectory = self.MacroGetDirectory
-            GetTextEntry = self.MacroGetTextEntry
-            WriteToScrap = self.MacroWriteToScrap
-            GetScrapText = self.MacroGetScrapText
+            self.InsertText = self_frame.InsertText
+            self.__doc__ += self_frame.FormatDocstring(self.InsertText)
+            self.SetText = self_frame.MacroSetText
+            self.__doc__ += self_frame.FormatDocstring(self.SetText)
+            #~ ReplaceText = self_frame.MacroReplaceText
+            self.GetText = self_frame.MacroGetText
+            self.__doc__ += self_frame.FormatDocstring(self.GetText)
+            self.GetSelectedText = self_frame.MacroGetSelectedText
+            self.__doc__ += self_frame.FormatDocstring(self.GetSelectedText)
+            self.GetSourceString = self_frame.GetSourceString
+            self.__doc__ += self_frame.FormatDocstring(self.GetSourceString)
+            self.GetPluginString = self_frame.GetPluginString
+            self.__doc__ += self_frame.FormatDocstring(self.GetPluginString)
+            self.GetFilename = self_frame.MacroGetFilename
+            self.__doc__ += self_frame.FormatDocstring(self.GetFilename)
+            self.GetSaveFilename = self_frame.MacroGetSaveFilename
+            self.__doc__ += self_frame.FormatDocstring(self.GetSaveFilename)
+            self.GetDirectory = self_frame.MacroGetDirectory
+            self.__doc__ += self_frame.FormatDocstring(self.GetDirectory)
+            self.GetTextEntry = self_frame.MacroGetTextEntry
+            self.__doc__ += self_frame.FormatDocstring(self.GetTextEntry)
+            self.WriteToScrap = self_frame.MacroWriteToScrap
+            self.__doc__ += self_frame.FormatDocstring(self.WriteToScrap)
+            self.GetScrapText = self_frame.MacroGetScrapText
+            self.__doc__ += self_frame.FormatDocstring(self.GetScrapText)
             # Program tab control
-            NewTab = self.NewTab
-            CloseTab = self.CloseTab
-            SelectTab = self.SelectTab
-            #~ GetTabFilename = self.MacroGetTabFilename
-            GetTabCount = self.MacroGetScriptCount
-            GetCurrentTabIndex = self.MacroGetCurrentIndex
-            GetScriptFilename = self.MacroGetScriptFilename
+            self.NewTab = self_frame.NewTab
+            self.__doc__ += self_frame.FormatDocstring(self.NewTab)
+            self.CloseTab = self_frame.CloseTab
+            self.__doc__ += self_frame.FormatDocstring(self.CloseTab)
+            self.SelectTab = self_frame.SelectTab
+            self.__doc__ += self_frame.FormatDocstring(self.SelectTab)
+            #~ GetTabFilename = self_frame.MacroGetTabFilename
+            self.GetTabCount = self_frame.MacroGetScriptCount
+            self.__doc__ += self_frame.FormatDocstring(self.GetTabCount)
+            self.GetCurrentTabIndex = self_frame.MacroGetCurrentIndex
+            self.__doc__ += self_frame.FormatDocstring(self.GetCurrentTabIndex)
+            self.GetScriptFilename = self_frame.MacroGetScriptFilename
+            self.__doc__ += self_frame.FormatDocstring(self.GetScriptFilename)
             # File opening and saving
-            OpenFile = self.OpenFile
-            SaveScript = self.MacroSaveScript
-            SaveScriptAs = self.SaveScript
-            IsScriptSaved = self.MacroIsScriptSaved
+            self.OpenFile = self_frame.OpenFile
+            self.__doc__ += self_frame.FormatDocstring(self.OpenFile)
+            self.SaveScript = self_frame.MacroSaveScript
+            self.__doc__ += self_frame.FormatDocstring(self.SaveScript)
+            self.SaveScriptAs = self_frame.SaveScript
+            self.__doc__ += self_frame.FormatDocstring(self.SaveScriptAs)
+            self.IsScriptSaved = self_frame.MacroIsScriptSaved
+            self.__doc__ += self_frame.FormatDocstring(self.IsScriptSaved)
             # Video related functions
-            ShowVideoFrame = self.MacroShowVideoFrame
-            ShowVideoOffset = self.MacroShowVideoOffset
-            UpdateVideo = self.MacroUpdateVideo
-            HideVideoWindow = self.HidePreviewWindow
-            #~ ToggleVideoWindow = self.MacroToggleVideoWindow
-            GetFrameNumber = self.GetFrameNumber
-            GetVideoWidth = self.MacroGetVideoWidth
-            GetVideoHeight = self.MacroGetVideoHeight
-            GetVideoFramerate = self.MacroGetVideoFramerate
-            GetVideoFramecount = self.MacroGetVideoFramecount
-            RunExternalPlayer = self.MacroRunExternalPlayer
-            SaveImage = self.MacroSaveImage
+            self.ShowVideoFrame = self_frame.MacroShowVideoFrame
+            self.__doc__ += self_frame.FormatDocstring(self.ShowVideoFrame)
+            self.ShowVideoOffset = self_frame.MacroShowVideoOffset
+            self.__doc__ += self_frame.FormatDocstring(self.ShowVideoOffset)
+            self.UpdateVideo = self_frame.MacroUpdateVideo
+            self.__doc__ += self_frame.FormatDocstring(self.UpdateVideo)
+            self.HideVideoWindow = self_frame.HidePreviewWindow
+            self.__doc__ += self_frame.FormatDocstring(self.HideVideoWindow)
+            #~ ToggleVideoWindow = self_frame.MacroToggleVideoWindow
+            self.GetFrameNumber = self_frame.GetFrameNumber
+            self.__doc__ += self_frame.FormatDocstring(self.GetFrameNumber)
+            self.GetVideoWidth = self_frame.MacroGetVideoWidth
+            self.__doc__ += self_frame.FormatDocstring(self.GetVideoWidth)
+            self.GetVideoHeight = self_frame.MacroGetVideoHeight
+            self.__doc__ += self_frame.FormatDocstring(self.GetVideoHeight)
+            self.GetVideoFramerate = self_frame.MacroGetVideoFramerate
+            self.__doc__ += self_frame.FormatDocstring(self.GetVideoFramerate)
+            self.GetVideoFramecount = self_frame.MacroGetVideoFramecount
+            self.__doc__ += self_frame.FormatDocstring(self.GetVideoFramecount)
+            self.RunExternalPlayer = self_frame.MacroRunExternalPlayer
+            self.__doc__ += self_frame.FormatDocstring(self.RunExternalPlayer)
+            self.SaveImage = self_frame.MacroSaveImage
+            self.__doc__ += self_frame.FormatDocstring(self.SaveImage)
             # Bookmarks
-            GetBookmarkList = self.MacroGetBookmarkFrameList
-            SetBookmark = self.MacroSetBookmark
-            GetSelectionList = self.MacroGetSliderSelections
+            self.GetBookmarkList = self_frame.MacroGetBookmarkFrameList
+            self.__doc__ += self_frame.FormatDocstring(self.GetBookmarkList)
+            self.SetBookmark = self_frame.MacroSetBookmark
+            self.__doc__ += self_frame.FormatDocstring(self.SetBookmark)
+            self.GetSelectionList = self_frame.MacroGetSliderSelections
+            self.__doc__ += self_frame.FormatDocstring(self.GetSelectionList)
             # Miscellaneous
-            MsgBox = self.MacroMsgBox
-            ProgressBox = self.MacroProgressBox
-            #~ GetAvs2aviDir = self.MacroGetAvs2aviDir
-            #~ SetAvs2aviDir = self.MacroSetAvs2aviDir
-            GetSliderInfo = self.MacroGetSliderInfo
-            #~ UpdateFunctionDefinitions = self.UpdateFunctionDefinitions
-            ExecuteMenuCommand = self.MacroExecuteMenuCommand
-            IsMenuChecked = self.MacroIsMenuChecked
-            GetWindow = staticmethod(lambda: self)
-            def SafeCall(self, method, *args, **kwargs): 
+            self.MsgBox = self_frame.MacroMsgBox
+            self.__doc__ += self_frame.FormatDocstring(self.MsgBox)
+            self.ProgressBox = self_frame.MacroProgressBox
+            self.__doc__ += self_frame.FormatDocstring(self.ProgressBox)
+            #~ GetAvs2aviDir = self_frame.MacroGetAvs2aviDir
+            #~ SetAvs2aviDir = self_frame.MacroSetAvs2aviDir
+            self.GetSliderInfo = self_frame.MacroGetSliderInfo
+            self.__doc__ += self_frame.FormatDocstring(self.GetSliderInfo)
+            #~ UpdateFunctionDefinitions = self_frame.UpdateFunctionDefinitions
+            self.ExecuteMenuCommand = self_frame.MacroExecuteMenuCommand
+            self.__doc__ += self_frame.FormatDocstring(self.ExecuteMenuCommand)
+            self.IsMenuChecked = self_frame.MacroIsMenuChecked
+            self.__doc__ += self_frame.FormatDocstring(self.IsMenuChecked)
+            def GetWindow():
+                r'''GetWindow()
+                
+                Get the handler of avsp's main window.  Don't use this except you know what 
+                you are doing.
+                
+                '''
+                return self_frame
+            self.GetWindow = GetWindow
+            self.__doc__ += self_frame.FormatDocstring(self.GetWindow)
+            def SafeCall(method, *args, **kwargs):
+                r'''SafeCall(callable [, param1, ...])
+                
+                Run the function or method specified in a thread-safe way.  This wrapper is 
+                usually necessary when the code is run from a thread and the callable is not 
+                part of the macro API and interacts with the GUI:
+                - Update method of ProgressBox
+                - Resources obtained through GetWindow
+                - Other wxPython resources obtained through importing wx.
+                
+                '''
                 return AsyncCallWrapper(method)(*args, **kwargs)
+            self.SafeCall = SafeCall
+            self.__doc__ += self_frame.FormatDocstring(self.SafeCall)
+            self.__doc__ += ('last\n====\nThis variable contains the return value of the latest '
+                        'executed macro.  It is \nuseful to create reusable macros.\n')
+        
+    
+    def ExecuteMacro(self, macrofilename='', return_env=False):
         
         if return_env:
-            return AvsP_functions()
+            return self.AvsP_functions(self)
             
         def ShowException():
             extra = ''
@@ -14333,7 +14715,11 @@ class MainFrame(wxp.Frame):
                 lineList += ['def AvsP_macro_main():'] + ['\t%s' % line for line in macroLines] + ['global last\nlast = AvsP_macro_main()']
                 macrotxt = '\n'.join(lineList)
                 # Execute the macro
-                self.macroVars['avsp'] = AvsP_functions()
+                self.macroVars['avsp'] = self.AvsP_functions(self)
+                def MacroHelp(function):
+                    '''help(function)\nPrint the function's description of use'''
+                    print self.FormatDocstring(function)
+                self.macroVars['help'] = MacroHelp
                 if thread:    
                     def MacroThread():
                         try:

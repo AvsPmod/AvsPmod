@@ -14,11 +14,15 @@
 *.sh
 *.diff
 *.patch
-src/*
-lib/*
+src/
+lib/
 tools/*
 !tools/*.py
 !tools/*.presets
+macros/*.*
+!macros/*.py
+macros/**/*.*
+!macros/**/*.py
 macros/test.py
 AvsPmod/
 tempfilterout.txt
