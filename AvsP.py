@@ -36,9 +36,11 @@ import cPickle
 import string
 import codecs
 import re
+import functools
 import random, subprocess, math, copy
 import socket
 import thread
+import threading
 import time
 import StringIO
 import textwrap
@@ -2338,6 +2340,45 @@ class ScrapWindow(wx.Dialog):
 
     def write(self, msg):
         self.parent.MacroWriteToScrap(msg)
+
+# Make safe calls to the main thread from other threads   
+# Adapted from <http://thread.gmane.org/gmane.comp.python.wxpython/54892/focus=55223>
+class AsyncCall:
+    ''' Queues a func to run in thread of MainLoop.
+    Code may wait() on self.complete for self.result to contain
+    the result of func(*ar,**kwar).  It is set upon completion.
+    Wait() does this.'''
+    def __init__(self, func, *ar, **kwar):
+        self.result = self.noresult = object()
+        self.complete = threading.Event()
+        self.func, self.ar, self.kwar = func, ar, kwar
+        if threading.current_thread().name == 'MainThread':
+            self.TimeToRun()
+        else:
+            wx.CallAfter(self.TimeToRun)
+    def TimeToRun(self):
+        try:
+            self.result = self.func(*self.ar, **self.kwar)
+        except:
+            self.exception = sys.exc_info()
+        else:
+            self.exception = None
+        self.complete.set()
+    def Wait(self, timeout=None, failval=None):
+        self.complete.wait(timeout)
+        if self.exception:
+            raise self.exception[0], self.exception[1], self.exception[2]
+        if self.result is self.noresult:
+            return failval
+        return self.result
+
+# Decorator for AsyncCall class
+def AsyncCallWrapper(wrapped):
+    '''Decorator for AsyncCall class'''
+    def wrapper(*args, **kwargs):
+        return AsyncCall(wrapped, *args, **kwargs).Wait()
+    functools.update_wrapper(wrapper, wrapped)
+    return wrapper
 
 # Dialog and validator for defining user slider
 class UserSliderValidator(wx.PyValidator):
@@ -9243,6 +9284,16 @@ class MainFrame(wxp.Frame):
                 return
         except AttributeError:
             pass
+        # Check if macros are still running
+        for thread in threading.enumerate():
+            if thread.name == 'MacroThread':
+                dlg = wx.MessageDialog(self, _('A macro is still running. Close anyway?'),
+                                       _('Warning'), wx.OK|wx.CANCEL|wx.ICON_EXCLAMATION)
+                ID = dlg.ShowModal()
+                dlg.Destroy()
+                if ID == wx.ID_CANCEL:
+                    return
+                break
         # Save scripts if necessary
         frame = self.GetFrameNumber()
         previewvisible = self.previewWindowVisible
@@ -9332,7 +9383,8 @@ class MainFrame(wxp.Frame):
         if self.boolSingleInstance:
             self.argsPosterThread.Stop()
         self.Destroy()
-
+    
+    @AsyncCallWrapper
     def NewTab(self, copyselected=True, select=True, splits=None):
         if self.cropDialog.IsShown():
             wx.MessageBox(_('Cannot create a new tab while crop editor is open!'), 
@@ -9387,7 +9439,8 @@ class MainFrame(wxp.Frame):
                 self.scriptNotebook.SetSize((w, h-1))
                 self.scriptNotebook.SetSize((w, h))
         self.Thaw()
-
+    
+    @AsyncCallWrapper
     def OpenFile(self, filename='', scripttext=None, setSavePoint=True, splits=None, framenum=None):#, index=None):
         # Get filename via dialog box if not specified
         if not filename:
@@ -9588,7 +9641,8 @@ class MainFrame(wxp.Frame):
             for i in range(nNameItems-nMax):
                 badMenuItem = menu.FindItemByPosition(pos)
                 menu.Delete(badMenuItem.GetId())
-
+    
+    @AsyncCallWrapper
     def CloseTab(self, index=None, prompt=False, discard=False, boolPrompt=False):
         r'''CloseTab(index=None, prompt=False, discard=False)
         
@@ -9656,6 +9710,7 @@ class MainFrame(wxp.Frame):
         for index in xrange(self.scriptNotebook.GetPageCount()):
             self.CloseTab(0)
     
+    @AsyncCallWrapper
     def SaveScript(self, filename='', index=None):
         r'''SaveScriptAs(filename='', index=None)
         
@@ -10092,6 +10147,7 @@ class MainFrame(wxp.Frame):
             #~ self.ShowVideoFrame(forceRefresh=True)
             #self.videoWindow.Refresh()
 
+    @AsyncCallWrapper
     def InsertText(self, txt, pos=-1, index=None):
         # Get the desired script
         if index == -1:
@@ -10178,7 +10234,8 @@ class MainFrame(wxp.Frame):
                 if self.FindFocus() == self.videoWindow:
                     self.refreshAVI = True
                     self.ShowVideoFrame()
-
+    
+    @AsyncCallWrapper
     def GetSourceString(self, filename='', return_filename=False):
         r'''GetSourceString(filename='')
         
@@ -10234,7 +10291,8 @@ class MainFrame(wxp.Frame):
             if self.FindFocus() == self.videoWindow:
                 self.refreshAVI = True
                 self.ShowVideoFrame()
-
+    
+    @AsyncCallWrapper
     def GetPluginString(self, filename=''):
         r'''GetPluginString(filename='')
         
@@ -10650,7 +10708,8 @@ class MainFrame(wxp.Frame):
         if not self.trimDialog.IsShown():
             self.OnMenuVideoTrimEditor(None)
         self.AddFrameBookmark(self.GetFrameNumber(), bmtype)
-
+    
+    @AsyncCallWrapper
     def GetFrameNumber(self):
         return self.videoSlider.GetValue()
 
@@ -10918,7 +10977,8 @@ class MainFrame(wxp.Frame):
         for key, item in keyList:
             info = info.replace(key, item)
         return info, showVideoPixelInfo, showVideoPixelAvisynth
-
+    
+    @AsyncCallWrapper
     def SelectTab(self, index=None, inc=0):
         nTabs = self.scriptNotebook.GetPageCount()
         if nTabs == 1:
@@ -11157,7 +11217,8 @@ class MainFrame(wxp.Frame):
         for index in xrange(self.scriptNotebook.GetPageCount()):
             script = self.scriptNotebook.GetPage(index)
             script.DefineKeywordCalltipInfo(self.optionsFilters, self.optionsFilterPresets, self.optionsFilterDocpaths, self.optionsFilterTypes, self.optionsKeywordLists)
-
+    
+    @AsyncCallWrapper
     def HidePreviewWindow(self):
         if not self.separatevideowindow:
             self.mainSplitter.Unsplit()
@@ -13408,6 +13469,7 @@ class MainFrame(wxp.Frame):
         return text
         
     # Macro-related functions
+    @AsyncCallWrapper
     def MacroIsMenuChecked(self, text):
         if text.count('->') > 0:
             # text is the menu command name
@@ -13439,7 +13501,8 @@ class MainFrame(wxp.Frame):
                         return menuItem.IsChecked()
                     return False
         return False
-            
+    
+    @AsyncCallWrapper
     def MacroExecuteMenuCommand(self, text, callafter=False):
         if text.count('->') > 0:
             # text is the menu command name
@@ -13477,6 +13540,7 @@ class MainFrame(wxp.Frame):
                     return True
         return False
     
+    @AsyncCallWrapper
     def MacroSaveScript(self, filename='', index=None):
         r'''SaveScript(filename='', index=None)
         
@@ -13498,18 +13562,21 @@ class MainFrame(wxp.Frame):
         self.SaveScript(filename, index)
         return script.filename
     
+    @AsyncCallWrapper
     def MacroIsScriptSaved(self, index=None):
         script, index = self.getScriptAtIndex(index)
         if script is None:
             return False
         return (not script.GetModify())
-
+    
+    @AsyncCallWrapper
     def MacroGetScriptFilename(self, index=None):
         script, index = self.getScriptAtIndex(index)
         if script is None:
             return None
         return script.filename
-
+    
+    @AsyncCallWrapper
     def MacroShowVideoFrame(self, framenum=None, index=None, forceRefresh=False):
         # Get the desired script
         script, index = self.getScriptAtIndex(index)
@@ -13520,7 +13587,8 @@ class MainFrame(wxp.Frame):
         self.Refresh()
         self.Update()
         return True
-
+    
+    @AsyncCallWrapper
     def MacroShowVideoOffset(self, offset=0, units='frames', index=None):
         # Get the desired script
         script, index = self.getScriptAtIndex(index)
@@ -13530,7 +13598,8 @@ class MainFrame(wxp.Frame):
         self.SelectTab(index)
         #~ self.Refresh()
         self.Update()
-
+    
+    @AsyncCallWrapper
     def MacroUpdateVideo(self, index=None):
         script, index = self.getScriptAtIndex(index)
         if script is None:
@@ -13543,6 +13612,7 @@ class MainFrame(wxp.Frame):
             return False
         return True
     
+    @AsyncCallWrapper
     def MacroWriteToScrap(self, txt, pos=-1):
         r'''WriteToScrap(txt, pos=-1)
         
@@ -13582,16 +13652,19 @@ class MainFrame(wxp.Frame):
             return True
         else:
             return False
-
+    
+    @AsyncCallWrapper
     def MacroGetScrapText(self):
         return self.scrapWindow.GetText()
-
+    
+    @AsyncCallWrapper
     def MacroReplaceText(self, old, new):
         script = self.currentScript
         txt = script.GetText().replace(old, new)
         script.SetText(txt)
         script.GotoPos(script.GetLength())
     
+    @AsyncCallWrapper
     def MacroSetText(self, txt, index=None):
         r'''SetText(txt, index=None)
         
@@ -13609,18 +13682,21 @@ class MainFrame(wxp.Frame):
         script.SetText(txt)
         return True
     
+    @AsyncCallWrapper
     def MacroGetText(self, index=None):
         script, index = self.getScriptAtIndex(index)
         if script is None:
             return False
         return script.GetText()
-
+    
+    @AsyncCallWrapper
     def MacroGetSelectedText(self, index=None):
         script, index = self.getScriptAtIndex(index)
         if script is None:
             return False
         return script.GetSelectedText()
-
+    
+    @AsyncCallWrapper
     def MacroGetFilename(self, title=_('Open a script or source'), filefilter=None):
         if filefilter is None:
             extlist = self.options['templates'].keys()
@@ -13640,7 +13716,8 @@ class MainFrame(wxp.Frame):
             filename = ''
         dlg.Destroy()
         return filename
-
+    
+    @AsyncCallWrapper
     def MacroGetSaveFilename(self, title=_('Save as'), filefilter = _('All files (*.*)|*.*')):
         dlg = wx.FileDialog(self, title,
             self.options['recentdir'], '', filefilter, wx.SAVE|wx.OVERWRITE_PROMPT)
@@ -13654,7 +13731,8 @@ class MainFrame(wxp.Frame):
             filename = ''
         dlg.Destroy()
         return filename
-
+    
+    @AsyncCallWrapper
     def MacroGetDirectory(self, title=_('Select a directory')):
         # Get the avisynth directory from the user with a dialog box
         dlg = wx.DirDialog(self, title, self.options['recentdir'])
@@ -13667,7 +13745,8 @@ class MainFrame(wxp.Frame):
             dirname = ''
         dlg.Destroy()
         return dirname
-
+    
+    @AsyncCallWrapper
     def MacroGetTextEntry(self, message=[''], default=[''], title=_('Enter information'), types=[''], width=400):
         r'''GetTextEntry(message='', default='', title='Enter information', types='text', width=400)
         
@@ -13887,7 +13966,8 @@ class MainFrame(wxp.Frame):
                 return values[0]
             return ''
         return values
-  
+    
+    @AsyncCallWrapper
     def MacroMsgBox(self, message, title='', cancel=False):
         r'''MsgBox(message, title='', cancel=False)
         
@@ -13906,6 +13986,7 @@ class MainFrame(wxp.Frame):
         action = wx.MessageBox(message, title, style)
         return True if action == wx.OK else False
     
+    @AsyncCallWrapper
     def MacroProgressBox(self, max=100, message='', title=_('Progress')):
         r'''ProgressBox(max=100, message='', title='Progress')
         
@@ -13915,7 +13996,8 @@ class MainFrame(wxp.Frame):
         In order to display the dialog, use its method Update(value, message), which 
         takes in the new progress value and optionally a new message.  The method 
         Update returns a tuple where its first component is False if the user clicked 
-        on the Cancel button, True otherwise.
+        on the Cancel button, True otherwise.  Wrap this method with SafeCall if it's 
+        called within a thread.
         
         IMPORTANT: You must use the Destroy() method to destroy the dialog after you 
         are done with it.
@@ -13925,10 +14007,12 @@ class MainFrame(wxp.Frame):
             title, message, max,
             style=wx.PD_CAN_ABORT|wx.PD_ELAPSED_TIME|wx.PD_REMAINING_TIME
         )
-
+    
+    @AsyncCallWrapper
     def MacroGetScriptCount(self):
         return self.scriptNotebook.GetPageCount()
-
+    
+    @AsyncCallWrapper
     def MacroGetCurrentIndex(self):
         return self.scriptNotebook.GetSelection()
 
@@ -13938,6 +14022,7 @@ class MainFrame(wxp.Frame):
             return False
         return script.filename
     
+    @AsyncCallWrapper
     def MacroSaveImage(self, filename='', framenum=None, index=None, quality=None):
         r'''SaveImage(filename='', framenum=None, index=None, quality=None)
         
@@ -13963,6 +14048,7 @@ class MainFrame(wxp.Frame):
             return
         return self.SaveCurrentImage(filename, index, quality=quality)
     
+    @AsyncCallWrapper
     def MacroGetVideoWidth(self, index=None):
         script, index = self.getScriptAtIndex(index)
         if script is None:
@@ -13973,7 +14059,8 @@ class MainFrame(wxp.Frame):
             wx.MessageBox(_('Error loading the script'), _('Error'), style=wx.OK|wx.ICON_ERROR)
             return False
         return script.AVI.WidthActual
-
+    
+    @AsyncCallWrapper
     def MacroGetVideoHeight(self, index=None):
         script, index = self.getScriptAtIndex(index)
         if script is None:
@@ -13984,7 +14071,8 @@ class MainFrame(wxp.Frame):
             wx.MessageBox(_('Error loading the script'), _('Error'), style=wx.OK|wx.ICON_ERROR)
             return False
         return script.AVI.HeightActual
-
+    
+    @AsyncCallWrapper
     def MacroGetVideoFramerate(self, index=None):
         script, index = self.getScriptAtIndex(index)
         if script is None:
@@ -13995,7 +14083,8 @@ class MainFrame(wxp.Frame):
             wx.MessageBox(_('Error loading the script'), _('Error'), style=wx.OK|wx.ICON_ERROR)
             return False
         return script.AVI.Framerate
-
+    
+    @AsyncCallWrapper
     def MacroGetVideoFramecount(self, index=None):
         script, index = self.getScriptAtIndex(index)
         if script is None:
@@ -14006,7 +14095,8 @@ class MainFrame(wxp.Frame):
             wx.MessageBox(_('Error loading the script'), _('Error'), style=wx.OK|wx.ICON_ERROR)
             return False
         return script.AVI.Framecount
-
+    
+    @AsyncCallWrapper
     def MacroRunExternalPlayer(self, executable=None, args='', index=None):
         if executable is None:
             executable = self.options['externalplayer']
@@ -14016,7 +14106,8 @@ class MainFrame(wxp.Frame):
         if not self.RunExternalPlayer(executable, script, args, prompt=False):
             return False
         return True
-
+    
+    @AsyncCallWrapper
     def MacroGetBookmarkFrameList(self, title=False):
         bookmarkList = [value for value, bmtype in self.GetBookmarkFrameList() if bmtype == 0]
         if title:
@@ -14025,6 +14116,7 @@ class MainFrame(wxp.Frame):
                 bookmarkList[i] = (bookmarkList[i], title)
         return bookmarkList
     
+    @AsyncCallWrapper
     def MacroSetBookmark(self, input):
         r'''SetBookmark(input)
         
@@ -14092,7 +14184,8 @@ class MainFrame(wxp.Frame):
                     self.AddFrameBookmark(value, bmtype, refreshProgram=True)
             return True
         return False
-        
+    
+    @AsyncCallWrapper
     def MacroGetSliderSelections(self):
         return self.GetSliderSelections(self.invertSelection)
 
@@ -14104,7 +14197,8 @@ class MainFrame(wxp.Frame):
             self.options['avs2avidir'] = exename
             return True
         return False
-
+    
+    @AsyncCallWrapper
     def MacroGetSliderInfo(self, index=None):
         script, index = self.getScriptAtIndex(index)
         self.UpdateScriptTagProperties(script)
@@ -14189,9 +14283,25 @@ class MainFrame(wxp.Frame):
             ExecuteMenuCommand = self.MacroExecuteMenuCommand
             IsMenuChecked = self.MacroIsMenuChecked
             GetWindow = staticmethod(lambda: self)
-        avsp = AvsP_functions()
+            def SafeCall(self, method, *args, **kwargs): 
+                return AsyncCallWrapper(method)(*args, **kwargs)
+        
         if return_env:
-            return avsp
+            return AvsP_functions()
+            
+        def ShowException():
+            extra = ''
+            for line in traceback.format_exc().split('\n'):
+                if line.endswith('in AvsP_macro_main'):
+                    try:
+                        linenumber = int(line.split(',')[1].split()[1]) - 1
+                        extra = ' (%s, line %i)' % (os.path.basename(macrofilename), linenumber)
+                    except:
+                        pass
+                    break
+            error_string = '%s\n\n%s%s' % (_('Error in the macro:'), sys.exc_info()[1], extra)
+            AsyncCall(wx.MessageBox, error_string, _('Error'), style=wx.OK|wx.ICON_ERROR).Wait()  
+        
         os.chdir(self.programdir)
         if os.path.isfile(macrofilename):
             try:
@@ -14202,10 +14312,18 @@ class MainFrame(wxp.Frame):
                 txt = f.read()
                 f.close()
                 macroLines = txt.split('\n')
+                # Check if the macro should run in its own thread
+                re_thread = re.compile(r'\s*#\s*run[\s_]*(macro)?[\s_]*in[\s_]*(new)?[\s_]*thread', re.I)
+                for line in macroLines:
+                    if re.match(re_thread, line):
+                        thread = True
+                        break
+                else:
+                    thread = False
                 # Check for syntax errors (thows SyntaxError exception with line number)
                 try:
                     compile('\n'.join(macroLines+['pass']), macrofilename, 'exec')
-                except SyntaxError as e:
+                except SyntaxError, e:
                     if not str(e).startswith("'return' outside function"):
                         raise
                 # Wrap the macro in a function (allows top-level variables to be treated "globally" within the function)
@@ -14214,22 +14332,21 @@ class MainFrame(wxp.Frame):
                     lineList.append(macroLines.pop(0))
                 lineList += ['def AvsP_macro_main():'] + ['\t%s' % line for line in macroLines] + ['global last\nlast = AvsP_macro_main()']
                 macrotxt = '\n'.join(lineList)
-                #~ macrotxt = '\n'.join(macroLines)
                 # Execute the macro
-                self.macroVars['avsp'] = AvsP_functions
-                exec macrotxt in self.macroVars, {}
-            except:
-                extra = ''
-                for line in traceback.format_exc().split('\n'):
-                    if line.endswith('in AvsP_macro_main'):
+                self.macroVars['avsp'] = AvsP_functions()
+                if thread:    
+                    def MacroThread():
                         try:
-                            linenumber = int(line.split(',')[1].split()[1]) - 1
-                            extra = ' (%s, line %i)' % (os.path.basename(macrofilename), linenumber)
+                            exec macrotxt in self.macroVars, {}
                         except:
-                            pass
-                        break
-                wx.MessageBox('%s\n\n%s%s' % (_('Error in the macro:'), sys.exc_info()[1], extra), 
-                              _('Error'), style=wx.OK|wx.ICON_ERROR)
+                            ShowException()
+                    thread = threading.Thread(target=MacroThread, name='MacroThread')
+                    thread.daemon = True
+                    thread.start()
+                else:
+                    exec macrotxt in self.macroVars, {}
+            except:
+                ShowException()
         else:
             wx.MessageBox(_("Couldn't find %(macrofilename)s") % locals(), _('Error'), style=wx.OK|wx.ICON_ERROR)
     
@@ -14258,10 +14375,9 @@ class MainApp(wxp.App):
         return True
 
 def main():
+    threading.current_thread().name = 'MainThread'
     try:
-        redirect_flag = True
-        if __debug__:
-            redirect_flag = False
+        redirect_flag = not __debug__
         #~ app = MainApp(redirect_flag, name='AvsP')
         app = MainApp(redirect_flag)
         app.MainLoop()
