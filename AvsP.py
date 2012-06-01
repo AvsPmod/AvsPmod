@@ -14434,6 +14434,35 @@ class MainFrame(wxp.Frame):
             self.getPixelInfo = False
     
     @AsyncCallWrapper
+    def MacroGetVar(self, var, index=None, forceRefresh=False):
+        r'''GetVar(var, index=None)
+        
+        Returns the content of the avisynth variable 'var' at the tab integer 'index'.  
+        If 'index' is None, then the currently selected tab is used.  Returns None if 
+        the specified variable is not defined.
+        
+        Warning: If the variable is frame-dependent the returned value may be unreliable.  
+        Two conditions must be met to ensure that is correct:
+        - Avisynth frame cache must be disabled, e.g. SetMemoryMax(1)
+        - No filters that request multiple frames can be used in the script.
+        '''
+        script, index = self.getScriptAtIndex(index)
+        if script is None:
+            return False
+        self.refreshAVI = True
+        #~ self.MacroShowVideoFrame(None, index)
+        if self.UpdateScriptAVI(script, forceRefresh=forceRefresh) is None:
+            wx.MessageBox(_('Error loading the script'), _('Error'), style=wx.OK|wx.ICON_ERROR)
+            return False
+        try:
+            with script.AVI.env.GetVar(var) as avs_var:
+                return avs_var.GetValue(script.AVI.env)
+        except avisynth.AvisynthError as err:
+            if str(err) != "NotFound":
+                raise
+            return
+    
+    @AsyncCallWrapper
     def MacroRunExternalPlayer(self, executable=None, args='', index=None):
         r'''RunExternalPlayer(executable=None, args='', index=None)
         
