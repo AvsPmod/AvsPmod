@@ -139,6 +139,7 @@ class AvsClip:
         self.HasAudio = None
         self.HasVideo = None
         self.Colorspace = None
+        self.ffms_info_cache = {}
         # Create the Avisynth script clip
         if (env is not None) and not isinstance(env,avisynth.PIScriptEnvironment):
             raise TypeError("env must be a PIScriptEnvironment or None")

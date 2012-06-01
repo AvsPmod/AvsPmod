@@ -8973,6 +8973,7 @@ class MainFrame(wxp.Frame):
             ('%F', _('Current frame')),
             ('%FC', _('Framecount')),
             ('%T', _('Current time')),
+            #('%ST', _('Original source time (ffms only)')),
             ('%TT', _('Total time')),
             ('%W', _('Width')),
             ('%H', _('Height')),
@@ -8984,6 +8985,7 @@ class MainFrame(wxp.Frame):
             ('%FB', _('Field or frame based')),
             ('%P', _('Parity')),
             ('%PS', _('Parity short (BFF or TFF)')),
+            #('%EFT', _('Encoded frame type (ffms only)')),
             ),
             (
             ('%AUR', _('Audio rate')),
@@ -10891,14 +10893,36 @@ class MainFrame(wxp.Frame):
         if not frame:
             frame = self.videoSlider.GetValue()
         v = script.AVI
+        # read ffms global variables
+        try:
+            ffms_encodedframetype, ffms_sourcetime = v.ffms_info_cache[self.currentframenum]
+        except KeyError:
+            try:
+                var = script.AVI.env.GetVar('FFSARFFVAR_PREFIX')
+                ffms_prefix = var.GetValue()
+            except avisynth.AvisynthError as err:
+                if str(err) != "NotFound":
+                    raise
+                ffms_prefix = ''
+            try:
+                var = script.AVI.env.GetVar(ffms_prefix + 'FFPICT_TYPE')
+                ffms_encodedframetype = chr(var.GetValue())
+            except avisynth.AvisynthError as err:
+                if str(err) != "NotFound":
+                    raise
+                ffms_encodedframetype = ''
+            try:
+                var = script.AVI.env.GetVar(ffms_prefix + 'FFVFR_TIME')
+                ffms_sourcetime = self.FormatTime(var.GetValue() / 1000.0)
+            except avisynth.AvisynthError as err:
+                if str(err) != "NotFound":
+                    raise
+                ffms_sourcetime = ''
+            v.ffms_info_cache[self.currentframenum] = ffms_encodedframetype, ffms_sourcetime
         framerate = v.Framerate
         framecount = v.Framecount
-        m, s = divmod(frame/framerate, 60)
-        h, m = divmod(m, 60)
-        time = '%02i:%02i:%06.3f' % (h ,m, s)
-        m, s = divmod(framecount/framerate, 60)
-        h, m = divmod(m, 60)
-        totaltime = '%02i:%02i:%06.3f' % (h ,m, s)
+        time = self.FormatTime(frame/framerate)
+        totaltime = self.FormatTime(framecount/framerate)
         zoom = ''
         if self.zoomwindow and script.zoomwindow_actualsize is not None:
             width, height = script.zoomwindow_actualsize
@@ -10975,6 +10999,8 @@ class MainFrame(wxp.Frame):
             ('%AR', '%(aspectratio)s'),
             ('%FB', '%(fieldframebased)s'),
             ('%PS', '%(parityshort)s'),
+            ('%EFT', '%(ffms_encodedframetype)s'),
+            ('%ST', '%(ffms_sourcetime)s'),
             ('%W', '%(width)i'),
             ('%H', '%(height)i'),
             ('%F', '%(frame)s'),
@@ -13565,6 +13591,12 @@ class MainFrame(wxp.Frame):
         text = f.readline().strip('#').strip()
         f.close()
         return text
+    
+    def FormatTime(self, s):
+        '''Format seconds (int/float) to hours, minutes and seconds (str)'''
+        m, s = divmod(s, 60)
+        h, m = divmod(m, 60)
+        return '%02i:%02i:%06.3f' % (h ,m, s)
     
     # Macro-related functions
     @AsyncCallWrapper
