@@ -377,25 +377,41 @@ class AVS_Value(ctypes.Structure,object):
         self.array_size=1
         self.d.f=0
         if val is not None:
-            self.AssignVal(val)
-    def AssignVal(self,val):
+            self.SetValue(val)
+    def SetValue(self,val):
         # check 'bool' in front of 'int'      
         if isinstance(val,bool):self.SetBool(val)
         elif isinstance(val,int):self.SetInt(val)
         elif isinstance(val,float):self.SetFloat(val)
-        elif isinstance(val,str):self.SetString(val)
-        elif isinstance(val,unicode):self.SetString(val)
+        elif isinstance(val,basestring):self.SetString(val)
         elif isinstance(val,PClip):self.SetClip(val)
         elif isinstance(val,AVS_Value):val.Copy(self)
-        elif isinstance(val,list):
-            if isinstance(val[0],AVS_Value):self.SetArray(val)
-    def __call__( self,val):
-        self.AssignVal(val)
+        elif isinstance(val,list):self.SetArray(val)
+            #if isinstance(val[0],AVS_Value):self.SetArray(val)
+        # to do: check if it's safe to raise an Exception:
+        #else: raise AvisynthError("Not convertible to AVS_Value object: %s" % val)
+    def __call__(self,val):
+        self.SetValue(val)
+    def GetValue(self, env=None):     
+        if self.IsBool(): return self.d.b
+        elif self.IsInt(): return self.d.i
+        elif self.IsFloat():return self.d.f
+        elif self.IsString():return self.d.s
+        elif self.IsError():return self.d.s
+        elif self.IsClip() and env is not None: return avs_take_clip(self,env)
+        elif self.IsArray(): return [i.GetValue() for i in self]
+        return repr(self)
+    def __str__(self):
+        return str(self.GetValue())
     def Release(self):
         avs_release_value(self)
         self.type=118
         self.array_size=1
         self.d.f=0
+    def __enter__(self):
+        return self
+    def __exit__(self , exc_type, exc_value, traceback):
+        self.Release()
     def IsInt(self):return self.type==105
     def AsInt(self):
         if self.IsInt(): return self.d.i
@@ -406,7 +422,7 @@ class AVS_Value(ctypes.Structure,object):
         raise AvisynthError("Not a string")
     def IsBool(self):return self.type==98
     def AsBool(self):
-        if self.IsBool: return self.d.b
+        if self.IsBool(): return self.d.b
         raise AvisynthError("Not a bool")
     def IsClip(self):return self.type==99
     def AsClip(self,env):
@@ -417,15 +433,18 @@ class AVS_Value(ctypes.Structure,object):
         if self.IsFloat():return self.d.f
         raise AvisynthError("Not a float")
     def IsArray(self):return self.type==97
+    def AsArray(self):
+        if self.IsArray(): return [i.GetValue() for i in self]
+        raise AvisynthError("Not an array")
     def IsError(self):return self.type==101
     def AsError(self):
         if self.IsError():return self.d.s
         raise AvisynthError("Not an error")
     def __getitem__( self, key):
         if self.IsArray():
-            if array_size<key or key<0:
+            if not 0 <= key < self.array_size:
                 raise IndexError 
-            return AVS_Value(a[key])
+            return self.d.a[key]
         else:
             return self
     def SetInt(self,i):
@@ -451,17 +470,17 @@ class AVS_Value(ctypes.Structure,object):
         self.type=102#='f'loat
         self.d.f=s
         self.array_size=1        
-    def SetArray(self,a):
-        if self.type!=118:self.Release()
-        self.type=97#='a'rray
-        self.array_size=len(a)
-        if isinstance(a,list):
-            AVS_VALUE_LIST=AVS_Value*len(a)
-            aa=AVS_VALUE_LIST()
+    def SetArray(self, a):
+        if self.type != 118: self.Release()
+        self.type = 97 # == 'a'rray
+        self.array_size = len(a)
+        if isinstance(a, list):
+            AVS_VALUE_LIST = AVS_Value * len(a)
+            aa = AVS_VALUE_LIST()
             for x in range(len(a)):
-                aa[x]=a[x]
-            a=ctypes.cast(ctypes.pointer(aa),ctypes.POINTER(AVS_Value))
-        self.d.a=a
+                aa[x] = AVS_Value(a[x])
+            a = ctypes.cast(ctypes.pointer(aa), ctypes.POINTER(AVS_Value))
+        self.d.a = a
     def Copy(self,dst):
         avs_copy_value(ctypes.byref(dst),self)
     def __del__(self):
