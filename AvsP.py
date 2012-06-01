@@ -4434,6 +4434,7 @@ class MainFrame(wxp.Frame):
         self.oldSliderWindowShown = None
         self.oldBoolSliders = None
         self.xo = self.yo = 5
+        self.getPixelInfo = False
         self.sliderOpenString = '[<'
         self.sliderCloseString = '>]'
         self.fc = None
@@ -8632,7 +8633,7 @@ class MainFrame(wxp.Frame):
         self.HidePreviewWindow()
 
     def OnLeftDownVideoWindow(self, event):
-        if self.cropDialog.IsShown():
+        if self.cropDialog.IsShown() and not self.getPixelInfo:
             # Set focus on video window if necessary
             # Set trim values if clicked within video frame
             script = self.currentScript
@@ -8689,8 +8690,14 @@ class MainFrame(wxp.Frame):
             videoWindow.SetCursor(wx.StockCursor(wx.CURSOR_HAND))
             videoWindow.oldPoint = event.GetPosition()
             videoWindow.oldOrigin = videoWindow.GetViewStart()
+            if self.getPixelInfo:
+                if self.getPixelInfo == 'string':
+                    self.pixelInfo = self.GetPixelInfo(event, string_=True)
+                else:
+                    self.pixelInfo = self.GetPixelInfo(event)
+                self.getPixelInfo = False
         event.Skip()
-
+    
     def OnMouseMotionVideoWindow(self, event=None):
         if self.cropDialog.IsShown() and event and event.LeftIsDown():
             script = self.currentScript
@@ -8763,75 +8770,18 @@ class MainFrame(wxp.Frame):
                     videoWindow.SetCursor(wx.StockCursor(wx.CURSOR_DEFAULT))
             elif self.showVideoPixelInfo: #self.options['showvideopixelinfo']:
                 if True:#self.FindFocus() == videoWindow:
-                    script = self.currentScript
-                    w, h = script.AVI.Width, script.AVI.Height
-                    dc = wx.ClientDC(videoWindow)
-                    dc.SetDeviceOrigin(self.xo, self.yo)
-                    try: # DoPrepareDC causes NameError in wx2.9.1 and fixed in wx2.9.2
-                        videoWindow.DoPrepareDC(dc)
-                    except:
-                        videoWindow.PrepareDC(dc)
-                    zoomfactor = self.zoomfactor
-                    #~ if self.zoomwindow and script.zoomwindow_actualsize is not None:
-                        #~ wOld = w
-                        #~ w, h = script.zoomwindow_actualsize
-                        #~ zoomfactor = wOld / float(w)
-                    if zoomfactor != 1:
-                        dc.SetUserScale(zoomfactor, zoomfactor)
-                    if event:
-                        xpos, ypos = event.GetPosition()
-                    else:
-                        xpos, ypos = videoWindow.ScreenToClient(wx.GetMousePosition())
-                    x = dc.DeviceToLogicalX(xpos)
-                    y = dc.DeviceToLogicalY(ypos)
-                    #~ x, y = min(max(x,0),w-1), min(max(y,0),h-1)
-                    rgb = dc.GetPixel(x, y)
-                    R,G,B = rgb.Get()
-                    A = 0
-                    hexcolor = '$%02x%02x%02x' % (R,G,B)
-                    Y = 0.257*R + 0.504*G + 0.098*B + 16
-                    U = -0.148*R - 0.291*G + 0.439*B + 128
-                    V = 0.439*R - 0.368*G - 0.071*B + 128
-                    xposScrolled, yposScrolled = self.videoWindow.CalcUnscrolledPosition(xpos,ypos)
-                    if 0 <= x < w and 0<= y < h and xposScrolled>=self.xo and yposScrolled>=self.yo:
-                        #~ xystring = 'xy = (%i,%i)' % (x,y)
-                        #~ format = self.options['pixelcolorformat']
-                        #~ if format == 'rgb':
-                            #~ colorstring = 'rgb = (%i,%i,%i)' % (R,G,B)
-                        #~ elif format == 'yuv':
-                            #~ colorstring = 'yuv = (%i,%i,%i)' % (Y,U,V)
-                        #~ else: #elif format == 'hex':
-                            #~ colorstring = 'hex = %s' % hexcolor.upper()
-                        #~ self.SetVideoStatusText(addon='%s%s, %s' % (' '*5,xystring, colorstring))
-                        xystring = '%s=(%i,%i)' % (_('pos'),x,y)
-                        if self.showVideoPixelAvisynth:
-                            if 'flipvertical' in self.flip:
-                                y = script.AVI.HeightActual - y
-                            if 'fliphorizontal' in self.flip:
-                                x = script.AVI.WidthActual - x
-                            try:
-                                avsYUV = script.AVI.GetPixelYUV(x, y)
-                                if avsYUV != (-1,-1,-1):
-                                    Y,U,V = avsYUV
-                                avsRGBA = script.AVI.GetPixelRGBA(x, y)
-                                if avsRGBA != (-1,-1,-1,-1):
-                                    R,G,B,A = avsRGBA
-                            except:
-                                pass
-                        rgbstring = '%s=(%i,%i,%i)' % (_('rgb'),R,G,B)
-                        rgbastring = '%s=(%i,%i,%i,%i)' % (_('rgba'),R,G,B,A)
-                        yuvstring = '%s=(%i,%i,%i)' % (_('yuv'),Y,U,V)
-                        hexstring = '%s=%s' % (_('hex'),hexcolor.upper())
-                        self.SetVideoStatusText(addon=(xystring, hexstring, rgbstring, rgbastring, yuvstring))#'%s%s, %s' % (' '*5,xystring, colorstring))
-                    else:
+                    pixelInfo = self.GetPixelInfo(event, string_=True)
+                    if pixelInfo[1] is None:
                         self.SetVideoStatusText()
+                    else:
+                        self.SetVideoStatusText(addon=pixelInfo)#'%s%s, %s' % (' '*5,xystring, colorstring))
                     #~ if self.separatevideowindow:
                         #~ ctrl = self.frameTextCtrl2
                     #~ else:
                         #~ ctrl = self.frameTextCtrl2
                     #~ ctrl.SetBackgroundColour(rgb)
                     #~ ctrl.Refresh()
-
+    
     def OnMouseLeaveVideoWindow(self, event):
         #~ if self.FindFocus() == self.videoWindow:
             #~ self.SetVideoStatusText()
@@ -11004,6 +10954,7 @@ class MainFrame(wxp.Frame):
                 showVideoPixelInfo = True
                 if item in ('%YUV', '%CLR'):
                     showVideoPixelAvisynth = True
+                    break
         keyList = [
             ('%POS', '%(pixelpos)s'),
             ('%HEX', '%(pixelhex)s'),
@@ -11034,6 +10985,81 @@ class MainFrame(wxp.Frame):
         for key, item in keyList:
             info = info.replace(key, item)
         return info, showVideoPixelInfo, showVideoPixelAvisynth
+    
+    def GetPixelInfo(self, event, string_=False):
+        videoWindow = self.videoWindow
+        script = self.currentScript
+        if script.AVI is None:
+            self.UpdateScriptAVI(script, forceRefresh=True)
+        w, h = script.AVI.Width, script.AVI.Height
+        dc = wx.ClientDC(videoWindow)
+        dc.SetDeviceOrigin(self.xo, self.yo)
+        try: # DoPrepareDC causes NameError in wx2.9.1 and fixed in wx2.9.2
+            videoWindow.DoPrepareDC(dc)
+        except:
+            videoWindow.PrepareDC(dc)
+        zoomfactor = self.zoomfactor
+        #~ if self.zoomwindow and script.zoomwindow_actualsize is not None:
+            #~ wOld = w
+            #~ w, h = script.zoomwindow_actualsize
+            #~ zoomfactor = wOld / float(w)
+        if zoomfactor != 1:
+            dc.SetUserScale(zoomfactor, zoomfactor)
+        if event:
+            xpos, ypos = event.GetPosition()
+        else:
+            xpos, ypos = videoWindow.ScreenToClient(wx.GetMousePosition())
+        x = dc.DeviceToLogicalX(xpos)
+        y = dc.DeviceToLogicalY(ypos)
+        #~ x, y = min(max(x,0),w-1), min(max(y,0),h-1)
+        xposScrolled, yposScrolled = self.videoWindow.CalcUnscrolledPosition(xpos,ypos)
+        if 0 <= x < w and 0 <= y < h and xposScrolled>=self.xo and yposScrolled>=self.yo:
+            #~ xystring = 'xy = (%i,%i)' % (x,y)
+            #~ format = self.options['pixelcolorformat']
+            #~ if format == 'rgb':
+                #~ colorstring = 'rgb = (%i,%i,%i)' % (R,G,B)
+            #~ elif format == 'yuv':
+                #~ colorstring = 'yuv = (%i,%i,%i)' % (Y,U,V)
+            #~ else: #elif format == 'hex':
+                #~ colorstring = 'hex = %s' % hexcolor.upper()
+            #~ self.SetVideoStatusText(addon='%s%s, %s' % (' '*5,xystring, colorstring))
+            
+            rgb = dc.GetPixel(x, y)
+            R,G,B = rgb.Get()
+            A = 0
+            hexcolor = '$%02x%02x%02x' % (R,G,B)
+            Y = 0.257*R + 0.504*G + 0.098*B + 16
+            U = -0.148*R - 0.291*G + 0.439*B + 128
+            V = 0.439*R - 0.368*G - 0.071*B + 128
+            if self.showVideoPixelAvisynth:
+                if 'flipvertical' in self.flip:
+                    y = script.AVI.HeightActual - y
+                if 'fliphorizontal' in self.flip:
+                    x = script.AVI.WidthActual - x
+                try:
+                    avsYUV = script.AVI.GetPixelYUV(x, y)
+                    if avsYUV != (-1,-1,-1):
+                        Y,U,V = avsYUV
+                    avsRGBA = script.AVI.GetPixelRGBA(x, y)
+                    if avsRGBA != (-1,-1,-1,-1):
+                        R,G,B,A = avsRGBA
+                except:
+                    pass
+            if not string_:
+                return (x, y), hexcolor.upper()[1:], (R, G, B), (R, G, B, A), (Y, U, V)
+            xystring = '%s=(%i,%i)' % (_('pos'),x,y)
+            hexstring = '%s=%s' % (_('hex'),hexcolor.upper())
+            rgbstring = '%s=(%i,%i,%i)' % (_('rgb'),R,G,B)
+            rgbastring = '%s=(%i,%i,%i,%i)' % (_('rgba'),R,G,B,A)
+            yuvstring = '%s=(%i,%i,%i)' % (_('yuv'),Y,U,V)
+            return xystring, hexstring, rgbstring, rgbastring, yuvstring
+        else:
+            if not 0 <= x < w:
+                x = 0 if x < 0 else w
+            if not 0 <= y < h:
+                y = 0 if y < 0 else h
+            xystring = '%s=(%i,%i)' % (_('pos'),x,y)
+            return xystring if string_ else (x, y), None, None, None, None
     
     @AsyncCallWrapper
     def SelectTab(self, index=None, inc=0):
@@ -11467,7 +11493,7 @@ class MainFrame(wxp.Frame):
             if focus:
                 self.videoWindow.SetFocus()
                 #~ self.SetVideoStatusText(framenum)
-                # Update pixel info if cursor in preiew windows
+                # Update pixel info if cursor in preview windows
                 self.IdleCall.append((self.OnMouseMotionVideoWindow, tuple(), {}))
             else:
                 primary = False
@@ -13712,6 +13738,8 @@ class MainFrame(wxp.Frame):
         self.SelectTab(index)
         self.Refresh()
         self.Update()
+        if script.AVI.IsErrorClip():
+            return False
         return True
     
     @AsyncCallWrapper
@@ -14309,6 +14337,103 @@ class MainFrame(wxp.Frame):
         return script.AVI.Framecount
     
     @AsyncCallWrapper
+    def MacroGetPixelInfo(self, color='hex', wait=False):
+        '''GetPixelInfo(color='hex', wait=False)
+        
+        Waits for the user to left-click in a position of the video preview, showing 
+        it if hidden, and returns a tuple with the position and colour of the clicked 
+        pixel.  The colour representation can be specified with the 'color' parameter.  
+        Valid values: 'hex', 'rgb', 'rgba', 'yuv', None.  If None, only returns the 
+        position.  
+        
+        The position is counted from the top left corner.  If the user clicks on a 
+        part of the preview outside the video, the returned coordinates are set to 
+        the nearest video pixel and the colour to None. 
+        
+        If the user doesn't click the video within the first 5 seconds after the 
+        preview is refreshed, returns None.
+        
+        If 'wait' is True waits for multiple clicks with a 5 seconds time-out between 
+        each one and returns a list with the pixel data, empty list if not pixel was 
+        clicked.
+        
+        '''
+        if self.getPixelInfo:
+            wx.MessageBox(_('A get pixel info operation has already started'), 
+                             _('Error'), style=wx.OK|wx.ICON_ERROR)
+            return
+        if not self.MacroShowVideoFrame():
+            return
+        if color:
+            color = color.lower() 
+        if color == 'hex':
+            i = 1
+        elif color == 'rgb':
+            i = 2
+        elif color == 'rgba':
+            i = 3
+        elif color == 'yuv':
+            i = 4
+        else:
+            i = 0
+        if wait:
+            pixelInfo_list = []
+            pixelColor_list = []
+            starting_script = self.currentScript
+            oldzoomfactor = self.zoomfactor
+            dc = wx.ClientDC(self.videoWindow)
+            dc.SetDeviceOrigin(self.xo, self.yo)
+            dc.SetUserScale(self.zoomfactor, self.zoomfactor)
+            while True:
+                start = time.time()
+                self.getPixelInfo = True
+                while self.getPixelInfo:
+                    time.sleep(0.05)
+                    if oldzoomfactor != self.zoomfactor:
+                        dc.SetUserScale(self.zoomfactor, self.zoomfactor)
+                        oldzoomfactor = self.zoomfactor
+                        for xy, color in [item for item in zip(pixelInfo_list, pixelColor_list) if item[1]]:
+                            xy = xy[0] if isinstance(xy[0], tuple) else xy
+                            dc.SetPen(wx.Pen(wx.Colour(*((component + 128) % 256 for component in color)), 
+                                         round(3.0 / self.zoomfactor)))
+                            dc.DrawLine(*map(lambda x,y:round(x-float(y)/self.zoomfactor), 
+                                         xy, self.videoWindow.GetViewStart()) * 2)
+                    if time.time() - start >= 5:
+                        break
+                    wx.Yield()
+                else:
+                    if i:
+                        pixelInfo_list.append((self.pixelInfo[0], self.pixelInfo[i]))
+                    else:
+                        pixelInfo_list.append(self.pixelInfo[0])
+                    pixelColor_list.append(self.pixelInfo[2])
+                    if self.pixelInfo[2] is not None:
+                        dc.SetPen(wx.Pen(wx.Colour(*((component + 128) % 256 for component in self.pixelInfo[2])), 
+                                         round(3.0 / self.zoomfactor)))
+                        dc.DrawLine(*map(lambda x,y:round(x-float(y)/self.zoomfactor), 
+                                         self.pixelInfo[0], self.videoWindow.GetViewStart()) * 2)
+                    continue
+                self.getPixelInfo = False
+                break
+            if starting_script == self.currentScript:
+                self.PaintAVIFrame(dc, self.currentScript, self.currentframenum)
+            return pixelInfo_list
+        else:
+            start = time.time()
+            self.getPixelInfo = True
+            while self.getPixelInfo:
+                time.sleep(0.05)
+                if time.time() - start >= 5:
+                    break
+                wx.Yield()
+            else:
+                if i:
+                    return self.pixelInfo[0], self.pixelInfo[i]
+                else:
+                    return self.pixelInfo[0]
+            self.getPixelInfo = False
+    
+    @AsyncCallWrapper
     def MacroRunExternalPlayer(self, executable=None, args='', index=None):
         r'''RunExternalPlayer(executable=None, args='', index=None)
         
@@ -14613,6 +14738,8 @@ class MainFrame(wxp.Frame):
             self.__doc__ += self_frame.FormatDocstring(self.GetVideoFramerate)
             self.GetVideoFramecount = self_frame.MacroGetVideoFramecount
             self.__doc__ += self_frame.FormatDocstring(self.GetVideoFramecount)
+            self.GetPixelInfo = self_frame.MacroGetPixelInfo
+            self.__doc__ += self_frame.FormatDocstring(self.GetPixelInfo)
             self.RunExternalPlayer = self_frame.MacroRunExternalPlayer
             self.__doc__ += self_frame.FormatDocstring(self.RunExternalPlayer)
             self.SaveImage = self_frame.MacroSaveImage
