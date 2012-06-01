@@ -4,32 +4,10 @@ import sys
 import re
 import wx
 import pyavs
-import threading
 
-def worker(script, filename, extType, quality): 
-    AVS = pyavs.AvsClip(script)    
-    if AVS.IsErrorClip():
-        wx.CallAfter(avsp.MsgBox, AVS.error_message, 'Error')
-    else:
-        bmp = wx.EmptyBitmap(AVS.Width, AVS.Height)
-        mdc = wx.MemoryDC()
-        mdc.SelectObject(bmp)
-        count = 0
-        for bookmark in bookmarks:
-            if bookmark > avsp.GetVideoFramecount():
-                break
-            AVS.DrawFrame(bookmark, mdc.GetHDC())
-            if quality == -1:
-                bmp.SaveFile(filename % bookmark, extType)
-            else:
-                img = bmp.ConvertToImage()
-                img.SetOptionInt(wx.IMAGE_OPTION_QUALITY, quality)
-                img.SaveFile(filename % bookmark, extType)
-            count += 1            
-        wx.CallAfter(avsp.MsgBox, '%d image files created.' % count, 'Information')
-    
+# run in thread
 if avsp.IsScriptSaved():
-    filename = avsp.GetSaveFilename()    
+    filename = avsp.GetSaveFilename('Select the output directory and basename')    
     if filename:        
         dirname = os.path.dirname(filename)
         basename = os.path.basename(filename)
@@ -73,9 +51,27 @@ if avsp.IsScriptSaved():
             f.close()
             quality = -1
             if ext == '.jpg':
-                quality = wx.GetNumberFromUser('JPEG Qality (0-100):', '', 'JPEG Quality', 70, 0, 100)
-            thread = threading.Thread(target=worker, args=(script, filename, extDict[ext], quality))
-            thread.start()
+                quality = avsp.SafeCall(wx.GetNumberFromUser, 'JPEG Quality (0-100):', 
+                                        '', 'JPEG Quality', 70, 0, 100)
+            AVS = pyavs.AvsClip(script)
+            if AVS.IsErrorClip():
+                avsp.MsgBox(AVS.error_message, 'Error')
+            else:
+                bmp = wx.EmptyBitmap(AVS.Width, AVS.Height)
+                mdc = wx.MemoryDC()
+                mdc.SelectObject(bmp)
+                count = 0
+                for bookmark in bookmarks:
+                    if bookmark > avsp.GetVideoFramecount():
+                        break
+                    AVS.DrawFrame(bookmark, mdc.GetHDC())
+                    if quality == -1:
+                        bmp.SaveFile(filename % bookmark, extDict[ext])
+                    else:
+                        img = bmp.ConvertToImage()
+                        img.SetOptionInt(wx.IMAGE_OPTION_QUALITY, quality)
+                        img.SaveFile(filename % bookmark, extDict[ext])
+                    count += 1            
+                avsp.MsgBox('%d image files created.' % count, 'Information')
 else:
-    avsp.MsgBox('Please save the current script firstly!', 'Error')
-    
+    avsp.MsgBox('Please save the current script first!', 'Error')
