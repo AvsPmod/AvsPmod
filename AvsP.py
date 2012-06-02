@@ -4632,6 +4632,17 @@ class MainFrame(wxp.Frame):
                 wx.MessageBox(_("%s language couldn't be loaded") % self.options['lang'], 
                               _('Error'), style=wx.OK|wx.ICON_ERROR)
                 self.options['lang'] = 'eng'
+        
+        # Timer for saving the session periodically
+        class BackupTimer(wx.Timer):
+            def __init__(self, self_frame):
+                wx.Timer.__init__(self)
+                self.self_frame = self_frame
+            def Notify(self):
+                self.self_frame.SaveSession(self.self_frame.lastSessionFilename, saverecentdir=False, previewvisible=False)
+        self.backupTimer = BackupTimer(self)
+        if self.options['periodicbackup']:
+            self.backupTimer.Start(self.options['periodicbackup'] * 60000)
     
     def ProcessArguments(self, args):
         if args:
@@ -4814,6 +4825,7 @@ class MainFrame(wxp.Frame):
                 'usemonospacedfont': False,
                 'disablepreview': False,
                 'paranoiamode': False,
+                'periodicbackup': 0,
                 'autoupdatevideo': False,
             }
             # Import certain options from older version if necessary
@@ -5263,13 +5275,13 @@ class MainFrame(wxp.Frame):
                 #~((_('Highlight current line'), wxp.OPT_ELEM_CHECK, 'highlightline', _('Highlight the line that the caret is currently in'), dict() ), ),
                 #~(('       '+_('Highlight line color'), wxp.OPT_ELEM_COLOR, 'highlightlinecolor', _('Change the the highlight line color'), dict() ), ),
                 ((_('Show autocomplete on capital letters'), wxp.OPT_ELEM_CHECK, 'autocomplete', _('Turn on/off automatic autocomplete list when typing words starting with capital letters'), dict() ), ),
-                ((_('       '+'Amount of letters typed'), wxp.OPT_ELEM_SPIN, 'autocompletelength', _('Show autocomplete list when typing a certain amount of letters'), dict() ), ),
+                ((_('       '+'Amount of letters typed'), wxp.OPT_ELEM_SPIN, 'autocompletelength', _('Show autocomplete list when typing a certain amount of letters'), dict(min_val=0) ), ),
                 #~((_('Use monospaced font'), wxp.OPT_ELEM_CHECK, 'usemonospacedfont', _('Override all fonts to use a specified monospace font'), dict() ), ),
                 ((_('Wrap text'), wxp.OPT_ELEM_CHECK, 'wrap', _("Don't allow lines wider than the window"), dict() ), ),
                 ((_('Draw lines at fold points'), wxp.OPT_ELEM_CHECK, 'foldflag', _('For code folding, draw a line underneath if the fold point is not expanded'), dict() ), ),
                 ((_('Use tabs instead of spaces'), wxp.OPT_ELEM_CHECK, 'usetabs', _('Check to insert actual tabs instead of spaces when using the Tab key'), dict() ), ),
-                ((_('Tab width'), wxp.OPT_ELEM_SPIN, 'tabwidth', _('Set the size of the tabs in spaces'), dict() ), ),
-                ((_('Line margin width'), wxp.OPT_ELEM_SPIN, 'numlinechars', _('Initial space to reserve for the line margin in terms of number of digits'), dict() ), ),
+                ((_('Tab width'), wxp.OPT_ELEM_SPIN, 'tabwidth', _('Set the size of the tabs in spaces'), dict(min_val=0) ), ),
+                ((_('Line margin width'), wxp.OPT_ELEM_SPIN, 'numlinechars', _('Initial space to reserve for the line margin in terms of number of digits'), dict(min_val=0) ), ),
             ),
             (_('Autocomplete'),
                 ((_('Show autocomplete with variables'), wxp.OPT_ELEM_CHECK, 'autocompletevariables', _('Add user defined variables into autocomplete list'), dict() ), ),
@@ -5288,7 +5300,7 @@ class MainFrame(wxp.Frame):
                 ((_('Shared timeline'), wxp.OPT_ELEM_CHECK, 'enableframepertab', _('Seeking to a certain frame will seek to that frame on all tabs'), dict() ), ),
                 ((_('Allow AvsPmod to resize the window'), wxp.OPT_ELEM_CHECK, 'allowresize', _('Allow AvsPmod to resize and/or move the program window when updating the video preview'), dict() ), ),
                 ((_('Separate video preview window')+' *', wxp.OPT_ELEM_CHECK, 'separatevideowindow', _('Use a separate window for the video preview'), dict() ), ),
-                ((_('Min text lines on video preview')+' *', wxp.OPT_ELEM_SPIN, 'mintextlines', _('Minimum number of lines to show when displaying the video preview'), dict() ), ),
+                ((_('Min text lines on video preview')+' *', wxp.OPT_ELEM_SPIN, 'mintextlines', _('Minimum number of lines to show when displaying the video preview'), dict(min_val=0) ), ),
                 ((_('Customize video status bar...'), wxp.OPT_ELEM_BUTTON, 'videostatusbarinfo', _('Customize the video information shown in the program status bar'), dict(handler=self.OnConfigureVideoStatusBarMessage) ), ),
             ),
             (_('User Sliders'),
@@ -5307,6 +5319,7 @@ class MainFrame(wxp.Frame):
                 ((_('Save session for next launch'), wxp.OPT_ELEM_CHECK, 'startupsession', _('Automatically save the session on shutdown and load on next startup'), dict() ), ),
                 ((_('Always load startup session'), wxp.OPT_ELEM_CHECK, 'alwaysloadstartupsession', _('Always load the auto-saved session before opening any other file on startup'), dict() ), ),
                 ((_("Don't preview when loading a session"), wxp.OPT_ELEM_CHECK, 'hidepreview', _('Always hide the video preview window when loading a session'), dict() ), ),
+                ((_('Backup session periodically (minutes)'), wxp.OPT_ELEM_SPIN, 'periodicbackup', _('Backup the session every X minutes, if X > 0'), dict(min_val=0) ), ),
                 ((_('Backup session when previewing'), wxp.OPT_ELEM_CHECK, 'paranoiamode', _('If checked, the current session is backed up prior to previewing any new script'), dict() ), ),
                 ((_('Prompt to save when previewing'), wxp.OPT_ELEM_CHECK, 'promptwhenpreview', _('Prompt to save a script before previewing (inactive if previewing with unsaved changes)'), dict() ), ),
                 ((_('Preview scripts with unsaved changes'), wxp.OPT_ELEM_CHECK, 'previewunsavedchanges', _('Create a temporary preview script with unsaved changes when previewing the video'), dict() ), ),
@@ -5325,8 +5338,8 @@ class MainFrame(wxp.Frame):
                 ((_('Enable scroll wheel through similar tabs'), wxp.OPT_ELEM_CHECK, 'enabletabscrolling', _('Mouse scroll wheel cycles through tabs with similar videos'), dict() ), ),
                 ((_('Only allow a single instance of AvsPmod')+' *', wxp.OPT_ELEM_CHECK, 'singleinstance', _('Only allow a single instance of AvsPmod'), dict() ), ),
                 ((_('Show warning for bad plugin naming at startup'), wxp.OPT_ELEM_CHECK, 'dllnamewarning', _('Show warning at startup if there are dlls with bad naming in default plugin folder'), dict() ), ),
-                ((_('Max number of recent filenames'), wxp.OPT_ELEM_SPIN, 'nrecentfiles', _('This number determines how many filenames to store in the recent files menu'), dict() ), ),
-                ((_('Custom jump size:'), wxp.OPT_ELEM_SPIN, 'customjump', _('Jump size used in video menu'), dict() ), ),
+                ((_('Max number of recent filenames'), wxp.OPT_ELEM_SPIN, 'nrecentfiles', _('This number determines how many filenames to store in the recent files menu'), dict(min_val=0) ), ),
+                ((_('Custom jump size:'), wxp.OPT_ELEM_SPIN, 'customjump', _('Jump size used in video menu'), dict(min_val=0) ), ),
                 ((_('Custom jump size units'), wxp.OPT_ELEM_RADIO, 'customjumpunits', _('Units of custom jump size'), dict(choices=[(_('frames'), 'frames'),(_('seconds'), 'sec'),(_('minutes'), 'min'),(_('hours'), 'hr')]) ), ),
             ),
         )
@@ -7962,6 +7975,10 @@ class MainFrame(wxp.Frame):
             w, h = self.scriptNotebook.GetSize()
             self.scriptNotebook.SetSize((w, h-1))
             self.scriptNotebook.SetSize((w, h))
+            if self.options['periodicbackup']:
+                self.backupTimer.Start(self.options['periodicbackup'] * 60000)
+            elif self.backupTimer.IsRunning():
+                self.backupTimer.Stop()
         dlg.Destroy()
 
     def OnMenuHelpAvisynth(self, event):
@@ -9146,6 +9163,10 @@ class MainFrame(wxp.Frame):
         if ID == wx.ID_OK:
             self.options = dlg.GetDict()
             self.SetProgramTitle()
+            if self.options['periodicbackup']:
+                self.backupTimer.Start(self.options['periodicbackup'] * 60000)
+            elif self.backupTimer.IsRunning():
+                self.backupTimer.Stop()
         dlg.Destroy()
 
     def OnSliderLabelModifySliderProperties(self, event):
@@ -9306,6 +9327,8 @@ class MainFrame(wxp.Frame):
                     elif ID == wx.ID_CANCEL:
                         return
         # Save the session
+        if self.backupTimer.IsRunning():
+            self.backupTimer.Stop()
         if self.options['startupsession']:
             self.SaveSession(self.lastSessionFilename, saverecentdir=False,
                 frame=frame,
