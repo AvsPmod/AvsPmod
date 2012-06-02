@@ -146,8 +146,8 @@ for dir, ext_filter, include in dirs:
     data_files.extend(
         [(root.split(os.sep, 1)[1] if root.startswith('..') else root, 
           [os.path.join(root, file) for file in files 
-                if (not ext_filter or os.path.splitext(file)[1] in ext_filter) or 
-                   (not include or file in include)]
+                if (not ext_filter or os.path.splitext(file)[1] in ext_filter or 
+                    include and file in include)]
          ) for root, dirs, files in os.walk(dir)])
 
 # Generate the dist files

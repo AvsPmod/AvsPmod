@@ -4227,9 +4227,16 @@ class MainFrame(wxp.Frame):
         self.optionsfilename = os.path.join(self.programdir, 'options.dat')
         self.filterdbfilename = os.path.join(self.programdir, 'filterdb.dat')
         self.lastSessionFilename = os.path.join(self.programdir, '_last_session_.ses')
+        self.macrosfilename = os.path.join(self.programdir, 'macros', 'macros.dat')
         self.getOptionsDict()        
         self.IdleCall = []
         self.defineFilterInfo()
+        if os.path.isfile(self.macrosfilename):
+            f = open(self.macrosfilename, 'rb')
+            self.optionsMacros = cPickle.load(f)
+            f.close
+        else:
+            self.optionsMacros = {}
         
         # load translation file
         self.translations_dir = 'translations'
@@ -6204,7 +6211,7 @@ class MainFrame(wxp.Frame):
 
             menuInfo.append((''))
             menuInfo.append(('macros_readme.txt', '', self.OnMenuMacrosReadme, _('View the readme for making macros')))
-            menuInfo.append(('Open macros folder', '', self.OnMenuMacrosFolder, _('Open the macros folder')))
+            menuInfo.append((_('Open macros folder'), '', self.OnMenuMacrosFolder, _('Open the macros folder')))
         else:
             menuInfo.append((''))
         menu = self.createMenu(menuInfo, _('&Macros'), shortcutList, oldShortcuts)
@@ -9350,6 +9357,9 @@ class MainFrame(wxp.Frame):
         self.options['exitstatus'] = 0
         f = open(self.optionsfilename, mode='wb')
         cPickle.dump(self.options, f, protocol=0)
+        f.close()
+        f = open(self.macrosfilename, mode='wb')
+        cPickle.dump(self.optionsMacros, f, protocol=0)
         f.close()
         # Clean up
         wx.TheClipboard.Flush()
@@ -14856,8 +14866,11 @@ class MainFrame(wxp.Frame):
                 return AsyncCallWrapper(method)(*args, **kwargs)
             self.SafeCall = SafeCall
             self.__doc__ += self_frame.FormatDocstring(self.SafeCall)
-            self.__doc__ += ('last\n====\nThis variable contains the return value of the latest '
-                        'executed macro.  It is \nuseful to create reusable macros.\n')
+            self.__doc__ += ('Options\n=======\n\nThis is a dictionary that can be used to store persistent '
+                             'options.')
+            self.__doc__ += '\n'*3 + '-'*80 + '\n'*3
+            self.__doc__ += ('last\n====\n\nThis variable contains the return value of the latest '
+                             'executed macro.  It is \nuseful to create reusable macros.\n')
         
     
     def ExecuteMacro(self, macrofilename='', return_env=False):
@@ -14908,23 +14921,36 @@ class MainFrame(wxp.Frame):
                     lineList.append(macroLines.pop(0))
                 lineList += ['def AvsP_macro_main():'] + ['\t%s' % line for line in macroLines] + ['global last\nlast = AvsP_macro_main()']
                 macrotxt = '\n'.join(lineList)
-                # Execute the macro
+                # Prepare the macro variables
                 self.macroVars['avsp'] = self.AvsP_functions(self)
+                macrobasename = os.path.splitext(os.path.basename(macrofilename))[0]
+                match = re.match(r'\[\s*\d+\s*\]\s*(.*)', macrobasename)
+                if match:
+                    macrobasename = match.group(1)
+                if macrobasename not in self.optionsMacros:
+                    self.optionsMacros[macrobasename] = {}
+                self.macroVars['avsp'].Options = self.optionsMacros[macrobasename]
+                hash_pre = hash(repr(self.optionsMacros[macrobasename].items()))
                 def MacroHelp(function):
                     '''help(function)\nPrint the function's description of use'''
                     print self.FormatDocstring(function)
                 self.macroVars['help'] = MacroHelp
+                # Execute the macro
+                def MacroFunction():
+                    try:
+                        exec macrotxt in self.macroVars, {}
+                    except:
+                        ShowException()
+                    if hash(repr(self.optionsMacros[macrobasename].items())) != hash_pre:
+                        f = open(self.macrosfilename, mode='wb')
+                        cPickle.dump(self.optionsMacros, f, protocol=0)
+                        f.close()
                 if thread:    
-                    def MacroThread():
-                        try:
-                            exec macrotxt in self.macroVars, {}
-                        except:
-                            ShowException()
-                    thread = threading.Thread(target=MacroThread, name='MacroThread')
+                    thread = threading.Thread(target=MacroFunction, name='MacroThread')
                     thread.daemon = True
                     thread.start()
                 else:
-                    exec macrotxt in self.macroVars, {}
+                    MacroFunction()
             except:
                 ShowException()
         else:
