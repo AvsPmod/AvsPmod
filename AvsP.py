@@ -4476,7 +4476,7 @@ class MainFrame(wxp.Frame):
             self.videoStatusBarInfo = self.options['videostatusbarinfo']
         self.videoStatusBarInfoParsed, self.showVideoPixelInfo, self.showVideoPixelAvisynth = self.ParseVideoStatusBarInfo(self.videoStatusBarInfo)
         self.foldAllSliders = True
-        self.matrix = 'Rec601'
+        self.matrix = ['auto', 'tv']
         self.interlaced = self.swapuv = False
         self.flip = []
         self.titleEntry = None
@@ -5838,10 +5838,11 @@ class MainFrame(wxp.Frame):
             )
         )
         self.yuv2rgbDict = {
-            _('Rec601'): 'Rec601',
-            _('PC.601'): 'PC.601',
-            _('Rec709'): 'Rec709',
-            _('PC.709'): 'PC.709',
+            _('Resolution-based'): 'auto',
+            _('BT.709'): '709',
+            _('BT.601'): '601',
+            _('TV levels'): 'tv',
+            _('PC levels'): 'pc',
             _('Progressive'): 'Progressive',
             _('Interlaced'): 'Interlaced',
             _('Swap UV'): 'swapuv',
@@ -6018,10 +6019,12 @@ class MainFrame(wxp.Frame):
                     (
                     (reverseMatrixDict['swapuv'], '', self.OnMenuVideoYUV2RGB, _('Swap chroma channels (U and V)'), wx.ITEM_CHECK, False),
                     (''),
-                    (reverseMatrixDict['Rec601'], '', self.OnMenuVideoYUV2RGB, _('For YUV source, assume it is Rec601 (default)'), wx.ITEM_RADIO, True),
-                    (reverseMatrixDict['PC.601'], '', self.OnMenuVideoYUV2RGB, _('For YUV source, assume it is PC.601'), wx.ITEM_RADIO, False),
-                    (reverseMatrixDict['Rec709'], '', self.OnMenuVideoYUV2RGB, _('For YUV source, assume it is Rec709'), wx.ITEM_RADIO, False),
-                    (reverseMatrixDict['PC.709'], '', self.OnMenuVideoYUV2RGB, _('For YUV source, assume it is PC.709'), wx.ITEM_RADIO, False),
+                    (reverseMatrixDict['auto'], '', self.OnMenuVideoYUV2RGB, _('Use BT.709 coefficients for HD, BT.601 for SD (default)'), wx.ITEM_RADIO, True),
+                    (reverseMatrixDict['709'], '', self.OnMenuVideoYUV2RGB, _('Use BT.709 coefficients'), wx.ITEM_RADIO, False),
+                    (reverseMatrixDict['601'], '', self.OnMenuVideoYUV2RGB, _('Use BT.601 coefficients'), wx.ITEM_RADIO, False),
+                    (''),
+                    (reverseMatrixDict['tv'], '', self.OnMenuVideoYUV2RGB, _('Use limited range (default)'), wx.ITEM_RADIO, True),
+                    (reverseMatrixDict['pc'], '', self.OnMenuVideoYUV2RGB, _('Use full range'), wx.ITEM_RADIO, False),
                     (''),
                     (reverseMatrixDict['Progressive'], '', self.OnMenuVideoYUV2RGB, _('For YV12 only, assume it is progressive (default)'), wx.ITEM_RADIO, True),
                     (reverseMatrixDict['Interlaced'], '', self.OnMenuVideoYUV2RGB, _('For YV12 only, assume it is interlaced'), wx.ITEM_RADIO, False),
@@ -7523,7 +7526,10 @@ class MainFrame(wxp.Frame):
             if self.currentScript.AVI:
                 refresh = self.currentScript.AVI.IsYV12
         else:
-            self.matrix = value
+            if value in ('tv', 'pc'):
+                self.matrix[1] = value
+            else:
+                self.matrix[0] = value
             if self.currentScript.AVI:
                 refresh = self.currentScript.AVI.IsYUV
         if self.previewWindowVisible and refresh:

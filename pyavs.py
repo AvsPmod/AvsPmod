@@ -100,7 +100,7 @@ def ExitRoutines():
     DrawDibClose(handleDib[0])
 
 class AvsClip:
-    def __init__(self, script, filename='', env=None, fitHeight=None, fitWidth=None, oldFramecount=240, keepRaw=False, matrix='Rec601', interlaced=False, swapuv=False):
+    def __init__(self, script, filename='', env=None, fitHeight=None, fitWidth=None, oldFramecount=240, keepRaw=False, matrix=['auto', 'tv'], interlaced=False, swapuv=False):
         # Internal variables
         self.initialized = False
         self.error_message = None
@@ -260,7 +260,14 @@ class AvsClip:
                 except avisynth.AvisynthError, err:
                     return
             arg = avisynth.AVS_Value(self.clip)
-            arg1 = avisynth.AVS_Value(matrix)
+            if isinstance(matrix, basestring):
+                arg1 = avisynth.AVS_Value(matrix)
+            else:
+                matrix = matrix[:]
+                if matrix[0] == 'auto':
+                    matrix[0] = '709' if self.HeightActual > 576 else '601'
+                matrix[1] = 'Rec' if matrix[1] == 'tv' else 'PC.'
+                arg1 = avisynth.AVS_Value(matrix[1] + matrix[0])
             if not self.IsYV12:
                 interlaced = False
             arg2 = avisynth.AVS_Value(interlaced)
