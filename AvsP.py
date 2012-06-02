@@ -1371,9 +1371,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
             if findpos==-1:
                 findpos = self.FindText(0,maxPos,text,stcflags)
             if findpos==-1:
-                dlg = wx.MessageDialog(self, _('Cannot find "%(text)s".') % locals(), _('Information'),wx.OK | wx.ICON_INFORMATION)
-                dlg.ShowModal()
-                dlg.Destroy()
+                self.app.GetStatusBar().SetStatusText(_('Cannot find "%(text)s"') % locals())
             else:
                 self.SetSelection(findpos, findpos+len(text))
         else:
@@ -1384,9 +1382,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                 minPos = self.GetLineEndPosition(self.GetLineCount()-1)
                 findpos = self.FindText(minPos,maxPos,text,stcflags)
             if findpos==-1:
-                dlg = wx.MessageDialog(self, _('Cannot find "%(text)s".') % locals(), _('Information'),wx.OK | wx.ICON_INFORMATION)
-                dlg.ShowModal()
-                dlg.Destroy()
+                self.app.GetStatusBar().SetStatusText(_('Cannot find "%(text)s"') % locals())
             else:
                 self.SetAnchor(findpos)
                 self.SetCurrentPos(findpos+len(text))
@@ -1432,9 +1428,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
             else:
                 exitflag = 1
         self.GotoPos(0)
-        dlg = wx.MessageDialog(self, _('Replaced %(count)i times') % locals(),_('Replace Information'),wx.OK | wx.ICON_INFORMATION)
-        dlg.ShowModal()
-        dlg.Destroy()
+        self.app.GetStatusBar().SetStatusText(_('Replaced %(count)i times') % locals())
 
     @staticmethod
     def OnFindNext(self):
