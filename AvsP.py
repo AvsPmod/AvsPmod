@@ -4227,7 +4227,6 @@ class MainFrame(wxp.Frame):
         
         # load translation file
         self.translations_dir = 'translations'
-        self.options['lang'] = self.options.get('lang', 'eng') # remove this line later
         if self.options['lang'] != 'eng':
             sys.path.append(self.translations_dir)
             sys.dont_write_bytecode = True
@@ -4651,7 +4650,6 @@ class MainFrame(wxp.Frame):
                     self.currentScript.EnsureCaretVisible()
 
     def getOptionsDict(self):
-        boolMakeOptions = True
         oldOptions = None
         if os.path.exists(self.optionsfilename):
             f = open(self.optionsfilename, mode='rb')
@@ -4660,188 +4658,184 @@ class MainFrame(wxp.Frame):
             oldVersion = oldOptions.get('version')
             if oldVersion.startswith('1.'):
                 oldOptions = None
-            elif oldVersion == self.version:
-                self.options = oldOptions
-                boolMakeOptions = False
-        if boolMakeOptions or __debug__:
-            templateDict = {
-                'avi': 'AVISource(***)',
-                'wav': 'WAVSource(***)',
-                'd2v': 'MPEG2Source(***, cpu=0)',
-                'dga': 'AVCSource(***)',
-                'mpg': 'DirectShowSource(***)',
-                'mp4': 'DirectShowSource(***)',
-                'mkv': 'DirectShowSource(***)',
-                'wmv': 'DirectShowSource(***)',
-                'avs': 'Import(***)',
-                'bmp': 'ImageReader(***)',
-                'jpg': 'ImageReader(***)',
-                'png': 'ImageReader(***)',
-            }
-            textstylesDict = {
-                'default': 'face:Verdana,size:10,fore:#000000,back:#FFFFFF',
-                'comment': 'face:Comic Sans MS,size:9,fore:#007F00,back:#FFFFFF',
-                'number': 'face:Verdana,size:10,fore:#007F7F,back:#FFFFFF',
-                'operator': 'face:Verdana,size:10,fore:#000000,back:#FFFFFF,bold',
-                'string': 'face:Courier New,size:10,fore:#7F007F,back:#FFFFFF',
-                'stringtriple': 'face:Courier New,size:10,fore:#7F0000,back:#FFFFFF',
-                'stringeol': 'face:Courier New,size:10,fore:#000000,back:#E0C0E0',
-                'internalfilter': 'face:Verdana,size:10,fore:#00007F,back:#FFFFFF,bold',
-                'externalfilter': 'face:Verdana,size:10,fore:#0080C0,back:#FFFFFF,bold',
-                'clipproperty': 'face:Verdana,size:10,fore:#00007F,back:#FFFFFF',
-                'userdefined': 'face:Verdana,size:10,fore:#8000FF,back:#FFFFFF,bold',
-                'userslider': 'face:Arial,size:10,fore:#00007F,back:#FFFFFF',
-                'monospaced': 'face:Courier New,size:10',
-                'internalfunction': 'face:Verdana,size:10,fore:#007F7F,back:#FFFFFF',
-                'keyword': 'face:Verdana,size:10,fore:#400080,back:#FFFFFF,bold',
-                'miscword': 'face:Verdana,size:10,fore:#00007F,back:#FFFFFF,bold',
-                'calltip': 'fore:#808080,back:#FFFFFF',
-                'calltiphighlight': 'fore:#000000',
-                'bracelight': 'face:Verdana,size:10,fore:#0000FF,back:#FFFFFF,bold',
-                'badbrace': 'face:Verdana,size:10,fore:#FF0000,back:#FFFFFF,bold',
-                'badnumber': 'face:Verdana,size:10,fore:#FF0000,back:#FFFFFF',
-                'linenumber': 'face:Verdana,fore:#555555,back:#C0C0C0',
-                'datatype': 'face:Verdana,size:10,fore:#0000FF,back:#FFFFFF',
-                'cursor': 'fore:#000000',
-                'highlight': 'back:#C0C0C0',                
-                'highlightline': 'back:#E8E8FF',
-                'scrapwindow': 'face:Comic Sans MS,size:10,fore:#0000AA,back:#F5EF90',
-            }
-            # Create the options dict
-            self.options = {
-                # INTERNAL OPTIONS
-                'templates': templateDict,
-                'textstyles': textstylesDict,
-                #~ 'avskeywords': avsKeywords,
-                #~ 'avsoperators': avsOperators,
-                #~ 'avsdatatypes': avsDatatypes,
-                #~ 'avsmiscwords': [],
-                'filteroverrides': {},
-                'filterpresets': {},
-                'filterdb': {},
-                'autcompletetypeflags': [True,True,True,True,True],
-                'filterremoved': set(),
-                'shortcuts': [],
-                'recentdir': '',
-                'recentdirPlugins': '',
-                'recentdirSession': '',
-                'recentfiles': None,
-                #~ 'lasthelpdir': None,
-                'scraptext': ('', 0, 0),
-                'maximized': False,
-                'maximized2': False,
-                'dimensions': (50, 50, 700, 550),
-                'cropchoice': 0,
-                'triminsertchoice': 0,
-                'trimreversechoice': 0,
-                'trimmarkframes': True,
-                'imagechoice': 0,
-                'imagenameformat': '%s%06d',
-                'imagesavedir': '',
-                'zoomindex': 2,
-                'exitstatus': 0,
-                'reservedshortcuts': ['Tab', 'Shift+Tab', 'Ctrl+Z', 'Ctrl+Y', 'Ctrl+X', 'Ctrl+C', 'Ctrl+V', 'Ctrl+A'],
-                # GENERAL OPTIONS
-                'helpdir': r'%programdir%\help',
-                'avisynthdir': '',
-                'avisynthhelpfile': r'%avisynthdir%\docs\english\index.htm',
-                'externalplayer': '',
-                'externalplayerargs': '',
-                'docsearchpaths': r'%avisynthdir%\plugins; %avisynthdir%\docs\english\corefilters; %avisynthdir%\docs\english\externalfilters;',
-                'docsearchurl':'http://www.google.com/search?q=%filtername%+Avisynth',
-                # TEXT OPTIONS
-                'calltips': True,
-                'frequentcalltips': False,
-                'syntaxhighlight': True,
-                'usestringeol': True,
-                'autocomplete': True,
-                'autocompletelength': 1,
-                'autocompleteexclusions': set(),
-                'autoparentheses': 1,
-                'presetactivatekey': 'return',
-                'wrap': False,
-                'highlightline': True,
-                'usetabs': False,
-                'tabwidth': 4,
-                'numlinechars': 1,
-                'foldflag': 1,
-                'autocompletesingle': True,
-                'autocompletevariables': True,
-                'autocompleteicons': True,
-                'calltipsoverautocomplete': False,
-                # VIDEO OPTIONS
-                'dragupdate': True,
-                'focusonrefresh': True,
-                'previewunsavedchanges': True,
-                'hidepreview': False,
-                'refreshpreview': True,
-                'promptwhenpreview': False,
-                'separatevideowindow': False,
-                #~ 'showvideopixelinfo': True,
-                #~ 'pixelcolorformat': 'hex',
-                'videostatusbarinfo': None,
-                'cropminx': 16,
-                'cropminy': 16,
-                #~ 'zoomresizescript': 'BicubicResize(width-width%8, height-height%8, b=1/3, c=1/3)',
-                'customjump': 10,
-                'customjumpunits': 'sec',
-                'enabletabscrolling': True,
-                'enableframepertab': True,
-                # AUTOSLIDER OPTIONS
-                'keepsliderwindowhidden': False,
-                'autoslideron': True,
-                'autosliderstartfold': 0, #1,
-                'autoslidermakeintfloat': True,
-                'autoslidermakecolor': True,
-                'autoslidermakebool': True,
-                'autoslidermakestringlist': True,
-                'autoslidermakestringfilename': True,
-                'autoslidermakeunknown': True,
-                'autosliderexclusions': '',
-                # MISC OPTIONS
-                'lang': 'eng',
-                'startupsession': True,
-                'alwaysloadstartupsession': False,
-                'closeneversaved': False,
-                'promptexitsave': True,
-                'savemarkedavs': True,
-                'loadstartupbookmarks': True,
-                'nrecentfiles': 5,
-                'allowresize': True,
-                'mintextlines': 2,
-                'usetabimages': True,
-                'multilinetab': False,
-                'fixedwidthtab': False,
-                'dllnamewarning': True,
-                # TOGGLE OPTIONS
-                'alwaysontop': False,
-                'singleinstance': False,
-                'usemonospacedfont': False,
-                'disablepreview': False,
-                'paranoiamode': False,
-                'periodicbackup': 0,
-                'autoupdatevideo': False,
-            }
-            # Import certain options from older version if necessary
-            if oldOptions is not None:
-                # Update the new options dictionnary with the old options
-                updateInfo = [(k,v) for k,v in oldOptions.items() if k in self.options]
-                self.options.update(updateInfo)
-                #~ for key in self.options.keys():
-                    #~ if key in oldOptions:
-                        #~ self.options[key] = optionsDict[key]
-                # Update the new options sub-dictionnaries with the old options
-                for key, d1 in (('templates', templateDict), ('textstyles', textstylesDict)):
-                    d2 = oldOptions.get(key)
-                    if d2 is not None:
-                        d1.update(d2)
-                    self.options[key] = d1
-                #~ for key, value in templateDict.items():
-                    #~ self.options['templates'].setdefault(key, value)
-                #~ for key, value in textStyles.items():
-                    #~ if not self.optionsTextStyles.has_key(key):
-                        #~ self.optionsTextStyles[key] = value
-            self.options['version'] = self.version
+        templateDict = {
+            'avi': 'AVISource(***)',
+            'wav': 'WAVSource(***)',
+            'd2v': 'MPEG2Source(***, cpu=0)',
+            'dga': 'AVCSource(***)',
+            'mpg': 'DirectShowSource(***)',
+            'mp4': 'DirectShowSource(***)',
+            'mkv': 'DirectShowSource(***)',
+            'wmv': 'DirectShowSource(***)',
+            'avs': 'Import(***)',
+            'bmp': 'ImageReader(***)',
+            'jpg': 'ImageReader(***)',
+            'png': 'ImageReader(***)',
+        }
+        textstylesDict = {
+            'default': 'face:Verdana,size:10,fore:#000000,back:#FFFFFF',
+            'comment': 'face:Comic Sans MS,size:9,fore:#007F00,back:#FFFFFF',
+            'number': 'face:Verdana,size:10,fore:#007F7F,back:#FFFFFF',
+            'operator': 'face:Verdana,size:10,fore:#000000,back:#FFFFFF,bold',
+            'string': 'face:Courier New,size:10,fore:#7F007F,back:#FFFFFF',
+            'stringtriple': 'face:Courier New,size:10,fore:#7F0000,back:#FFFFFF',
+            'stringeol': 'face:Courier New,size:10,fore:#000000,back:#E0C0E0',
+            'internalfilter': 'face:Verdana,size:10,fore:#00007F,back:#FFFFFF,bold',
+            'externalfilter': 'face:Verdana,size:10,fore:#0080C0,back:#FFFFFF,bold',
+            'clipproperty': 'face:Verdana,size:10,fore:#00007F,back:#FFFFFF',
+            'userdefined': 'face:Verdana,size:10,fore:#8000FF,back:#FFFFFF,bold',
+            'userslider': 'face:Arial,size:10,fore:#00007F,back:#FFFFFF',
+            'monospaced': 'face:Courier New,size:10',
+            'internalfunction': 'face:Verdana,size:10,fore:#007F7F,back:#FFFFFF',
+            'keyword': 'face:Verdana,size:10,fore:#400080,back:#FFFFFF,bold',
+            'miscword': 'face:Verdana,size:10,fore:#00007F,back:#FFFFFF,bold',
+            'calltip': 'fore:#808080,back:#FFFFFF',
+            'calltiphighlight': 'fore:#000000',
+            'bracelight': 'face:Verdana,size:10,fore:#0000FF,back:#FFFFFF,bold',
+            'badbrace': 'face:Verdana,size:10,fore:#FF0000,back:#FFFFFF,bold',
+            'badnumber': 'face:Verdana,size:10,fore:#FF0000,back:#FFFFFF',
+            'linenumber': 'face:Verdana,fore:#555555,back:#C0C0C0',
+            'datatype': 'face:Verdana,size:10,fore:#0000FF,back:#FFFFFF',
+            'cursor': 'fore:#000000',
+            'highlight': 'back:#C0C0C0',                
+            'highlightline': 'back:#E8E8FF',
+            'scrapwindow': 'face:Comic Sans MS,size:10,fore:#0000AA,back:#F5EF90',
+        }
+        # Create the options dict
+        self.options = {
+            # INTERNAL OPTIONS
+            'templates': templateDict,
+            'textstyles': textstylesDict,
+            #~ 'avskeywords': avsKeywords,
+            #~ 'avsoperators': avsOperators,
+            #~ 'avsdatatypes': avsDatatypes,
+            #~ 'avsmiscwords': [],
+            'filteroverrides': {},
+            'filterpresets': {},
+            'filterdb': {},
+            'autcompletetypeflags': [True,True,True,True,True],
+            'filterremoved': set(),
+            'shortcuts': [],
+            'recentdir': '',
+            'recentdirPlugins': '',
+            'recentdirSession': '',
+            'recentfiles': None,
+            #~ 'lasthelpdir': None,
+            'scraptext': ('', 0, 0),
+            'maximized': False,
+            'maximized2': False,
+            'dimensions': (50, 50, 700, 550),
+            'cropchoice': 0,
+            'triminsertchoice': 0,
+            'trimreversechoice': 0,
+            'trimmarkframes': True,
+            'imagechoice': 0,
+            'imagenameformat': '%s%06d',
+            'imagesavedir': '',
+            'zoomindex': 2,
+            'exitstatus': 0,
+            'reservedshortcuts': ['Tab', 'Shift+Tab', 'Ctrl+Z', 'Ctrl+Y', 'Ctrl+X', 'Ctrl+C', 'Ctrl+V', 'Ctrl+A'],
+            # GENERAL OPTIONS
+            'helpdir': r'%programdir%\help',
+            'avisynthdir': '',
+            'avisynthhelpfile': r'%avisynthdir%\docs\english\index.htm',
+            'externalplayer': '',
+            'externalplayerargs': '',
+            'docsearchpaths': r'%avisynthdir%\plugins; %avisynthdir%\docs\english\corefilters; %avisynthdir%\docs\english\externalfilters;',
+            'docsearchurl':'http://www.google.com/search?q=%filtername%+Avisynth',
+            # TEXT OPTIONS
+            'calltips': True,
+            'frequentcalltips': False,
+            'syntaxhighlight': True,
+            'usestringeol': True,
+            'autocomplete': True,
+            'autocompletelength': 1,
+            'autocompleteexclusions': set(),
+            'autoparentheses': 1,
+            'presetactivatekey': 'return',
+            'wrap': False,
+            'highlightline': True,
+            'usetabs': False,
+            'tabwidth': 4,
+            'numlinechars': 1,
+            'foldflag': 1,
+            'autocompletesingle': True,
+            'autocompletevariables': True,
+            'autocompleteicons': True,
+            'calltipsoverautocomplete': False,
+            # VIDEO OPTIONS
+            'dragupdate': True,
+            'focusonrefresh': True,
+            'previewunsavedchanges': True,
+            'hidepreview': False,
+            'refreshpreview': True,
+            'promptwhenpreview': False,
+            'separatevideowindow': False,
+            #~ 'showvideopixelinfo': True,
+            #~ 'pixelcolorformat': 'hex',
+            'videostatusbarinfo': None,
+            'cropminx': 16,
+            'cropminy': 16,
+            #~ 'zoomresizescript': 'BicubicResize(width-width%8, height-height%8, b=1/3, c=1/3)',
+            'customjump': 10,
+            'customjumpunits': 'sec',
+            'enabletabscrolling': True,
+            'enableframepertab': True,
+            # AUTOSLIDER OPTIONS
+            'keepsliderwindowhidden': False,
+            'autoslideron': True,
+            'autosliderstartfold': 0, #1,
+            'autoslidermakeintfloat': True,
+            'autoslidermakecolor': True,
+            'autoslidermakebool': True,
+            'autoslidermakestringlist': True,
+            'autoslidermakestringfilename': True,
+            'autoslidermakeunknown': True,
+            'autosliderexclusions': '',
+            # MISC OPTIONS
+            'lang': 'eng',
+            'startupsession': True,
+            'alwaysloadstartupsession': False,
+            'closeneversaved': False,
+            'promptexitsave': True,
+            'savemarkedavs': True,
+            'loadstartupbookmarks': True,
+            'nrecentfiles': 5,
+            'allowresize': True,
+            'mintextlines': 2,
+            'usetabimages': True,
+            'multilinetab': False,
+            'fixedwidthtab': False,
+            'dllnamewarning': True,
+            # TOGGLE OPTIONS
+            'alwaysontop': False,
+            'singleinstance': False,
+            'usemonospacedfont': False,
+            'disablepreview': False,
+            'paranoiamode': False,
+            'periodicbackup': 0,
+            'autoupdatevideo': False,
+        }
+        # Import certain options from older version if necessary
+        if oldOptions is not None:
+            # Update the new options dictionnary with the old options
+            updateInfo = [(k,v) for k,v in oldOptions.items() if k in self.options]
+            self.options.update(updateInfo)
+            #~ for key in self.options.keys():
+                #~ if key in oldOptions:
+                    #~ self.options[key] = optionsDict[key]
+            # Update the new options sub-dictionnaries with the old options
+            for key, d1 in (('templates', templateDict), ('textstyles', textstylesDict)):
+                d2 = oldOptions.get(key)
+                if d2 is not None:
+                    d1.update(d2)
+                self.options[key] = d1
+            #~ for key, value in templateDict.items():
+                #~ self.options['templates'].setdefault(key, value)
+            #~ for key, value in textStyles.items():
+                #~ if not self.optionsTextStyles.has_key(key):
+                    #~ self.optionsTextStyles[key] = value
+        self.options['version'] = self.version
         # Get the avisynth directory as necessary
         if not os.path.isdir(self.options['avisynthdir']):
             try:
