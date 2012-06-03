@@ -8,17 +8,18 @@ A ZIP or 7z archive will be created in its same directory.
 Requirements
 ------------
 
-- Python (versions 2.5-2.7 supported)
-- Microsoft runtime DLLs (see below)
+- Python (versions 2.6-2.7 supported)
+- Microsoft runtime DLLs
 - wxPython (2.6-2.8 supported, 2.9 MAY work)
+- Additional included resources (see below)
 - py2exe
 - editbin (optional)
 - UPX (optional)
 - 7-Zip (optional)
 
 
-Python 2.6+ only
-----------------
+Microsoft runtime DLLs
+----------------------
 
 Some Microsoft Visual C runtime DLLs are needed: 'msvcm90.dll', 'msvcp90.dll' 
 and 'msvcr90.dll'.  Chances are that these files are already present in your 
@@ -30,11 +31,12 @@ from Visual Studio or another application and place them in the same directory
 as the AvsPmod source files (the version needed is 9.0.21022.8).
 
 
-Python 2.5 only
-----------------
-
-'msvcr71.dll' is needed if you're building AvsPmod with Python 2.5.  Normally 
-you don't have to include it manually.
+Additional included resources
+-----------------------------
+avs2avi <http://moitah.net/> is needed for the 'Save to AVI' tool.  This two 
+files are expected to be found in the 'tools' subdirectory:
+- avs2avi.exe
+- avs2avi_src.zip
 
 
 editbin
@@ -54,3 +56,9 @@ UPX can be used to compress the executable files.  If 7-Zip is present, a 7z
 archive is created instead of ZIP.  The build script searchs for them in the 
 'Program Files' folder. You can also just put upx.exe and/or 7z.exe in the 
 same directory as the source code files.
+
+
+Other
+-----
+
+Rename/copy readme.txt to README.md if not present.
