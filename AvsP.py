@@ -9277,9 +9277,10 @@ class MainFrame(wxp.Frame):
         f = open(self.optionsfilename, mode='wb')
         cPickle.dump(self.options, f, protocol=0)
         f.close()
-        f = open(self.macrosfilename, mode='wb')
-        cPickle.dump(self.optionsMacros, f, protocol=0)
-        f.close()
+        if os.path.isdir('macros'):
+            f = open(self.macrosfilename, mode='wb')
+            cPickle.dump(self.optionsMacros, f, protocol=0)
+            f.close()
         # Clean up
         wx.TheClipboard.Flush()
         for index in xrange(self.scriptNotebook.GetPageCount()):
