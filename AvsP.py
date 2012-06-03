@@ -10030,12 +10030,6 @@ class MainFrame(wxp.Frame):
                 self.options['imagenameformat'] = fmt
             dlg.Destroy()
         if filename:
-            script, index = self.getScriptAtIndex(index)
-            if script is None or script.AVI is None:
-                wx.MessageBox(_('No image to save'), _('Error'), style=wx.OK|wx.ICON_ERROR)
-                return False
-            #~ if script==None:
-                #~ script = self.currentScript
             w = script.AVI.Width
             h = script.AVI.Height
             bmp = wx.EmptyBitmap(w, h)
@@ -14419,6 +14413,7 @@ class MainFrame(wxp.Frame):
         Two conditions must be met to ensure that is correct:
         - Avisynth frame cache must be disabled, e.g. SetMemoryMax(1)
         - No filters that request multiple frames can be used in the script.
+        
         '''
         script, index = self.getScriptAtIndex(index)
         if script is None:
@@ -14743,6 +14738,8 @@ class MainFrame(wxp.Frame):
             self.__doc__ += self_frame.FormatDocstring(self.GetVideoFramecount)
             self.GetPixelInfo = self_frame.MacroGetPixelInfo
             self.__doc__ += self_frame.FormatDocstring(self.GetPixelInfo)
+            self.GetVar = self_frame.MacroGetVar
+            self.__doc__ += self_frame.FormatDocstring(self.GetVar)
             self.RunExternalPlayer = self_frame.MacroRunExternalPlayer
             self.__doc__ += self_frame.FormatDocstring(self.RunExternalPlayer)
             self.SaveImage = self_frame.MacroSaveImage
