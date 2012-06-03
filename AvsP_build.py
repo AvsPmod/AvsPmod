@@ -40,6 +40,7 @@ def main():
     programdirname = os.path.join(tempdir, programdirname)
     
     # Create/update the master translation file
+    print '\nCreating translation file...'
     if not AvsP_i18n.main():
         return
     

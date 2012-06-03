@@ -7,7 +7,7 @@ import pyavs
 
 # run in thread
 if avsp.IsScriptSaved():
-    filename = avsp.GetSaveFilename('Select the output directory and basename')    
+    filename = avsp.GetSaveFilename(_('Select the output directory and basename'))
     if filename:        
         dirname = os.path.dirname(filename)
         basename = os.path.basename(filename)
@@ -51,11 +51,11 @@ if avsp.IsScriptSaved():
             f.close()
             quality = -1
             if ext == '.jpg':
-                quality = avsp.SafeCall(wx.GetNumberFromUser, 'JPEG Quality (0-100):', 
-                                        '', 'JPEG Quality', 70, 0, 100)
+                quality = avsp.SafeCall(wx.GetNumberFromUser, _('JPEG Quality (0-100):'), 
+                                        '', _('JPEG Quality'), 70, 0, 100)
             AVS = pyavs.AvsClip(script)
             if AVS.IsErrorClip():
-                avsp.MsgBox(AVS.error_message, 'Error')
+                avsp.MsgBox(AVS.error_message, _('Error'))
             else:
                 bmp = wx.EmptyBitmap(AVS.Width, AVS.Height)
                 mdc = wx.MemoryDC()
@@ -72,6 +72,6 @@ if avsp.IsScriptSaved():
                         img.SetOptionInt(wx.IMAGE_OPTION_QUALITY, quality)
                         img.SaveFile(filename % bookmark, extDict[ext])
                     count += 1            
-                avsp.MsgBox('%d image files created.' % count, 'Information')
+                avsp.MsgBox(_('%d image files created.') % count, _('Information'))
 else:
-    avsp.MsgBox('Please save the current script first!', 'Error')
+    avsp.MsgBox(_('Please save the current script first!'), _('Error'))

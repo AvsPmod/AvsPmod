@@ -11,9 +11,9 @@ import subprocess
 infile = avsp.SaveScript()
 
 # Get basic encoder options with a dialog box
-labels = ['Bitrate:', 'Output width:', 'Output height:', 'Output filename:']
+labels = [_('Bitrate:'), _('Output width:'), _('Output height:'), _('Output filename:')]
 defaults = ['500', '320', '240', infile+'.avi']
-entries = avsp.GetTextEntry(labels, defaults, 'Enter encoder info')
+entries = avsp.GetTextEntry(labels, defaults, _('Enter encoder info'))
 
 if entries:
     # Run the encoder
@@ -43,4 +43,4 @@ if entries:
         # Run the second pass
         # args[-3] = '2'
         # subprocess.call(args)    
-    avsp.MsgBox('Encoding is disabled, please read the "Encoding example 2.py" macro for info')
+    avsp.MsgBox(_('Encoding is disabled, please read the "Encoding example 2.py" macro for info'))

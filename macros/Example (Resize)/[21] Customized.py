@@ -6,7 +6,7 @@ boolsize = False
 try:
     x, y = last
 except:
-    text = avsp.GetTextEntry('Enter a pixel ratio or new size. e.g. 40:33, 1.212 or 640x360', '', 'Customized aspect ratio')
+    text = avsp.GetTextEntry(_('Enter a pixel ratio or new size. e.g. 40:33, 1.212 or 640x360'), '', _('Customized aspect ratio'))
     text = text.lower()
     try:
         if ':' in text:
@@ -34,22 +34,22 @@ else:
         return
 
 # retrieve menu item's state to create a suitable avs statement
-if avsp.IsMenuChecked('create new tab'):
+if avsp.IsMenuChecked(_('create new tab')):
     text = avsp.GetText()
     avsp.NewTab()
     avsp.SetText(text)
     
-if avsp.IsMenuChecked('force mod 2'):
+if avsp.IsMenuChecked(_('force mod 2')):
     width += width%2
     height += height%2
     
-if avsp.IsMenuChecked('bilinear'):
+if avsp.IsMenuChecked(_('bilinear')):
     filter = 'BilinearResize'
-elif avsp.IsMenuChecked('bicubic'):
+elif avsp.IsMenuChecked(_('bicubic')):
     filter = 'BicubicResize'
-elif avsp.IsMenuChecked('lanczos'):
+elif avsp.IsMenuChecked(_('lanczos')):
     filter = 'LanczosResize'
-elif avsp.IsMenuChecked('spline36'):
+elif avsp.IsMenuChecked(_('spline36')):
     filter = 'Spline36Resize'
     
 # insert text and refresh preview

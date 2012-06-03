@@ -17,4 +17,4 @@ filename = avsp.SaveScript()
 exe = r'C:\Progam Files\ffmpeg\ffmpeg.exe'
 outputfilename = filename+'.avi'
 #subprocess.Popen([exe, filename, '-b', '500', outputfilename])
-avsp.MsgBox('Encoding is disabled, please read the "Encoding example.py" macro for info')
+avsp.MsgBox(_('Encoding is disabled, please read the "Encoding example.py" macro for info'))

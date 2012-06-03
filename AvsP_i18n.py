@@ -9,12 +9,14 @@ import re
 def _(s): return s
 __builtin__._ = _
 
+pythonexe = sys.executable 
+pygettextpath = os.path.join(sys.prefix, 'Tools\i18n\pygettext.py')
+toolsdir = 'tools'
+macrosdir = 'macros'
+
 def main(version=None):
     if version is None:
         from AvsP import version
-    pythonexe = sys.executable 
-    pygettextpath = os.path.join(sys.prefix, 'Tools\i18n\pygettext.py')
-    toolsdir = 'tools'
     
     argsList = ['AvsP.py wxp.py pyavs.py pyavs_avifile.py']
     # Get additional files to translate from the tools directory
@@ -26,41 +28,43 @@ def main(version=None):
     for item in items:
         if len(item) == 3:
             argsList.append(item)
-            
-    oldline = ''
-    messageDict = {}
-    newlines = ['messages = {\n']
-    for args in argsList:
-        if len(args) != 3:
-            os.system('""%s" "%s" %s"' % (pythonexe, pygettextpath, args))
-        else:
-            filename, menuLabel, statusString = args
-            filename += '.py'
-            fullname = os.path.join(toolsdir, filename)
-            s = '\n    #--- Tool: %s ---#\n' % (filename)
-            newlines.append(s)
-            s = '    "%s" : u"",\n' % (menuLabel)
-            newlines.append(s)
-            s = '    "%s" : u"",\n' % (statusString)
-            newlines.append(s)
-            os.system('""%s" "%s" %s"' % (pythonexe, pygettextpath, fullname))
-        f = open('messages.pot', 'r')
-        lines = f.readlines()
-        f.close()
-        os.remove('messages.pot')
-        for line in lines:
-            line = line.strip()
-            if line.startswith('msgid '):
-                text = line.split('msgid ')[1]
-                if oldline.startswith('#:') and text not in messageDict:
-                    comment = ' %s' % oldline
-                    #~ s = '    %s : u"",%s\n' % (text, comment)
-                    s = '    %s : u"",\n' % (text)
-                    newlines.append(s)
-                    messageDict[text] = None
-            oldline = line
-    newlines.append('}')
     
+    newlines = ['messages = {\n']
+    messageSet = set()
+    for args in argsList:
+        newlines.extend(GenerateMessages(messageSet, args))
+    
+    # Include the macros' filenames
+    newlines.append('\n    #--- Macros ---#\n')
+    macro_list = []
+    label_list = []
+    global macrosdir
+    if not os.path.isdir(macrosdir):
+        macrosdir = os.path.join('..', macrosdir)
+        if not os.path.isdir(macrosdir):
+            exit('Macros directory not found')
+    re_macro = re.compile(r'(?:\[\s*\d+\s*\]\s+)?((?P<chr>\w)(?P=chr){2}\s+)?\s*([^\[].+?)\s*\.py')
+    for dirpath, dirnames, filenames in os.walk(macrosdir):
+        for filename in filenames:
+            match = re_macro.match(filename)
+            if match and match.group(3) != '---':
+                newlines.append('    "%s" : u"",\n' % match.group(3))
+                messageSet.add('"%s"' % match.group(3))
+                if not match.group('chr'):
+                    macro_list.append('"%s" ' % os.path.abspath(os.path.join(dirpath, filename)))
+                    label_list.append(match.group(3))
+        for dirname in dirnames:
+            newlines.append('    "%s" : u"",\n' % dirname)
+    
+    # Include the macros
+    for macro, label in zip(macro_list, label_list):
+        lines = GenerateMessages(messageSet, macro)
+        if lines:
+            newlines.append('\n    #--- Macro: %s ---#\n' % label)
+            newlines.extend(lines)
+    
+    newlines.append('}')
+
     f = open('__translation_new.py', 'w')
     f.write("new_translation_string = r'''")
     f.write('version = "%s"\n\n' % version)
@@ -69,6 +73,56 @@ def main(version=None):
     f.close()
     
     return True
+
+def GenerateMessages(messageSet, args):
+    
+    oldline = ''
+    newlines = []
+    if isinstance(args, basestring):
+        os.system('""%s" "%s" %s"' % (pythonexe, pygettextpath, args))
+    else:
+        filename, menuLabel, statusString = args
+        filename += '.py'
+        fullname = os.path.join(toolsdir, filename)
+        s = '\n    #--- Tool: %s ---#\n' % (filename)
+        newlines.append(s)
+        s = '    "%s" : u"",\n' % (menuLabel)
+        newlines.append(s)
+        s = '    "%s" : u"",\n' % (statusString)
+        newlines.append(s)
+        os.system('""%s" "%s" %s"' % (pythonexe, pygettextpath, fullname))
+    f = open('messages.pot', 'r')
+    lines = f.readlines()
+    f.close()
+    os.remove('messages.pot')
+    multiline = False
+    for i, line in enumerate(lines):
+        line = line.strip()
+        if not multiline:
+            if line.startswith('msgid '):
+                text = line.split('msgid ')[1]
+                if text.strip('"'):
+                    if oldline.startswith('#:') and text not in messageSet:
+                        #~ comment = ' %s' % oldline
+                        #~ s = '    %s : u"",%s\n' % (text, comment)
+                        s = '    %s : u"",\n' % (text)
+                        newlines.append(s)
+                        messageSet.add(text)
+                else:
+                    multiline = i
+                    text = '"'
+            oldline = line
+        else:
+            if not line.startswith('msgstr '):
+                text += line.strip('"')
+            else:
+                text += '"'
+                if i - multiline > 1 and text not in messageSet:
+                    s = '    %s : u"",\n' % (text)
+                    newlines.append(s)
+                    messageSet.add(text)
+                multiline = False
+    return newlines
 
 def UpdateTranslationFile(dir, lang=None, version=None):
     if version is None:
@@ -112,8 +166,8 @@ def UpdateTranslationFile(dir, lang=None, version=None):
             '# into this document - if you do, make sure to save it in the appropriate \n'
             '# format.  If required, you can change the coding on the first line of this \n'
             '# document to a coding appropriate for your translated language. DO NOT \n'
-            '# translate any words inside formatted strings (ie, any portions of the \n'
-            '# text which look like %(...)s, %(...)i, etc.)\n'
+            '# touch line breaks (\\n) and any words inside formatted strings (ie, any \n'
+            '# portions of the text which look like %(...)s, %(...)i, etc.)\n'
             ).split('\n')
         else:
             newlines = []

@@ -21,7 +21,7 @@ if dirname and avsp.GetText() == '':
         if os.path.splitext(name)[1] in ('.bmp', '.jpg'):
             namelist.append(name)
     # Create a progress box
-    pbox = avsp.ProgressBox(len(namelist), 'Processing images...')
+    pbox = avsp.ProgressBox(len(namelist), _('Processing images...'))
     # Generate each of the image files
     for i, filename in enumerate(namelist):
         fullname = os.path.join(dirname, filename)
@@ -58,4 +58,4 @@ if dirname and avsp.GetText() == '':
     # Clear the remaining text
     avsp.SetText('')
 else:
-    avsp.MsgBox('Macro aborted')
+    avsp.MsgBox(_('Macro aborted'))

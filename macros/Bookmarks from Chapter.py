@@ -3,13 +3,13 @@ import cPickle
 
 fps = avsp.GetVideoFramerate()
 oldBookmarks = avsp.GetBookmarkList()
-filename = avsp.GetFilename('Open a bookmark file', filefilter=
-                            'Supported files|*.txt;*.xml;*.ses|'
-                            'Chapters Text files (*.txt)|*.txt|'
-                            'Matroska XML files (*.xml)|*.xml|'
-                            'Celltimes files (*.txt)|*.txt|'
-                            'AvsP Session files (*.ses)|*.ses|'
-                            'All files (*.*)|*.*')
+filename = avsp.GetFilename(_('Open a bookmark file'), filefilter=
+                            _('Supported files') + '|*.txt;*.xml;*.ses|' + 
+                            _('Chapters Text files') + ' (*.txt)|*.txt|' + 
+                            _('Matroska XML files') + ' (*.xml)|*.xml|' + 
+                            _('Celltimes files') + ' (*.txt)|*.txt|' + 
+                            _('AvsP Session files') + ' (*.ses)|*.ses|' + 
+                            _('All files') + ' (*.*)|*.*')
 if filename:
     f = open(filename)
     lines = f.read()
@@ -74,4 +74,4 @@ if filename:
             bookmarkList = [ bookmark for bookmark, title in bookmarkList]
             avsp.SetBookmark(bookmarkList)
     else:
-        avsp.MsgBox('bookmark file unrecognized!', 'Error')
+        avsp.MsgBox(_('Bookmark file unrecognized!'), _('Error'))

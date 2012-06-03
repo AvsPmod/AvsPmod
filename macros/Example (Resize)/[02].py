@@ -6,5 +6,5 @@
 # # use callafter=True to ensure the main marco runs after return of the current macro.
 # In general, you should return a value, and then,
 # the main macro can retrive it from variable 'last'
-avsp.ExecuteMenuCommand('Customized', callafter=True)
+avsp.ExecuteMenuCommand(_('Customized'), callafter=True)
 return 118, 81

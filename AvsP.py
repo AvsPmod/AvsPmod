@@ -58,7 +58,7 @@ def _(s):
     if messages:
         s2 = messages.get(s, s)
         if s2:
-            return s2
+            return s2.replace(r'\n','\n')
     return s
 __builtin__._ = _
 encoding = sys.getfilesystemencoding()
@@ -2290,7 +2290,8 @@ class ScrapWindow(wx.Dialog):
         self.textCtrl.ReplaceSelection(str(frame))
 
     def OnSave(self, event):
-        filefilter = _('Text document (*.txt)|*.txt|All files (*.*)|*.*')
+        filefilter = (_('Text document') + ' (*.txt)|*.txt|' + 
+                      _('All files') + ' (*.*)|*.*')
         initialdir = self.parent.options['recentdir']
         dlg = wx.FileDialog(self,_('Save scrap text'),
             initialdir, '', filefilter, wx.SAVE | wx.OVERWRITE_PROMPT)
@@ -2856,7 +2857,9 @@ class AvsFunctionDialog(wx.Dialog):
         filenames, filterInfo, unrecognized = [], [], []
         title = _('Open Customization files, Avisynth scripts or Avsp options files')
         recentdir = os.path.join(self.GetParent().options['avisynthdir'], 'plugins')
-        filefilter = _('All supported|*.txt;*.avsi;*.avs;*.dat|Customization file (*.txt)|*.txt|AviSynth script (*.avs, *.avsi)|*.avs;*.avsi|AvsP data (*.dat)|*.dat|All files (*.*)|*.*')
+        filefilter = (_('All supported') + '|*.txt;*.avsi;*.avs;*.dat|' + _('Customization file') + ' (*.txt)|*.txt|' + 
+                      _('AviSynth script') + ' (*.avs, *.avsi)|*.avs;*.avsi|' + _('AvsP data') + ' (*.dat)|*.dat|' + 
+                      _('All files') + ' (*.*)|*.*')
         dlg = wx.FileDialog(self, title, recentdir, '', filefilter, 
                             wx.OPEN|wx.MULTIPLE|wx.FILE_MUST_EXIST)
         ID = dlg.ShowModal()
@@ -3067,7 +3070,7 @@ class AvsFunctionDialog(wx.Dialog):
             return
         title = _('Save filter customizations')
         recentdir = self.GetParent().programdir
-        filefilter = _('Customization file (*.txt)|*.txt|All files (*.*)|*.*')
+        filefilter = _('Customization file') + ' (*.txt)|*.txt|' + _('All files') + ' (*.*)|*.*'
         dlg = wx.FileDialog(self, title, recentdir, '', filefilter, wx.SAVE|wx.OVERWRITE_PROMPT)
         ID = dlg.ShowModal()
         if ID == wx.ID_OK:
@@ -4448,15 +4451,15 @@ class MainFrame(wxp.Frame):
         #~ self.tab_processed = False
         self.macroVars = {'last': None}
         self.imageFormats = {
-            '.bmp': (_('Windows Bitmap (*.bmp)'), wx.BITMAP_TYPE_BMP),
-            '.gif': (_('Animation (*.gif)'), wx.BITMAP_TYPE_GIF),
-            '.jpg': (_('JPEG (*.jpg)'), wx.BITMAP_TYPE_JPEG),
-            '.pcx': (_('Zsoft Paintbrush (*.pcx)'), wx.BITMAP_TYPE_PCX),
-            '.png': (_('Portable Network Graphics (*.png)'), wx.BITMAP_TYPE_PNG),
-            '.pnm': (_('Netpbm (*.pnm)'), wx.BITMAP_TYPE_PNM),
-            '.tif': (_('Tagged Image File (*.tif)'), wx.BITMAP_TYPE_TIF),
-            '.xpm': (_('ASCII Text Array (*.xpm)'), wx.BITMAP_TYPE_XPM),
-            '.ico': (_('Windows Icon (*.ico)'), wx.BITMAP_TYPE_ICO),
+            '.bmp': (_('Windows Bitmap') + ' (*.bmp)', wx.BITMAP_TYPE_BMP),
+            '.gif': (_('Animation') + ' (*.gif)', wx.BITMAP_TYPE_GIF),
+            '.jpg': (_('JPEG') + ' (*.jpg)', wx.BITMAP_TYPE_JPEG),
+            '.pcx': (_('Zsoft Paintbrush') + ' (*.pcx)', wx.BITMAP_TYPE_PCX),
+            '.png': (_('Portable Network Graphics') + ' (*.png)', wx.BITMAP_TYPE_PNG),
+            '.pnm': (_('Netpbm') + ' (*.pnm)', wx.BITMAP_TYPE_PNM),
+            '.tif': (_('Tagged Image File') + ' (*.tif)', wx.BITMAP_TYPE_TIF),
+            '.xpm': (_('ASCII Text Array') + ' (*.xpm)', wx.BITMAP_TYPE_XPM),
+            '.ico': (_('Windows Icon') + ' (*.ico)', wx.BITMAP_TYPE_ICO),
         }
         self.markFrameInOut = self.options['trimmarkframes']
         if self.options['trimreversechoice'] == 0:
@@ -5263,7 +5266,7 @@ class MainFrame(wxp.Frame):
                 #~((_('Highlight current line'), wxp.OPT_ELEM_CHECK, 'highlightline', _('Highlight the line that the caret is currently in'), dict() ), ),
                 #~(('       '+_('Highlight line color'), wxp.OPT_ELEM_COLOR, 'highlightlinecolor', _('Change the the highlight line color'), dict() ), ),
                 ((_('Show autocomplete on capital letters'), wxp.OPT_ELEM_CHECK, 'autocomplete', _('Turn on/off automatic autocomplete list when typing words starting with capital letters'), dict() ), ),
-                ((_('       '+'Amount of letters typed'), wxp.OPT_ELEM_SPIN, 'autocompletelength', _('Show autocomplete list when typing a certain amount of letters'), dict(min_val=0) ), ),
+                (('       '+_('Amount of letters typed'), wxp.OPT_ELEM_SPIN, 'autocompletelength', _('Show autocomplete list when typing a certain amount of letters'), dict(min_val=0) ), ),
                 #~((_('Use monospaced font'), wxp.OPT_ELEM_CHECK, 'usemonospacedfont', _('Override all fonts to use a specified monospace font'), dict() ), ),
                 ((_('Wrap text'), wxp.OPT_ELEM_CHECK, 'wrap', _("Don't allow lines wider than the window"), dict() ), ),
                 ((_('Draw lines at fold points'), wxp.OPT_ELEM_CHECK, 'foldflag', _('For code folding, draw a line underneath if the fold point is not expanded'), dict() ), ),
@@ -6076,7 +6079,7 @@ class MainFrame(wxp.Frame):
                             splitname = name.split(']',1)
                             if len(splitname) == 2 and name.startswith('['):
                                 name = splitname[1].strip()
-                            menuList.append((name, submenuList))
+                            menuList.append((_(name), submenuList))
                 for name in namelist:
                     fullname = os.path.join(dirname, name)
                     root, ext = os.path.splitext(name)
@@ -6093,26 +6096,26 @@ class MainFrame(wxp.Frame):
                                 root = root.strip()[3:].strip()
                                 if not root:
                                     root = self.getMacrosLabelFromFile(fullname)
-                                menuList.append((root, '', self.OnMenuMacroRunSelected, _('a macro check item'), (wx.ITEM_CHECK, False, id)))
+                                menuList.append((_(root), '', self.OnMenuMacroRunSelected, _('A macro check item'), (wx.ITEM_CHECK, False, id)))
                             elif root.strip().startswith('CCC'):
                                 root = root.strip()[3:].strip()
                                 if not root:
                                     root = self.getMacrosLabelFromFile(fullname)
-                                menuList.append((root, '', self.OnMenuMacroRunSelected, _('a macro check item'), (wx.ITEM_CHECK, True, id)))
+                                menuList.append((_(root), '', self.OnMenuMacroRunSelected, _('A macro check item'), (wx.ITEM_CHECK, True, id)))
                             elif root.strip().startswith('rrr'):
                                 if not root:
                                     root = self.getMacrosLabelFromFile(fullname)
                                 root = root.strip()[3:].strip()
-                                menuList.append((root, '', self.OnMenuMacroRunSelected, _('a macro radio item'), (wx.ITEM_RADIO, False, id)))
+                                menuList.append((_(root), '', self.OnMenuMacroRunSelected, _('A macro radio item'), (wx.ITEM_RADIO, False, id)))
                             elif root.strip().startswith('RRR'):
                                 if not root:
                                     root = self.getMacrosLabelFromFile(fullname)
                                 root = root.strip()[3:].strip()
-                                menuList.append((root, '', self.OnMenuMacroRunSelected, _('a macro radio item'), (wx.ITEM_RADIO, True, id)))
+                                menuList.append((_(root), '', self.OnMenuMacroRunSelected, _('A macro radio item'), (wx.ITEM_RADIO, True, id)))
                             else:
                                 if not root:
                                     root = self.getMacrosLabelFromFile(fullname)
-                                menuList.append((root, '', self.OnMenuMacroRunSelected, _('Run selected macro'), id))
+                                menuList.append((_(root), '', self.OnMenuMacroRunSelected, _('Run selected macro'), id))
             createMenuList(menuInfo, os.listdir(self.macrofolder), self.macrofolder)
 
             menuInfo.append((''))
@@ -6771,7 +6774,7 @@ class MainFrame(wxp.Frame):
         self.InsertSource()
 
     def OnMenuEditInsertFilename(self, event):
-        filefilter = _('All files (*.*)|*.*')
+        filefilter = _('All files') + ' (*.*)|*.*'
         recentdir =  self.options['recentdir']
         dlg = wx.FileDialog(self, _('Select a file'), recentdir, '', filefilter, wx.OPEN)
         ID = dlg.ShowModal()
@@ -9369,7 +9372,9 @@ class MainFrame(wxp.Frame):
             extlist2 = [s for s in extlist if not s.startswith('avs')]
             extlist1 = ', '.join(extlist2)
             extlist2 = ';*.'.join(extlist2)
-            filefilter = _('AviSynth script (avs, avsi)|*.avs;*.avsi|Source files (%(extlist1)s)|*.%(extlist2)s|All files (*.*)|*.*') %  locals()
+            filefilter = (_('AviSynth script') + ' (avs, avsi)|*.avs;*.avsi|' + 
+                          _('Source files') + ' (%(extlist1)s)|*.%(extlist2)s|' + 
+                          _('All files') + ' (*.*)|*.*') %  locals()
             dlg = wx.FileDialog(self,_('Open a script or source'),
                 self.options['recentdir'], '', filefilter, wx.OPEN|wx.MULTIPLE)
             ID = dlg.ShowModal()
@@ -9644,7 +9649,8 @@ class MainFrame(wxp.Frame):
             return None
         # Get filename via dialog box if not specified
         if not filename:           
-            filefilter = _('AviSynth script (*.avs, *.avsi)|*.avs;*.avsi|All files (*.*)|*.*')
+            filefilter = (_('AviSynth script') + ' (*.avs, *.avsi)|*.avs;*.avsi|' + 
+                          _('All files') + ' (*.*)|*.*')
             initialdir = None
             initialname = self.scriptNotebook.GetPageText(index).lstrip('* ')
             if script.filename:
@@ -10188,7 +10194,8 @@ class MainFrame(wxp.Frame):
         if not filename or not os.path.isfile(filename):
             extlist1 = ', '.join(extlist)
             extlist2 = ';*.'.join(extlist)
-            filefilter = _('Source files (%(extlist1)s)|*.%(extlist2)s|All files (*.*)|*.*') %  locals()
+            filefilter = (_('Source files') + ' (%(extlist1)s)|*.%(extlist2)s|' + 
+                          _('All files') + ' (*.*)|*.*') %  locals()
             recentdir = self.options['recentdir']
             dlg = wx.FileDialog(self, _('Insert a source'), recentdir, '', filefilter, wx.OPEN)
             ID = dlg.ShowModal()
@@ -11124,7 +11131,8 @@ class MainFrame(wxp.Frame):
                 _('Open filter customization file'),
                 self.programdir,
                 '',
-                '%s|%s' % (_('Filter customization file (*.tag)|*.tag'), _('Calltip-only text file (*.txt)|*.txt')),
+                '%s|%s' % (_('Filter customization file') + ' (*.tag)|*.tag', 
+                           _('Calltip-only text file') + ' (*.txt)|*.txt'),
                 wx.OPEN
             )
             ID = dlg2.ShowModal()
@@ -11176,7 +11184,8 @@ class MainFrame(wxp.Frame):
                     _('Save filter customization file'),
                     self.programdir,
                     '',
-                    '%s|%s' % (_('Filter customization file (*.tag)|*.tag'), _('Calltip-only text file (*.txt)|*.txt')),
+                    '%s|%s' % (_('Filter customization file') + ' (*.tag)|*.tag', 
+                               _('Calltip-only text file') + ' (*.txt)|*.txt'),
                     wx.SAVE | wx.OVERWRITE_PROMPT
                 )
                 ID = dlg2.ShowModal()
@@ -12123,7 +12132,7 @@ class MainFrame(wxp.Frame):
         if not os.path.isfile(path):
             if not prompt:
                 return False
-            filefilter = _('Executable files (*.exe)|*.exe|All files (*.*)|*.*')
+            filefilter = _('Executable files') + ' (*.exe)|*.exe|' + _('All files') + ' (*.*)|*.*'
             dlg = wx.FileDialog(self, _('Select an external player'), '', '', filefilter, wx.OPEN)
             ID = dlg.ShowModal()
             if ID == wx.ID_OK:
@@ -13202,8 +13211,8 @@ class MainFrame(wxp.Frame):
             extlist1 = ', '.join(extlist2)
             extlist2 = ';*.'.join(extlist2)
             s1 = '%s|%s' % (', '.join(extList), ';'.join(extList))
-            s2 = _('Source files (%(extlist1)s)|*.%(extlist2)s') % locals() #'%s|%s' % (', '.join(extList), ';'.join(extList))
-            s3 = _('All files (*.*)|*.*')
+            s2 = _('Source files') + ' (%(extlist1)s)|*.%(extlist2)s' % locals() #'%s|%s' % (', '.join(extList), ';'.join(extList))
+            s3 = _('All files') + ' (*.*)|*.*'
             if extList:
                 filefilter = '%s|%s|%s' % (s1, s2, s3) #_('AviSynth script (avs, avsi)|*.avs;*.avsi|Source files (%(extlist1)s)|*.%(extlist2)s|All files (*.*)|*.*') %  locals()
             else:
@@ -13861,7 +13870,8 @@ class MainFrame(wxp.Frame):
             extlist.sort()
             extlist1 = ', '.join(extlist)
             extlist2 = ';*.'.join(extlist)
-            filefilter = _('Source files (%(extlist1)s)|*.%(extlist2)s|All files (*.*)|*.*') %  locals()
+            filefilter = (_('Source files') + ' (%(extlist1)s)|*.%(extlist2)s|' + 
+                          _('All files') + ' (*.*)|*.*') %  locals()
         dlg = wx.FileDialog(self, title,
             self.options['recentdir'], '', filefilter, wx.OPEN|wx.FILE_MUST_EXIST)
         ID = dlg.ShowModal()
@@ -13876,8 +13886,8 @@ class MainFrame(wxp.Frame):
         return filename
     
     @AsyncCallWrapper
-    def MacroGetSaveFilename(self, title=_('Save as'), filefilter = _('All files (*.*)|*.*')):
-        r'''GetSaveFilename(title='Save as', filefilter=_('All files (*.*)|*.*'))
+    def MacroGetSaveFilename(self, title=_('Save as'), filefilter = _('All files') + ' (*.*)|*.*'):
+        r'''GetSaveFilename(title='Save as', filefilter=_('All files') + ' (*.*)|*.*')
         
         Displays an save file dialog box, returning the entered filename if the user 
         clicked "OK", returning an empty string otherwise.
@@ -14851,6 +14861,7 @@ class MainFrame(wxp.Frame):
                     '''help(function)\nPrint the function's description of use'''
                     print self.FormatDocstring(function)
                 self.macroVars['help'] = MacroHelp
+                self.macroVars['_'] = _
                 # Execute the macro
                 def MacroFunction():
                     try:

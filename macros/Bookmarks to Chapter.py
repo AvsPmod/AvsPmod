@@ -6,9 +6,9 @@ try:
 except TypeError:
     bookmarks = avsp.GetBookmarkList()
 bookmarks.sort()
-filename = avsp.GetSaveFilename(title='Save as', 
-                                filefilter = '|'.join((_('Text files (*.txt)|*.txt'),
-                                                       _('All files (*.*)|*.*'))))
+filename = avsp.GetSaveFilename(title=_('Save as'), 
+                                filefilter = '|'.join((_('Text files') + ' (*.txt)|*.txt',
+                                                       _('All files') + ' (*.*)|*.*')))
 if not filename:
     return
 fps = avsp.GetVideoFramerate()

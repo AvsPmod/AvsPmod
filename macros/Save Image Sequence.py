@@ -12,7 +12,7 @@ if not dirname:
 # get the number of frames
 totalframes = avsp.GetVideoFramecount()
 # Create a progress box
-pbox = avsp.ProgressBox(max=totalframes, message = "0 / " + str(totalframes), title="Saving images...")
+pbox = avsp.ProgressBox(max=totalframes, message = "0 / " + str(totalframes), title=_("Saving images..."))
 
 #find number of leading zeros to use
 if (zeros < 0):

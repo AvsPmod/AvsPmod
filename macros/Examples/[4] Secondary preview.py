@@ -12,8 +12,9 @@ success = avsp.RunExternalPlayer(exe, args)
 
 if not success:
     avsp.MsgBox(
-        'Failed to run the external player!\n\n'
-        'Open the macro file in the "Macros" subdirectory\n'
-        'with a text editor and edit the executable\n'
-        'directory appropriately!'
+        _('Failed to run the external player!\n\n'
+          'Open the macro file in the "Macros" subdirectory\n'
+          'with a text editor and edit the executable\n'
+          'directory appropriately!'),
+        _('Error')
     )

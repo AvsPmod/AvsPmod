@@ -59,7 +59,7 @@ def main():
             # Create the initial population (generation 0)
             self.population = [self.Individual() for i in range(self.n)]
             try:
-                pb = avsp.ProgressBox(self.n, 'Initial evaluation...', 'Generation 0 Progress')
+                pb = avsp.ProgressBox(self.n, _('Initial evaluation...'), _('Generation 0 Progress'))
             except NameError:
                 pb = None
             try:
@@ -83,7 +83,7 @@ def main():
                     if pb is not None:
                         pb = avsp.ProgressBox(
                             self.n,
-                            'Initial best score: %.3f, Current best score: %.3f' % (initialscore, best.score),
+                            _('Initial best score: %.3f, Current best score: %.3f') % (initialscore, best.score),
                             'Generation %i Progress' % self.generation
                         )
                     newpopulation = [best.copy()]
@@ -222,11 +222,11 @@ def main():
         f.write(script)
         f.close()
         if score is not None:
-            print 'Best score: %.2f' % score
+            print _('Best score: %.2f') % score
             
     # MAIN SECTION
     if not avs2avidir or not os.path.isfile(avs2avidir):
-        avsp.MsgBox('Must configure avs2avi directory to use this macro!', 'Error')
+        avsp.MsgBox(_('Must configure avs2avi directory to use this macro!'), _('Error'))
         return
     # Save the script
     filename = avsp.SaveScript()
@@ -249,9 +249,10 @@ def main():
         length += nbits
         scriptTemplate = scriptTemplate.replace(text, '%('+label+').'+str(nDecimal)+'f')
     # Get basic encoder options with a dialog box
-    labels = ['SSIM log filename:', 'max generations:', 'population size:', 'crossover probability:', 'mutation probability:', 'selection pressure:']
+    labels = [_('SSIM log filename:'), _('max generations:'), _('population size:'), 
+              _('crossover probability:'), _('mutation probability:'), _('selection pressure:')]
     defaults = [logfilename, '10', '30', '0.6', '0.03', '4']
-    entries = avsp.GetTextEntry(labels, defaults, 'Enter optimization info    (%i bits, %i possibilities)' % (length, 2**length))
+    entries = avsp.GetTextEntry(labels, defaults, _('Enter optimization info    (%i bits, %i possibilities)') % (length, 2**length))
     if not entries:
         return
     # First clear the AVI from memory (to close the log file)
@@ -263,11 +264,11 @@ def main():
     avsp.SaveScript()
     # Run the optimization
     logfilename, maxgen, n, pc, pm, s = entries
-    print 'Begin optimization...'
+    print _('Begin optimization...')
     print 'n=%s, pc=%s, pm=%s, s=%s, maxgen=%s (%i bits)' % (n, pc, pm, s, maxgen, length)
     sga = SGA(length, evaluate, int(n), float(pc), float(pm), int(s), int(maxgen), False, dump)
     sga.run()
-    print 'Finished optimization.'
+    print _('Finished optimization.')
     # Show the optimized results
     avsp.OpenFile(os.path.join(os.getcwd(), 'optimized.avs'))
     avsp.ShowVideoFrame()

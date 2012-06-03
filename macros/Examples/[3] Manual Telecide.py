@@ -35,7 +35,7 @@ import os
 if avsp.GetTabCount() == 1 and avsp.GetText() == '':
     #== FIRST MODE ==#
     # Get the filename of the source to de-interlace from a dialog box
-    filename = avsp.GetFilename('Open a source to Telecide')
+    filename = avsp.GetFilename(_('Open a source to Telecide'))
     if filename:
         # Make the script to determine field order
         # Note: the filename is stored on the first line, used by the second mode
@@ -55,16 +55,16 @@ elif avsp.GetTabCount() == 1 and avsp.GetText().startswith('# TELECIDE FILENAME:
     filename = firstline.split('# TELECIDE FILENAME: ')[1]
     # If the filename somehow got mangled, get it again with a dialog box
     if not os.path.isfile(filename):
-        avsp.MsgBox('Filename was mangled! Get it again!', 'Error')
-        filename = avsp.GetFilename('Open a source to Telecide')
+        avsp.MsgBox(_('Filename was mangled! Get it again!'), _('Error'))
+        filename = avsp.GetFilename(_('Open a source to Telecide'))
     # Get the field order from the user, make sure it's either 0 or 1
-    order = avsp.GetTextEntry('Enter the field order:')
+    order = avsp.GetTextEntry(_('Enter the field order:'))
     try:
         order = int(order)
         if order not in (0,1):
-            avsp.MsgBox('Must enter either a 0 or 1!')
+            avsp.MsgBox(_('Must enter either a 0 or 1!'))
     except ValueError:
-        avsp.MsgBox('Must enter an integer!')
+        avsp.MsgBox(_('Must enter an integer!'))
     # Make the Telecide-related scripts
     if filename and order in (0,1):
         # Close the field order script
@@ -127,14 +127,14 @@ elif avsp.GetTabCount() == 4 and avsp.GetText(0).startswith('# TELECIDE OVERRIDE
     filename = firstline.split('# TELECIDE OVERRIDE NAME: ')[1]
     # If the filename somehow got mangled, get it again with a dialog box
     if not os.path.isfile(filename):
-        avsp.MsgBox('Override filename was mangled! Get it again!', 'Error')
+        avsp.MsgBox(_('Override filename was mangled! Get it again!'), _('Error'))
         filename = avsp.GetFilename('Get the Telecide overrride text file')
     if filename:
         # Get the index of the currently selected tab
         index = avsp.GetCurrentTabIndex()
         if index == 0:
             # Don't write anything if base Telecide tab was selected
-            avsp.MsgBox('Not allowed to select base Telecide tab!', 'ERROR')
+            avsp.MsgBox(_('Not allowed to select base Telecide tab!'), _('Error'))
         else:
             # Create the text to write depending on which tab was selected
             frame = avsp.GetFrameNumber()
@@ -153,5 +153,5 @@ elif avsp.GetTabCount() == 4 and avsp.GetText(0).startswith('# TELECIDE OVERRIDE
             avsp.ShowVideoFrame(index=0, forceRefresh=True)
 else:
     # Unknown mode
-    avsp.MsgBox('Unknown mode!', 'Error')
+    avsp.MsgBox(_('Unknown mode!'), _('Error'))
     

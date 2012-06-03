@@ -42,7 +42,7 @@ from os.path import splitext
 # Get the bookmarks
 bmlist = avsp.GetBookmarkList(title=True)
 if not bmlist:
-    avsp.MsgBox('There is not bookmarks', 'Error')
+    avsp.MsgBox(_('There is not bookmarks'), _('Error'))
     return
 bmlist.sort()
 
@@ -53,19 +53,19 @@ if not default_filename:
 txt_filter = (_('Text files') + ' (*.txt)|*.txt|' + _('All files') + '|*.*')
 while True:
     options = avsp.GetTextEntry(
-        title='ConditionalReader file from bookmarks', 
-        message=[['Type', 'Default', 'Value'], 
-                 ['Bookmarks represent...', 
-                  "Override 'Value' with the bookmark's title"], 
-                 'ConditionalReader file', 
-                 'Insert the ConditionalReader file path at the current cursor '
-                 'position'
+        title=_('ConditionalReader file from bookmarks'), 
+        message=[[_('Type'), _('Default'), _('Value')], 
+                 [_('Bookmarks represent...'), 
+                  _("Override 'Value' with the bookmark's title")], 
+                 _('ConditionalReader file'), 
+                 _('Insert the ConditionalReader file path at the current '
+                   'cursor position')
                 ], 
-        default=[[('Bool', 'Int', 'Float', 'String', default_type), 
-                  ('True', 'False', default_default), 
-                  ('True', 'False', default_value)], 
-                 [('Single frames', 'Ranges of frames', 
-                   'Ranges of frames (with interpolation)', default_bm_meaning), 
+        default=[[(_('Bool'), _('Int'), _('Float'), _('String'), default_type), 
+                  (_('True'), _('False'), default_default), 
+                  (_('True'), _('False'), default_value)], 
+                 [(_('Single frames'), _('Ranges of frames'), 
+                   _('Ranges of frames (with interpolation)'), default_bm_meaning), 
                    default_use_title], 
                  (default_filename, txt_filter), default_insert_path
                 ], 
@@ -74,24 +74,24 @@ while True:
         width=415)
     if not options or not options[5]:
         return
-    if (options[3] == 'Ranges of frames (with interpolation)' and 
-            options[0] not in ('Int', 'Float')):
-        avsp.MsgBox('Interpolation only available for Int and Float', 'Error')
+    if (options[3] == _('Ranges of frames (with interpolation)') and 
+            options[0] not in (_('Int'), _('Float'))):
+        avsp.MsgBox(_('Interpolation only available for Int and Float'), _('Error'))
     else: break
 
 # Write the ConditionalReader file
 value_default = options[2].strip()
 text = ['Type {}\n'.format(options[0])]
 if options[1]: text.append(u'Default {}\n'.format(options[1].strip()))
-if options[3] == 'Single frames':
+if options[3] == _('Single frames'):
     for frame, title in bmlist:
         text.append(u'{} {}\n'.format(frame, 
                     title.strip() if options[4] and title else value_default))
 else:
-    if len(bmlist) % 2 and not avsp.MsgBox('Odd number of bookmarks', 
-                                           title='Warning', cancel=True):
+    if len(bmlist) % 2 and not avsp.MsgBox(_('Odd number of bookmarks'), 
+                                           title=_('Warning'), cancel=True):
         return
-    prefix = 'R' if options[3] == 'Ranges of frames' else 'I'
+    prefix = 'R' if options[3] == _('Ranges of frames') else 'I'
     for i, bm in enumerate(bmlist):
         if i%2:
             value = None
@@ -99,7 +99,7 @@ else:
                 if bmlist[i-1][1]:
                     value = bmlist[i-1][1].strip()
                 if bm[1]:
-                    if value and options[3] != 'Ranges of frames':
+                    if value and options[3] != _('Ranges of frames'):
                         value += ' ' + bm[1].strip()
                     else:
                         value = bm[1].strip()
