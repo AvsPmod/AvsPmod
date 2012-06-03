@@ -39,13 +39,16 @@ def main():
     tempdir = tempfile.mkdtemp()
     programdirname = os.path.join(tempdir, programdirname)
     
-    # Make the translation file
+    # Create/update the master translation file
     if not AvsP_i18n.main():
         return
     
     # Create the program executable using py2exe
     if os.system('""%s" -OO AvsP_setup.py py2exe -d %s"' % (pythonexe, programdirname)):
         return
+    
+    # Update the translation files in the temporal subdirectory
+    AvsP_i18n.UpdateTranslationFile(os.path.join(programdirname, 'translations'), version=AvsP.version)
     
     # Create/update 'macros_readme.txt' in the macros subdirectory
     AvsP.GenerateMacroReadme(os.path.join(programdirname, 'macros', 'macros_readme.txt'))
