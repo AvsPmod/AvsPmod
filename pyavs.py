@@ -1,7 +1,7 @@
 # AvsP - an AviSynth editor
-# Copyright 2007 Peter Jang
-#  http://www.avisynth.org/qwerpoi
-
+# Copyright 2007 Peter Jang <http://www.avisynth.org/qwerpoi>
+#           2010-2012 the AvsPmod authors <http://forum.doom9.org/showthread.php?t=153248>
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or

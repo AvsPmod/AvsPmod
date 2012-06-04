@@ -1,7 +1,7 @@
 # wxp - General framework classes for wxPython
-# Copyright 2007 Peter Jang
-#  http://www.avisynth.org/qwerpoi
-
+# Copyright 2007 Peter Jang <http://www.avisynth.org/qwerpoi>
+#           2010-2012 the AvsPmod authors <http://forum.doom9.org/showthread.php?t=153248>
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -579,7 +579,7 @@ class Frame(wx.Frame):
         return button
         
 class OptionsDialog(wx.Dialog):
-    def __init__(self, parent, dlgInfo, options, title=_('Program Settings'), startPageIndex=0, starText=True):
+    def __init__(self, parent, dlgInfo, options, title=None, startPageIndex=0, starText=True):
         '''Init the OptionsDialog window
         
         Create a wx.Notebook from the tabs specified in 'dlgInfo' and the 
@@ -591,6 +591,8 @@ class OptionsDialog(wx.Dialog):
         width.
         
         '''
+        if title is None:
+            title = _('Program Settings')
         wx.Dialog.__init__(self, parent, wx.ID_ANY, title)
         self.options = options.copy()
         self.optionsOriginal = options
@@ -1068,7 +1070,9 @@ class OptionsDialog(wx.Dialog):
         ctrl.SetFocus()
         
 class ShortcutsDialog(wx.Dialog):
-    def __init__(self, parent, shortcutList, title=_('Edit shortcuts'), exceptionIds=None, submessage=None):
+    def __init__(self, parent, shortcutList, title=None, exceptionIds=None, submessage=None):
+        if title is None:
+            title = _('Edit shortcuts')
         wx.Dialog.__init__(self, parent, wx.ID_ANY, title, style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
         self.parent = parent
         self.shortcutList = copy.deepcopy(shortcutList)#shortcutList[:]

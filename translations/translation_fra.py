@@ -11,20 +11,18 @@
 # into this document - if you do, make sure to save it in the appropriate 
 # format.  If required, you can change the coding on the first line of this 
 # document to a coding appropriate for your translated language. DO NOT 
-# translate any words inside formatted strings (ie, any portions of the 
-# text which look like %(...)s, %(...)i, etc.)
+# touch line breaks (\n) and any words inside formatted strings (ie, any 
+# portions of the text which look like %(...)s, %(...)i, etc.)
 
 # French traslation authors:
 #   André v2.0.2
 
-version = "2.2.1"
+version = "2.3.0"
 
 messages = {
     "Find" : u"Rechercher",
     "Replace" : u"Remplacer",
-    "Cannot find \"%(text)s\"." : u"\"%(text)s\". est introuvable !",
-    "Information" : u"",
-    "Replace Information" : u"Remplacer l'information",
+    "Cannot find \"%(text)s\"" : u"", # New in v2.3.0
     "Replaced %(count)i times" : u"Remplacé %(count)i fois",
     "AviSynth fonts and colors" : u"APolices et couleurs AvsP",
     "Background" : u"Arrière-plan",
@@ -46,7 +44,8 @@ messages = {
     "Toggle scrap window" : u"Afficher bloc-note",
     "Save script" : u"Enregistrer le script",
     "Error: no contextMenu variable defined for window" : u"Erreur : variable du menu contextuel non définie pour cette fenêtre",
-    "Text document (*.txt)|*.txt|All files (*.*)|*.*" : u"Document texte (*.txt)|*.txt|Tous (*.*)|*.*",
+    "Text document" : u"", # New in v2.3.0
+    "All files" : u"", # New in v2.3.0
     "Save scrap text" : u"Enregistrer le bloc-note",
     "This field must contain a value!" : u"Ce champ doit être rempli !",
     "This slider label already exists!" : u"Un appel vers ce curseur existe déjà !",
@@ -99,7 +98,10 @@ messages = {
     "Renaming not allowed!" : u"Renommage refusé !",
     "You must use dllname_function naming format for plugins!" : u"Vous devez utiliser le format nomDeFicherDll_fonction pour nommer les plugins!",
     "Open Customization files, Avisynth scripts or Avsp options files" : u"", # New in v2.2.1
-    "All supported|*.txt;*.avsi;*.avs;*.dat|Customization file (*.txt)|*.txt|AviSynth script (*.avs, *.avsi)|*.avs;*.avsi|AvsP data (*.dat)|*.dat|All files (*.*)|*.*" : u"", # New in v2.2.1
+    "All supported" : u"", # New in v2.3.0
+    "Customization file" : u"", # New in v2.3.0
+    "AvsP data" : u"", # New in v2.3.0
+    "AviSynth script" : u"", # New in v2.3.0
     "Unrecognized files" : u"", # New in v2.2.1
     "Select import functions" : u"", # New in v2.2.1
     "select all" : u"", # New in v2.2.1
@@ -109,7 +111,6 @@ messages = {
     "Red - a customized function already exists." : u"", # New in v2.2.1
     "No customizations to export!" : u"Aucune personnalisation à exporter !",
     "Save filter customizations" : u"Enregistrer les personnalisations des filtres",
-    "Customization file (*.txt)|*.txt|All files (*.*)|*.*" : u"Fichier personnalisation (*.txt)|Tout (*.*)|*.*",
     "This will delete all filter customizations. Continue?" : u"Supprimer toute les personnalisations (*) ?",
     "Warning" : u"Attention",
     "This will delete all manually defined presets. Continue?" : u"Supprimer les presets manuels (~) ?",
@@ -130,23 +131,23 @@ messages = {
     "You must select at least one filter!" : u"Vous devez sélectionner au moins 1 filtre !",
     "Error: minValue must be less than maxValue" : u"Erreur : minValue doit être inférieure à maxValue",
     "New File" : u"Nouveau Fichier",
-    "Windows Bitmap (*.bmp)" : u"", # New in v1.3.6
-    "Animation (*.gif)" : u"", # New in v2.2.1
-    "JPEG (*.jpg)" : u"", # New in v1.3.6
-    "Zsoft Paintbrush (*.pcx)" : u"", # New in v2.2.1
-    "Portable Network Graphics (*.png)" : u"", # New in v1.3.6
-    "Netpbm (*.pnm)" : u"", # New in v2.2.1
-    "Tagged Image File (*.tif)" : u"", # New in v2.2.1
-    "ASCII Text Array (*.xpm)" : u"", # New in v2.2.1
-    "Windows Icon (*.ico)" : u"", # New in v2.2.1
+    "Windows Bitmap" : u"", # New in v2.3.0
+    "Animation" : u"", # New in v2.3.0
+    "JPEG" : u"", # New in v2.3.0
+    "Zsoft Paintbrush" : u"", # New in v2.3.0
+    "Portable Network Graphics" : u"", # New in v2.3.0
+    "Netpbm" : u"", # New in v2.3.0
+    "Tagged Image File" : u"", # New in v2.3.0
+    "ASCII Text Array" : u"", # New in v2.3.0
+    "Windows Icon" : u"", # New in v2.3.0
     "fps" : u"",
     "Frame" : u"",
     "A crash detected at the last running!" : u"", # New in v2.2.1
     "&Zoom" : u"", # New in v2.2.1
-    "%s translation file updated with new messages to translate" : u"", # New in v2.2.1
-    "Translation updated" : u"", # New in v2.2.1
-    "%s translation file updated.  No new messages to translate." : u"", # New in v2.2.1
-    "%s language couldn't be loaded" : u"", # New in v2.2.1
+    "%s translation file updated with new messages to translate" : u"", # New in v2.3.0
+    "Translation updated" : u"", # New in v2.3.0
+    "%s translation file updated.  No new messages to translate." : u"", # New in v2.3.0
+    "%s language couldn't be loaded" : u"", # New in v2.3.0
     "Paths" : u"", # New in v2.2.1
     "AvsP help directory:" : u"Répertoire aide d'AvsP",
     "Location of the AvsP help directory" : u"Emplacement du répertoire d'aide d'AvsP",
@@ -171,6 +172,7 @@ messages = {
     "Turn on/off avisynth-specific text colors and fonts" : u"Active/Désactive les couleures et polices spécifiques à Avisynth",
     "Show autocomplete on capital letters" : u"Sur lettres majuscules, afficher la liste automatique ",
     "Turn on/off automatic autocomplete list when typing words starting with capital letters" : u"Active/Désactive la liste des filtres quand un mot est commencé par une lettre en majuscule",
+    "Amount of letters typed" : u"", # New in v2.3.0
     "Show autocomplete list when typing a certain amount of letters" : u"", # New in v2.2.1
     "Don't allow lines wider than the window" : u"Retour à la ligne automatique si la ligne dépasse la taille de la fenêtre",
     "Wrap text" : u"Retour à la ligne auto",
@@ -253,19 +255,23 @@ messages = {
     "Always load the auto-saved session before opening any other file on startup" : u"Au démarrage, permet de toujours charger la dernière session sauvegardée avant d'ouvrir d'autre(s) fichier(s)",
     "Always hide the video preview window when loading a session" : u"", # New in v2.2.1
     "Don't preview when loading a session" : u"", # New in v2.2.1
+    "Backup session periodically (minutes)" : u"", # New in v2.3.0
+    "Backup the session every X minutes, if X > 0" : u"", # New in v2.3.0
     "Backup session when previewing" : u"", # New in v2.2.1
     "If checked, the current session is backed up prior to previewing any new script" : u"Si actif, la session courante est sauvegardée avant chaque prévisualisation de script",
     "Prompt to save a script before previewing (inactive if previewing with unsaved changes)" : u"Propose de sauver le script avant d'afficher la vidéo correspondante (inopérant avec l'option Afficher la vidéo du script modifié non enregistré)",
     "Prompt to save when previewing" : u"Proposer de sauvegarder le script avant d'afficher la vidéo correspondante",
     "Create a temporary preview script with unsaved changes when previewing the video" : u"Cré un script temporaire incluant les modifications non sauvegardées et servant à la prévisualisation vidéo",
     "Preview scripts with unsaved changes" : u"", # New in v2.2.1
+    "Don't prompt to save scripts without file" : u"", # New in v2.3.0
+    "When closing a tab, don't prompt to save the script if it doesn't already exist on the filesystem" : u"", # New in v2.3.0
     "Prompt to save each script with unsaved changes when exiting the program" : u"Demande pour chaque script modifié non sauvegardé si une sauvegarde est nécessaire",
     "Prompt to save scripts on program exit" : u"A la fermeture, demander si les modifications du(es) script(s) sont à enregistrer",
     "Save *.avs scripts with AvsPmod markings" : u"", # New in v2.2.1
     "Save AvsPmod-specific markings (user sliders, toggle tags, etc) as a commented section in the *.avs file" : u"", # New in v2.2.1
     "Misc" : u"Divers",
-    "Choose the language used for the interface" : u"", # New in v2.2.1
-    "Language *" : u"", # New in v2.2.1
+    "Choose the language used for the interface" : u"", # New in v2.3.0
+    "Language *" : u"", # New in v2.3.0
     "Show keyboard images in the script tabs when video has focus" : u"Quand la fenêtre vidéo a le focus, affiche les images claviers dans les onglets des scripts",
     "Use keyboard images in tabs" : u"Utiliser les images claviers dans les onglets",
     "Show tabs in multiline style" : u"", # New in v2.2.1
@@ -346,10 +352,11 @@ messages = {
     "show time" : u"", # New in v2.2.1
     "Show bookmarks with title" : u"", # New in v2.2.1
     "show title" : u"", # New in v2.2.1
-    "Rec601" : u"", # New in v2.2.1
-    "PC.601" : u"", # New in v2.2.1
-    "Rec709" : u"", # New in v2.2.1
-    "PC.709" : u"", # New in v2.2.1
+    "Resolution-based" : u"", # New in v2.3.0
+    "BT.709" : u"", # New in v2.3.0
+    "BT.601" : u"", # New in v2.3.0
+    "TV levels" : u"", # New in v2.3.0
+    "PC levels" : u"", # New in v2.3.0
     "Progressive" : u"", # New in v2.2.1
     "Interlaced" : u"", # New in v2.2.1
     "Swap UV" : u"", # New in v2.2.1
@@ -518,10 +525,11 @@ messages = {
     "Flip video preview from left to right" : u"", # New in v2.2.1
     "&YUV -> RGB" : u"", # New in v2.2.1
     "Swap chroma channels (U and V)" : u"", # New in v2.2.1
-    "For YUV source, assume it is Rec601 (default)" : u"", # New in v2.2.1
-    "For YUV source, assume it is PC.601" : u"", # New in v2.2.1
-    "For YUV source, assume it is Rec709" : u"", # New in v2.2.1
-    "For YUV source, assume it is PC.709" : u"", # New in v2.2.1
+    "Use BT.709 coefficients for HD, BT.601 for SD (default)" : u"", # New in v2.3.0
+    "Use BT.709 coefficients" : u"", # New in v2.3.0
+    "Use BT.601 coefficients" : u"", # New in v2.3.0
+    "Use limited range (default)" : u"", # New in v2.3.0
+    "Use full range" : u"", # New in v2.3.0
     "For YV12 only, assume it is progressive (default)" : u"", # New in v2.2.1
     "For YV12 only, assume it is interlaced" : u"", # New in v2.2.1
     "Save image as..." : u"Enregistrer l'image sous...",
@@ -536,6 +544,8 @@ messages = {
     "Switch video/text focus" : u"Basculer focus vidéo/texte",
     "Show/hide the slider sidebar (double-click the divider for the same effect)" : u"Affiche/cache la zone des curseurs (équivalent à double cliquer sur le diviseur)",
     "Toggle the slider sidebar" : u"Afficher/cacher zone curseurs",
+    "Request every video frame once (analysis pass for two-pass filters)" : u"", # New in v2.3.0
+    "Run analysis pass" : u"", # New in v2.3.0
     "External player" : u"Lecteur externe",
     "Play the current script in an external program" : u"Joue le script courant dans un programme externe",
     "Show information about the video in a dialog box" : u"Affiche les informations concernant la vidéo dans une boite de dialogue",
@@ -578,10 +588,11 @@ messages = {
     "Run the script with an external program" : u"Lit le script avec le lecteur externe",
     "Run the selected tool" : u"Démarre l'outils sélectionné",
     "&Tools" : u"", # New in v2.2.1
-    "a macro check item" : u"", # New in v2.2.1
-    "a macro radio item" : u"", # New in v2.2.1
+    "A macro check item" : u"", # New in v2.3.0
+    "A macro radio item" : u"", # New in v2.3.0
     "Run selected macro" : u"Exécute la macro sélectionnée",
     "View the readme for making macros" : u"Affiche le fichier lisez-moi de création des macros",
+    "Open macros folder" : u"", # New in v2.3.0
     "Open the macros folder" : u"", # New in v2.2.1
     "&Macros" : u"", # New in v2.2.1
     "Close" : u"Fermer",
@@ -607,7 +618,6 @@ messages = {
     "Insert Dissolve() commands:" : u"", # New in v2.2.1
     "Use the buttons which appear on the video slider handle to create the frame selections to trim." : u"Utiliser les boutons additionnels sur la barre du curseur de frames pour créer les selections de frames via Trim",
     "File does not exist!" : u"Ce fichier n'existe pas !",
-    "All files (*.*)|*.*" : u"Tous (*.*)",
     "Select a file" : u"Sélectionner un fichier",
     "Create a separator label" : u"Créer un séparateur nommé",
     "Enter separator label" : u"Entrer un nom pour le séparateur",
@@ -618,8 +628,10 @@ messages = {
     "Title" : u"", # New in v2.2.1
     "Frame No." : u"", # New in v2.2.1
     "Time **" : u"", # New in v2.2.1
-    "" : u"", # New in v2.2.1
+    "Left-click on a selected item or double-click to edit.\n\n*  RED - a historic title, not a real bookmark.\n** Time may be unavailable or incorrect before preview refreshed." : u"", # New in v2.3.0
     "Cannot use crop editor unless zoom set to 100% and non-flipped!" : u"", # New in v2.2.1
+    "Error loading the script" : u"Erreur pendant le chargement du script",
+    "Starting analysis pass..." : u"", # New in v2.3.0
     "Frame size:" : u"Taille de l'image :",
     "Length:" : u"Durée :",
     "Frame rate:" : u"Framerate :",
@@ -683,6 +695,8 @@ messages = {
     "(If you want relative paths instead of the full filename, use [***].)" : u"(Pour des chemins relatifs au lieu du nom de fichier complet, utiliser [***].)",
     "Associating .avs files will write to the windows registry." : u"Associer les .avs avec AvsP va modifier le registre de windows.",
     "Do you wish to continue?" : u"Voulez-vous continuer ?",
+    "Above keys are built-in editing shortcuts. If item is checked,\nit will not be overrided by a menu shortcut in script window." : u"", # New in v2.3.0
+    "* This shortcut is active only when video window has focus.\n~ This shortcut is active only when script window has focus." : u"", # New in v2.3.0
     "Could not find the Avisynth plugins folder!" : u"", # New in v2.2.1
     "AvsPmod version %(version)s " : u"", # New in v2.2.1
     "An AviSynth script editor" : u"Editeur de scripts Avisynth",
@@ -696,11 +710,6 @@ messages = {
     "clear history" : u"", # New in v2.2.1
     "Cannot switch tabs while crop editor is open!" : u"Ne peut pas changer d'onglet quand l'editeur rognage est actif !",
     "Cannot switch tabs while trim editor is open!" : u"Ne peut pas changer d'onglet quand l'éditeur de trim est activé !",
-    "pos" : u"", # New in v1.3.8
-    "rgb" : u"", # New in v1.3.7
-    "rgba" : u"rvba",
-    "yuv" : u"", # New in v1.3.7
-    "hex" : u"", # New in v1.3.7
     "Invalid crop values detected.  Continue?" : u"Valeures crop non-valide détectées. Continuer ?",
     "You must create at least one frame selection first!" : u"Vous devez dabord créer au moins 1 sélection de frames",
     "Select autocomplete keywords" : u"", # New in v2.2.1
@@ -733,25 +742,28 @@ messages = {
     "Pixel yuv color (cursor based)" : u"Couleur du pixel en yuv (curseur)",
     "Pixel color (auto-detect colorspace)" : u"Couleur du pixel (auto en fct de l'esp de couleur)",
     "Program zoom" : u"Zoom courant",
+    "Note: The \"\\t\\t\" or \"\\T\\T\" is used to separate the left and right portions of the status bar\n         message." : u"", # New in v2.3.0
+    "A macro is still running. Close anyway?" : u"", # New in v2.3.0
     "Save changes before closing?" : u"Sauver les changements avant de fermer ?",
     "Cannot create a new tab while crop editor is open!" : u"Ne peut pas créer d'onglet quand l'éditeur de crop est activé !",
     "Cannot create a new tab while trim editor is open!" : u"Ne peut pas créer d'onglet quand l'éditeur de trim est activé !",
-    "AviSynth script (avs, avsi)|*.avs;*.avsi|Source files (%(extlist1)s)|*.%(extlist2)s|All files (*.*)|*.*" : u"Scripts AviSynth (avs, avsi)|*.avs;*.avsi|Fichiers sources (%(extlist1)s)|*.%(extlist2)s|Tous fichiers (*.*)|*.*",
+    "Source files" : u"", # New in v2.3.0
     "Open a script or source" : u"Ouvrir un script ou source",
     "Reload the file and lose the current changes?" : u"Recharger le script sans garder les modifications ?",
     "Open this file" : u"Ouvrir ce fichier",
     "Save session before closing all tabs?" : u"Sauver la session avant de fermer tous les tabs ?",
-    "AviSynth script (*.avs, *.avsi)|*.avs;*.avsi|All files (*.*)|*.*" : u"Script AviSynth (*.avs, *.avsi)|*.avs;*.avsi|Tous (*.*)|*.*",
     "Save current script" : u"Enregistrer le script courant",
     "Directory %(dirname)s does not exist!" : u"Répertoire %(dirname)s n'existe pas !",
     "Load a session" : u"Charger une session",
     "File has been modified since the session was saved. Reload?" : u"Le script a été modifié depuis la dernière session. Recharger ?",
     "Save the session" : u"Enregistrer la session",
-    "Save current frame" : u"Enregistrer la frame courante",
     "No image to save" : u"Pas d'image à enregistrer",
-    "Source files (%(extlist1)s)|*.%(extlist2)s|All files (*.*)|*.*" : u"Fichiers source (%(extlist1)s)|*.%(extlist2)s|Tous (*.*)|*.*",
+    "Save current frame" : u"Enregistrer la frame courante",
     "Insert a source" : u"Insérer une source",
-    "AviSynth plugin (*.dll)|*.dll|All files (*.*)|*.*" : u"", # New in v2.2.1
+    "All supported plugins" : u"", # New in v2.3.0
+    "AviSynth plugins" : u"", # New in v2.3.0
+    "VirtualDub plugins" : u"", # New in v2.3.0
+    "VFAPI plugins" : u"", # New in v2.3.0
     "Insert a plugin" : u"Insérer un plugin",
     "No bookmarks defined!" : u"Aucune position de frame définie !",
     "There must be more than one unique bookmark to use this feature!" : u"Au moins 2 positions enregistrées sont requises pour utiliser cette fonction !",
@@ -765,19 +777,24 @@ messages = {
     "TFF" : u"", # New in v1.3.8
     "Integer" : u"Integer (Entier)",
     "Float" : u"Float (Décimal)",
+    "pos" : u"", # New in v1.3.8
+    "hex" : u"", # New in v1.3.7
+    "rgb" : u"", # New in v1.3.7
+    "rgba" : u"rvba",
+    "yuv" : u"", # New in v1.3.7
     "Edit AviSynth function information" : u"Editer les informations des filtres AviSynth",
     "  Function name" : u"  Nom du filtre",
     "Function arguments" : u"Paramètres du filtre",
     "Open filter customization file" : u"Ouvrir le fichier de filtres utilisateur",
-    "Calltip-only text file (*.txt)|*.txt" : u"Fichier texte bulle d'aide seulement (*.txt)|*.txt",
-    "Filter customization file (*.tag)|*.tag" : u"Fichier de filtres utilisateurs (*.tag)|*.tag",
+    "Filter customization file" : u"", # New in v2.3.0
+    "Calltip-only text file" : u"", # New in v2.3.0
     "Invalid filter customization file!" : u"Fichier de filtres utilisateur non valide !",
     "Save filter customization file" : u"Enregistrer le fichier de filtres utilisateur",
     "Invalid argument!" : u"Arguments non valide !",
     "Error loading AviSynth!" : u"Erreur au chargement d'AviSynth !",
     "Make sure you have AviSynth installed and that there are no unstable plugins or avsi files in the AviSynth plugins directory." : u"Vérifier qu'Avisynth est installé correctement et qu'aucun filtre / script avsi instable n'est présent dans le répertoire plugins d'Avisynth.",
     "Save changes before previewing?" : u"Enregistrer les modifications avant affichage vidéo ?",
-    "Executable files (*.exe)|*.exe|All files (*.*)|*.*" : u"Programmes (*.exe)|*.exe|Tous (*.*)|*.*",
+    "Executable files" : u"", # New in v2.3.0
     "Select an external player" : u"Sélectionner un lecteur externe",
     "A program must be specified to use this feature!" : u"Un program doit être définie pour utiliser cette fonction !",
     "General settings..." : u"Paramètres généraux...",
@@ -786,6 +803,7 @@ messages = {
     "Invalid slider text: bad modulo label" : u"Erreur curseur : mise en forme du modulo incorrecte",
     "Invalid slider text: slider label already exists" : u"Erreur curseur : ce nom de curseur existe déjà",
     "Invalid slider text: invalid number" : u"Erreur curseur : nombre incorrecte",
+    "Invalid slider tag for rescaling!\nAccept only +, -, or an integer." : u"", # New in v2.3.0
     "Reset to initial value: %(value_formatted)s" : u"Retourner à la valeur initiale : %(value_formatted)s",
     "Reset to initial value: %(value2_formatted)s" : u"", # New in v2.2.1
     "Reset to default value: %(value_formatted)s" : u"Retourner à la valeur par défaut : %(value_formatted)s",
@@ -797,14 +815,14 @@ messages = {
     "Default value must be a number!" : u"Défaut doit être un nombre !",
     "Step size value must be a number!" : u"La taille de pas doit etre un nombre !",
     "Left-click to select a color, right click to reset to default" : u"Clic gauche pour sélectionner une couleure, clic droit pour retourner à la valeur par défaut",
-    "Source files (%(extlist1)s)|*.%(extlist2)s" : u"Fichiers sources (%(extlist1)s)|*.%(extlist2)s",
     "Toggle \"%(label)s\" section" : u"Basculer la section \"%(label)s\"",
+    "Above plugin names contain undesirable symbols.\nRename them to only use alphanumeric or underscores,\nor make sure to use them in short name style only." : u"", # New in v2.3.0
     "Don't show me this again" : u"", # New in v2.2.1
     "Save as" : u"Enregistrer sous",
     "Select a directory" : u"Sélectionner un répertoire",
     "Enter information" : u"Entrer l'information",
     "Progress" : u"",
-    "Error loading the script" : u"Erreur pendant le chargement du script",
+    "A get pixel info operation has already started" : u"", # New in v2.3.0
     "Error in the macro:" : u"erreur dans la macro :",
     "Couldn't find %(macrofilename)s" : u"%(macrofilename)s introuvable",
     "Failed to open the AVI file" : u"Echec de l'ouverture du fichier AVI",
@@ -953,4 +971,132 @@ messages = {
     "Filesize: %(size).2f MB" : u"Taille du fichier: %(size).2f Mo",
     "The current script contains errors, exiting." : u"Le script courant contient des erreurs, fermeture.",
     "Save as AVI" : u"Enregistrer en AVI",
+
+    #--- Macros ---#
+    "Bookmarks at Intervals" : u"", # New in v2.3.0
+    "Bookmarks from Chapter" : u"", # New in v2.3.0
+    "Bookmarks to Chapter" : u"", # New in v2.3.0
+    "ConditionalReader file from bookmarks" : u"", # New in v2.3.0
+    "DeleteFrame" : u"", # New in v2.3.0
+    "DuplicateFrame" : u"", # New in v2.3.0
+    "Preview from current point" : u"", # New in v2.3.0
+    "Random Clip Order" : u"", # New in v2.3.0
+    "Save bookmarks to images" : u"", # New in v2.3.0
+    "Save Image Sequence" : u"", # New in v2.3.0
+    "Shift Bookmarks by frames" : u"", # New in v2.3.0
+    "Example (Resize)" : u"", # New in v2.3.0
+    "Examples" : u"", # New in v2.3.0
+    "Customized" : u"", # New in v2.3.0
+    "bilinear" : u"", # New in v2.3.0
+    "bicubic" : u"", # New in v2.3.0
+    "lanczos" : u"", # New in v2.3.0
+    "spline36" : u"", # New in v2.3.0
+    "create new tab" : u"", # New in v2.3.0
+    "force mod 2" : u"", # New in v2.3.0
+    "Template example" : u"", # New in v2.3.0
+    "Batch example" : u"", # New in v2.3.0
+    "Image processing" : u"", # New in v2.3.0
+    "Manual Telecide" : u"", # New in v2.3.0
+    "Secondary preview" : u"", # New in v2.3.0
+    "Encoding example" : u"", # New in v2.3.0
+    "Encoding example 2" : u"", # New in v2.3.0
+    "Optimize Sliders" : u"", # New in v2.3.0
+
+    #--- Macro: Bookmarks at Intervals ---#
+    "Choose a frame step or a number of intervals" : u"", # New in v2.3.0
+    "Frame step" : u"", # New in v2.3.0
+    "Number of intervals" : u"", # New in v2.3.0
+
+    #--- Macro: Bookmarks from Chapter ---#
+    "Open a bookmark file" : u"", # New in v2.3.0
+    "Supported files" : u"", # New in v2.3.0
+    "Chapters Text files" : u"", # New in v2.3.0
+    "Matroska XML files" : u"", # New in v2.3.0
+    "Celltimes files" : u"", # New in v2.3.0
+    "AvsP Session files" : u"", # New in v2.3.0
+    "Bookmark file unrecognized!" : u"", # New in v2.3.0
+
+    #--- Macro: Bookmarks to Chapter ---#
+    "Text files" : u"", # New in v2.3.0
+
+    #--- Macro: ConditionalReader file from bookmarks ---#
+    "There is not bookmarks" : u"", # New in v2.3.0
+    "Type" : u"", # New in v2.0.0
+    "Value" : u"", # New in v2.3.0
+    "Bookmarks represent..." : u"", # New in v2.3.0
+    "Override 'Value' with the bookmark's title" : u"", # New in v2.3.0
+    "ConditionalReader file" : u"", # New in v2.3.0
+    "Insert the ConditionalReader file path at the current cursor position" : u"", # New in v2.3.0
+    "Bool" : u"", # New in v2.3.0
+    "String" : u"Chaines de caractères ", # New in v1.2.1
+    "Int" : u"", # New in v2.3.0
+    "False" : u"", # New in v2.3.0
+    "True" : u"", # New in v2.3.0
+    "Single frames" : u"", # New in v2.3.0
+    "Ranges of frames" : u"", # New in v2.3.0
+    "Ranges of frames (with interpolation)" : u"", # New in v2.3.0
+    "Interpolation only available for Int and Float" : u"", # New in v2.3.0
+    "Odd number of bookmarks" : u"", # New in v2.3.0
+
+    #--- Macro: Preview from current point ---#
+    "Failed to run the external player!\n\nOpen the macro file in the \"Macros\" subdirectory\nwith a text editor and edit the executable\ndirectory appropriately!" : u"", # New in v2.3.0
+
+    #--- Macro: Save bookmarks to images ---#
+    "Select the output directory and basename" : u"", # New in v2.3.0
+    "JPEG Quality (0-100):" : u"", # New in v2.3.0
+    "JPEG Quality" : u"", # New in v2.3.0
+    "%d image files created." : u"", # New in v2.3.0
+    "Information" : u"",
+    "Please save the current script first!" : u"", # New in v2.3.0
+
+    #--- Macro: Save Image Sequence ---#
+    "Saving images..." : u"", # New in v2.3.0
+
+    #--- Macro: Shift Bookmarks by frames ---#
+    "Introduce the number of frames:" : u"", # New in v2.3.0
+    "Shift bookmarks by # frames" : u"", # New in v2.3.0
+
+    #--- Macro: Customized ---#
+    "Customized aspect ratio" : u"", # New in v2.3.0
+    "Enter a pixel ratio or new size. e.g. 40:33, 1.212 or 640x360" : u"", # New in v2.3.0
+
+    #--- Macro: Image processing ---#
+    "Processing images..." : u"", # New in v2.3.0
+    "Macro aborted" : u"", # New in v2.3.0
+
+    #--- Macro: Manual Telecide ---#
+    "Open a source to Telecide" : u"", # New in v2.3.0
+    "Filename was mangled! Get it again!" : u"", # New in v2.3.0
+    "Enter the field order:" : u"", # New in v2.3.0
+    "Must enter either a 0 or 1!" : u"", # New in v2.3.0
+    "Must enter an integer!" : u"", # New in v2.3.0
+    "Override filename was mangled! Get it again!" : u"", # New in v2.3.0
+    "Not allowed to select base Telecide tab!" : u"", # New in v2.3.0
+    "Unknown mode!" : u"", # New in v2.3.0
+
+    #--- Macro: Encoding example ---#
+    "Encoding is disabled, please read the \"Encoding example.py\" macro for info" : u"", # New in v2.3.0
+
+    #--- Macro: Encoding example 2 ---#
+    "Output filename:" : u"", # New in v2.3.0
+    "Output height:" : u"", # New in v2.3.0
+    "Output width:" : u"", # New in v2.3.0
+    "Enter encoder info" : u"", # New in v2.3.0
+    "Encoding is disabled, please read the \"Encoding example 2.py\" macro for info" : u"", # New in v2.3.0
+
+    #--- Macro: Optimize Sliders ---#
+    "Generation 0 Progress" : u"", # New in v2.3.0
+    "Initial evaluation..." : u"", # New in v2.3.0
+    "Initial best score: %.3f, Current best score: %.3f" : u"", # New in v2.3.0
+    "Best score: %.2f" : u"", # New in v2.3.0
+    "Must configure avs2avi directory to use this macro!" : u"", # New in v2.3.0
+    "SSIM log filename:" : u"", # New in v2.3.0
+    "max generations:" : u"", # New in v2.3.0
+    "population size:" : u"", # New in v2.3.0
+    "crossover probability:" : u"", # New in v2.3.0
+    "mutation probability:" : u"", # New in v2.3.0
+    "selection pressure:" : u"", # New in v2.3.0
+    "Enter optimization info    (%i bits, %i possibilities)" : u"", # New in v2.3.0
+    "Begin optimization..." : u"", # New in v2.3.0
+    "Finished optimization." : u"", # New in v2.3.0
 }

@@ -1,7 +1,7 @@
 # AvsP - an AviSynth editor
-# Copyright 2007 Peter Jang
-#  http://www.avisynth.org/qwerpoi
-
+# Copyright 2007 Peter Jang <http://www.avisynth.org/qwerpoi>
+#           2010-2012 the AvsPmod authors <http://forum.doom9.org/showthread.php?t=153248>
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -53,6 +53,8 @@ from collections import OrderedDict, Iterable, Sequence, MutableSequence
 if hasattr(sys,'frozen'):
     programdir = os.path.dirname(sys.executable)
     sys.path.insert(0, programdir)
+
+import AvsP_i18n
 messages = None
 def _(s):
     if messages:
@@ -82,10 +84,9 @@ except AttributeError:
 from icons import AvsP_icon, next_icon, play_icon, skip_icon, spin_icon,\
                   ok_icon, smile_icon, question_icon, rectangle_icon,\
                   dragdrop_cursor
-import AvsP_i18n
 
 
-version = '2.2.1'
+version = '2.3.0'
 
 
 # Custom styled text control for avisynth language

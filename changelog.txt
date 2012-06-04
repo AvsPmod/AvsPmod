@@ -2,6 +2,42 @@ CHANGELOG
 =========
 
 
+Version 2.3.0 [2012-06-04]
+--------------------------
+
+- Add an option to decide based on the video resolution the coefficients used in the conversion to RGB for the video preview
+- Add 'Run analysis pass' to the 'Video' menu (for two-pass filters)
+- Add periodic session backup option
+- Add an option to not prompt to save a script if it doesn't already exist on the filesystem
+- Add original source time (%ST) and encoded frame type (%EFT) to the video status bar options (only works with ffms as source filter and no temporal filters in the script)
+- VirtualDub and VFAPI plugins can be also inserted now with the 'Insert plugin...' menu option and the 'GetPluginString' macro function, and be dropped over a script
+- Fix exception opening the crop editor
+- The default filename in a save script dialog wasn't taken from the first source in the script in some cases
+- Saving an image with an unsaved script not longer causes to include a '*' in the default output filename
+- Solved single instance + restart AvsPmod + child process still running -> socket error
+- The interface language can be chosen now from the options. Several translations are included.
+- Add macro files to the translations
+- The macro documentation can be checked now with 'help(avsp.function)' or 'help(avsp)' from a macro
+- All included macros and macro functions support unicode strings now
+- Add persistent storage to macros - 'Options' dictionary 
+- Macros can run now in its own thread by including a comment line like: # run macro in new thread
+- The macro API functions are now thread-safe
+- Add a new macro function 'SafeCall' for thread-safe calls in separate-thread macros and tools
+- Add a new macro function 'GetPixelInfo' that waits for the user to click on the video preview and returns the coordinates and colour of that point
+- Add a new macro function 'GetVar' to retrieve the contents of a specified Avisynth variable. Some limitations apply.
+- Update GetTextEntry macro function with new types of entry, multiple entries per row and customizable width, backwards compatible
+- Add an optional cancel button to the MsgBox macro function
+- SaveImage macro function also accepts now JPEG quality as a parameter
+- Fix ProgressBox macro function 'Cancel' button
+- Fix SaveScript macro function 'filename' parameter
+- Add new macro 'ConditionalReader file from bookmarks'
+- Update some macros with the improvements in GetTextEntry
+- A number of intervals can be specified directly now in the 'Bookmarks at Intervals' macro
+- Set the Large Address Aware flag
+- Python 2.6-2.7 is required now
+- Other minor changes and fixes
+
+
 Version 2.2.1 [2012-01-04]
 --------------------------
 

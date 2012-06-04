@@ -11,20 +11,18 @@
 # into this document - if you do, make sure to save it in the appropriate 
 # format.  If required, you can change the coding on the first line of this 
 # document to a coding appropriate for your translated language. DO NOT 
-# translate any words inside formatted strings (ie, any portions of the 
-# text which look like %(...)s, %(...)i, etc.)
+# touch line breaks (\n) and any words inside formatted strings (ie, any 
+# portions of the text which look like %(...)s, %(...)i, etc.)
 
 # Japanese translation authors:
 #   niiyan v2.0.2
 
-version = "2.2.1"
+version = "2.3.0"
 
 messages = {
     "Find" : u"検索",
     "Replace" : u"置換",
-    "Cannot find \"%(text)s\"." : u"\"%(text)s\"が見つかりません。",
-    "Information" : u"情報",
-    "Replace Information" : u"置換情報",
+    "Cannot find \"%(text)s\"" : u"", # New in v2.3.0
     "Replaced %(count)i times" : u"%(count)i回置換しました",
     "AviSynth fonts and colors" : u"フォントと色の設定",
     "Background" : u"背景色",
@@ -46,7 +44,8 @@ messages = {
     "Toggle scrap window" : u"スクラップウィンドウの切り替え",
     "Save script" : u"上書き保存",
     "Error: no contextMenu variable defined for window" : u"エラー: コンテキストメニュー変数がウィンドウに対して定義されていません",
-    "Text document (*.txt)|*.txt|All files (*.*)|*.*" : u"テキストファイル (*.txt)|*.txt|すべてのファイル (*.*)|*.*",
+    "Text document" : u"", # New in v2.3.0
+    "All files" : u"", # New in v2.3.0
     "Save scrap text" : u"スクラップテキストを保存",
     "This field must contain a value!" : u"値が入力されていません！！",
     "This slider label already exists!" : u"このラベルはすでに存在しています！",
@@ -99,7 +98,10 @@ messages = {
     "Renaming not allowed!" : u"名前を変更することはできません！",
     "You must use dllname_function naming format for plugins!" : u"プラグインについては「dll名_関数」という命名書式を使用しなければなりません！",
     "Open Customization files, Avisynth scripts or Avsp options files" : u"", # New in v2.2.0
-    "All supported|*.txt;*.avsi;*.avs;*.dat|Customization file (*.txt)|*.txt|AviSynth script (*.avs, *.avsi)|*.avs;*.avsi|AvsP data (*.dat)|*.dat|All files (*.*)|*.*" : u"", # New in v2.2.0
+    "All supported" : u"", # New in v2.3.0
+    "Customization file" : u"", # New in v2.3.0
+    "AvsP data" : u"", # New in v2.3.0
+    "AviSynth script" : u"", # New in v2.3.0
     "Unrecognized files" : u"", # New in v2.2.0
     "Select import functions" : u"", # New in v2.2.0
     "select all" : u"", # New in v2.2.0
@@ -109,7 +111,6 @@ messages = {
     "Red - a customized function already exists." : u"", # New in v2.2.0
     "No customizations to export!" : u"エクスポートするカスタマイズが存在しません！",
     "Save filter customizations" : u"フィルタカスタマイズの保存",
-    "Customization file (*.txt)|*.txt|All files (*.*)|*.*" : u"カスタマイズファイル (*.txt)|*.txt|All files (*.*)|*.*",
     "This will delete all filter customizations. Continue?" : u"すべてのフィルタカスタマイズを削除します。続行しますか？",
     "Warning" : u"警告",
     "This will delete all manually defined presets. Continue?" : u"すべての手動で定義されたプリセットを削除します。続行しますか？",
@@ -130,23 +131,23 @@ messages = {
     "You must select at least one filter!" : u"少なくとも1つのフィルタを選択しなければなりません！",
     "Error: minValue must be less than maxValue" : u"エラー: minValueはmaxValueより小さくなければなりません",
     "New File" : u"新しいファイル",
-    "Windows Bitmap (*.bmp)" : u"Windows ビットマップ (*.bmp)",
-    "Animation (*.gif)" : u"", # New in v2.2.0
-    "JPEG (*.jpg)" : u"", # New in v1.3.6
-    "Zsoft Paintbrush (*.pcx)" : u"", # New in v2.2.0
-    "Portable Network Graphics (*.png)" : u"", # New in v1.3.6
-    "Netpbm (*.pnm)" : u"", # New in v2.2.0
-    "Tagged Image File (*.tif)" : u"", # New in v2.2.0
-    "ASCII Text Array (*.xpm)" : u"", # New in v2.2.0
-    "Windows Icon (*.ico)" : u"", # New in v2.2.0
+    "Windows Bitmap" : u"", # New in v2.3.0
+    "Animation" : u"", # New in v2.3.0
+    "JPEG" : u"", # New in v2.3.0
+    "Zsoft Paintbrush" : u"", # New in v2.3.0
+    "Portable Network Graphics" : u"", # New in v2.3.0
+    "Netpbm" : u"", # New in v2.3.0
+    "Tagged Image File" : u"", # New in v2.3.0
+    "ASCII Text Array" : u"", # New in v2.3.0
+    "Windows Icon" : u"", # New in v2.3.0
     "fps" : u"",
     "Frame" : u"フレーム",
     "A crash detected at the last running!" : u"", # New in v2.2.0
     "&Zoom" : u"", # New in v2.2.0
-    "%s translation file updated with new messages to translate" : u"", # New in v2.2.1
-    "Translation updated" : u"", # New in v2.2.1
-    "%s translation file updated.  No new messages to translate." : u"", # New in v2.2.1
-    "%s language couldn't be loaded" : u"", # New in v2.2.1
+    "%s translation file updated with new messages to translate" : u"", # New in v2.3.0
+    "Translation updated" : u"", # New in v2.3.0
+    "%s translation file updated.  No new messages to translate." : u"", # New in v2.3.0
+    "%s language couldn't be loaded" : u"", # New in v2.3.0
     "Paths" : u"", # New in v2.2.0
     "AvsP help directory:" : u"AvsPのヘルプのディレクトリ",
     "Location of the AvsP help directory" : u"AvsPのヘルプのディレクトリの場所",
@@ -171,6 +172,7 @@ messages = {
     "Turn on/off avisynth-specific text colors and fonts" : u"AviSynth特有のテキストの色とフォントを強調する/しない",
     "Show autocomplete on capital letters" : u"大文字で始まる単語にオートコンプリートを表示",
     "Turn on/off automatic autocomplete list when typing words starting with capital letters" : u"大文字で始まる単語の入力時に自動的にオートコンプリートのリストを表示する/しない",
+    "Amount of letters typed" : u"", # New in v2.3.0
     "Show autocomplete list when typing a certain amount of letters" : u"", # New in v2.2.0
     "Don't allow lines wider than the window" : u"テキストがウィンドウの幅を超える場合は折り返す",
     "Wrap text" : u"現在のウィンドウの幅で折り返す",
@@ -253,19 +255,23 @@ messages = {
     "Always load the auto-saved session before opening any other file on startup" : u"起動時に常に他のファイルを開く前に自動保存されたセッションを読み込む",
     "Always hide the video preview window when loading a session" : u"", # New in v2.2.0
     "Don't preview when loading a session" : u"", # New in v2.2.0
+    "Backup session periodically (minutes)" : u"", # New in v2.3.0
+    "Backup the session every X minutes, if X > 0" : u"", # New in v2.3.0
     "Backup session when previewing" : u"", # New in v2.2.0
     "If checked, the current session is backed up prior to previewing any new script" : u"有効にすると、プレビューの更新ごとに現在のセッションがバックアップされる",
     "Prompt to save a script before previewing (inactive if previewing with unsaved changes)" : u"外部プレビューの前にスクリプトの保存のためのダイアログを表示（未保存の変更を含むプレビューを許可しているなら動作せず）",
     "Prompt to save when previewing" : u"プレビュー時に保存のためのダイアログを表示",
     "Create a temporary preview script with unsaved changes when previewing the video" : u"ビデオプレビュー時に、未保存の変更を含む外部プレビュー用の一時スクリプトを生成する",
     "Preview scripts with unsaved changes" : u"", # New in v2.2.0
+    "Don't prompt to save scripts without file" : u"", # New in v2.3.0
+    "When closing a tab, don't prompt to save the script if it doesn't already exist on the filesystem" : u"", # New in v2.3.0
     "Prompt to save each script with unsaved changes when exiting the program" : u"プログラムを終了する時に保存されていない変更のあるスクリプトを保存するためのダイアログを表示する",
     "Prompt to save scripts on program exit" : u"プログラム終了時にスクリプトを保存するダイアログを表示",
     "Save *.avs scripts with AvsPmod markings" : u"", # New in v2.2.0
     "Save AvsPmod-specific markings (user sliders, toggle tags, etc) as a commented section in the *.avs file" : u"", # New in v2.2.0
     "Misc" : u"その他",
-    "Choose the language used for the interface" : u"", # New in v2.2.1
-    "Language *" : u"", # New in v2.2.1
+    "Choose the language used for the interface" : u"", # New in v2.3.0
+    "Language *" : u"", # New in v2.3.0
     "Show keyboard images in the script tabs when video has focus" : u"ビデオにフォーカスがある時にスクリプトタブにキーボード画像を表示する",
     "Use keyboard images in tabs" : u"タブ内にキーボード画像を使用",
     "Show tabs in multiline style" : u"", # New in v2.2.0
@@ -346,10 +352,11 @@ messages = {
     "show time" : u"", # New in v2.2.0
     "Show bookmarks with title" : u"", # New in v2.2.0
     "show title" : u"", # New in v2.2.0
-    "Rec601" : u"", # New in v2.2.0
-    "PC.601" : u"", # New in v2.2.0
-    "Rec709" : u"", # New in v2.2.0
-    "PC.709" : u"", # New in v2.2.0
+    "Resolution-based" : u"", # New in v2.3.0
+    "BT.709" : u"", # New in v2.3.0
+    "BT.601" : u"", # New in v2.3.0
+    "TV levels" : u"", # New in v2.3.0
+    "PC levels" : u"", # New in v2.3.0
     "Progressive" : u"", # New in v2.2.0
     "Interlaced" : u"", # New in v2.2.0
     "Swap UV" : u"", # New in v2.2.0
@@ -518,10 +525,11 @@ messages = {
     "Flip video preview from left to right" : u"", # New in v2.2.0
     "&YUV -> RGB" : u"", # New in v2.2.0
     "Swap chroma channels (U and V)" : u"", # New in v2.2.0
-    "For YUV source, assume it is Rec601 (default)" : u"", # New in v2.2.0
-    "For YUV source, assume it is PC.601" : u"", # New in v2.2.0
-    "For YUV source, assume it is Rec709" : u"", # New in v2.2.0
-    "For YUV source, assume it is PC.709" : u"", # New in v2.2.0
+    "Use BT.709 coefficients for HD, BT.601 for SD (default)" : u"", # New in v2.3.0
+    "Use BT.709 coefficients" : u"", # New in v2.3.0
+    "Use BT.601 coefficients" : u"", # New in v2.3.0
+    "Use limited range (default)" : u"", # New in v2.3.0
+    "Use full range" : u"", # New in v2.3.0
     "For YV12 only, assume it is progressive (default)" : u"", # New in v2.2.0
     "For YV12 only, assume it is interlaced" : u"", # New in v2.2.0
     "Save image as..." : u"名前を付けて画像を保存...",
@@ -536,6 +544,8 @@ messages = {
     "Switch video/text focus" : u"フォーカスの切り替え",
     "Show/hide the slider sidebar (double-click the divider for the same effect)" : u"スライダのサイドバーの表示/非表示を切り替える（区切り線をダブルクリックでも同じ効果）",
     "Toggle the slider sidebar" : u"スライダのサイドバーを表示/非表示",
+    "Request every video frame once (analysis pass for two-pass filters)" : u"", # New in v2.3.0
+    "Run analysis pass" : u"", # New in v2.3.0
     "External player" : u"外部プレーヤー",
     "Play the current script in an external program" : u"現在のスクリプトを外部プログラムで再生",
     "Show information about the video in a dialog box" : u"ダイアログボックスにビデオに関する情報を表示",
@@ -578,10 +588,11 @@ messages = {
     "Run the script with an external program" : u"外部プログラムを使ってスクリプトを実行する",
     "Run the selected tool" : u"選択されたツールを実行",
     "&Tools" : u"", # New in v2.2.0
-    "a macro check item" : u"", # New in v2.2.0
-    "a macro radio item" : u"", # New in v2.2.0
+    "A macro check item" : u"", # New in v2.3.0
+    "A macro radio item" : u"", # New in v2.3.0
     "Run selected macro" : u"選択されたマクロを実行",
     "View the readme for making macros" : u"マクロ作成のためのreadmeを読む",
+    "Open macros folder" : u"", # New in v2.3.0
     "Open the macros folder" : u"", # New in v2.2.0
     "&Macros" : u"", # New in v2.2.0
     "Close" : u"閉じる",
@@ -607,7 +618,6 @@ messages = {
     "Insert Dissolve() commands:" : u"", # New in v2.2.0
     "Use the buttons which appear on the video slider handle to create the frame selections to trim." : u"トリミングするフレームの選択を行うには、ビデオスライダのつまみの上に現れるボタンを使用してください。",
     "File does not exist!" : u"ファイルが存在しません！",
-    "All files (*.*)|*.*" : u"すべてのファイル (*.*)|*.*",
     "Select a file" : u"ファイルを選択",
     "Create a separator label" : u"セパレータのラベルを作成",
     "Enter separator label" : u"セパレータのラベルを入力",
@@ -618,8 +628,10 @@ messages = {
     "Title" : u"", # New in v2.2.0
     "Frame No." : u"", # New in v2.2.0
     "Time **" : u"", # New in v2.2.0
-    "" : u"", # New in v2.2.0
+    "Left-click on a selected item or double-click to edit.\n\n*  RED - a historic title, not a real bookmark.\n** Time may be unavailable or incorrect before preview refreshed." : u"", # New in v2.3.0
     "Cannot use crop editor unless zoom set to 100% and non-flipped!" : u"", # New in v2.2.0
+    "Error loading the script" : u"スクリプトの読み込みエラー",
+    "Starting analysis pass..." : u"", # New in v2.3.0
     "Frame size:" : u"フレームサイズ:",
     "Length:" : u"長さ:",
     "Frame rate:" : u"フレームレート:",
@@ -683,6 +695,8 @@ messages = {
     "(If you want relative paths instead of the full filename, use [***].)" : u"（フルパスの代わりに相対パスを使いたいなら、[***]を使用してください。）",
     "Associating .avs files will write to the windows registry." : u".avsファイルとの関連付けをWindowsのレジストリに書き込む。",
     "Do you wish to continue?" : u"続行しますか？",
+    "Above keys are built-in editing shortcuts. If item is checked,\nit will not be overrided by a menu shortcut in script window." : u"", # New in v2.3.0
+    "* This shortcut is active only when video window has focus.\n~ This shortcut is active only when script window has focus." : u"", # New in v2.3.0
     "Could not find the Avisynth plugins folder!" : u"", # New in v2.2.0
     "AvsPmod version %(version)s " : u"", # New in v2.2.0
     "An AviSynth script editor" : u"AviSynthスクリプトエディタ",
@@ -696,11 +710,6 @@ messages = {
     "clear history" : u"", # New in v2.2.0
     "Cannot switch tabs while crop editor is open!" : u"Cropエディタが開いている時はタブを切り替えることができません！",
     "Cannot switch tabs while trim editor is open!" : u"Trimエディタを開いている間はタブを切り替えることができません！",
-    "pos" : u"座標",
-    "rgb" : u"RGB",
-    "rgba" : u"RGBA",
-    "yuv" : u"YUV",
-    "hex" : u"16進数",
     "Invalid crop values detected.  Continue?" : u"無効なCrop値が検出されました。続行しますか？",
     "You must create at least one frame selection first!" : u"少なくとも1つ以上の選択範囲を作成しなければなりません！",
     "Select autocomplete keywords" : u"", # New in v2.2.0
@@ -733,25 +742,28 @@ messages = {
     "Pixel yuv color (cursor based)" : u"ピクセルのYUV色（カーソルベース）",
     "Pixel color (auto-detect colorspace)" : u"ピクセルの色（色空間自動判別）",
     "Program zoom" : u"表示倍率",
+    "Note: The \"\\t\\t\" or \"\\T\\T\" is used to separate the left and right portions of the status bar\n         message." : u"", # New in v2.3.0
+    "A macro is still running. Close anyway?" : u"", # New in v2.3.0
     "Save changes before closing?" : u"閉じる前に変更を保存しますか？",
     "Cannot create a new tab while crop editor is open!" : u"Cropエディタを開いている間は新しいタブを作成できません！",
     "Cannot create a new tab while trim editor is open!" : u"Trimエディタを開いている間は新しいタブを作成できません！",
-    "AviSynth script (avs, avsi)|*.avs;*.avsi|Source files (%(extlist1)s)|*.%(extlist2)s|All files (*.*)|*.*" : u"AviSynthスクリプト (avs, avsi)|*.avs;*.avsi|ソースファイル (%(extlist1)s)|*.%(extlist2)s|すべてのファイル (*.*)|*.*",
+    "Source files" : u"", # New in v2.3.0
     "Open a script or source" : u"スクリプトまたはソースを開く",
     "Reload the file and lose the current changes?" : u"ファイルをリロードしますか？現在までの変更は失われます。",
     "Open this file" : u"このファイルを開く",
     "Save session before closing all tabs?" : u"すべてのタブを閉じる前にセッションを保存しますか？",
-    "AviSynth script (*.avs, *.avsi)|*.avs;*.avsi|All files (*.*)|*.*" : u"AviSynthスクリプト (*.avs, *.avsi)|*.avs;*.avsi|すべてのファイル (*.*)|*.*",
     "Save current script" : u"現在のスクリプトを保存",
     "Directory %(dirname)s does not exist!" : u"ディレクトリ%(dirname)sは存在しません！",
     "Load a session" : u"セッションの読み込み",
     "File has been modified since the session was saved. Reload?" : u"前にセッションが保存されてからファイルが修正されています。リロードしますか？",
     "Save the session" : u"セッションの保存",
-    "Save current frame" : u"現在のフレームを保存",
     "No image to save" : u"保存する画像がありません",
-    "Source files (%(extlist1)s)|*.%(extlist2)s|All files (*.*)|*.*" : u"ソースファイル (%(extlist1)s)|*.%(extlist2)s|すべてのファイル (*.*)|*.*",
+    "Save current frame" : u"現在のフレームを保存",
     "Insert a source" : u"ソースの挿入",
-    "AviSynth plugin (*.dll)|*.dll|All files (*.*)|*.*" : u"", # New in v2.2.1
+    "All supported plugins" : u"", # New in v2.3.0
+    "AviSynth plugins" : u"", # New in v2.3.0
+    "VirtualDub plugins" : u"", # New in v2.3.0
+    "VFAPI plugins" : u"", # New in v2.3.0
     "Insert a plugin" : u"プラグインの挿入",
     "No bookmarks defined!" : u"ブックマークが定義されていません！",
     "There must be more than one unique bookmark to use this feature!" : u"この機能を使用するには2つ以上のブックマークがなければなりません！",
@@ -765,19 +777,24 @@ messages = {
     "TFF" : u"", # New in v1.3.8
     "Integer" : u"整数",
     "Float" : u"浮動小数点数",
+    "pos" : u"座標",
+    "hex" : u"16進数",
+    "rgb" : u"RGB",
+    "rgba" : u"RGBA",
+    "yuv" : u"YUV",
     "Edit AviSynth function information" : u"AviSynth関数情報の編集",
     "  Function name" : u"  関数名",
     "Function arguments" : u"パラメータ",
     "Open filter customization file" : u"フィルタのカスタマイズファイルを開く",
-    "Calltip-only text file (*.txt)|*.txt" : u"コールチップのみのテキストファイル (*.txt)|*.txt",
-    "Filter customization file (*.tag)|*.tag" : u"フィルタカスタマイスファイル (*.tag)|*.tag",
+    "Filter customization file" : u"", # New in v2.3.0
+    "Calltip-only text file" : u"", # New in v2.3.0
     "Invalid filter customization file!" : u"無効なフィルタカスタマイスファイル！",
     "Save filter customization file" : u"フィルタのカスタマイスファイルを保存",
     "Invalid argument!" : u"無効なパラメータ！",
     "Error loading AviSynth!" : u"AviSynthの読み込みに関するエラー！",
     "Make sure you have AviSynth installed and that there are no unstable plugins or avsi files in the AviSynth plugins directory." : u"AviSynthがインストール済みで、不安定なプラグインやavsiファイルがAviSynthのpluginsディレクトリに存在しないことを確認してください。",
     "Save changes before previewing?" : u"プレビュー前に変更を保存しますか？",
-    "Executable files (*.exe)|*.exe|All files (*.*)|*.*" : u"実行ファイル (*.exe)|*.exe|すべてのファイル (*.*)|*.*",
+    "Executable files" : u"", # New in v2.3.0
     "Select an external player" : u"外部プレーヤーの選択",
     "A program must be specified to use this feature!" : u"この機能を使用するにはプログラムを指定しなければなりません！",
     "General settings..." : u"一般的な設定...",
@@ -786,6 +803,7 @@ messages = {
     "Invalid slider text: bad modulo label" : u"無効なスライダテキスト: ラベルの倍数指定が不正",
     "Invalid slider text: slider label already exists" : u"無効なスライダテキスト: スライダのラベルがすでに存在する",
     "Invalid slider text: invalid number" : u"無効なスライダテキスト: 無効な数値",
+    "Invalid slider tag for rescaling!\nAccept only +, -, or an integer." : u"", # New in v2.3.0
     "Reset to initial value: %(value_formatted)s" : u"初期値%(value_formatted)sにリセット",
     "Reset to initial value: %(value2_formatted)s" : u"", # New in v2.2.0
     "Reset to default value: %(value_formatted)s" : u"デフォルト設定にリセット: %(value_formatted)s",
@@ -797,14 +815,14 @@ messages = {
     "Default value must be a number!" : u"デフォルト値は数値でなければなりません！",
     "Step size value must be a number!" : u"ステップサイズの値は数でなければなりません！",
     "Left-click to select a color, right click to reset to default" : u"色を選択するには左クリック、デフォルト値にリセットするには右クリックしてください",
-    "Source files (%(extlist1)s)|*.%(extlist2)s" : u"ソースファイル (%(extlist1)s)|*.%(extlist2)s",
     "Toggle \"%(label)s\" section" : u"\"%(label)s\"の範囲をオン/オフ",
+    "Above plugin names contain undesirable symbols.\nRename them to only use alphanumeric or underscores,\nor make sure to use them in short name style only." : u"", # New in v2.3.0
     "Don't show me this again" : u"", # New in v2.2.0
     "Save as" : u"名前を付けて保存",
     "Select a directory" : u"ディレクトリの選択",
     "Enter information" : u"情報の入力",
     "Progress" : u"進捗状況",
-    "Error loading the script" : u"スクリプトの読み込みエラー",
+    "A get pixel info operation has already started" : u"", # New in v2.3.0
     "Error in the macro:" : u"マクロのエラー",
     "Couldn't find %(macrofilename)s" : u"%(macrofilename)sが見つかりませんでした",
     "Failed to open the AVI file" : u"AVIファイルのオープンに失敗しました",
@@ -953,4 +971,132 @@ messages = {
     "Filesize: %(size).2f MB" : u"ファイルサイズ: %(size).2f MB",
     "The current script contains errors, exiting." : u"現在のスクリプトはエラーを含んでいます。終了します。",
     "Save as AVI" : u"AVIとして保存",
+
+    #--- Macros ---#
+    "Bookmarks at Intervals" : u"", # New in v2.3.0
+    "Bookmarks from Chapter" : u"", # New in v2.3.0
+    "Bookmarks to Chapter" : u"", # New in v2.3.0
+    "ConditionalReader file from bookmarks" : u"", # New in v2.3.0
+    "DeleteFrame" : u"", # New in v2.3.0
+    "DuplicateFrame" : u"", # New in v2.3.0
+    "Preview from current point" : u"", # New in v2.3.0
+    "Random Clip Order" : u"", # New in v2.3.0
+    "Save bookmarks to images" : u"", # New in v2.3.0
+    "Save Image Sequence" : u"", # New in v2.3.0
+    "Shift Bookmarks by frames" : u"", # New in v2.3.0
+    "Example (Resize)" : u"", # New in v2.3.0
+    "Examples" : u"", # New in v2.3.0
+    "Customized" : u"", # New in v2.3.0
+    "bilinear" : u"", # New in v2.3.0
+    "bicubic" : u"", # New in v2.3.0
+    "lanczos" : u"", # New in v2.3.0
+    "spline36" : u"", # New in v2.3.0
+    "create new tab" : u"", # New in v2.3.0
+    "force mod 2" : u"", # New in v2.3.0
+    "Template example" : u"", # New in v2.3.0
+    "Batch example" : u"", # New in v2.3.0
+    "Image processing" : u"", # New in v2.3.0
+    "Manual Telecide" : u"", # New in v2.3.0
+    "Secondary preview" : u"", # New in v2.3.0
+    "Encoding example" : u"", # New in v2.3.0
+    "Encoding example 2" : u"", # New in v2.3.0
+    "Optimize Sliders" : u"", # New in v2.3.0
+
+    #--- Macro: Bookmarks at Intervals ---#
+    "Choose a frame step or a number of intervals" : u"", # New in v2.3.0
+    "Frame step" : u"", # New in v2.3.0
+    "Number of intervals" : u"", # New in v2.3.0
+
+    #--- Macro: Bookmarks from Chapter ---#
+    "Open a bookmark file" : u"", # New in v2.3.0
+    "Supported files" : u"", # New in v2.3.0
+    "Chapters Text files" : u"", # New in v2.3.0
+    "Matroska XML files" : u"", # New in v2.3.0
+    "Celltimes files" : u"", # New in v2.3.0
+    "AvsP Session files" : u"", # New in v2.3.0
+    "Bookmark file unrecognized!" : u"", # New in v2.3.0
+
+    #--- Macro: Bookmarks to Chapter ---#
+    "Text files" : u"", # New in v2.3.0
+
+    #--- Macro: ConditionalReader file from bookmarks ---#
+    "There is not bookmarks" : u"", # New in v2.3.0
+    "Type" : u"タイプ",
+    "Value" : u"", # New in v2.3.0
+    "Bookmarks represent..." : u"", # New in v2.3.0
+    "Override 'Value' with the bookmark's title" : u"", # New in v2.3.0
+    "ConditionalReader file" : u"", # New in v2.3.0
+    "Insert the ConditionalReader file path at the current cursor position" : u"", # New in v2.3.0
+    "Bool" : u"", # New in v2.3.0
+    "String" : u"文字列",
+    "Int" : u"", # New in v2.3.0
+    "False" : u"", # New in v2.3.0
+    "True" : u"", # New in v2.3.0
+    "Single frames" : u"", # New in v2.3.0
+    "Ranges of frames" : u"", # New in v2.3.0
+    "Ranges of frames (with interpolation)" : u"", # New in v2.3.0
+    "Interpolation only available for Int and Float" : u"", # New in v2.3.0
+    "Odd number of bookmarks" : u"", # New in v2.3.0
+
+    #--- Macro: Preview from current point ---#
+    "Failed to run the external player!\n\nOpen the macro file in the \"Macros\" subdirectory\nwith a text editor and edit the executable\ndirectory appropriately!" : u"", # New in v2.3.0
+
+    #--- Macro: Save bookmarks to images ---#
+    "Select the output directory and basename" : u"", # New in v2.3.0
+    "JPEG Quality (0-100):" : u"", # New in v2.3.0
+    "JPEG Quality" : u"", # New in v2.3.0
+    "%d image files created." : u"", # New in v2.3.0
+    "Information" : u"情報",
+    "Please save the current script first!" : u"", # New in v2.3.0
+
+    #--- Macro: Save Image Sequence ---#
+    "Saving images..." : u"", # New in v2.3.0
+
+    #--- Macro: Shift Bookmarks by frames ---#
+    "Introduce the number of frames:" : u"", # New in v2.3.0
+    "Shift bookmarks by # frames" : u"", # New in v2.3.0
+
+    #--- Macro: Customized ---#
+    "Customized aspect ratio" : u"", # New in v2.3.0
+    "Enter a pixel ratio or new size. e.g. 40:33, 1.212 or 640x360" : u"", # New in v2.3.0
+
+    #--- Macro: Image processing ---#
+    "Processing images..." : u"", # New in v2.3.0
+    "Macro aborted" : u"", # New in v2.3.0
+
+    #--- Macro: Manual Telecide ---#
+    "Open a source to Telecide" : u"", # New in v2.3.0
+    "Filename was mangled! Get it again!" : u"", # New in v2.3.0
+    "Enter the field order:" : u"", # New in v2.3.0
+    "Must enter either a 0 or 1!" : u"", # New in v2.3.0
+    "Must enter an integer!" : u"", # New in v2.3.0
+    "Override filename was mangled! Get it again!" : u"", # New in v2.3.0
+    "Not allowed to select base Telecide tab!" : u"", # New in v2.3.0
+    "Unknown mode!" : u"", # New in v2.3.0
+
+    #--- Macro: Encoding example ---#
+    "Encoding is disabled, please read the \"Encoding example.py\" macro for info" : u"", # New in v2.3.0
+
+    #--- Macro: Encoding example 2 ---#
+    "Output filename:" : u"", # New in v2.3.0
+    "Output height:" : u"", # New in v2.3.0
+    "Output width:" : u"", # New in v2.3.0
+    "Enter encoder info" : u"", # New in v2.3.0
+    "Encoding is disabled, please read the \"Encoding example 2.py\" macro for info" : u"", # New in v2.3.0
+
+    #--- Macro: Optimize Sliders ---#
+    "Generation 0 Progress" : u"", # New in v2.3.0
+    "Initial evaluation..." : u"", # New in v2.3.0
+    "Initial best score: %.3f, Current best score: %.3f" : u"", # New in v2.3.0
+    "Best score: %.2f" : u"", # New in v2.3.0
+    "Must configure avs2avi directory to use this macro!" : u"", # New in v2.3.0
+    "SSIM log filename:" : u"", # New in v2.3.0
+    "max generations:" : u"", # New in v2.3.0
+    "population size:" : u"", # New in v2.3.0
+    "crossover probability:" : u"", # New in v2.3.0
+    "mutation probability:" : u"", # New in v2.3.0
+    "selection pressure:" : u"", # New in v2.3.0
+    "Enter optimization info    (%i bits, %i possibilities)" : u"", # New in v2.3.0
+    "Begin optimization..." : u"", # New in v2.3.0
+    "Finished optimization." : u"", # New in v2.3.0
 }
