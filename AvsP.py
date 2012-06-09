@@ -10614,6 +10614,7 @@ class MainFrame(wxp.Frame):
             self.menuBookmark.DestroyItem(self.menuBookmark.FindItemByPosition(0))
         pos = 0
         bookmarkList = self.GetBookmarkFrameList()
+        if len(bookmarkList) > 1000: return
         #~for key in self.bookmarkDict.keys():
             #~if (key, 0) not in bookmarkList:
                 #~del self.bookmarkDict[key]
