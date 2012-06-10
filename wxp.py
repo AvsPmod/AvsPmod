@@ -380,6 +380,7 @@ class ArgsPosterThread:
                     wx.PostEvent(self.app, evt)
                     newSocket.sendall(receivedData)
                 newSocket.close()
+                self.app.Raise()
         finally:
             sock.close()
         self.running = False
