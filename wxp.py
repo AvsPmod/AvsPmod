@@ -380,7 +380,15 @@ class ArgsPosterThread:
                     wx.PostEvent(self.app, evt)
                     newSocket.sendall(receivedData)
                 newSocket.close()
-                self.app.Raise()
+                if self.app.IsIconized():
+                    self.app.Iconize(False)
+                else:
+                    self.app.Raise()
+                if self.app.separatevideowindow and self.app.videoDialog.IsShown():
+                    if self.app.videoDialog.IsIconized():
+                        self.app.videoDialog.Iconize(False)
+                    else:
+                        self.app.videoDialog.Raise()
         finally:
             sock.close()
         self.running = False
