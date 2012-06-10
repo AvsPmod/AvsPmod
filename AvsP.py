@@ -4775,6 +4775,7 @@ class MainFrame(wxp.Frame):
             'refreshpreview': True,
             'promptwhenpreview': False,
             'separatevideowindow': False,
+            'previewontopofmain': False,
             #~ 'showvideopixelinfo': True,
             #~ 'pixelcolorformat': 'hex',
             'videostatusbarinfo': None,
@@ -4813,6 +4814,7 @@ class MainFrame(wxp.Frame):
             'dllnamewarning': True,
             # TOGGLE OPTIONS
             'alwaysontop': False,
+            'previewalwaysontop': False,
             'singleinstance': False,
             'usemonospacedfont': False,
             'disablepreview': False,
@@ -5292,6 +5294,7 @@ class MainFrame(wxp.Frame):
                 ((_('Shared timeline'), wxp.OPT_ELEM_CHECK, 'enableframepertab', _('Seeking to a certain frame will seek to that frame on all tabs'), dict() ), ),
                 ((_('Allow AvsPmod to resize the window'), wxp.OPT_ELEM_CHECK, 'allowresize', _('Allow AvsPmod to resize and/or move the program window when updating the video preview'), dict() ), ),
                 ((_('Separate video preview window')+' *', wxp.OPT_ELEM_CHECK, 'separatevideowindow', _('Use a separate window for the video preview'), dict() ), ),
+                ((_('Keep it on top of the main window')+' *', wxp.OPT_ELEM_CHECK, 'previewontopofmain', _('Keep the video preview window always on top of the main one and link its visibility'), dict(ident=20) ), ),
                 ((_('Min text lines on video preview')+' *', wxp.OPT_ELEM_SPIN, 'mintextlines', _('Minimum number of lines to show when displaying the video preview'), dict(min_val=0) ), ),
                 ((_('Customize video status bar...'), wxp.OPT_ELEM_BUTTON, 'videostatusbarinfo', _('Customize the video information shown in the program status bar'), dict(handler=self.OnConfigureVideoStatusBarMessage) ), ),
             ),
@@ -5320,7 +5323,7 @@ class MainFrame(wxp.Frame):
                 ((_('Save *.avs scripts with AvsPmod markings'), wxp.OPT_ELEM_CHECK, 'savemarkedavs', _('Save AvsPmod-specific markings (user sliders, toggle tags, etc) as a commented section in the *.avs file'), dict() ), ),
             ),
             (_('Misc'),
-                ((_('Language *'), wxp.OPT_ELEM_LIST, 'lang', _('Choose the language used for the interface'), dict(choices=self.getTranslations()) ), ),
+                ((_('Language')+' *', wxp.OPT_ELEM_LIST, 'lang', _('Choose the language used for the interface'), dict(choices=self.getTranslations()) ), ),
                 #~((_('Load bookmarks on startup'), wxp.OPT_ELEM_CHECK, 'loadstartupbookmarks', _('Load video bookmarks from the previous session on program startup'), dict() ), ),
                 #~ ((_('Show full pathname in program title'), wxp.OPT_ELEM_CHECK, 'showfullname', _('Show the full pathname of the current script in the program title'), dict() ), ),
                 #~ ((_('Use custom AviSynth lexer'), wxp.OPT_ELEM_CHECK, 'usecustomlexer', _('Use the custom AviSynth syntax highlighting lexer (may be slower)'), dict() ), ),
@@ -5362,7 +5365,15 @@ class MainFrame(wxp.Frame):
             parent = self.mainSplitter
         else:
             #~ self.videoDialog = wx.Dialog(self, wx.ID_ANY, style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
-            self.videoDialog = wx.Frame(self, wx.ID_ANY,style=wx.DEFAULT_FRAME_STYLE|wx.WANTS_CHARS)#, style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+            style=wx.DEFAULT_FRAME_STYLE|wx.WANTS_CHARS
+            if self.options['previewontopofmain']:
+                style = style|wx.FRAME_FLOAT_ON_PARENT
+            if self.options['previewalwaysontop']:
+                style = style|wx.STAY_ON_TOP
+            self.videoDialog = wx.Frame(self, wx.ID_ANY,style=style)#, style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+            if self.options['previewontopofmain']: # main window loses 'always on top' effect
+                self.ToggleWindowStyle(wx.STAY_ON_TOP)
+                self.ToggleWindowStyle(wx.STAY_ON_TOP)
             dimensions = self.options.get('dimensions2')
             if dimensions is not None and dimensions[0] > 0 and dimensions[1] > 0:
                 self.videoDialog.SetDimensions(*dimensions)
@@ -5962,6 +5973,7 @@ class MainFrame(wxp.Frame):
             ),
             (_('&Options'),
                 (_('Always on top'), '', self.OnMenuOptionsAlwaysOnTop, _('Keep this window always on top of others'), wx.ITEM_CHECK, self.options['alwaysontop']),
+                (_('Video preview always on top'), '', self.OnMenuOptionsPreviewAlwaysOnTop, _('If the video preview is detached, keep it always on top of other windows'), wx.ITEM_CHECK, self.options['previewalwaysontop']),
                 #~(_('Only allow a single instance'), '', self.OnMenuOptionsSingleInstance, _('Only allow a single instance of AvsP'), wx.ITEM_CHECK, self.options['singleinstance']),
                 #~(_('Use monospaced font'), '', self.OnMenuOptionsMonospaceFont, _('Override all fonts to use a specified monospace font'), wx.ITEM_CHECK, self.options['usemonospacedfont']),
                 (_('Disable video preview'), '', self.OnMenuOptionsDisablePreview, _('If checked, the video preview will not be shown under any circumstances'), wx.ITEM_CHECK, self.options['disablepreview']),
@@ -7616,12 +7628,20 @@ class MainFrame(wxp.Frame):
         else:
             self.options['alwaysontop'] = False
             menuItem.Check(False)
-        if self.options['alwaysontop']:
-            style = wx.DEFAULT_FRAME_STYLE|wx.STAY_ON_TOP
+        self.ToggleWindowStyle(wx.STAY_ON_TOP)
+    
+    def OnMenuOptionsPreviewAlwaysOnTop(self, event):
+        id = event.GetId()
+        menuItem = self.GetMenuBar().FindItemById(id)
+        if not self.options['previewalwaysontop']:
+            self.options['previewalwaysontop'] = True
+            menuItem.Check(True)
         else:
-            style = wx.DEFAULT_FRAME_STYLE
-        self.SetWindowStyle(style)
-
+            self.options['previewalwaysontop'] = False
+            menuItem.Check(False)
+        if self.separatevideowindow:
+            self.videoDialog.ToggleWindowStyle(wx.STAY_ON_TOP)
+    
     def OnMenuOptionsSingleInstance(self, event):
         id = event.GetId()
         menuItem = self.GetMenuBar().FindItemById(id)
