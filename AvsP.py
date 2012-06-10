@@ -14805,6 +14805,9 @@ class MainFrame(wxp.Frame):
             return self.AvsP_functions(self)
             
         def ShowException():
+            match = re.match('\w+\((?:\d+,)?\s*[\'"](.*)[\'"],?\)$', 
+                             repr(sys.exc_info()[1]).decode('string_escape').decode(encoding))
+            message = match.group(1) if match else ''
             extra = ''
             for line in traceback.format_exc().split('\n'):
                 if line.endswith('in AvsP_macro_main'):
@@ -14814,7 +14817,7 @@ class MainFrame(wxp.Frame):
                     except:
                         pass
                     break
-            error_string = '%s\n\n%s%s' % (_('Error in the macro:'), sys.exc_info()[1], extra)
+            error_string = '%s\n\n%s%s' % (_('Error in the macro:'), message, extra)
             AsyncCall(wx.MessageBox, error_string, _('Error'), style=wx.OK|wx.ICON_ERROR).Wait()  
         
         os.chdir(self.programdir)
