@@ -5,6 +5,7 @@
 *.pyo
 *.dat
 !filterdb.dat
+*.BAD
 *.gz
 *.zip
 *.rar

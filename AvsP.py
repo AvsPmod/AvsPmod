@@ -33,6 +33,7 @@ import os
 import sys
 import traceback
 import cPickle
+import shutil
 import string
 import codecs
 import re
@@ -4219,13 +4220,19 @@ class MainFrame(wxp.Frame):
         self.filterdbfilename = os.path.join(self.programdir, 'filterdb.dat')
         self.lastSessionFilename = os.path.join(self.programdir, '_last_session_.ses')
         self.macrosfilename = os.path.join(self.programdir, 'macros', 'macros.dat')
+        self.loaderror = []
         self.getOptionsDict()        
         self.IdleCall = []
         self.defineFilterInfo()
         if os.path.isfile(self.macrosfilename):
-            f = open(self.macrosfilename, 'rb')
-            self.optionsMacros = cPickle.load(f)
-            f.close
+            try:
+                with open(self.macrosfilename, 'rb') as f:
+                    self.optionsMacros = cPickle.load(f)
+            except:
+                self.loaderror.append(os.path.basename(self.macrosfilename))
+                shutil.copy2(self.macrosfilename, 
+                             os.path.splitext(self.macrosfilename)[0] + '.BAD')
+                self.optionsMacros = {}
         else:
             self.optionsMacros = {}
         
@@ -4508,8 +4515,9 @@ class MainFrame(wxp.Frame):
             self.IdleCall.append((wx.MessageBox, (_('A crash detected at the last running!'), _('Warning'), wx.OK|wx.ICON_EXCLAMATION, self), {})) 
         if self.options['startupsession'] or self.options['exitstatus']:
             if self.options['alwaysloadstartupsession'] or len(sys.argv) <= 1 or not self.options['promptexitsave'] or self.options['exitstatus']:
-                if os.path.exists(self.lastSessionFilename):
-                    self.LoadSession(self.lastSessionFilename, saverecentdir=False, resize=False, backup=True, startup=True)
+                if os.path.exists(self.lastSessionFilename) and not self.LoadSession(self.lastSessionFilename, saverecentdir=False, resize=False, backup=True, startup=True):
+                    self.loaderror.append(os.path.basename(self.lastSessionFilename))
+                    shutil.copy2(self.lastSessionFilename, os.path.splitext(self.lastSessionFilename)[0] + '.BAD')
         if not self.options['exitstatus']:
             self.options['exitstatus'] = 1
             f = open(self.optionsfilename, mode='wb')
@@ -4607,6 +4615,10 @@ class MainFrame(wxp.Frame):
         self.scriptNotebook.SetSelection(index)
         self.currentScript.SetFocus()
         
+        # Warn if option files are damaged
+        if self.loaderror:
+            print>>sys.stderr, '{}: {}'.format(_('Error'), _('Damaged {}. Using default settings.').format(', '.join(self.loaderror)))
+        
         # Update the translation file if necessary
         if self.options['lang'] != 'eng':
             if translation:
@@ -4656,12 +4668,16 @@ class MainFrame(wxp.Frame):
     def getOptionsDict(self):
         oldOptions = None
         if os.path.exists(self.optionsfilename):
-            f = open(self.optionsfilename, mode='rb')
-            oldOptions = cPickle.load(f)
-            f.close()
-            oldVersion = oldOptions.get('version')
-            if oldVersion.startswith('1.'):
-                oldOptions = None
+            try:
+                with open(self.optionsfilename, mode='rb') as f:
+                    oldOptions = cPickle.load(f)
+            except:
+                self.loaderror.append(os.path.basename(self.optionsfilename))
+                shutil.copy2(self.optionsfilename, 
+                             os.path.splitext(self.optionsfilename)[0] + '.BAD')
+                oldOptions = {}
+        if oldOptions and oldOptions.get('version').startswith('1.'):
+            oldOptions = None
         templateDict = {
             'avi': 'AVISource(***)',
             'wav': 'WAVSource(***)',
@@ -4902,67 +4918,75 @@ class MainFrame(wxp.Frame):
         ]
         self.avsmiscwords = ['__end__']
         if os.path.exists(self.filterdbfilename):
-            f = open(self.filterdbfilename, mode='r')
-            text = '\n'.join([line.strip() for line in f.readlines()])
-            f.close()
-            for section in text.split('\n['):
-                title, data = section.split(']\n',1)
-                title = title.strip('[]').lower()
-                if title == 'keywords':
-                    self.avskeywords = data.split()
-                elif title == 'datatypes':
-                    self.avsdatatypes = data.split()
-                elif title == 'operators':
-                    self.avsoperators = data.split()
-                elif title == 'clipproperties':
-                    for item in data.split('\n'):
-                        if not item.strip():
-                            continue
-                        splitstring = item.split('(', 1)
-                        if len(splitstring) == 2:
-                            filtername = splitstring[0].strip()
-                            filterargs = '('+splitstring[1].strip(' ')
-                        else:
-                            filtername = item
-                            filterargs = ''
-                        self.optionsFilters[filtername.lower()] = (filtername, filterargs, 1)
-                elif title == 'scriptfunctions':
-                    for item in data.split('\n'):
-                        splitstring = item.split('(', 1)
-                        if len(splitstring) == 2:
-                            filtername = splitstring[0].strip()
-                            filterargs = '('+splitstring[1].strip(' ')
-                            self.optionsFilters[filtername.lower()] = (filtername, filterargs, 4)
-                elif title == 'corefilters':
-                    for s in data.split('\n\n'):
-                        splitstring = s.split('(', 1)
-                        if len(splitstring) == 2:
-                            filtername = splitstring[0].strip()
-                            filterargs = '('+splitstring[1].strip(' ')
-                            self.optionsFilters[filtername.lower()] = (filtername, filterargs, 0)
-                elif title == 'plugins':
-                    for s in data.split('\n\n'):
-                        splitstring = s.split('(', 1)
-                        if len(splitstring) == 2:
-                            filtername = splitstring[0].strip()
-                            filterargs = '('+splitstring[1].strip(' ')
-                            #~ if filtername.lower() in self.optionsFilters:
-                                #~ self.optionsFilters[filtername.lower()] = (filtername, filterargs, 2)
-                            key = filtername.lower()
-                            self.optionsFilters[key] = (filtername, filterargs, 2)
-                            #~ splitname = filtername.split('_', 1)
-                            #~ if len(splitname) == 2:
-                                #~ filtername = splitname[1]
-                                #~ self.optionsFilters[filtername.lower()] = (filtername, filterargs, 2)
-                            if key in self.options['filterdb']:
-                                del self.options['filterdb'][key]
-                elif title == 'userfunctions':
-                    for s in data.split('\n\n'):
-                        splitstring = s.split('(', 1)
-                        if len(splitstring) == 2:
-                            filtername = splitstring[0].strip()
-                            filterargs = '('+splitstring[1].strip(' ')
-                            self.optionsFilters[filtername.lower()] = (filtername, filterargs, 3)
+            try:
+                with open(self.filterdbfilename, mode='r') as f:
+                    text = '\n'.join([line.strip() for line in f.readlines()])
+                for section in text.split('\n['):
+                    title, data = section.split(']\n',1)
+                    title = title.strip('[]').lower()
+                    if title == 'keywords':
+                        self.avskeywords = data.split()
+                    elif title == 'datatypes':
+                        self.avsdatatypes = data.split()
+                    elif title == 'operators':
+                        self.avsoperators = data.split()
+                    elif title == 'clipproperties':
+                        for item in data.split('\n'):
+                            if not item.strip():
+                                continue
+                            splitstring = item.split('(', 1)
+                            if len(splitstring) == 2:
+                                filtername = splitstring[0].strip()
+                                filterargs = '('+splitstring[1].strip(' ')
+                            else:
+                                filtername = item
+                                filterargs = ''
+                            self.optionsFilters[filtername.lower()] = (filtername, filterargs, 1)
+                    elif title == 'scriptfunctions':
+                        for item in data.split('\n'):
+                            splitstring = item.split('(', 1)
+                            if len(splitstring) == 2:
+                                filtername = splitstring[0].strip()
+                                filterargs = '('+splitstring[1].strip(' ')
+                                self.optionsFilters[filtername.lower()] = (filtername, filterargs, 4)
+                    elif title == 'corefilters':
+                        for s in data.split('\n\n'):
+                            splitstring = s.split('(', 1)
+                            if len(splitstring) == 2:
+                                filtername = splitstring[0].strip()
+                                filterargs = '('+splitstring[1].strip(' ')
+                                self.optionsFilters[filtername.lower()] = (filtername, filterargs, 0)
+                    elif title == 'plugins':
+                        for s in data.split('\n\n'):
+                            splitstring = s.split('(', 1)
+                            if len(splitstring) == 2:
+                                filtername = splitstring[0].strip()
+                                filterargs = '('+splitstring[1].strip(' ')
+                                #~ if filtername.lower() in self.optionsFilters:
+                                    #~ self.optionsFilters[filtername.lower()] = (filtername, filterargs, 2)
+                                key = filtername.lower()
+                                self.optionsFilters[key] = (filtername, filterargs, 2)
+                                #~ splitname = filtername.split('_', 1)
+                                #~ if len(splitname) == 2:
+                                    #~ filtername = splitname[1]
+                                    #~ self.optionsFilters[filtername.lower()] = (filtername, filterargs, 2)
+                                if key in self.options['filterdb']:
+                                    del self.options['filterdb'][key]
+                    elif title == 'userfunctions':
+                        for s in data.split('\n\n'):
+                            splitstring = s.split('(', 1)
+                            if len(splitstring) == 2:
+                                filtername = splitstring[0].strip()
+                                filterargs = '('+splitstring[1].strip(' ')
+                                self.optionsFilters[filtername.lower()] = (filtername, filterargs, 3)
+            except:
+                self.loaderror.append(os.path.basename(self.filterdbfilename))
+                bad0 = os.path.splitext(self.filterdbfilename)[0]
+                bad, i = bad0 + '.BAD', 1
+                while os.path.isfile(bad):
+                    bad = bad0 + str(i) + '.BAD'
+                    i += 1
+                os.rename(self.filterdbfilename, bad)
         # Clean up override dict
         deleteKeys = []
         #~ for key, value in self.options['filteroverrides'].items():
@@ -6687,7 +6711,9 @@ class MainFrame(wxp.Frame):
             wx.CallLater(300, setattr, self.scriptNotebook, 'dblClicked' ,False)        
 
     def OnMenuFileLoadSession(self, event):
-        self.LoadSession()
+        if not self.LoadSession():
+            wx.MessageBox(_('Damaged session file'), _('Error'), wx.ICON_ERROR)
+            return
         self.SaveSession(self.lastSessionFilename, saverecentdir=False, previewvisible=False)
         
     def OnMenuFileSaveSession(self, event):
@@ -9458,7 +9484,9 @@ class MainFrame(wxp.Frame):
             dirname, basename = os.path.split(filename)
             root, ext = os.path.splitext(basename)
             if ext.lower() == '.ses':
-                self.LoadSession(filename)
+                if not self.LoadSession(filename):
+                    wx.MessageBox(_('Damaged session file'), _('Error'), wx.ICON_ERROR)
+                    return
             elif ext.lower() not in ('.avs', '.avsi'):
                 # Treat the file as a source
                 self.InsertSource(filename)
@@ -9841,9 +9869,11 @@ class MainFrame(wxp.Frame):
             dlg.Destroy()
         if filename is not None:
             # Load the session info from filename
-            f = open(filename, mode='rb')
-            session = cPickle.load(f)
-            f.close()            
+            try:
+                with open(filename, mode='rb') as f:
+                    session = cPickle.load(f)
+            except:
+                return
             if self.options['hidepreview'] or self.options['paranoiamode'] or (startup and self.options['exitstatus']):
                 previewWindowVisible = False
             else:
@@ -9925,6 +9955,7 @@ class MainFrame(wxp.Frame):
                 dirname = os.path.dirname(filename)
                 if os.path.isdir(dirname):
                     self.options['recentdirSession'] = dirname
+            return True
 
     def ReloadModifiedScripts(self):
         if self.reloadList is not None:
