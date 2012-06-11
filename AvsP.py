@@ -14858,7 +14858,7 @@ class MainFrame(wxp.Frame):
         def ShowException():
             match = re.match('\w+\((?:\d+,)?\s*[\'"](.*)[\'"],?\)$', 
                              repr(sys.exc_info()[1]).decode('string_escape').decode(encoding))
-            message = match.group(1) if match else ''
+            message = match.group(1) if match else sys.exc_info()[1]
             extra = ''
             for line in traceback.format_exc().split('\n'):
                 if line.endswith('in AvsP_macro_main'):
