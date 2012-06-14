@@ -9955,7 +9955,7 @@ class MainFrame(wxp.Frame):
                 dirname = os.path.dirname(filename)
                 if os.path.isdir(dirname):
                     self.options['recentdirSession'] = dirname
-            return True
+        return True
 
     def ReloadModifiedScripts(self):
         if self.reloadList is not None:
