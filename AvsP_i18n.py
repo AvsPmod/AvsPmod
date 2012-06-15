@@ -62,6 +62,7 @@ def main(version=None):
         if lines:
             newlines.append('\n    #--- Macro: %s ---#\n' % label)
             newlines.extend(lines)
+    newlines.append('\n    #--- Macros - Extra ---#\n')
     
     newlines.append('}')
 
@@ -173,6 +174,7 @@ def UpdateTranslationFile(dir, lang=None, version=None):
             newlines = []
             boolStartLines = True
             re_mark = re.compile(r'(.*(?<![\'"])[\'"],)\s*#')
+            txt, extra_sep, extra_txt = txt.partition('\n    #--- Macros - Extra ---#\n')
             for line in txt.split('\n'):
                 # Copy the start lines
                 if line.strip() and not line.lstrip('\xef\xbb\xbf').strip().startswith('#'):
@@ -219,6 +221,9 @@ def UpdateTranslationFile(dir, lang=None, version=None):
                     allMessagesMatched = False
             else:
                 newlines.append(line)
+        if extra_txt:
+            newlines[-1] = extra_txt
+        
         # Overwrite the text file with the new data
         f = open(filename, 'w')
         f.write('\n'.join(newlines))
