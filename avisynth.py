@@ -469,7 +469,7 @@ class AVS_Value(ctypes.Structure,object):
     def SetFloat(self,f):
         if self.type!=118:self.Release()
         self.type=102#='f'loat
-        self.d.f=s
+        self.d.f=f
         self.array_size=1        
     def SetArray(self, a):
         if self.type != 118: self.Release()
