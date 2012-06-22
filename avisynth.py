@@ -277,6 +277,7 @@ class PClip:
     def GetFrame(self,n): return avs_get_frame(self,n)
     def GetError(self): return avs_clip_get_error(self)
     def GetVideoInfo(self):return avs_get_video_info(self)
+    def GetVersion(self): return avs_get_version(self)
 
         
 class VideoFrameBuffer(ctypes.Structure):
