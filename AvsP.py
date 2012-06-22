@@ -11044,11 +11044,11 @@ class MainFrame(wxp.Frame):
             Y = 0.257*R + 0.504*G + 0.098*B + 16
             U = -0.148*R - 0.291*G + 0.439*B + 128
             V = 0.439*R - 0.368*G - 0.071*B + 128
+            if 'flipvertical' in self.flip:
+                y = script.AVI.HeightActual - y
+            if 'fliphorizontal' in self.flip:
+                x = script.AVI.WidthActual - x
             if self.showVideoPixelAvisynth:
-                if 'flipvertical' in self.flip:
-                    y = script.AVI.HeightActual - y
-                if 'fliphorizontal' in self.flip:
-                    x = script.AVI.WidthActual - x
                 try:
                     avsYUV = script.AVI.GetPixelYUV(x, y)
                     if avsYUV != (-1,-1,-1):
@@ -11071,6 +11071,10 @@ class MainFrame(wxp.Frame):
                 x = 0 if x < 0 else w - 1
             if not 0 <= y < h:
                 y = 0 if y < 0 else h - 1
+            if 'flipvertical' in self.flip:
+                y = script.AVI.HeightActual - y
+            if 'fliphorizontal' in self.flip:
+                x = script.AVI.WidthActual - x
             xystring = '%s=(%i,%i)' % (_('pos'),x,y)
             return xystring if string_ else (x, y), None, None, None, None
     
