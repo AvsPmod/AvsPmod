@@ -11068,9 +11068,9 @@ class MainFrame(wxp.Frame):
             return xystring, hexstring, rgbstring, rgbastring, yuvstring
         else:
             if not 0 <= x < w:
-                x = 0 if x < 0 else w
+                x = 0 if x < 0 else w - 1
             if not 0 <= y < h:
-                y = 0 if y < 0 else h
+                y = 0 if y < 0 else h - 1
             xystring = '%s=(%i,%i)' % (_('pos'),x,y)
             return xystring if string_ else (x, y), None, None, None, None
     
