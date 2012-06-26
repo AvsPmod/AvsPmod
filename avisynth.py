@@ -97,7 +97,7 @@ class PIScriptEnvironment:
     def __del__(self):
         #print>>sys.stderr, "del env"
         self.Release()
-    def Invoke(self,name,args,arg_names):
+    def Invoke(self,name,args=[],arg_names=None):
         if isinstance(args,list):
             a=(AVS_Value*len(args))()
             for x in range(len(args)):
@@ -404,6 +404,8 @@ class AVS_Value(ctypes.Structure,object):
         return repr(self)
     def __str__(self):
         return str(self.GetValue())
+    def __repr__(self):
+        return repr(self.GetValue())
     def Release(self):
         avs_release_value(self)
         self.type=118

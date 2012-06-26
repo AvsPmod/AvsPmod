@@ -5128,6 +5128,7 @@ class MainFrame(wxp.Frame):
         ]
 
     def getFilterInfoFromAvisynth(self):
+        self.avisynthVersion = (None,) * 3
         self.dllnameunderscored = set()
         try:
             avisynth
@@ -5137,6 +5138,9 @@ class MainFrame(wxp.Frame):
             env = avisynth.avs_create_script_environment(3)
         except WindowsError:
             return {}
+        self.avisynthVersion = (env.Invoke('VersionString'),
+                                env.Invoke('VersionNumber'),
+                                env.Invoke('Version').AsClip(env).GetVersion())
         intfunc = avisynth.avs_get_var(env,"$InternalFunctions$")
         intfuncList = [(name, 0) for name in intfunc.d.s.split()]
         intfunc.Release()
@@ -14891,9 +14895,11 @@ class MainFrame(wxp.Frame):
                 return AsyncCallWrapper(method)(*args, **kwargs)
             self.SafeCall = SafeCall
             self.__doc__ += self_frame.FormatDocstring(self.SafeCall)
-            self.__doc__ += ('Options\n=======\n\nThis is a dictionary that can be used to store persistent '
-                             'options.')
-            self.__doc__ += '\n'*3 + '-'*80 + '\n'*3
+            self.__doc__ += '\n' + '** VARIABLES **' + '\n'*4
+            self.__doc__ += ('Version\n=======\n\nDictionary containing version info.  Keys:\n'
+                             '[AvsP, AviSynth_string, AviSynth_number, AviSynth_interface]\n\n\n')
+            self.__doc__ += ('Options\n=======\n\nThis dictionary can be used to store persistent '
+                             'data.  Each macro have its \nown dictionary.\n\n\n')
             self.__doc__ += ('last\n====\n\nThis variable contains the return value of the latest '
                              'executed macro.  It is \nuseful to create reusable macros.\n')
         
@@ -14951,6 +14957,10 @@ class MainFrame(wxp.Frame):
                 macrotxt = '\n'.join(lineList)
                 # Prepare the macro variables
                 self.macroVars['avsp'] = self.AvsP_functions(self)
+                self.macroVars['avsp'].Version = dict(AvsP=self.version, 
+                                    AviSynth_string=self.avisynthVersion[0], 
+                                    AviSynth_number=self.avisynthVersion[1], 
+                                    AviSynth_interface=self.avisynthVersion[2])
                 macrobasename = os.path.splitext(os.path.basename(macrofilename))[0]
                 match = re.match(r'\[\s*\d+\s*\]\s*(.*)', macrobasename)
                 if match:
