@@ -7644,9 +7644,15 @@ class MainFrame(wxp.Frame):
             return
         avsp = self.ExecuteMacro(return_env=True)
         #~ avsp.GetWindow = lambda: self
-        obj.__dict__['avsp'] = avsp
         obj.__dict__['_'] = _
+        obj.__dict__['avsp'] = avsp
+        obj.__dict__['avsp'].Version = dict(
+            AvsP=self.version, 
+            AviSynth_string=self.avisynthVersion[0], 
+            AviSynth_number=self.avisynthVersion[1], 
+            AviSynth_interface=self.avisynthVersion[2])
         obj.__dict__['last'] = self.macroVars['last']
+        obj.__dict__['avsp'].Last = self.macroVars['last']
         self.macroVars['last'] = obj.avsp_run()
 
     def OnMenuOptionsAlwaysOnTop(self, event):
@@ -14747,11 +14753,12 @@ class MainFrame(wxp.Frame):
                 "Macros" menu (the macros are sorted alphabetically).  The extension and 
                 any initial open-close brackets are removed in the displayed name - the file 
                 "[001] My Macro.py" shows up in the menu as "My Macro", in order to help 
-                order the macros in the menu.  Separators can be inserted in the menu by 
-                creating empty macro files with name "[001] ---.py".  To help further 
-                organize your macros, you can put macros in any subdirectories you create 
-                in the "macros" folder, which will automatically create submenus in the 
-                "Macros" menu.
+                order the macros in the menu.  If the striped name is empty, the first line 
+                from the script is used as the display name, removing '#' if present.  
+                Separators can be inserted in the menu by creating empty macro files with 
+                name "[001] ---.py".  To help further organize your macros, you can put 
+                macros in any subdirectories you create in the "macros" folder, which will 
+                automatically create submenus in the "Macros" menu.
                 
                     Macro files can also be used to add options to the macro menu that can 
                 be read by any macro through the IsMenuChecked macro function.  To include 
@@ -14895,12 +14902,12 @@ class MainFrame(wxp.Frame):
                 return AsyncCallWrapper(method)(*args, **kwargs)
             self.SafeCall = SafeCall
             self.__doc__ += self_frame.FormatDocstring(self.SafeCall)
-            self.__doc__ += '\n' + '** VARIABLES **' + '\n'*4
+            self.__doc__ += '\n' + '** VARIABLES **' + '\n'*3
             self.__doc__ += ('Version\n=======\n\nDictionary containing version info.  Keys:\n'
                              '[AvsP, AviSynth_string, AviSynth_number, AviSynth_interface]\n\n\n')
             self.__doc__ += ('Options\n=======\n\nThis dictionary can be used to store persistent '
                              'data.  Each macro have its \nown dictionary.\n\n\n')
-            self.__doc__ += ('last\n====\n\nThis variable contains the return value of the latest '
+            self.__doc__ += ('Last\n====\n\nThis variable contains the return value of the latest '
                              'executed macro.  It is \nuseful to create reusable macros.\n')
         
     
@@ -14969,6 +14976,7 @@ class MainFrame(wxp.Frame):
                     self.optionsMacros[macrobasename] = {}
                 self.macroVars['avsp'].Options = self.optionsMacros[macrobasename]
                 hash_pre = hash(repr(self.optionsMacros[macrobasename].items()))
+                self.macroVars['avsp'].Last = self.macroVars['last']
                 def MacroHelp(function):
                     '''help(function)\nPrint the function's description of use'''
                     print self.FormatDocstring(function)

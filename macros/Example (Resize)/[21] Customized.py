@@ -1,10 +1,10 @@
 # Customized pixel ratio
 
-# if this macro is called by another macro, retrieve return values from 'last'
-# otherwise, pop up an input box
+# If this macro is called by another macro, retrieve the return values 
+# from 'avsp.Last'.  Otherwise, pop up an input box.
 boolsize = False
 try:
-    x, y = last
+    x, y = avsp.Last
 except:
     text = avsp.GetTextEntry(_('Enter a pixel ratio or new size. e.g. 40:33, 1.212 or 640x360'), '', _('Customized aspect ratio'))
     text = text.lower()
