@@ -14425,20 +14425,26 @@ class MainFrame(wxp.Frame):
                         oldzoomfactor = self.zoomfactor
                         old_flip_h = 'fliphorizontal' in self.flip
                         old_flip_v = 'flipvertical' in self.flip
-                        for xy, color in [item for item in zip(pixelInfo_list, pixelColor_list) if item[1]]:
-                            x, y = xy[0] if isinstance(xy[0], tuple) else xy
-                            dc.SetPen(wx.Pen(wx.Colour(*((component + 128) % 256 for component in color)), 
-                                         round(pen_width / self.zoomfactor)))
-                            if old_flip_h:
-                                x = self.currentScript.AVI.WidthActual - 1 - x
-                            if old_flip_v:
-                                y = self.currentScript.AVI.HeightActual - 1 - y
-                            x = dc.LogicalToDeviceX(x) - self.xo
-                            y = dc.LogicalToDeviceY(y) - self.yo
-                            p2 = [float(c) / self.zoomfactor for c in self.videoWindow.CalcScrolledPosition(x, y)]
-                            pixelScrolledXY_list.append(p2)
-                            p1 = pixelScrolledXY_list[-2] if lines and len(pixelScrolledXY_list) > 1 else p2
-                            dc.DrawLinePoint(p1, p2)
+                        for xy in pixelInfo_list:
+                            pen_color = None
+                            for color in reversed(pixelColor_list):
+                                if color:
+                                    pen_color = color
+                                    break
+                            if pen_color:
+                                x, y = xy[0] if isinstance(xy[0], tuple) else xy
+                                dc.SetPen(wx.Pen(wx.Colour(*((component + 128) % 256 for component in pen_color)), 
+                                                 round(pen_width / self.zoomfactor)))
+                                if old_flip_h:
+                                    x = self.currentScript.AVI.WidthActual - 1 - x
+                                if old_flip_v:
+                                    y = self.currentScript.AVI.HeightActual - 1 - y
+                                x = dc.LogicalToDeviceX(x) - self.xo
+                                y = dc.LogicalToDeviceY(y) - self.yo
+                                p2 = [float(c) / self.zoomfactor for c in self.videoWindow.CalcScrolledPosition(x, y)]
+                                pixelScrolledXY_list.append(p2)
+                                p1 = pixelScrolledXY_list[-2] if lines and len(pixelScrolledXY_list) > 1 else p2
+                                dc.DrawLinePoint(p1, p2)
                     if time.time() - start >= 5:
                         break
                     wx.Yield()
@@ -14448,9 +14454,14 @@ class MainFrame(wxp.Frame):
                     else:
                         pixelInfo_list.append(self.pixelInfo[0])
                     pixelColor_list.append(self.pixelInfo[2])
-                    if self.pixelInfo[2] is not None:
+                    pen_color = None
+                    for color in reversed(pixelColor_list):
+                        if color:
+                            pen_color = color
+                            break
+                    if pen_color:
                         x, y = self.pixelInfo[0]
-                        dc.SetPen(wx.Pen(wx.Colour(*((component + 128) % 256 for component in self.pixelInfo[2])), 
+                        dc.SetPen(wx.Pen(wx.Colour(*((component + 128) % 256 for component in pen_color)), 
                                          round(pen_width / self.zoomfactor)))
                         if old_flip_h:
                             x = self.currentScript.AVI.WidthActual - 1 - x
