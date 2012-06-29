@@ -194,7 +194,8 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
         self.MarkerDefine(stc.STC_MARKNUM_FOLDEROPENMID, stc.STC_MARK_EMPTY, "white", "black")
         self.MarkerDefine(stc.STC_MARKNUM_FOLDERMIDTAIL, stc.STC_MARK_EMPTY, "white", "black")
         #~ self.SetMarginWidth(2, 0)
-        self.fitNumberMarginWidth()
+        if self.app.options['numlinechars']:
+            self.fitNumberMarginWidth()
         self.SetSavePoint()
         # Event handling
         self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdateUI)
@@ -252,8 +253,12 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
         else:
             self.SetWrapMode(stc.STC_WRAP_NONE)
         self.SetFoldFlags(self.app.options['foldflag']<<4)
-        self.initialMarginWidth = self.numlinechars2pixels(self.app.options['numlinechars'])
-        self.fitNumberMarginWidth()
+        if self.app.options['numlinechars']:
+            self.initialMarginWidth = self.numlinechars2pixels(self.app.options['numlinechars'])
+            self.fitNumberMarginWidth()
+        else:
+            self.initialMarginWidth = 0
+            self.SetMarginWidth(0, 0)
         self.Colourise(0, self.GetTextLength())
         
 
@@ -1549,7 +1554,8 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
             line += 1
 
     def OnTextChange(self, event):
-        self.fitNumberMarginWidth()
+        if self.app.options['numlinechars']:
+            self.fitNumberMarginWidth()
         #~ self.UpdateCalltip(force=True)
         self.flagTextChanged = True
     
@@ -5303,7 +5309,7 @@ class MainFrame(wxp.Frame):
                 ((_('Draw lines at fold points'), wxp.OPT_ELEM_CHECK, 'foldflag', _('For code folding, draw a line underneath if the fold point is not expanded'), dict() ), ),
                 ((_('Use tabs instead of spaces'), wxp.OPT_ELEM_CHECK, 'usetabs', _('Check to insert actual tabs instead of spaces when using the Tab key'), dict() ), ),
                 ((_('Tab width'), wxp.OPT_ELEM_SPIN, 'tabwidth', _('Set the size of the tabs in spaces'), dict(min_val=0) ), ),
-                ((_('Line margin width'), wxp.OPT_ELEM_SPIN, 'numlinechars', _('Initial space to reserve for the line margin in terms of number of digits'), dict(min_val=0) ), ),
+                ((_('Line margin width'), wxp.OPT_ELEM_SPIN, 'numlinechars', _('Initial space to reserve for the line margin in terms of number of digits. Set it to 0 to disable showing line numbers'), dict(min_val=0) ), ),
             ),
             (_('Autocomplete'),
                 ((_('Show autocomplete with variables'), wxp.OPT_ELEM_CHECK, 'autocompletevariables', _('Add user defined variables into autocomplete list'), dict() ), ),
