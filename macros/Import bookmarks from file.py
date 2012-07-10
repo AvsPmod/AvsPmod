@@ -1,8 +1,8 @@
 import re
 import cPickle
 
-filename = avsp.GetFilename(_('Open a bookmark file'), filefilter=
-                            _('All supported files') + '|*.txt;*.xml;*.ses;*.log|' +
+filename = avsp.GetFilename(_('Select a file'), filefilter=
+                            _('All supported files') + '|*.txt;*.xml;*.ses;*.log;*.qp|' +
                             _('Chapters Text files') + ' (*.txt)|*.txt|'+
                             _('Matroska XML files') + ' (*.xml)|*.xml|' + 
                             _('Celltimes files') + ' (*.txt)|*.txt|' +
