@@ -4602,7 +4602,7 @@ class MainFrame(wxp.Frame):
                     textPoint.y + self.win.TextHeight(0)
                 )
                 self.oldPos = textPos
-                return wx.DragMove
+                return default#wx.DragMove
 
             def OnData(self, x, y, default):
                 script = self.win
@@ -4618,10 +4618,11 @@ class MainFrame(wxp.Frame):
                     point = wx.Point(x,y)
                     textPos = script.PositionFromPoint(point)
                     script.GotoPos(textPos)
-                    # Erase the old selection
-                    script.SetTargetStart(posA)
-                    script.SetTargetEnd(posB)
-                    script.ReplaceTarget('')
+                    # Erase the old selection if required
+                    if default == wx.DragMove:
+                        script.SetTargetStart(posA)
+                        script.SetTargetEnd(posB)
+                        script.ReplaceTarget('')
                     # Insert the clipboard text in the current position
                     curPos = script.GetCurrentPos()
                     script.InsertText(curPos, text)
