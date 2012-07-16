@@ -72,34 +72,39 @@ while True:
         types=[['list_read_only', 'list_writable', 'list_writable'], 
                ['list_read_only', 'check'], 'file_save', 'check'], 
         width=415)
-    if not options or not options[5]:
+    if not options:
         return
-    if (options[3] == _('Ranges of frames (with interpolation)') and 
-            options[0] not in (_('Int'), _('Float'))):
+    type, default, value, bm_meaning, use_title, filename, insert_path = options
+    if not filename:
+        avsp.MsgBox(_('An output path is needed'), _('Error'))
+    elif (bm_meaning == _('Ranges of frames (with interpolation)') and 
+          type not in (_('Int'), _('Float'))):
         avsp.MsgBox(_('Interpolation only available for Int and Float'), _('Error'))
     else: break
+    (default_type, default_default, default_value, default_bm_meaning, 
+     default_use_title, default_filename, default_insert_path) = options
 
 # Write the ConditionalReader file
-value_default = options[2].strip()
-text = ['Type {}\n'.format(options[0])]
-if options[1]: text.append(u'Default {}\n'.format(options[1].strip()))
-if options[3] == _('Single frames'):
+value_default = value.strip()
+text = ['Type {}\n'.format(type)]
+if default: text.append(u'Default {}\n'.format(default.strip()))
+if bm_meaning == _('Single frames'):
     for frame, title in bmlist:
         text.append(u'{} {}\n'.format(frame, 
-                    title.strip() if options[4] and title else value_default))
+                    title.strip() if use_title and title else value_default))
 else:
     if len(bmlist) % 2 and not avsp.MsgBox(_('Odd number of bookmarks'), 
                                            title=_('Warning'), cancel=True):
         return
-    prefix = 'R' if options[3] == _('Ranges of frames') else 'I'
+    prefix = 'R' if bm_meaning == _('Ranges of frames') else 'I'
     for i, bm in enumerate(bmlist):
         if i%2:
             value = None
-            if options[4]:
+            if use_title:
                 if bmlist[i-1][1]:
                     value = bmlist[i-1][1].strip()
                 if bm[1]:
-                    if value and options[3] != _('Ranges of frames'):
+                    if value and bm_meaning != _('Ranges of frames'):
                         value += ' ' + bm[1].strip()
                     else:
                         value = bm[1].strip()
@@ -109,7 +114,7 @@ else:
                 value = value_default
             text.append(u'{} {} {} {}\n'.format(
                         prefix, bmlist[i-1][0], bm[0], value))
-with open(options[5], 'w') as file:
+with open(filename, 'w') as file:
     file.writelines(text)
-if options[6]:
-    avsp.InsertText(u'"{}"'.format(options[5]), pos=None)
+if insert_path:
+    avsp.InsertText(u'"{}"'.format(filename), pos=None)
