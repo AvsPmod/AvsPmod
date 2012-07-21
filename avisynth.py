@@ -1,8 +1,13 @@
 import ctypes
 import sys
+import os
 
-avidll = ctypes.windll.avisynth
-    
+nt = os.name == 'nt'
+# load avisynth/avxsynth
+avidll = ctypes.windll.avisynth if nt else ctypes.CDLL("libavxsynth.so") 
+# use stdcall calling convention on Windows, cdecl on Unix
+FUNCTYPE = ctypes.WINFUNCTYPE if nt else ctypes.CFUNCTYPE
+
 #constants
 PLANAR_Y=1<<0
 PLANAR_U=1<<1
@@ -506,15 +511,14 @@ class FilterInfo(ctypes.Structure):
 
 
 
-GETFRAME=ctypes.WINFUNCTYPE(ctypes.POINTER(VideoFrame),
-                            ctypes.POINTER(FilterInfo),ctypes.c_int)
-GETPARITY=ctypes.WINFUNCTYPE(ctypes.c_int,ctypes.POINTER(FilterInfo),
-                             ctypes.c_int)
-GETAUDIO=ctypes.WINFUNCTYPE(ctypes.c_int,ctypes.POINTER(FilterInfo),
-                            ctypes.c_void_p,ctypes.c_int64,ctypes.c_int64)
-SETCACHEHINTS=ctypes.WINFUNCTYPE(ctypes.c_int,ctypes.POINTER(FilterInfo),
-                                 ctypes.c_int,ctypes.c_int)
-FREEFILTER=ctypes.WINFUNCTYPE(None,ctypes.POINTER(FilterInfo))
+GETFRAME = FUNCTYPE(ctypes.POINTER(VideoFrame), ctypes.POINTER(FilterInfo), 
+                    ctypes.c_int)
+GETPARITY = FUNCTYPE(ctypes.c_int, ctypes.POINTER(FilterInfo), ctypes.c_int)
+GETAUDIO = FUNCTYPE(ctypes.c_int, ctypes.POINTER(FilterInfo), ctypes.c_void_p, 
+                    ctypes.c_int64, ctypes.c_int64)
+SETCACHEHINTS = FUNCTYPE(ctypes.c_int, ctypes.POINTER(FilterInfo), ctypes.c_int,
+                         ctypes.c_int)
+FREEFILTER = FUNCTYPE(None, ctypes.POINTER(FilterInfo))
 
 FilterInfo._fields_=[("child",ctypes.c_void_p),
                      ("vi",VideoInfo),
@@ -601,8 +605,8 @@ avs_vsprintf=avidll.avs_sprintf
 avs_vsprintf.restype = ctypes.c_char_p
 avs_vsprintf.argtypes=[PIScriptEnvironment,ctypes.c_char_p,ctypes.c_void_p]
 
-APPLYFUNC=ctypes.WINFUNCTYPE(ctypes.POINTER(AVS_Value),PIScriptEnvironment,
-                             AVS_Value,ctypes.c_void_p)
+APPLYFUNC = FUNCTYPE(ctypes.POINTER(AVS_Value), PIScriptEnvironment, AVS_Value, 
+                     ctypes.c_void_p)
 
 avs_add_function=avidll.avs_add_function
 avs_add_function.restype = ctypes.c_int
@@ -641,7 +645,7 @@ avs_bit_blt.argtypes=[PIScriptEnvironment,ctypes.POINTER(ctypes.c_ubyte),
                       ctypes.c_int,ctypes.POINTER(ctypes.c_ubyte),
                       ctypes.c_int,ctypes.c_int,ctypes.c_int]
 
-SHUTDOWNFUNC=ctypes.WINFUNCTYPE(ctypes.c_void_p,PIScriptEnvironment)
+SHUTDOWNFUNC = FUNCTYPE(ctypes.c_void_p, PIScriptEnvironment)
 
 avs_at_exit=avidll.avs_at_exit
 avs_at_exit.restype=None
