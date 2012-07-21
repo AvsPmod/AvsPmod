@@ -13716,6 +13716,8 @@ class MainFrame(wxp.Frame):
                 startpos += 1
         # Find the argument in the text
         endwordpos = script.WordEndPosition(startpos, 1)
+        while chr(script.GetCharAt(endwordpos)) in (' ', '\t'):
+            endwordpos += 1
         posEnd = script.BraceMatch(endwordpos)
         if posEnd == -1:
             return (None, None, None)
