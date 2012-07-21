@@ -91,7 +91,7 @@ from icons import AvsP_icon, next_icon, play_icon, skip_icon, spin_icon,\
                   dragdrop_cursor
 
 
-version = '2.3.0'
+version = '2.3.1'
 
 
 # Custom styled text control for avisynth language

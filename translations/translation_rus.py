@@ -28,7 +28,7 @@
 # Russian interface file for AvsP editor by qwerpoi, http://www.avisynth.org/qwerpoi
 # Translated by Fizick 19.09.2006-11.03.2007 for AvsP v1.3.7, http://avisynth.org.ru/avsp
 
-version = "2.3.0"
+version = "2.3.1"
 
 messages = {
     "Find" : u"Найти",
@@ -41,6 +41,8 @@ messages = {
     "Text color" : u"Цвет текста", 
     "OK" : u"Да", 
     "Cancel" : u"Отменить ",
+    "Page:" : u"", # New in v2.3.1
+    "Page: %d" : u"", # New in v2.3.1
     "Scrap Window" : u"Окно заметок",
     "Undo" : u"Отмена",
     "Redo" : u"Повтор",
@@ -155,6 +157,7 @@ messages = {
     "Frame" : u"Кадр",
     "A crash detected at the last running!" : u"", # New in v2.2.1
     "&Zoom" : u"", # New in v2.2.1
+    "Damaged {}. Using default settings." : u"", # New in v2.3.1
     "%s translation file updated with new messages to translate" : u"", # New in v2.3.0
     "Translation updated" : u"", # New in v2.3.0
     "%s translation file updated.  No new messages to translate." : u"", # New in v2.3.0
@@ -193,7 +196,7 @@ messages = {
     "Use tabs instead of spaces" : u"Использовать табуляцию вместо пробелов",
     "Set the size of the tabs in spaces" : u"Установить размер табуляции в пробелах",
     "Tab width" : u"Ширина табуляции",
-    "Initial space to reserve for the line margin in terms of number of digits" : u"Начальный пробел, зарезервированный для отступа строк, число цифр", 
+    "Initial space to reserve for the line margin in terms of number of digits. Set it to 0 to disable showing line numbers" : u"", # New in v2.3.1
     "Line margin width" : u"Ширина отступа строк",
     "Autocomplete" : u"Автозавершение",
     "Add user defined variables into autocomplete list" : u"", # New in v2.2.1
@@ -231,6 +234,8 @@ messages = {
     "Allow AvsPmod to resize the window" : u"", # New in v2.2.1
     "Separate video preview window" : u"Отдельное окно просмотра видео",
     "Use a separate window for the video preview" : u"Использоваить отдельное окно для просмотра видео",
+    "Keep it on top of the main window" : u"", # New in v2.3.1
+    "Keep the video preview window always on top of the main one and link its visibility" : u"", # New in v2.3.1
     "Min text lines on video preview" : u"Мин. число строк при просмотре видео",
     "Minimum number of lines to show when displaying the video preview" : u"Минимальное число строк текста при просмотре видео",
     "Customize the video information shown in the program status bar" : u"Настроить видео информацию показываемую в полосе статуса",
@@ -282,7 +287,7 @@ messages = {
     "Save AvsPmod-specific markings (user sliders, toggle tags, etc) as a commented section in the *.avs file" : u"", # New in v2.2.1
     "Misc" : u"Разное", 
     "Choose the language used for the interface" : u"", # New in v2.3.0
-    "Language *" : u"", # New in v2.3.0
+    "Language" : u"", # New in v2.3.0
     "Show keyboard images in the script tabs when video has focus" : u"", # New in v2.2.1
     "Use keyboard images in tabs" : u"", # New in v2.2.1
     "Show tabs in multiline style" : u"", # New in v2.2.1
@@ -395,6 +400,18 @@ messages = {
     "Save the current script" : u"Сохранить текущий скрипт",
     "Choose where to save the current script" : u"Выбрать где сохранить текущий скрипт",
     "Save script as..." : u"Сохранить скрипт как...",
+    "&Print script" : u"", # New in v2.3.1
+    "Configure page for printing" : u"", # New in v2.3.1
+    "Page setup" : u"", # New in v2.3.1
+    "Include the script filename and page number at the top of each page" : u"", # New in v2.3.1
+    "Print header" : u"", # New in v2.3.1
+    "Word-wrap long lines" : u"", # New in v2.3.1
+    "Apply the current zoom to the output" : u"", # New in v2.3.1
+    "Use zoom" : u"", # New in v2.3.1
+    "Display print preview" : u"", # New in v2.3.1
+    "Print preview" : u"", # New in v2.3.1
+    "&Print" : u"", # New in v2.3.1
+    "Print to printer or file" : u"", # New in v2.3.1
     "Load a session into the tabs" : u"Загрузить сеанс во вкладки",
     "Load session..." : u"Загрузить сеанс...",
     "Save all the scripts as a session, including slider info" : u"Сохранить все скрипты как сеанс, включая информацию ползунков",
@@ -564,6 +581,8 @@ messages = {
     "&Options" : u"&Опции",
     "Always on top" : u"Всегда поверх",
     "Keep this window always on top of others" : u"Удерживать это окно всегда поверх других",
+    "If the video preview is detached, keep it always on top of other windows" : u"", # New in v2.3.1
+    "Video preview always on top" : u"", # New in v2.3.1
     "Disable video preview" : u"Отменить видео просмотр", 
     "If checked, the video preview will not be shown under any circumstances" : u"Если отмечено, видео просмотр не будет показан ни при каких обстоятельствах", 
     "Associate .avs files with AvsP" : u"Ассоциировать .avs файлы с AvsP",
@@ -591,7 +610,7 @@ messages = {
     "Avisynth help" : u"Справка AviSynth",
     "Open the avisynth help html" : u"Открыть html файл справки AviSynth",
     "Open Avisynth plugins folder" : u"", # New in v2.2.1
-    "Open the avisynth plugins folder" : u"", # New in v2.2.1
+    "Open the avisynth plugins folder, or the last folder from which a plugin was loaded" : u"", # New in v2.3.1
     "About this program" : u"Об этой программе",
     "About AvsPmod" : u"", # New in v2.2.1
     "Previous frame" : u"Предыдущий кадр",
@@ -628,6 +647,12 @@ messages = {
     "Insert Trim() commands:" : u"Вставить команду вырезки Trim():",
     "Insert Dissolve() commands:" : u"", # New in v2.2.1
     "Use the buttons which appear on the video slider handle to create the frame selections to trim." : u"Использовать кнопки на контроле ползунка видео для создания выборки кадров для вырезки.",
+    "Print Preview" : u"", # New in v2.3.1
+    "Failed to create print preview" : u"", # New in v2.3.1
+    "Print Error" : u"", # New in v2.3.1
+    "There was an error when printing.\nCheck that your printer is properly connected." : u"", # New in v2.3.1
+    "Printer Error" : u"", # New in v2.3.1
+    "Damaged session file" : u"", # New in v2.3.1
     "File does not exist!" : u"Файл не существует!", 
     "Select a file" : u"Выбрать файл",
     "Create a separator label" : u"Создать метку разделителя",
@@ -985,11 +1010,11 @@ messages = {
 
     #--- Macros ---#
     "Bookmarks at Intervals" : u"", # New in v2.3.0
-    "Bookmarks from Chapter" : u"", # New in v2.3.0
     "Bookmarks to Chapter" : u"", # New in v2.3.0
     "ConditionalReader file from bookmarks" : u"", # New in v2.3.0
     "DeleteFrame" : u"", # New in v2.3.0
     "DuplicateFrame" : u"", # New in v2.3.0
+    "Import bookmarks from file" : u"", # New in v2.3.1
     "Preview from current point" : u"", # New in v2.3.0
     "Random Clip Order" : u"", # New in v2.3.0
     "Save bookmarks to images" : u"", # New in v2.3.0
@@ -1018,15 +1043,6 @@ messages = {
     "Frame step" : u"", # New in v2.3.0
     "Number of intervals" : u"", # New in v2.3.0
 
-    #--- Macro: Bookmarks from Chapter ---#
-    "Open a bookmark file" : u"", # New in v2.3.0
-    "Supported files" : u"", # New in v2.3.0
-    "Chapters Text files" : u"", # New in v2.3.0
-    "Matroska XML files" : u"", # New in v2.3.0
-    "Celltimes files" : u"", # New in v2.3.0
-    "AvsP Session files" : u"", # New in v2.3.0
-    "Bookmark file unrecognized!" : u"", # New in v2.3.0
-
     #--- Macro: Bookmarks to Chapter ---#
     "Text files" : u"", # New in v2.3.0
 
@@ -1046,8 +1062,30 @@ messages = {
     "Single frames" : u"", # New in v2.3.0
     "Ranges of frames" : u"", # New in v2.3.0
     "Ranges of frames (with interpolation)" : u"", # New in v2.3.0
+    "An output path is needed" : u"", # New in v2.3.1
     "Interpolation only available for Int and Float" : u"", # New in v2.3.0
     "Odd number of bookmarks" : u"", # New in v2.3.0
+
+    #--- Macro: Import bookmarks from file ---#
+    "All supported files" : u"", # New in v2.3.1
+    "Chapters Text files" : u"", # New in v2.3.0
+    "Matroska XML files" : u"", # New in v2.3.0
+    "Celltimes files" : u"", # New in v2.3.0
+    "AvsP Session files" : u"", # New in v2.3.0
+    "TFM log files" : u"", # New in v2.3.1
+    "XviD log files" : u"", # New in v2.3.1
+    "QP files" : u"", # New in v2.3.1
+    "Bookmarks from TFM file" : u"", # New in v2.3.1
+    "Not combed or out of order frames" : u"", # New in v2.3.1
+    "Combed" : u"", # New in v2.3.1
+    "Possible" : u"", # New in v2.3.1
+    "u,b,out-of-order" : u"", # New in v2.3.1
+    "Min frame:" : u"", # New in v2.3.1
+    "Max frame:" : u"", # New in v2.3.1
+    "TFM log parser" : u"", # New in v2.3.1
+    "%d frames imported" : u"", # New in v2.3.1
+    "[COMBED FRAMES] section could not be parsed" : u"", # New in v2.3.1
+    "Bookmark file unrecognized!" : u"", # New in v2.3.0
 
     #--- Macro: Preview from current point ---#
     "Failed to run the external player!\n\nOpen the macro file in the \"Macros\" subdirectory\nwith a text editor and edit the executable\ndirectory appropriately!" : u"", # New in v2.3.0
@@ -1110,4 +1148,6 @@ messages = {
     "Enter optimization info    (%i bits, %i possibilities)" : u"", # New in v2.3.0
     "Begin optimization..." : u"", # New in v2.3.0
     "Finished optimization." : u"", # New in v2.3.0
+
+    #--- Macros - Extra ---#
 }

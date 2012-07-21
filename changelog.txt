@@ -2,6 +2,28 @@ CHANGELOG
 =========
 
 
+Version 2.3.1 [2012-07-22]
+--------------------------
+
+- Add detached video preview window visibility options:
+  - Always on top of other windows ('Options' menu)
+  - Always on top of the main window ('Program Settings' dialog, needs restart)
+- Add printing support 
+- Disable showing line numbers if 'line margin width' option is 0 
+- Don't fail to launch AvsPmod if the option files are damaged
+- Work around event ID overlapping when working with a large number of bookmarks by disabling 'Go to bookmark' submenu for more than 1000
+- Add version info to the macro API
+- Add draw lines option to the GetPixelInfo macro function, and fix marks position
+- Rename the last executed macro return value from 'last' to 'avsp.Last'.  The former is still accepted.
+- Add 'Macros - Extra' section to the translation files.  Strings that no longer exist are deleted from the translation files when updating to a new version.  That means that translation strings added for the user for macros not bundled with AvsPmod are lost. This new section at the end is copied verbatim from the original file.
+- Rename 'Bookmarks from Chapter' macro to 'Import bookmarks from file' and add support for some other file types:
+  - TFM log (combed, possible combed and u/v mismatches)
+  - x264 QP file
+  - XviD and SCXviD log
+- Fix performance issues in the 'Bookmarks at Intervals' macro
+- Other minor changes and fixes
+
+
 Version 2.3.0 [2012-06-04]
 --------------------------
 
