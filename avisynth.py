@@ -501,6 +501,9 @@ class U(ctypes.Union):
                    ("f",ctypes.c_float),
                    ("s",ctypes.c_char_p),
                    ("a",ctypes.POINTER(AVS_Value))]
+       # AvxSynth extends AVS_Value with a 64-bit integer type.
+       if not nt:
+           _fields_.append(('l',ctypes.c_longlong))
            
 AVS_Value._fields_ = [("type",ctypes.c_short),
                 ("array_size",ctypes.c_short),
