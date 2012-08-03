@@ -2,11 +2,13 @@ import ctypes
 import sys
 import os
 
-nt = os.name == 'nt'
-# load avisynth/avxsynth
-avidll = ctypes.windll.avisynth if nt else ctypes.CDLL("libavxsynth.so") 
-# use stdcall calling convention on Windows, cdecl on Unix
-FUNCTYPE = ctypes.WINFUNCTYPE if nt else ctypes.CFUNCTYPE
+# Initialization routines.  Assume AvxSynth/Linux if os.name is not NT.
+if os.name == 'nt':
+    avidll = ctypes.windll.avisynth
+    FUNCTYPE = ctypes.WINFUNCTYPE
+else:
+    avidll = ctypes.CDLL("libavxsynth.so")
+    FUNCTYPE = ctypes.CFUNCTYPE
 
 #constants
 PLANAR_Y=1<<0
@@ -502,7 +504,7 @@ class U(ctypes.Union):
                    ("s",ctypes.c_char_p),
                    ("a",ctypes.POINTER(AVS_Value))]
        # AvxSynth extends AVS_Value with a 64-bit integer type.
-       if not nt:
+       if os.name != 'nt':
            _fields_.append(('l',ctypes.c_longlong))
            
 AVS_Value._fields_ = [("type",ctypes.c_short),
