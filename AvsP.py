@@ -77,7 +77,7 @@ import  wx.lib.colourselect as  colourselect
 import wxp
 try:
     import avisynth
-except WindowsError, err:
+except OSError, err:
     message = "%sLoad avisynth.dll failed!\nTry install or re-install Avisynth firstly." % err
     app = wx.PySimpleApp()
     wx.MessageBox(message, 'Windows Error', wx.OK|wx.ICON_ERROR)
@@ -5383,7 +5383,7 @@ class MainFrame(wxp.Frame):
             return {}
         try:
             env = avisynth.avs_create_script_environment(3)
-        except WindowsError:
+        except OSError:
             return {}
         self.avisynthVersion = (env.Invoke('VersionString'),
                                 env.Invoke('VersionNumber'),
@@ -15331,7 +15331,7 @@ class MainFrame(wxp.Frame):
                 if newname != macrofilename:
                     try:
                         os.rename(macrofilename, newname)
-                    except WindowsError:
+                    except OSError:
                         pass
                     
 class MainApp(wxp.App):

@@ -148,7 +148,7 @@ class AvsClip:
                 raise ValueError("env must be defined when providing a clip") 
             try:
                 self.env=avisynth.avs_create_script_environment(3)
-            except WindowsError:
+            except OSError:
                 return
         if isinstance(script,avisynth.PClip):
             self.clip=script
@@ -329,7 +329,7 @@ class AvsClip:
             self.pBits = src.GetReadPtr()
             #~ try:
                 #~ src=self.clip.GetFrame(frame)
-            #~ except WindowsError:
+            #~ except OSError:
                 #~ return False
             src_pitch=src.GetPitch()
             self.bmih.biWidth = src_pitch*8/self.bmih.biBitCount
