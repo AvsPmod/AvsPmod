@@ -50,7 +50,8 @@ import time
 import StringIO
 import textwrap
 import ctypes
-import _winreg
+if os.name == 'nt':
+    import _winreg
 from hashlib import md5
 import __builtin__
 from collections import OrderedDict, Iterable, Sequence, MutableSequence
@@ -5107,25 +5108,29 @@ class MainFrame(wxp.Frame):
         self.options['version'] = self.version
         # Get the avisynth directory as necessary
         if not os.path.isdir(self.options['avisynthdir']):
-            try:
-                # Get the avisynth directory from the registry
-                key = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, 'Software\\AviSynth')
-                name, value, typereg = _winreg.EnumValue(key, 0)
-                if os.path.isdir(value):
-                    self.options['avisynthdir'] = value
-                else:
-                    raise WindowsError
-                key.Close()
-            except WindowsError:
-                # Get the avisynth directory from the user with a dialog box
-                defaultdir = os.environ.get('PROGRAMFILES')
-                if defaultdir is None:
-                    defaultdir = ''
-                dlg = wx.DirDialog(self, 'Select the Avisynth directory', defaultdir)
-                ID = dlg.ShowModal()
-                if ID==wx.ID_OK:
-                    self.options['avisynthdir'] = dlg.GetPath()
-                dlg.Destroy()
+            if os.name == 'nt':
+                try:
+                    # Get the avisynth directory from the registry
+                    key = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, 'Software\\AviSynth')
+                    name, value, typereg = _winreg.EnumValue(key, 0)
+                    if os.path.isdir(value):
+                        self.options['avisynthdir'] = value
+                    else:
+                        raise WindowsError
+                    key.Close()
+                except WindowsError:
+                    # Get the avisynth directory from the user with a dialog box
+                    defaultdir = os.environ.get('PROGRAMFILES')
+                    if defaultdir is None:
+                        defaultdir = ''
+                    dlg = wx.DirDialog(self, 'Select the Avisynth directory', defaultdir)
+                    ID = dlg.ShowModal()
+                    if ID==wx.ID_OK:
+                        self.options['avisynthdir'] = dlg.GetPath()
+                    dlg.Destroy()
+            else:
+                # avisynthdir is only used for the helpfile
+                self.options['avisynthdir'] = '/path/to/nowhere'
         self.options['avisynthhelpfile'] = self.options['avisynthhelpfile'].replace('%avisynthdir%', self.options['avisynthdir'])
         # Fix recentfiles as necessary???
         try:
@@ -8157,6 +8162,9 @@ class MainFrame(wxp.Frame):
         f.close()
 
     def OnMenuOptionsAssociate(self, event):
+        # Currently, associations are not supported on Linux.
+        if not os.name == 'nt':
+            return
         s1 = _('Associating .avs files will write to the windows registry.')
         s2 = _('Do you wish to continue?')
         ret = wx.MessageBox('%s\n\n%s' % (s1, s2), _('Warning'), wx.YES_NO|wx.ICON_EXCLAMATION)
