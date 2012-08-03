@@ -10409,7 +10409,7 @@ class MainFrame(wxp.Frame):
             bmp = wx.EmptyBitmap(w, h)
             mdc = wx.MemoryDC()
             mdc.SelectObject(bmp)
-            script.AVI.DrawFrame(self.currentframenum, mdc.GetHDC())
+            script.AVI.DrawFrame(self.currentframenum, mdc)
             ext = os.path.splitext(filename)[1].lower()
             if ext not in extlist:
                 ext = '.bmp'
@@ -12367,7 +12367,7 @@ class MainFrame(wxp.Frame):
                 dc = wx.MemoryDC()
                 bmp = wx.EmptyBitmap(w,h)
                 dc.SelectObject(bmp)
-                script.AVI.DrawFrame(frame, dc.GetHDC())
+                script.AVI.DrawFrame(frame, dc)
                 self.PaintCropRectangles(dc, script)
                 self.PaintTrimSelectionMark(dc, script, frame)
                 try: # DoPrepareDC causes NameError in wx2.9.1 and fixed in wx2.9.2
@@ -12381,7 +12381,7 @@ class MainFrame(wxp.Frame):
                     self.videoWindow.DoPrepareDC(dc)
                 except:
                     self.videoWindow.PrepareDC(dc)
-                script.AVI.DrawFrame(frame, dc.GetHDC())
+                script.AVI.DrawFrame(frame, dc)
         else:
             dc = wx.MemoryDC()
             w = script.AVI.Width
@@ -12391,7 +12391,7 @@ class MainFrame(wxp.Frame):
             else:
                 bmp = wx.EmptyBitmap(w,h)
                 dc.SelectObject(bmp)
-                script.AVI.DrawFrame(frame, dc.GetHDC())
+                script.AVI.DrawFrame(frame, dc)
                 if self.flip:
                     img = bmp.ConvertToImage()
                     if 'flipvertical' in self.flip:

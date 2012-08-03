@@ -314,17 +314,18 @@ class AvsClip:
         else:
             return False
             
-    def DrawFrame(self, frame, hdc=None, offset=(0,0), size=None):
+    def DrawFrame(self, frame, dc=None, offset=(0,0), size=None):
         if not self._GetFrame(frame):
             return
-        if hdc:
+        if dc:
+            hdc = dc.GetHDC()
             if size is None:
                 w = self.Width
                 h = self.Height
             else:
                 w, h = size
             #~ SetDIBitsToDevice(hdc, offset[0], offset[1], w, h, 0, 0, 0, h, self.pBits, self.pInfo, 0)
-            DrawDibDraw(handleDib[0], hdc, offset[0], offset[1], w, h, self.pInfo, self.pBits, 0, 0, -1, -1, 0)
+            DrawDibDraw(handleDib[0], dc, offset[0], offset[1], w, h, self.pInfo, self.pBits, 0, 0, -1, -1, 0)
         
     def GetPixelYUV(self, x, y):
         return (-1,-1,-1)
