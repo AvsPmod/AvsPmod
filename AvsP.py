@@ -51,7 +51,7 @@ import StringIO
 import textwrap
 import ctypes
 import _winreg
-import _md5 as md5
+from hashlib import md5
 import __builtin__
 from collections import OrderedDict, Iterable, Sequence, MutableSequence
 
@@ -10238,9 +10238,9 @@ class MainFrame(wxp.Frame):
                             setSavePoint = False
                         if crc is not None:
                             try:
-                                crc2 = md5.new(txtFromFile).digest()
+                                crc2 = md5(txtFromFile).hexdigest()
                             except UnicodeEncodeError:
-                                crc2 = md5.new(txtFromFile.encode(encoding)).digest()
+                                crc2 = md5(txtFromFile.encode(encoding)).hexdigest()
                             if crc != crc2:
                                 self.reloadList.append((index, scriptname, txt))
                 self.OpenFile(filename=scriptname, scripttext=scripttext, setSavePoint=setSavePoint, splits=splits, framenum=framenum)
@@ -10324,7 +10324,7 @@ class MainFrame(wxp.Frame):
                         f = open(scriptname, 'r')
                         txt = f.read()
                         f.close()
-                        crc = md5.new(txt).digest()
+                        crc = md5(txt).hexdigest()
                     except UnicodeDecodeError:
                         f = codecs.open(scriptname, 'rU', encoding)
                         txt = f.read()
@@ -10332,7 +10332,7 @@ class MainFrame(wxp.Frame):
                     #~ f = codecs.open(scriptname, 'rU', encoding)
                     #~ txt = f.read()
                     #~ f.close()
-                        crc = md5.new(txt.encode(encoding)).digest()
+                        crc = md5(txt.encode(encoding)).hexdigest()
                 splits = (script.lastSplitVideoPos, script.lastSplitSliderPos, script.sliderWindowShown)
                 scripts.append((scriptname, boolSelected, script.GetText(), crc, splits, script.lastFramenum))
             # Get the remaining session information, store in a dict
