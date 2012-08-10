@@ -85,7 +85,7 @@ except OSError, err:
     sys.exit(0)
 if os.name == 'nt':
     try:
-        import pyavs_gdi
+        import pyavs_gdi as pyavs
     except AttributeError:
         import pyavs_avifile as pyavs
 else:
