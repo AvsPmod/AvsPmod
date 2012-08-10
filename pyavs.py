@@ -25,7 +25,7 @@
 
 import sys
 import os
-import array
+import ctypes
 import wx
 
 import avisynth
@@ -213,8 +213,17 @@ class AvsClip:
             arg2 = avisynth.AVS_Value(interlaced)
             args = avisynth.AVS_Value([arg, arg1, arg2])
             try:
-                avsfile = self.env.Invoke("converttorgb24", args, 0)
-                arg.Release()  #release the clip
+                # Avisynth uses BGR ordering but we need RGB
+                rgb = self.env.Invoke("converttorgb24", args, 0)
+                r = self.env.Invoke("showred", rgb, 0)
+                b = self.env.Invoke("showblue", rgb, 0)
+                merge_args = avisynth.AVS_Value([b, rgb, r, avisynth.AVS_Value("rgb24")])
+                avsfile = self.env.Invoke("mergergb", merge_args, 0)
+                # Release intermediate clips
+                rgb.Release()
+                r.Release()
+                b.Release()
+                arg.Release()
                 self.clip = avsfile.AsClip(self.env)
             except avisynth.AvisynthError, err:
                 return
@@ -289,19 +298,18 @@ class AvsClip:
                 w = self.Width
                 h = self.Height
             else:
-                w, h = size 
-            buf = array.array('B', [0] * w * h * 3)  # Unpadded RGB24 image.
-            # Avisynth RGB is upside-down, so we iterate from the last line.
-            idx_start = (h - 1) * self.DrawPitch
-            write_idx = 0
+                w, h = size
+            buf = ctypes.create_string_buffer(h * self.DrawPitch)
+            # Use ctypes.memmove to blit the Avisynth VFB line-by-line
+            read_addr = ctypes.addressof(self.pBits.contents) + (h - 1) * self.DrawPitch
+            write_addr = ctypes.addressof(buf)
+            P_UBYTE = ctypes.POINTER(ctypes.c_ubyte)
             for i in range(h):
-                for j in range(w):
-                    # wx expects RGB ordering but Avisynth uses BGR.
-                    buf[write_idx + 0] = self.pBits[idx_start + j * 3 + 2]  # R
-                    buf[write_idx + 1] = self.pBits[idx_start + j * 3 + 1]  # G
-                    buf[write_idx + 2] = self.pBits[idx_start + j * 3 + 0]  # B
-                    write_idx += 3
-                idx_start -= self.DrawPitch
+                read_ptr = ctypes.cast(read_addr, P_UBYTE)
+                write_ptr = ctypes.cast(write_addr, P_UBYTE)
+                ctypes.memmove(write_ptr, read_ptr, w * 3)
+                read_addr -= self.DrawPitch
+                write_addr += w * 3
             bmp = wx.BitmapFromBuffer(w, h, buf)
             dc.DrawBitmap(bmp, 0, 0)
         
