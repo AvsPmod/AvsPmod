@@ -299,7 +299,7 @@ class AvsClip:
                 h = self.Height
             else:
                 w, h = size
-            buf = ctypes.create_string_buffer(h * self.DrawPitch)
+            buf = ctypes.create_string_buffer(h * w * 3)
             # Use ctypes.memmove to blit the Avisynth VFB line-by-line
             read_addr = ctypes.addressof(self.pBits.contents) + (h - 1) * self.DrawPitch
             write_addr = ctypes.addressof(buf)
