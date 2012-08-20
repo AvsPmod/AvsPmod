@@ -50,6 +50,7 @@ import time
 import StringIO
 import textwrap
 import ctypes
+import tempfile
 import _winreg
 import _md5 as md5
 import __builtin__
@@ -8155,41 +8156,36 @@ class MainFrame(wxp.Frame):
         f = open(self.optionsfilename, mode='wb')
         cPickle.dump(self.options, f, protocol=0)
         f.close()
-
+    
     def OnMenuOptionsAssociate(self, event):
-        s1 = _('Associating .avs files will write to the windows registry.')
+        s1 = _('Associating .avs files will write to the windows registry. Admin rights are needed.')
         s2 = _('Do you wish to continue?')
         ret = wx.MessageBox('%s\n\n%s' % (s1, s2), _('Warning'), wx.YES_NO|wx.ICON_EXCLAMATION)
         if ret == wx.YES:
-            if hasattr(sys,'frozen'): # run in py2exe binary mode
-                value = '"%s" "%%1"' % sys.executable
-            else: # run in source mode
-                dirname = os.path.dirname(__file__)
-                basename = os.path.basename(__file__)
-                if not dirname:
-                    dirname = os.getcwd()
-                script = os.path.join(dirname, basename)
-                value = '"%s" "%s" "%%1"' % (sys.executable, script)
-            try:
-                hkey = _winreg.OpenKey(_winreg.HKEY_CLASSES_ROOT, 'avsfile\\shell\\Open\\command', 0, _winreg.KEY_SET_VALUE)            
-                _winreg.SetValue(_winreg.HKEY_CLASSES_ROOT, 'avsfile\\shell\\Open\\command', _winreg.REG_SZ, value)
-                _winreg.CloseKey(hkey)
-            except WindowsError, e:
-                print e
-            try:
-                hkey = _winreg.OpenKey(_winreg.HKEY_CURRENT_USER, 'Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\FileExts\\.avs', 0, _winreg.KEY_SET_VALUE)
-                _winreg.DeleteValue(hkey, 'Application')
-                _winreg.CloseKey(hkey)
-            except WindowsError, e:
-                print e
-            try:
-                hkey = _winreg.OpenKey(_winreg.HKEY_CURRENT_USER, 'Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\FileExts\\.avs\\UserChoice', 0, _winreg.KEY_SET_VALUE)
-                _winreg.DeleteKey(_winreg.HKEY_CURRENT_USER, 'Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\FileExts\\.avs\\UserChoice')
-                _winreg.CloseKey(hkey)
-            except WindowsError, e:
-                print e
-            
-
+            ret = wx.MessageBox(_('Associate avs files for all users?'), '', wx.YES_NO|wx.CANCEL|wx.ICON_QUESTION)
+            if ret != wx.CANCEL:
+                root = 'HKLM' if ret == wx.YES else 'HKCU'
+                if hasattr(sys,'frozen'): # run in py2exe binary mode
+                    value = '"%s" "%%1"' % sys.executable
+                else: # run in source mode
+                    dirname = os.path.dirname(__file__)
+                    basename = os.path.basename(__file__)
+                    if not dirname:
+                        dirname = os.getcwd()
+                    script = os.path.join(dirname, basename)
+                    value = '"%s" "%s" "%%1"' % (sys.executable, script)
+                f = tempfile.NamedTemporaryFile(delete=False)
+                txt = '''
+                {}\\Software\\Classes\\avsfile\\shell\\Open\\command
+                = "{}"
+                HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\FileExts\\.avs
+                "Application" = DELETE
+                HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\FileExts\\.avs\\UserChoice [DELETE]
+                '''.format(root, value)
+                f.write(txt)
+                f.close()
+                ctypes.windll.shell32.ShellExecuteW(None, u'runas', u'cmd', u'/k "regini "{f}" & del "{f}""'.format(f=f.name), None, 0)
+    
     def OnMenuConfigureShortcuts(self, event):
         #~ exceptionIds = []
         #~ for window, idList in self._shortcutBindWindowDict.items():
