@@ -1303,6 +1303,8 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
             name = self.calltipFilter
         #~ if not name.lower() in self.app.avsfilterdict:
             #~ return True
+        if not name:
+            return
         docsearchpaths = []
         avisynthdir = self.app.options['avisynthdir']
         docsearchpathstring = self.app.options['docsearchpaths']
@@ -7289,11 +7291,11 @@ class MainFrame(wxp.Frame):
             posB = script.WordEndPosition(pos, 1)
             word = script.GetTextRange(posA, posB)
             #~ if word.lower() in script.keywords:
-            if word.lower() in self.avskeywords:
-                script.ShowFilterDocumentation(word)
-            else:
-                script.ShowFilterDocumentation(script.GetSelectedText())
-
+            selected = script.GetSelectedText()
+            if word.lower() not in self.avskeywords and selected:
+                word = selected
+            script.ShowFilterDocumentation(word)
+    
     def OnMenuEditCopyToNewTab(self, event):
         self.CopyTextToNewTab()
 
