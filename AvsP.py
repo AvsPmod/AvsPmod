@@ -1333,10 +1333,10 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
             if filenames:
                 filenames.sort()
                 filename = os.path.join(dir, filenames[0][1])
-                os.startfile(filename)
+                startfile(filename)
                 return True
         url = self.app.options['docsearchurl'].replace('%filtername%', name.replace('_', '+'))
-        os.startfile(url)
+        startfile(url)
         return False
 
     def GetFilterNameAtCursor(self, pos=None):
@@ -2630,6 +2630,14 @@ def GenerateMacroReadme(file=None):
         file.write(doc)
         file.close()
     return doc
+
+# Open a file or directory with its associate program
+def startfile(path):
+    '''Open a file or directory with its associate program'''
+    if os.name == 'nt':
+        os.startfile(path)
+    else: 
+        os.system('xdg-open "{}"'.format(path))
 
 # Dialog and validator for defining user slider
 class UserSliderValidator(wx.PyValidator):
@@ -7939,14 +7947,14 @@ class MainFrame(wxp.Frame):
 
     def OnMenuMacrosFolder(self, event):
         if os.path.exists(self.macrofolder):
-            os.startfile(self.macrofolder)
+            startfile(self.macrofolder)
         else:
             wx.MessageBox(_('Could not find the macros folder!') % locals(), _('Error'), style=wx.OK|wx.ICON_ERROR)
 
     def OnMenuMacrosReadme(self, event):
         readme = os.path.join(self.macrofolder, 'macros_readme.txt')
         if os.path.exists(readme):
-            os.startfile(readme)
+            startfile(readme)
         else:
             wx.MessageBox(_('Could not find %(readme)s!') % locals(), _('Error'), style=wx.OK|wx.ICON_ERROR)
 
@@ -8269,11 +8277,11 @@ class MainFrame(wxp.Frame):
 
         # First see if the given doc path exists on the computer
         if os.path.isfile(helpfile):
-            os.startfile(helpfile)
+            startfile(helpfile)
             return True
         # Then see if the given doc path is a url
         if helpfile.startswith('http://'):
-            os.startfile(helpfile)
+            startfile(helpfile)
             return True
         # Give a message if not a file or a url
         wx.MessageBox('Could not find avisynth help file!', _('Error'), style=wx.OK|wx.ICON_ERROR)
@@ -8283,49 +8291,49 @@ class MainFrame(wxp.Frame):
         if not os.path.isdir(plugindir):
             plugindir = os.path.join(self.options['avisynthdir'], 'plugins')
         if os.path.exists(plugindir):
-            os.startfile(plugindir)
+            startfile(plugindir)
         else:
             wx.MessageBox(_('Could not find the Avisynth plugins folder!') % locals(), _('Error'), style=wx.OK|wx.ICON_ERROR)
 
     def OnMenuHelpAnimatedTutorial(self, event):
         filename = os.path.join(self.options['helpdir'], 'Demo.htm')
         if os.path.isfile(filename):
-            os.startfile(filename)
+            startfile(filename)
         else:
-            os.startfile('http://www.avisynth.org/qwerpoi/Demo.htm')
+            startfile('http://www.avisynth.org/qwerpoi/Demo.htm')
 
     def OnMenuHelpTextFeatures(self, event):
         filename = os.path.join(self.options['helpdir'], 'Text.html')
         if os.path.isfile(filename):
-            os.startfile(filename)
+            startfile(filename)
         else:
-            os.startfile('http://avisynth.org/qwerpoi/Text.html')
+            startfile('http://avisynth.org/qwerpoi/Text.html')
 
     def OnMenuHelpVideoFeatures(self, event):
         filename = os.path.join(self.options['helpdir'], 'Video.html')
         if os.path.isfile(filename):
-            os.startfile(filename)
+            startfile(filename)
         else:
-            os.startfile('http://avisynth.org/qwerpoi/Video.html')
+            startfile('http://avisynth.org/qwerpoi/Video.html')
 
     def OnMenuHelpUserSliderFeatures(self, event):
         filename = os.path.join(self.options['helpdir'], 'UserSliders.html')
         if os.path.isfile(filename):
-            os.startfile(filename)
+            startfile(filename)
         else:
-            os.startfile('http://avisynth.org/qwerpoi/UserSliders.html')
+            startfile('http://avisynth.org/qwerpoi/UserSliders.html')
 
     def OnMenuHelpMacroFeatures(self, event):
         filename = os.path.join(self.options['helpdir'], 'Macros.html')
         if os.path.isfile(filename):
-            os.startfile(filename)
+            startfile(filename)
         else:
-            os.startfile('http://avisynth.org/qwerpoi/Macros.html')
+            startfile('http://avisynth.org/qwerpoi/Macros.html')
 
     def OnMenuHelpReadme(self, event):
         readme = os.path.join(self.programdir, 'readme.txt')
         if os.path.exists(readme):
-            os.startfile(readme)
+            startfile(readme)
         else:
             wx.MessageBox(_('Could not find %(readme)s!') % locals(), _('Error'), style=wx.OK|wx.ICON_ERROR)
 
@@ -8348,7 +8356,7 @@ class MainFrame(wxp.Frame):
         link.SetCursor(wx.StockCursor(wx.CURSOR_HAND))
         url = 'http://www.avisynth.org/qwerpoi/'
         def OnClick(event):
-            os.startfile(url)
+            startfile(url)
         link.SetToolTip(wx.ToolTip(url))
         link.Bind(wx.EVT_LEFT_DOWN, OnClick)
         
@@ -8360,7 +8368,7 @@ class MainFrame(wxp.Frame):
         link1.SetCursor(wx.StockCursor(wx.CURSOR_HAND))
         url1 = 'http://forum.doom9.org/showthread.php?t=153248'
         def OnClick1(event):
-            os.startfile(url1)
+            startfile(url1)
         link1.SetToolTip(wx.ToolTip(url1))
         link1.Bind(wx.EVT_LEFT_DOWN, OnClick1)
         
@@ -8373,7 +8381,7 @@ class MainFrame(wxp.Frame):
         link2.SetForegroundColour(wx.Colour(0,0,255))
         link2.SetCursor(wx.StockCursor(wx.CURSOR_HAND))
         def OnClick2(event):
-            os.startfile(url2)
+            startfile(url2)
         link2.SetToolTip(wx.ToolTip(url2))
         link2.Bind(wx.EVT_LEFT_DOWN, OnClick2)
 
