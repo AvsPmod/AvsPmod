@@ -1,3 +1,4 @@
+import os.path
 import math
 #file extension to use
 ext = ".png"
@@ -20,7 +21,7 @@ if (zeros < 0):
 
 #save the images
 for frame in range(0,totalframes):
-    avsp.SaveImage(filename=dirname+"\\"+str(frame).zfill(zeros)+ext, framenum=frame)
+    avsp.SaveImage(filename=os.path.join(dirname, str(frame).zfill(zeros)+ext), framenum=frame)
     # Update the progress box, exit if user canceled
     if not pbox.Update(frame+1, str(frame+1) + " / " + str(totalframes))[0]:
         break

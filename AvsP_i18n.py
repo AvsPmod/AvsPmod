@@ -10,7 +10,7 @@ def _(s): return s
 __builtin__._ = _
 
 pythonexe = sys.executable 
-pygettextpath = os.path.join(sys.prefix, 'Tools\i18n\pygettext.py')
+pygettextpath = os.path.join(sys.prefix, 'Tools', 'i18n', 'pygettext.py')
 toolsdir = 'tools'
 macrosdir = 'macros'
 

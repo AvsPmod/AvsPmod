@@ -1313,10 +1313,10 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
             path = path.strip()
             if path == '':
                 continue
-            if path.rstrip('\\') == '%avisynthdir%':
+            if path.rstrip(os.sep) == '%avisynthdir%':
                 docsearchpaths.append(avisynthdir)
-            elif path.startswith('%avisynthdir%\\'):
-                path = os.path.join(avisynthdir, path.split('%avisynthdir%\\')[1])
+            elif path.startswith('%avisynthdir%' + os.sep):
+                path = os.path.join(avisynthdir, path.split('%avisynthdir%' + os.sep)[1])
                 if os.path.isdir(path):
                     docsearchpaths.append(path)
             else:
@@ -5015,12 +5015,14 @@ class MainFrame(wxp.Frame):
             'exitstatus': 0,
             'reservedshortcuts': ['Tab', 'Shift+Tab', 'Ctrl+Z', 'Ctrl+Y', 'Ctrl+X', 'Ctrl+C', 'Ctrl+V', 'Ctrl+A'],
             # GENERAL OPTIONS
-            'helpdir': r'%programdir%\help',
+            'helpdir': os.path.join('%programdir%', 'help'),
             'avisynthdir': '',
-            'avisynthhelpfile': r'%avisynthdir%\docs\english\index.htm',
+            'avisynthhelpfile': os.path.join('%avisynthdir%', 'docs', 'english', 'index.htm'),
             'externalplayer': '',
             'externalplayerargs': '',
-            'docsearchpaths': r'%avisynthdir%\plugins; %avisynthdir%\docs\english\corefilters; %avisynthdir%\docs\english\externalfilters;',
+            'docsearchpaths': ';'.join([os.path.join('%avisynthdir%', 'plugins'), 
+                                        os.path.join('%avisynthdir%', 'docs', 'english', 'corefilters'), 
+                                        os.path.join('%avisynthdir%', 'docs', 'english', 'externalfilters')]),
             'docsearchurl':'http://www.google.com/search?q=%filtername%+Avisynth',
             # TEXT OPTIONS
             'calltips': True,
@@ -5141,7 +5143,8 @@ class MainFrame(wxp.Frame):
                     dlg.Destroy()
             else:
                 # avisynthdir is only used for the helpfile
-                self.options['avisynthdir'] = '/path/to/nowhere'
+                self.options['avisynthdir'] = ''
+        
         self.options['avisynthhelpfile'] = self.options['avisynthhelpfile'].replace('%avisynthdir%', self.options['avisynthdir'])
         # Fix recentfiles as necessary???
         try:
@@ -8272,8 +8275,8 @@ class MainFrame(wxp.Frame):
 
     def OnMenuHelpAvisynth(self, event):
         helpfile = self.options['avisynthhelpfile']
-        if helpfile.startswith('%avisynthdir%\\'):
-            helpfile = os.path.join(self.options['avisynthdir'], helpfile.split('%avisynthdir%\\')[1])
+        if helpfile.startswith('%avisynthdir%' + os.sep):
+            helpfile = os.path.join(self.options['avisynthdir'], helpfile.split('%avisynthdir%' + os.sep)[1])
 
         # First see if the given doc path exists on the computer
         if os.path.isfile(helpfile):
