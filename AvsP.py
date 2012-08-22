@@ -50,6 +50,7 @@ import time
 import StringIO
 import textwrap
 import ctypes
+import tempfile
 if os.name == 'nt':
     import _winreg
 from hashlib import md5
@@ -1306,6 +1307,8 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
             name = self.calltipFilter
         #~ if not name.lower() in self.app.avsfilterdict:
             #~ return True
+        if not name:
+            return
         docsearchpaths = []
         avisynthdir = self.app.options['avisynthdir']
         docsearchpathstring = self.app.options['docsearchpaths']
@@ -7319,11 +7322,11 @@ class MainFrame(wxp.Frame):
             posB = script.WordEndPosition(pos, 1)
             word = script.GetTextRange(posA, posB)
             #~ if word.lower() in script.keywords:
-            if word.lower() in self.avskeywords:
-                script.ShowFilterDocumentation(word)
-            else:
-                script.ShowFilterDocumentation(script.GetSelectedText())
-
+            selected = script.GetSelectedText()
+            if word.lower() not in self.avskeywords and selected:
+                word = selected
+            script.ShowFilterDocumentation(word)
+    
     def OnMenuEditCopyToNewTab(self, event):
         self.CopyTextToNewTab()
 
@@ -7968,11 +7971,10 @@ class MainFrame(wxp.Frame):
 
     def OnMenuMacrosReadme(self, event):
         readme = os.path.join(self.macrofolder, 'macros_readme.txt')
-        if os.path.exists(readme):
-            startfile(readme)
-        else:
-            wx.MessageBox(_('Could not find %(readme)s!') % locals(), _('Error'), style=wx.OK|wx.ICON_ERROR)
-
+        if not os.path.exists(readme):
+            GenerateMacroReadme(file=True)
+        startfile(readme)
+    
     def OnMenuToolsRunSelected(self, event):
         try:
             os.chdir(self.toolsfolder)
@@ -8186,44 +8188,39 @@ class MainFrame(wxp.Frame):
         f = open(self.optionsfilename, mode='wb')
         cPickle.dump(self.options, f, protocol=0)
         f.close()
-
+    
     def OnMenuOptionsAssociate(self, event):
         # Currently, associations are not supported on Linux.
         if not os.name == 'nt':
             return
-        s1 = _('Associating .avs files will write to the windows registry.')
+        s1 = _('Associating .avs files will write to the windows registry. Admin rights are needed.')
         s2 = _('Do you wish to continue?')
         ret = wx.MessageBox('%s\n\n%s' % (s1, s2), _('Warning'), wx.YES_NO|wx.ICON_EXCLAMATION)
         if ret == wx.YES:
-            if hasattr(sys,'frozen'): # run in py2exe binary mode
-                value = '"%s" "%%1"' % sys.executable
-            else: # run in source mode
-                dirname = os.path.dirname(__file__)
-                basename = os.path.basename(__file__)
-                if not dirname:
-                    dirname = os.getcwd()
-                script = os.path.join(dirname, basename)
-                value = '"%s" "%s" "%%1"' % (sys.executable, script)
-            try:
-                hkey = _winreg.OpenKey(_winreg.HKEY_CLASSES_ROOT, 'avsfile\\shell\\Open\\command', 0, _winreg.KEY_SET_VALUE)            
-                _winreg.SetValue(_winreg.HKEY_CLASSES_ROOT, 'avsfile\\shell\\Open\\command', _winreg.REG_SZ, value)
-                _winreg.CloseKey(hkey)
-            except WindowsError, e:
-                print e
-            try:
-                hkey = _winreg.OpenKey(_winreg.HKEY_CURRENT_USER, 'Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\FileExts\\.avs', 0, _winreg.KEY_SET_VALUE)
-                _winreg.DeleteValue(hkey, 'Application')
-                _winreg.CloseKey(hkey)
-            except WindowsError, e:
-                print e
-            try:
-                hkey = _winreg.OpenKey(_winreg.HKEY_CURRENT_USER, 'Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\FileExts\\.avs\\UserChoice', 0, _winreg.KEY_SET_VALUE)
-                _winreg.DeleteKey(_winreg.HKEY_CURRENT_USER, 'Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\FileExts\\.avs\\UserChoice')
-                _winreg.CloseKey(hkey)
-            except WindowsError, e:
-                print e
-            
-
+            ret = wx.MessageBox(_('Associate avs files for all users?'), '', wx.YES_NO|wx.CANCEL|wx.ICON_QUESTION)
+            if ret != wx.CANCEL:
+                root = 'HKLM' if ret == wx.YES else 'HKCU'
+                if hasattr(sys,'frozen'): # run in py2exe binary mode
+                    value = '"%s" "%%1"' % sys.executable
+                else: # run in source mode
+                    dirname = os.path.dirname(__file__)
+                    basename = os.path.basename(__file__)
+                    if not dirname:
+                        dirname = os.getcwd()
+                    script = os.path.join(dirname, basename)
+                    value = '"%s" "%s" "%%1"' % (sys.executable, script)
+                f = tempfile.NamedTemporaryFile(delete=False)
+                txt = '''
+                {}\\Software\\Classes\\avsfile\\shell\\Open\\command
+                = "{}"
+                HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\FileExts\\.avs
+                "Application" = DELETE
+                HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\FileExts\\.avs\\UserChoice [DELETE]
+                '''.format(root, value)
+                f.write(txt)
+                f.close()
+                ctypes.windll.shell32.ShellExecuteW(None, u'runas', u'cmd', u'/k "regini "{f}" & del "{f}""'.format(f=f.name), None, 0)
+    
     def OnMenuConfigureShortcuts(self, event):
         #~ exceptionIds = []
         #~ for window, idList in self._shortcutBindWindowDict.items():
