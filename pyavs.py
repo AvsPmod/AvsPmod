@@ -187,46 +187,45 @@ class AvsClip:
             self.clipRaw = self.clip
             
         # Initialize display-related variables.  RGB24 allows simpler memory copy operations.
-        if not self.vi.IsRGB24():
-            try:
-                arg(self.clip)
-            except NameError:
-                arg = avisynth.AVS_Value(self.clip)
-            if self.IsYUV and swapuv:
-                try:
-                    avsfile = self.env.Invoke("swapuv", arg, 0)
-                    arg.Release()
-                    self.clip = avsfile.AsClip(self.env)
-                except avisynth.AvisynthError, err:
-                    return
+        try:
+            arg(self.clip)
+        except NameError:
             arg = avisynth.AVS_Value(self.clip)
-            if isinstance(matrix, basestring):
-                arg1 = avisynth.AVS_Value(matrix)
-            else:
-                matrix = matrix[:]
-                if matrix[0] == 'auto':
-                    matrix[0] = '709' if self.HeightActual > 576 else '601'
-                matrix[1] = 'Rec' if matrix[1] == 'tv' else 'PC.'
-                arg1 = avisynth.AVS_Value(matrix[1] + matrix[0])
-            if not self.IsYV12:
-                interlaced = False
-            arg2 = avisynth.AVS_Value(interlaced)
-            args = avisynth.AVS_Value([arg, arg1, arg2])
+        if self.IsYUV and swapuv:
             try:
-                # Avisynth uses BGR ordering but we need RGB
-                rgb = self.env.Invoke("converttorgb24", args, 0)
-                r = self.env.Invoke("showred", rgb, 0)
-                b = self.env.Invoke("showblue", rgb, 0)
-                merge_args = avisynth.AVS_Value([b, rgb, r, avisynth.AVS_Value("rgb24")])
-                avsfile = self.env.Invoke("mergergb", merge_args, 0)
-                # Release intermediate clips
-                rgb.Release()
-                r.Release()
-                b.Release()
+                avsfile = self.env.Invoke("swapuv", arg, 0)
                 arg.Release()
                 self.clip = avsfile.AsClip(self.env)
             except avisynth.AvisynthError, err:
                 return
+        arg = avisynth.AVS_Value(self.clip)
+        if isinstance(matrix, basestring):
+            arg1 = avisynth.AVS_Value(matrix)
+        else:
+            matrix = matrix[:]
+            if matrix[0] == 'auto':
+                matrix[0] = '709' if self.HeightActual > 576 else '601'
+            matrix[1] = 'Rec' if matrix[1] == 'tv' else 'PC.'
+            arg1 = avisynth.AVS_Value(matrix[1] + matrix[0])
+        if not self.IsYV12:
+            interlaced = False
+        arg2 = avisynth.AVS_Value(interlaced)
+        args = avisynth.AVS_Value([arg, arg1, arg2])
+        try:
+            # Avisynth uses BGR ordering but we need RGB
+            rgb = self.env.Invoke("converttorgb24", args, 0)
+            r = self.env.Invoke("showred", rgb, 0)
+            b = self.env.Invoke("showblue", rgb, 0)
+            merge_args = avisynth.AVS_Value([b, rgb, r, avisynth.AVS_Value("rgb24")])
+            avsfile = self.env.Invoke("mergergb", merge_args, 0)
+            # Release intermediate clips
+            rgb.Release()
+            r.Release()
+            b.Release()
+            arg.Release()
+            self.clip = avsfile.AsClip(self.env)
+        except avisynth.AvisynthError, err:
+            return
         # Add a resize...
         if fitHeight is not None and self.Height != 0:
             fitWidthTemp = int(round(fitHeight *  (self.Width/float(self.Height))))
