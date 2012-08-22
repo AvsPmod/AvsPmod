@@ -7940,11 +7940,10 @@ class MainFrame(wxp.Frame):
 
     def OnMenuMacrosReadme(self, event):
         readme = os.path.join(self.macrofolder, 'macros_readme.txt')
-        if os.path.exists(readme):
-            os.startfile(readme)
-        else:
-            wx.MessageBox(_('Could not find %(readme)s!') % locals(), _('Error'), style=wx.OK|wx.ICON_ERROR)
-
+        if not os.path.exists(readme):
+            GenerateMacroReadme(file=True)
+        os.startfile(readme)
+    
     def OnMenuToolsRunSelected(self, event):
         try:
             os.chdir(self.toolsfolder)
