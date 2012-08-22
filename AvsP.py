@@ -10418,6 +10418,7 @@ class MainFrame(wxp.Frame):
             ID = dlg.ShowModal()
             if ID == wx.ID_OK:
                 filename = dlg.GetPath()
+                filter = extlist[dlg.GetFilterIndex()]
                 self.options['imagechoice'] = dlg.GetFilterIndex()
                 self.options['imagesavedir'] = os.path.dirname(filename)
                 fmt = os.path.splitext(os.path.basename(filename))[0]
@@ -10427,6 +10428,8 @@ class MainFrame(wxp.Frame):
                              fmt, 1)
                 self.options['imagenameformat'] = fmt
             dlg.Destroy()
+        else:
+            filter = None
         if filename:
             w = script.AVI.Width
             h = script.AVI.Height
@@ -10436,7 +10439,7 @@ class MainFrame(wxp.Frame):
             script.AVI.DrawFrame(self.currentframenum, mdc)
             ext = os.path.splitext(filename)[1].lower()
             if ext not in extlist:
-                ext = '.bmp'
+                ext = filter if filter else '.bmp'
                 filename = '%s%s' % (filename, ext)
             #~ bmp.SaveFile(filename, self.imageFormats[ext][1])
             img = bmp.ConvertToImage()
