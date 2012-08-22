@@ -46,7 +46,7 @@ if not bookmarkDict:
             if len(stats)==5:
                 dCombed=dict( (int(L.split(' ')[0]), L.split(' ')[1]) for L in stats[1].strip().split('\n') if not L.startswith('none'))
                 dPossible=dict( (int(L.split(' ')[0]), '') for L in re.sub('\(\d+\)',' ',stats[3].strip()).split('\n') if not L.startswith('none'))
-                dUBmatch=dict( (int(L.split(' ')[0]), L.split(' ')[1]) for L in stats[4].strip().split('\n') if not L.startswith('none'))
+                dUBmatch=dict( (int(F), L[-1]) for L in stats[4].strip().split('\n') for F in re.split('[\s,]',L[:-2]) if not L.startswith('none'))
                 maxframe = max([max(d.keys()) if d.keys() else -1 for d in (dCombed, dPossible, dUBmatch)])
                 if maxframe == -1:
                     avsp.MsgBox(_('Not combed or out of order frames'), _('Bookmarks from TFM file'))
