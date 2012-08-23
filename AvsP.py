@@ -4942,20 +4942,37 @@ class MainFrame(wxp.Frame):
                 oldOptions = {}
         if oldOptions and oldOptions.get('version').startswith('1.'):
             oldOptions = None
-        templateDict = {
-            'avi': 'AVISource(***)',
-            'wav': 'WAVSource(***)',
-            'd2v': 'MPEG2Source(***, cpu=0)',
-            'dga': 'AVCSource(***)',
-            'mpg': 'DirectShowSource(***)',
-            'mp4': 'DirectShowSource(***)',
-            'mkv': 'DirectShowSource(***)',
-            'wmv': 'DirectShowSource(***)',
-            'avs': 'Import(***)',
-            'bmp': 'ImageReader(***)',
-            'jpg': 'ImageReader(***)',
-            'png': 'ImageReader(***)',
-        }
+        
+        if os.name == 'nt':
+            templateDict = {
+                'avi': 'AVISource(***)',
+                'wav': 'WAVSource(***)',
+                'd2v': 'MPEG2Source(***, cpu=0)',
+                'dga': 'AVCSource(***)',
+                'mpg': 'DirectShowSource(***)',
+                'mp4': 'DirectShowSource(***)',
+                'mkv': 'DirectShowSource(***)',
+                'wmv': 'DirectShowSource(***)',
+                'avs': 'Import(***)',
+                'bmp': 'ImageReader(***)',
+                'jpg': 'ImageReader(***)',
+                'png': 'ImageReader(***)',
+            }
+        else:
+            templateDict = {
+                'avi': 'FFVideoSource(***)',
+                'wav': 'FFAudioSource(***)',
+                'd2v': 'FFVideoSource(***)',
+                'dga': 'FFVideoSource(***)',
+                'mpg': 'FFVideoSource(***)',
+                'mp4': 'FFVideoSource(***)',
+                'mkv': 'FFVideoSource(***)',
+                'wmv': 'FFVideoSource(***)',
+                'avs': 'Import(***)',
+                'bmp': 'FFVideoSource(***, cache=false, seekmode=-1)',
+                'jpg': 'FFVideoSource(***, cache=false, seekmode=-1)',
+                'png': 'FFVideoSource(***, cache=false, seekmode=-1)',
+            }
         textstylesDict = {
             'default': 'face:Verdana,size:10,fore:#000000,back:#FFFFFF',
             'comment': 'face:Comic Sans MS,size:9,fore:#007F00,back:#FFFFFF',
@@ -10053,7 +10070,10 @@ class MainFrame(wxp.Frame):
             else:
                 stringList = [s.strip('"') for s in re.findall('".+?"', script.GetText())]
                 #~ extList = ['.%s' % s for s in self.options['templates'].keys()]
-                sourceFilterList = {'directshowsource'}
+                if os.name == 'nt':
+                    sourceFilterList = {'directshowsource'}
+                else:
+                    sourceFilterList = {'ffvideosource', 'ffaudiosource'}
                 noMediaFileList = ('import', 'loadplugin', 'loadcplugin', 'load_stdcall_plugin', 
                                    'loadvirtualdubplugin', 'loadvfapiplugin')
                 re_templates = re.compile(r'\b(\w+)\s*\([^)]*?\[?\*{3}', re.I)
@@ -10579,9 +10599,9 @@ class MainFrame(wxp.Frame):
         Returns an appropriate source string based on the file extension of the input 
         string 'filename'.  For example, if 'filename' is "D:\test.avi", the function 
         returns the string "AviSource("D:\test.avi")".  Any unknown extension is wrapped 
-        with "DirectShowSource(____)".  Templates can be viewed and defined in the 
-        options menu of the program.  If 'filename' is empty, the user is prompted to 
-        select a file with a dialog box.
+        with "DirectShowSource(____)" (AviSynth) or "FFVideoSource(____)" (AvxSynth).  
+        Templates can be viewed and defined in the options menu of the program.  If 
+        'filename' is empty, the user is prompted to select a file with a dialog box.
         
         '''
         extlist = self.options['templates'].keys()
@@ -10609,7 +10629,7 @@ class MainFrame(wxp.Frame):
             if not strsource:
                 strsource = self.GetPluginString(filename)
                 if not strsource:
-                   strsource = u'DirectShowSource(***)'
+                   strsource = u'DirectShowSource(***)' if os.name == 'nt' else  u'FFVideoSource(***)'
             strsource = strsource.replace(u'[***]', u'"%s"' % os.path.basename(filename))
             strsource = strsource.replace(u'***', u'"%s"' % filename)
         else:
