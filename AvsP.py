@@ -4731,7 +4731,7 @@ class MainFrame(wxp.Frame):
         else:
             self.invertSelection = True
         if self.options['videostatusbarinfo'] == None:
-            self.videoStatusBarInfo = _('Frame') + ' %F / %FC  -  (%T)      %POS  %HEX \t\t %Z %Wx%H (%AR)  -  %FR ' + _('fps') + '  -  %CS'
+            self.videoStatusBarInfo = _('Frame') + ' %F / %FC  -  (%T)      %POS  %HEX \\T\\T %Z %Wx%H (%AR)  -  %FR ' + _('fps') + '  -  %CS'
         else:
             self.videoStatusBarInfo = self.options['videostatusbarinfo']
         self.videoStatusBarInfoParsed, self.showVideoPixelInfo, self.showVideoPixelAvisynth = self.ParseVideoStatusBarInfo(self.videoStatusBarInfo)
