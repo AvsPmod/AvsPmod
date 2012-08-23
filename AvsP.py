@@ -80,9 +80,10 @@ import wxp
 try:
     import avisynth
 except OSError, err:
-    message = "%sLoad avisynth.dll failed!\nTry install or re-install Avisynth firstly." % err
+    lib = ('AviSynth', '.dll') if os.name == 'nt' else ('AvxSynth', '.so')
+    message = "{0}\nLoading {1}{2} failed!\nMake sure that {3} is installed.".format(err, lib[0].lower(), lib[1], lib[0])
     app = wx.PySimpleApp()
-    wx.MessageBox(message, 'Windows Error', wx.OK|wx.ICON_ERROR)
+    wx.MessageBox(message, 'OS Error', wx.OK|wx.ICON_ERROR)
     sys.exit(0)
 if os.name == 'nt':
     try:
@@ -1885,8 +1886,9 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
     def parseDllname(self, start, end):
         path = self.GetTextRange(start, end).lower().strip('"')
         #~ print path
-        if path.endswith('.dll'):
-            dllname = os.path.basename(path[:-4])
+        ext = os.path.splitext(path)[1]
+        if ext in ('.dll', '.so'):
+            dllname = os.path.basename(path[:-len(ext)])
             if dllname.count('_') and dllname not in self.app.dllnameunderscored:
                 self.app.dllnameunderscored.add(dllname)
                 self.app.defineScriptFilterInfo()
@@ -6170,7 +6172,7 @@ class MainFrame(wxp.Frame):
                     (
                     (_('Insert source...'), 'F9', self.OnMenuEditInsertSource, _('Choose a source file to insert into the text')),
                     (_('Insert filename...'), 'Shift+F9', self.OnMenuEditInsertFilename, _('Get a filename from a dialog box to insert into the text')),
-                    (_('Insert plugin...'), 'F10', self.OnMenuEditInsertPlugin, _('Choose a plugin dll to insert into the text')),
+                    (_('Insert plugin...'), 'F10', self.OnMenuEditInsertPlugin, _('Choose a plugin file to insert into the text')),
                     (''),
                     (_('Insert user slider...'), 'F12', self.OnMenuEditInsertUserSlider, _('Insert a user-scripted slider into the text')),
                     (_('Insert user slider separator'), 'Shift+F12', self.OnMenuEditInsertUserSliderSeparator, _('Insert a tag which indicates a separator in the user slider window')),
@@ -10085,8 +10087,9 @@ class MainFrame(wxp.Frame):
                             sourceFilterList.add(function_name)
                 findpos = -1
                 lastpos = script.GetLength()
+                noMediaExtList = ('.dll', '.vdf', 'vdplugin', '.vfp', '.so', '.avs', '.txt', '.log')
                 for s in stringList:
-                    if os.path.isfile(s) and os.path.splitext(s)[1].lower() not in ('.dll', '.avs', '.txt', '.log'):
+                    if os.path.isfile(s) and os.path.splitext(s)[1].lower() not in noMediaExtList:
                         findpos = script.FindText(findpos+1, lastpos, s)
                         openpos = script.GetOpenParenthesesPos(findpos)
                         if openpos is not None:
@@ -10667,11 +10670,15 @@ class MainFrame(wxp.Frame):
         
         #~ script = self.currentScript
         if not filename or not os.path.isfile(filename):
-            filefilter = (_('All supported plugins') + ' (*.dll;*.vdf;*.vdplugin;*.vfp)|*.dll;*.vdf;*.vdplugin;*.vfp|' + 
-                          _('AviSynth plugins') + ' (*.dll)|*.dll|' + 
-                          _('VirtualDub plugins') + ' (*.vdf;*.vdplugin)|*.vdf;*.vdplugin|' + 
-                          _('VFAPI plugins') + ' (*.vfp)|*.vfp|' + 
-                          _('All files') + ' (*.*)|*.*')
+            if os.name == 'nt':
+                filefilter = (_('All supported plugins') + ' (*.dll;*.vdf;*.vdplugin;*.vfp)|*.dll;*.vdf;*.vdplugin;*.vfp|' + 
+                              _('AviSynth plugins') + ' (*.dll)|*.dll|' + 
+                              _('VirtualDub plugins') + ' (*.vdf;*.vdplugin)|*.vdf;*.vdplugin|' + 
+                              _('VFAPI plugins') + ' (*.vfp)|*.vfp|' + 
+                              _('All files') + ' (*.*)|*.*')
+            else:
+                filefilter = (_('AvxSynth plugins') + ' (*.so)|*.so|' + 
+                              _('All files') + ' (*.*)|*.*')
             plugindir = self.options['recentdirPlugins']
             if not os.path.isdir(plugindir):
                 plugindir = os.path.join(self.options['avisynthdir'], 'plugins' if os.name == 'nt' else 'avxsynth')
@@ -10686,7 +10693,7 @@ class MainFrame(wxp.Frame):
             dirname, name = os.path.split(filename)
             basename, ext = os.path.splitext(name)
             ext = ext.lower()
-            if ext == '.dll':
+            if ext in ('.dll', '.so'):
                 txt = 'LoadPlugin("%s")' % filename
             elif ext in ('.vdf', '.vdplugin'):
                 txt = 'LoadVirtualDubPlugin("%s", "%s", 0)' % (filename, basename)
@@ -13929,7 +13936,7 @@ class MainFrame(wxp.Frame):
         dlg = wx.Dialog(self, wx.ID_ANY, _('Warning'))
         bmp = wx.StaticBitmap(dlg, wx.ID_ANY, wx.ArtProvider.GetBitmap(wx.ART_WARNING))
         dllnameList.append('\n')
-        message = wx.StaticText(dlg, wx.ID_ANY, '.dll\n'.join(dllnameList) +\
+        message = wx.StaticText(dlg, wx.ID_ANY, '.{}\n'.format('dll' if os.name == 'nt' else 'so').join(dllnameList) +\
                                                 _('Above plugin names contain undesirable symbols.\n'
                                                   'Rename them to only use alphanumeric or underscores,\n'
                                                   'or make sure to use them in short name style only.'))
