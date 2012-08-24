@@ -5204,7 +5204,7 @@ class MainFrame(wxp.Frame):
         self.optionsFilters = self.getFilterInfoFromAvisynth()
         self.installedfilternames = set(self.optionsFilters) #set([key.lower() for key in self.optionsFilters.keys()])
         if __debug__:
-            self.ExportFilterData(self.optionsFilters, 'tempfilterout.txt', True)
+            self.ExportFilterData(self.optionsFilters, os.path.join(self.programdir, 'tempfilterout.txt'), True)
         self.avskeywords = [
             'return', 'global', 'function', 'last',
             'true', 'false', 'try', 'catch',
@@ -6318,7 +6318,7 @@ class MainFrame(wxp.Frame):
                 #~(_('Enable paranoia mode'), '', self.OnMenuOptionsEnableParanoiaMode, _('If checked, the current session is backed up prior to previewing any new script'), wx.ITEM_CHECK, self.options['paranoiamode']),
                 #~(_('Enable line-by-line update'), '', self.OnMenuOptionsEnableLineByLineUpdate, _('Enable the line-by-line video update mode (update every time the cursor changes line position)'), wx.ITEM_CHECK, self.options['autoupdatevideo']),
                 (''),
-                (_('Associate .avs files with AvsP'), '', self.OnMenuOptionsAssociate, _('Configure this computer to open .avs files with AvsP when double-clicked')),
+                (_('Associate .avs files with AvsP'), '', self.OnMenuOptionsAssociate, _('Configure this computer to open .avs files with AvsP when double-clicked. Run again to disassociate')),
                 (''),
                 (_('AviSynth function definition...'), '', self.OnMenuOptionsFilters, _('Add or override AviSynth functions in the database')),
                 #~ (_('AviSynth function definition...'), '', self.OnMenuOptionsFilters, _('Edit the AviSynth function info for syntax highlighting and calltips')),
@@ -8209,36 +8209,101 @@ class MainFrame(wxp.Frame):
         f.close()
     
     def OnMenuOptionsAssociate(self, event):
-        # Currently, associations are not supported on Linux.
-        if not os.name == 'nt':
-            return
-        s1 = _('Associating .avs files will write to the windows registry. Admin rights are needed.')
-        s2 = _('Do you wish to continue?')
-        ret = wx.MessageBox('%s\n\n%s' % (s1, s2), _('Warning'), wx.YES_NO|wx.ICON_EXCLAMATION)
-        if ret == wx.YES:
-            ret = wx.MessageBox(_('Associate avs files for all users?'), '', wx.YES_NO|wx.CANCEL|wx.ICON_QUESTION)
-            if ret != wx.CANCEL:
-                root = 'HKLM' if ret == wx.YES else 'HKCU'
-                if hasattr(sys,'frozen'): # run in py2exe binary mode
-                    value = '"%s" "%%1"' % sys.executable
-                else: # run in source mode
-                    dirname = os.path.dirname(__file__)
-                    basename = os.path.basename(__file__)
-                    if not dirname:
-                        dirname = os.getcwd()
-                    script = os.path.join(dirname, basename)
-                    value = '"%s" "%s" "%%1"' % (sys.executable, script)
-                f = tempfile.NamedTemporaryFile(delete=False)
-                txt = '''
-                {}\\Software\\Classes\\avsfile\\shell\\Open\\command
-                = "{}"
-                HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\FileExts\\.avs
-                "Application" = DELETE
-                HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\FileExts\\.avs\\UserChoice [DELETE]
-                '''.format(root, value)
+        if os.name == 'nt':
+            s1 = _('Associating .avs files will write to the windows registry. Admin rights are needed.')
+            s2 = _('Do you wish to continue?')
+            ret = wx.MessageBox('%s\n\n%s' % (s1, s2), _('Warning'), wx.YES_NO|wx.ICON_EXCLAMATION)
+            if ret == wx.YES:
+                restore = 'avsp' in _winreg.QueryValue(_winreg.HKEY_CLASSES_ROOT, 'avsfile\\shell\\Open\\command').lower()
+                ret = wx.MessageBox(_('Disassociate avs files for all users?') if restore else
+                                    _('Associate avs files for all users?'), '', wx.YES_NO|wx.CANCEL|wx.ICON_QUESTION)
+                if ret != wx.CANCEL:
+                    if hasattr(sys,'frozen'): # run in py2exe binary mode
+                        value = '"%s" "%%1"' % sys.executable
+                    else: # run in source mode
+                        dirname = os.path.dirname(__file__)
+                        basename = os.path.basename(__file__)
+                        if not dirname:
+                            dirname = os.getcwd()
+                        script = os.path.join(dirname, basename)
+                        value = '"%s" "%s" "%%1"' % (sys.executable, script)
+                    f = tempfile.NamedTemporaryFile(delete=False)
+                    if restore:
+                        txt = textwrap.dedent('''\
+                        HKCU\\Software\\Classes\\avsfile\\shell\\Open\\command
+                        = "notepad"
+                        HKCU\\Software\\Classes\\avs_auto_file\\shell\\Open\\command
+                        = "notepad"''')
+                        if ret == wx.YES:
+                            txt += textwrap.dedent('''
+                            HKLM\\Software\\Classes\\avsfile\\shell\\Open\\command
+                            = "notepad"
+                            HKLM\\Software\\Classes\\avs_auto_file\\shell\\Open\\command
+                            = "notepad"''')
+                    else:
+                        txt = textwrap.dedent('''\
+                        HKCU\\Software\\Classes\\avsfile\\shell\\Open\\command
+                        = "{value}"
+                        HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\FileExts\\.avs
+                        "Application" = DELETE
+                        HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\FileExts\\.avs\\UserChoice
+                        HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\FileExts\\.avs\\UserChoice [DELETE]
+                        HKCU\\Software\\Classes\\avs_auto_file\\shell\\Open\\command
+                        = "{value}"
+                        HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\FileExts\\.avsi
+                        "Application" = DELETE
+                        HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\FileExts\\.avsi\\UserChoice
+                        HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\FileExts\\.avsi\\UserChoice [DELETE]
+                        ''').format(value=value)
+                        if ret == wx.YES:
+                            txt += textwrap.dedent('''
+                            HKLM\\Software\\Classes\\avsfile\\shell\\Open\\command
+                            = "{value}"
+                            HKLM\\Software\\Classes\\avs_auto_file\\shell\\Open\\command
+                            = "{value}"''').format(value=value)
+                    f.write(txt)
+                    f.close()
+                    ctypes.windll.shell32.ShellExecuteW(None, u'runas', u'cmd', u'/k "regini "{f}" & del "{f}""'.format(f=f.name), None, 0)
+        else:
+            app_file = os.path.join(tempfile.gettempdir(), 'avspmod.desktop')
+            with open(app_file, 'w') as f:
+                txt = textwrap.dedent('''\
+                [Desktop Entry]
+                Version=1.0
+                Name=AvsPmod
+                GenericName=Video Editor
+                Comment=An Avisynth script editor
+                Type=Application
+                Exec=python -O {dir}/run.py %F
+                Path={dir}
+                Terminal=false
+                StartupNotify=true
+                Icon={dir}/AvsP.ico
+                Categories=AudioVideo;
+                MimeType=text/x-avisynth;''').format(dir=self.programdir)
                 f.write(txt)
-                f.close()
-                ctypes.windll.shell32.ShellExecuteW(None, u'runas', u'cmd', u'/k "regini "{f}" & del "{f}""'.format(f=f.name), None, 0)
+            if 'avsp' in subprocess.check_output(['xdg-mime', 'query', 'default', 'text/x-avisynth']):
+                text_editor = subprocess.check_output(['xdg-mime', 'query', 'default', 'text/plain']).strip()
+                os.system('xdg-desktop-menu uninstall {} && '
+                          'xdg-mime default {} text/x-avisynth'.format(app_file, text_editor))
+            else:
+                mime_file = os.path.join(tempfile.gettempdir(), 'avisynth.xml')
+                with open(mime_file, 'w') as f:
+                    txt = textwrap.dedent('''\
+                    <?xml version="1.0"?>
+                    <mime-info xmlns='http://www.freedesktop.org/standards/shared-mime-info'>
+                      <mime-type type="text/x-avisynth">
+                        <comment>AviSynth script</comment>
+                        <glob pattern="*.avs"/>
+                        <glob pattern="*.avsi"/>
+                      </mime-type>
+                    </mime-info>''')
+                    f.write(txt)
+                os.system('xdg-mime install --novendor {mime_file} && '
+                          'xdg-desktop-menu install --novendor {app_file} && '
+                          'xdg-mime default {app_file} text/x-avisynth'.format(mime_file=mime_file, app_file=app_file))
+                os.remove(mime_file)
+            os.remove(app_file)
     
     def OnMenuConfigureShortcuts(self, event):
         #~ exceptionIds = []
