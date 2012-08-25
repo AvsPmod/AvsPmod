@@ -8210,13 +8210,16 @@ class MainFrame(wxp.Frame):
     
     def OnMenuOptionsAssociate(self, event):
         if os.name == 'nt':
-            s1 = _('Associating .avs files will write to the windows registry. Admin rights are needed.')
+            s1 = _('Associating .avs files will write to the windows registry.')
             s2 = _('Do you wish to continue?')
             ret = wx.MessageBox('%s\n\n%s' % (s1, s2), _('Warning'), wx.YES_NO|wx.ICON_EXCLAMATION)
             if ret == wx.YES:
-                restore = 'avsp' in _winreg.QueryValue(_winreg.HKEY_CLASSES_ROOT, 'avsfile\\shell\\Open\\command').lower()
-                ret = wx.MessageBox(_('Disassociate avs files for all users?') if restore else
-                                    _('Associate avs files for all users?'), '', wx.YES_NO|wx.CANCEL|wx.ICON_QUESTION)
+                try:
+                    restore = 'avsp' in _winreg.QueryValue(_winreg.HKEY_CLASSES_ROOT, 'avsfile\\shell\\Open\\command').lower()
+                except WindowsError:
+                    restore = False
+                ret = wx.MessageBox((_('Disassociate avs files for all users?') if restore else _('Associate avs files for all users?')) + 
+                                     _(' Admin rights are needed.'), '', wx.YES_NO|wx.CANCEL|wx.ICON_QUESTION)
                 if ret != wx.CANCEL:
                     if hasattr(sys,'frozen'): # run in py2exe binary mode
                         value = '"%s" "%%1"' % sys.executable
@@ -8226,20 +8229,20 @@ class MainFrame(wxp.Frame):
                         if not dirname:
                             dirname = os.getcwd()
                         script = os.path.join(dirname, basename)
-                        value = '"%s" "%s" "%%1"' % (sys.executable, script)
+                        value = '"%s" -O "%s" "%%1"' % (sys.executable, script)
                     f = tempfile.NamedTemporaryFile(delete=False)
                     if restore:
                         txt = textwrap.dedent('''\
                         HKCU\\Software\\Classes\\avsfile\\shell\\Open\\command
-                        = "notepad"
+                        = notepad "%1"
                         HKCU\\Software\\Classes\\avs_auto_file\\shell\\Open\\command
-                        = "notepad"''')
+                        = notepad "%1"''')
                         if ret == wx.YES:
                             txt += textwrap.dedent('''
                             HKLM\\Software\\Classes\\avsfile\\shell\\Open\\command
-                            = "notepad"
+                            = notepad "%1"
                             HKLM\\Software\\Classes\\avs_auto_file\\shell\\Open\\command
-                            = "notepad"''')
+                            = notepad "%1"''')
                     else:
                         txt = textwrap.dedent('''\
                         HKCU\\Software\\Classes\\avsfile\\shell\\Open\\command
@@ -8263,7 +8266,10 @@ class MainFrame(wxp.Frame):
                             = "{value}"''').format(value=value)
                     f.write(txt)
                     f.close()
-                    ctypes.windll.shell32.ShellExecuteW(None, u'runas', u'cmd', u'/k "regini "{f}" & del "{f}""'.format(f=f.name), None, 0)
+                    if ret == wx.YES:
+                        ctypes.windll.shell32.ShellExecuteW(None, u'runas', u'cmd', u'/k "regini "{f}" & del "{f}""'.format(f=f.name), None, 0)
+                    else:
+                        os.system('regini "{f}" & del "{f}"'.format(f=f.name))
         else:
             app_file = os.path.join(tempfile.gettempdir(), 'avspmod.desktop')
             with open(app_file, 'w') as f:
