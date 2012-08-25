@@ -434,6 +434,7 @@ class Frame(wx.Frame):
             # Special case: separator
             if eachMenuInfo == '' or nItems == 1:
                 menu.AppendSeparator()
+                menu.Remove(menu.Append(wx.ID_ANY, '0',).GetId()) # wxGTK fix
                 continue
             if nItems > 7:
                 raise
