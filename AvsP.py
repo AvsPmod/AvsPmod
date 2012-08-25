@@ -5584,7 +5584,7 @@ class MainFrame(wxp.Frame):
                 ((_('AvsP help directory:'), wxp.OPT_ELEM_DIR, 'helpdir', _('Location of the AvsP help directory'), dict(buttonText='...', buttonWidth=30) ), ),
                 ((_('Avisynth directory:'), wxp.OPT_ELEM_DIR, 'avisynthdir', _('Location of the avisynth installation directory'), dict(buttonText='...', buttonWidth=30) ), ),
                 ((_('Avisynth help file/url:'), wxp.OPT_ELEM_FILE_URL, 'avisynthhelpfile', _('Location of the avisynth help file or url'), dict(buttonText='...', buttonWidth=30) ), ),
-                ((_('External player:'), wxp.OPT_ELEM_FILE, 'externalplayer', _('Location of external program for script playback'), dict(fileMask='Executable files (*.exe)|*.exe', buttonText='...', buttonWidth=30) ), ),
+                ((_('External player:'), wxp.OPT_ELEM_FILE, 'externalplayer', _('Location of external program for script playback'), dict(fileMask=(_('Executable files') + ' (*.exe)|*.exe|' if os.name == 'nt' else '') + _('All files') + ' (*.*)|*.*', buttonText='...', buttonWidth=30) ), ),
                 ((_('External player extra args:'), wxp.OPT_ELEM_STRING, 'externalplayerargs', _('Additional arguments when running the external player'), dict() ), ),
                 ((_('Documentation search paths:'), wxp.OPT_ELEM_STRING, 'docsearchpaths', _('Specify which directories to search for docs when you click on a filter calltip'), dict() ), ),
                 ((_('Documentation search url:'), wxp.OPT_ELEM_STRING, 'docsearchurl', _("The web address to search if docs aren't found (the filter's name replaces %filtername%)"), dict() ), ),
@@ -12624,7 +12624,7 @@ class MainFrame(wxp.Frame):
         if not os.path.isfile(path):
             if not prompt:
                 return False
-            filefilter = _('Executable files') + ' (*.exe)|*.exe|' + _('All files') + ' (*.*)|*.*'
+            filefilter = (_('Executable files') + ' (*.exe)|*.exe|' if os.name == 'nt' else '') + _('All files') + ' (*.*)|*.*'
             dlg = wx.FileDialog(self, _('Select an external player'), '', '', filefilter, wx.OPEN)
             ID = dlg.ShowModal()
             if ID == wx.ID_OK:
