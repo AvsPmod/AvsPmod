@@ -15460,6 +15460,10 @@ class MainApp(wxp.App):
         return True
 
 def main():
+    try:
+        ctypes.CDLL('libX11.so').XInitThreads()
+    except:
+        pass
     threading.current_thread().name = 'MainThread'
     try:
         redirect_flag = not __debug__
