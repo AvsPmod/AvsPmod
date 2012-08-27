@@ -64,7 +64,7 @@ if avsp.IsScriptSaved():
                 for bookmark in bookmarks:
                     if bookmark > avsp.GetVideoFramecount():
                         break
-                    AVS.DrawFrame(bookmark, mdc.GetHDC())
+                    AVS.DrawFrame(bookmark, mdc)
                     if quality == -1:
                         bmp.SaveFile(filename % bookmark, extDict[ext])
                     else:
