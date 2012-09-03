@@ -4717,7 +4717,7 @@ class MainFrame(wxp.Frame):
         else:
             self.invertSelection = True
         if self.options['videostatusbarinfo'] == None:
-            self.videoStatusBarInfo = _('Frame') + ' %F / %FC  -  (%T)      %POS  %HEX \t\t %Z %Wx%H (%AR)  -  %FR ' + _('fps') + '  -  %CS'
+            self.videoStatusBarInfo = _('Frame') + ' %F / %FC  -  (%T)  %BM      %POS  %HEX \t\t %Z %Wx%H (%AR)  -  %FR ' + _('fps') + '  -  %CS'
         else:
             self.videoStatusBarInfo = self.options['videostatusbarinfo']
         self.videoStatusBarInfoParsed, self.showVideoPixelInfo, self.showVideoPixelAvisynth = self.ParseVideoStatusBarInfo(self.videoStatusBarInfo)
@@ -11228,6 +11228,7 @@ class MainFrame(wxp.Frame):
         framecount = v.Framecount
         time = self.FormatTime(frame/framerate)
         totaltime = self.FormatTime(framecount/framerate)
+        bookmarktitle = self.bookmarkDict.get(frame, '')
         zoom = ''
         if self.zoomwindow and script.zoomwindow_actualsize is not None:
             width, height = script.zoomwindow_actualsize
@@ -11306,6 +11307,7 @@ class MainFrame(wxp.Frame):
             ('%PS', '%(parityshort)s'),
             ('%EFT', '%(ffms_encodedframetype)s'),
             ('%ST', '%(ffms_sourcetime)s'),
+            ('%BM', '%(bookmarktitle)s'),
             ('%W', '%(width)i'),
             ('%H', '%(height)i'),
             ('%F', '%(frame)s'),
