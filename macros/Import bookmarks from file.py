@@ -42,11 +42,20 @@ if not bookmarkDict:
 if not bookmarkDict:
     if lines.startswith('#TFM '):
         try:
-            stats=re.split('\[Individual Frames|\[Grouped Ranges|\[POSSIBLE|\[u, b|'.replace('|',r'.+?FORMAT.+?\n|'),re.sub(r'#\s+\n?','',lines),0,re.DOTALL)
+            stats = lines.split('#   FORMAT:')
             if len(stats)==5:
-                dCombed=dict( (int(L.split(' ')[0]), L.split(' ')[1]) for L in stats[1].strip().split('\n') if not L.startswith('none'))
-                dPossible=dict( (int(L.split(' ')[0]), '') for L in re.sub('\(\d+\)',' ',stats[3].strip()).split('\n') if not L.startswith('none'))
-                dUBmatch=dict( (int(F), L[-1]) for L in stats[4].strip().split('\n') for F in re.split('[\s,]',L[:-2]) if not L.startswith('none'))
+                sectionslice = (0,(2,-2),(2,-4),(2,-4),(2,-1))
+                section = lambda sectionidx: stats[sectionidx].strip().split('\n')[sectionslice[sectionidx][0]:sectionslice[sectionidx][1]]
+                sectionisempty = lambda sectionidx: 'none detected' in stats[sectionidx]
+
+                frameindent = 4
+                frametitle = lambda line: line[line.find(' ',frameindent+1)+1:]
+                framenum = lambda line: int(line[1:line.find(' ',frameindent)])
+
+                dCombed = dict( (framenum(L), frametitle(L)) for L in section(1) ) if not sectionisempty(1) else {}
+                dGrouped = dict( (int(F), frametitle(L)) for L in section(2) for F in re.split('[\s,]',L[frameindent:])[:-2] ) if not sectionisempty(2) else {}
+                dPossible = dict( (framenum(L), frametitle(L)) for L in section(3) ) if not sectionisempty(3) else {}
+                dUBmatch = dict( (int(F),L[-1]) for L in section(4) for F in re.split('[\s,]',L[frameindent:-2]) ) if not sectionisempty(4) else {}
                 maxframe = max([max(d.keys()) if d.keys() else -1 for d in (dCombed, dPossible, dUBmatch)])
                 if maxframe == -1:
                     avsp.MsgBox(_('Not combed or out of order frames'), _('Bookmarks from TFM file'))
