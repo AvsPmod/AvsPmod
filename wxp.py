@@ -749,7 +749,8 @@ class OptionsDialog(wx.Dialog):
                         buttonWidth = misc['buttonWidth'] if 'buttonWidth' in misc else -1
                         itemSizer = wx.BoxSizer(wx.VERTICAL)
                         itemSizer.AddStretchSpacer()
-                        if label_position == wx.VERTICAL:
+                        Label = label
+                        if label and label_position == wx.VERTICAL:
                             staticText = wx.StaticText(tabPanel, wx.ID_ANY, label)
                             staticText.SetToolTipString(tip)
                             itemSizer.Add(staticText, 0, wx.LEFT|wx.RIGHT|wx.TOP|wx.BOTTOM, 2)
@@ -767,10 +768,10 @@ class OptionsDialog(wx.Dialog):
                         ctrl.Sizer.Children[0].SetBorder(0)
                         if not label: 
                             ctrl.Sizer.Children[0].Sizer.Children[1].SetBorder(0)
-                            label = staticText.Label
                         elif tip:
                             ctrl.label.SetToolTipString(tip)
                         ctrl.Sizer.Children[0].Sizer.Children[2].SetInitSize(buttonWidth, -1)
+                        ctrl.Label = Label
                         itemSizer.Add(ctrl, 0, (wx.EXPAND if expand else 0)|wx.ALIGN_CENTER_VERTICAL|wx.TOP|wx.BOTTOM, 2)
                         itemSizer.AddStretchSpacer()
                     
@@ -785,7 +786,8 @@ class OptionsDialog(wx.Dialog):
                         buttonWidth = misc['buttonWidth'] if 'buttonWidth' in misc else -1         
                         itemSizer = wx.BoxSizer(wx.VERTICAL)
                         itemSizer.AddStretchSpacer()
-                        if label_position == wx.VERTICAL:
+                        Label = label
+                        if label and label_position == wx.VERTICAL:
                                 staticText = wx.StaticText(tabPanel, wx.ID_ANY, label)
                                 staticText.SetToolTipString(tip)
                                 itemSizer.Add(staticText, 0, wx.LEFT|wx.RIGHT|wx.TOP|wx.BOTTOM, 2)
@@ -802,10 +804,10 @@ class OptionsDialog(wx.Dialog):
                         ctrl.Sizer.Children[0].SetBorder(0)
                         if not label: 
                             ctrl.Sizer.Children[0].Sizer.Children[1].SetBorder(0)
-                            label = staticText.Label
                         elif tip:
                             ctrl.label.SetToolTipString(tip)
                         ctrl.Sizer.Children[0].Sizer.Children[2].SetInitSize(buttonWidth, -1)
+                        ctrl.Label = Label
                         itemSizer.Add(ctrl, 0, (wx.EXPAND if expand else 0)|wx.ALIGN_CENTER_VERTICAL|wx.TOP|wx.BOTTOM, 2)
                         itemSizer.AddStretchSpacer()
                     
@@ -1028,7 +1030,8 @@ class OptionsDialog(wx.Dialog):
                 elif flag == OPT_ELEM_DIR_URL and entry.lstrip().startswith('http://'):
                     newValue = entry
                 else:
-                    self.ShowWarning(ctrl, _('Invalid directory!'), tabIndex)
+                    label = '\n\n{}{}'.format(ctrl.Label.rstrip(':') + ': ' if ctrl.Label else '', entry)
+                    self.ShowWarning(ctrl, _('Invalid directory!') + label, tabIndex)
                     return False
             elif flag in (OPT_ELEM_FILE, OPT_ELEM_FILE_OPEN, OPT_ELEM_FILE_SAVE, OPT_ELEM_FILE_URL):
                 entry = ctrl.GetValue()
@@ -1036,7 +1039,8 @@ class OptionsDialog(wx.Dialog):
                    flag == OPT_ELEM_FILE_URL and entry.lstrip().startswith('http://')):
                     newValue = entry
                 else:
-                    self.ShowWarning(ctrl, _('Invalid filename!'), tabIndex)
+                    label = '\n\n{}{}'.format(ctrl.Label.rstrip(':') + ': ' if ctrl.Label else '', entry)
+                    self.ShowWarning(ctrl, _('Invalid filename!') + label, tabIndex)
                     return False
             elif flag == OPT_ELEM_COLOR:
                 #~ newValue = ctrl.GetBackgroundColour().Get()

@@ -100,9 +100,15 @@ class AvsClip:
                 f = script
             arg=avisynth.AVS_Value(f)           #assign to AVSValue
             scriptdirname, scriptbasename = os.path.split(filename)
+            self.file = avisynth.AVS_Value(filename)
+            self.name = avisynth.AVS_Value(scriptbasename)
+            self.dir = avisynth.AVS_Value(scriptdirname)
             if os.path.isdir(scriptdirname):
                 self.env.SetWorkingDir(scriptdirname)
-            arg2=avisynth.AVS_Value(scriptbasename)
+            self.env.SetGlobalVar("$ScriptFile$", self.file)
+            self.env.SetGlobalVar("$ScriptName$", self.name)
+            self.env.SetGlobalVar("$ScriptDir$", self.dir)
+            arg2=avisynth.AVS_Value(filename)
             args=avisynth.AVS_Value([arg,arg2])
             try:
                 avsfile=self.env.Invoke("eval",args,0) #use eval to load it

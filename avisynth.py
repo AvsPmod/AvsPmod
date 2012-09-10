@@ -408,7 +408,6 @@ class AVS_Value(ctypes.Structure,object):
         elif self.IsError():return self.d.s
         elif self.IsClip() and env is not None: return avs_take_clip(self,env)
         elif self.IsArray(): return [i.GetValue() for i in self]
-        return repr(self)
     def __str__(self):
         return str(self.GetValue())
     def __repr__(self):
