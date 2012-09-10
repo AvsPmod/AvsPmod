@@ -1,5 +1,6 @@
 import os
 import cPickle
+import ctypes
 import wx
 
 class Avs2aviDialog(wx.Dialog):
