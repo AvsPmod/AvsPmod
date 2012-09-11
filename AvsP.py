@@ -55,7 +55,7 @@ if os.name == 'nt':
     import _winreg
 from hashlib import md5
 import __builtin__
-from collections import OrderedDict, Iterable, Sequence, MutableSequence
+from collections import Iterable, Sequence, MutableSequence
 
 if hasattr(sys,'frozen'):
     programdir = os.path.dirname(sys.executable)
@@ -2642,7 +2642,7 @@ def startfile(path):
     if os.name == 'nt':
         os.startfile(path)
     else: 
-        os.system('xdg-open "{}"'.format(path))
+        os.system('xdg-open "{0}"'.format(path))
 
 # Dialog and validator for defining user slider
 class UserSliderValidator(wx.PyValidator):
@@ -4883,7 +4883,7 @@ class MainFrame(wxp.Frame):
         
         # Warn if option files are damaged
         if self.loaderror:
-            print>>sys.stderr, '{}: {}'.format(_('Error'), _('Damaged {}. Using default settings.').format(', '.join(self.loaderror)))
+            print>>sys.stderr, '{0}: {1}'.format(_('Error'), _('Damaged {0}. Using default settings.').format(', '.join(self.loaderror)))
         
         # Update the translation file if necessary
         if self.options['lang'] != 'eng':
@@ -5669,7 +5669,7 @@ class MainFrame(wxp.Frame):
     
     def getTranslations(self):
         '''Return the list of 'translation_lng.py' files within the translations subfolder'''
-        translation_list = {'eng'}
+        translation_list = set(('eng',))
         re_lng = re.compile(r'translation_(\w{3})\.py[co]?', re.I)
         if os.path.isdir(self.translations_dir):
             for file in os.listdir(self.translations_dir): 
@@ -8290,8 +8290,8 @@ class MainFrame(wxp.Frame):
                 f.write(txt)
             if 'avsp' in subprocess.check_output(['xdg-mime', 'query', 'default', 'text/x-avisynth']):
                 text_editor = subprocess.check_output(['xdg-mime', 'query', 'default', 'text/plain']).strip()
-                os.system('xdg-desktop-menu uninstall {} && '
-                          'xdg-mime default {} text/x-avisynth'.format(app_file, text_editor))
+                os.system('xdg-desktop-menu uninstall {0} && '
+                          'xdg-mime default {1} text/x-avisynth'.format(app_file, text_editor))
             else:
                 mime_file = os.path.join(tempfile.gettempdir(), 'avisynth.xml')
                 with open(mime_file, 'w') as f:
@@ -10144,9 +10144,9 @@ class MainFrame(wxp.Frame):
                 stringList = [s.strip('"') for s in re.findall('".+?"', script.GetText())]
                 #~ extList = ['.%s' % s for s in self.options['templates'].keys()]
                 if os.name == 'nt':
-                    sourceFilterList = {'directshowsource'}
+                    sourceFilterList = set(('directshowsource',))
                 else:
-                    sourceFilterList = {'ffvideosource', 'ffaudiosource'}
+                    sourceFilterList = set(('ffvideosource', 'ffaudiosource'))
                 noMediaFileList = ('import', 'loadplugin', 'loadcplugin', 'load_stdcall_plugin', 
                                    'loadvirtualdubplugin', 'loadvfapiplugin')
                 re_templates = re.compile(r'\b(\w+)\s*\([^)]*?\[?\*{3}', re.I)
@@ -14514,8 +14514,8 @@ class MainFrame(wxp.Frame):
         '''
         # Complete the 'default' and 'types' lists
         optionsDlgInfo = [['']]
-        options = OrderedDict()
-        cont = 0
+        options = dict()
+        key = 0
         if not isinstance(message, MutableSequence): message = [message]
         if not isinstance(default, MutableSequence): default = [default] 
         if not isinstance(types, MutableSequence): types = [types] 
@@ -14536,10 +14536,9 @@ class MainFrame(wxp.Frame):
                 #  Set 'optionsDlgInfo' and 'options' from the kind of more user friendly 'message', 'default' and 'types'
                 
                 if eachType in ('file_open', 'file_save'):
+                    key += 1
                     flag = (wxp.OPT_ELEM_FILE_OPEN if eachType == 'file_open' 
                             else wxp.OPT_ELEM_FILE_SAVE )
-                    key = 'mgte' + str(cont)
-                    cont += 1
                     misc = dict(width=width / lineLen, 
                         fileMask=eachDefault[1] if len(eachDefault) > 1 else '*.*', 
                         startDirectory=os.path.dirname(self.MacroGetScriptFilename()), 
@@ -14549,9 +14548,8 @@ class MainFrame(wxp.Frame):
                     options[key] = eachDefault[0]
                 
                 elif eachType == 'dir':
+                    key += 1
                     flag = wxp.OPT_ELEM_DIR
-                    key = 'mgte' + str(cont)
-                    cont += 1
                     misc = dict(width=width / lineLen, 
                         startDirectory=os.path.dirname(self.MacroGetScriptFilename()), 
                         buttonText='...', buttonWidth=30, label_position=wx.VERTICAL, 
@@ -14560,9 +14558,8 @@ class MainFrame(wxp.Frame):
                     options[key] = eachDefault[0]
                 
                 elif eachType in ('list_writable', 'list_read_only'):
+                    key += 1
                     flag = wxp.OPT_ELEM_LIST
-                    key = 'mgte' + str(cont)
-                    cont += 1
                     misc = dict(width=width / lineLen, choices=eachDefault[:-1], 
                         writable=True if eachType == 'list_writable' else False, 
                         label_position=wx.VERTICAL, expand=True)
@@ -14570,17 +14567,15 @@ class MainFrame(wxp.Frame):
                     options[key] = eachDefault[-1]
                 
                 elif eachType == 'check':
+                    key += 1
                     flag = wxp.OPT_ELEM_CHECK
-                    key = 'mgte' + str(cont)
-                    cont += 1
                     misc = dict(width=width / lineLen)
                     colOptions = [eachMessage, flag, key, '', misc]
                     options[key] = eachDefault[0] if eachDefault[0] else False
                 
                 elif eachType == 'spin':
+                    key += 1
                     flag = wxp.OPT_ELEM_SPIN
-                    key = 'mgte' + str(cont)
-                    cont += 1
                     misc = dict(width=width / lineLen, label_position=wx.VERTICAL, 
                                 expand=True)
                     params = ('min_val', 'max_val', 'digits', 'increment')
@@ -14596,9 +14591,8 @@ class MainFrame(wxp.Frame):
                     options[key] = float(eachDefault[0]) if eachDefault[0] else 0
                 
                 elif eachType in ('slider_h', 'slider_v'):
+                    key += 1
                     flag = wxp.OPT_ELEM_SLIDER
-                    key = 'mgte' + str(cont)
-                    cont += 1
                     if eachType == 'slider_v':
                         orientation = wx.VERTICAL
                         width = 150
@@ -14624,9 +14618,8 @@ class MainFrame(wxp.Frame):
                     colOptions = [eachMessage, flag, 'mgte_sep', '', misc]
                 
                 else:
+                    key += 1
                     flag = ''
-                    key = 'mgte' + str(cont)
-                    cont += 1
                     misc = dict(width=width / lineLen, label_position=wx.VERTICAL)
                     colOptions = [eachMessage, flag, key, '', misc]
                     options[key] = str(eachDefault[0])
@@ -14640,7 +14633,8 @@ class MainFrame(wxp.Frame):
         values = []
         if ID == wx.ID_OK:
             values_dic = dlg.GetDict()
-            for key in options.keys():
+            options.keys().sort()
+            for key in options:
                 values.append(values_dic[key])
         dlg.Destroy()
         if len(message) == 1:

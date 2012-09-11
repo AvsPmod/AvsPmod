@@ -86,11 +86,11 @@ while True:
 
 # Write the ConditionalReader file
 value_default = value.strip()
-text = ['Type {}\n'.format(type)]
-if default: text.append(u'Default {}\n'.format(default.strip()))
+text = ['Type {0}\n'.format(type)]
+if default: text.append(u'Default {0}\n'.format(default.strip()))
 if bm_meaning == _('Single frames'):
     for frame, title in bmlist:
-        text.append(u'{} {}\n'.format(frame, 
+        text.append(u'{0} {1}\n'.format(frame, 
                     title.strip() if use_title and title else value_default))
 else:
     if len(bmlist) % 2 and not avsp.MsgBox(_('Odd number of bookmarks'), 
@@ -112,9 +112,9 @@ else:
                     value = value_default
             else:
                 value = value_default
-            text.append(u'{} {} {} {}\n'.format(
+            text.append(u'{0} {1} {2} {3}\n'.format(
                         prefix, bmlist[i-1][0], bm[0], value))
 with open(filename, 'w') as file:
     file.writelines(text)
 if insert_path:
-    avsp.InsertText(u'"{}"'.format(filename), pos=None)
+    avsp.InsertText(u'"{0}"'.format(filename), pos=None)
