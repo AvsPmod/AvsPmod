@@ -14633,8 +14633,7 @@ class MainFrame(wxp.Frame):
         values = []
         if ID == wx.ID_OK:
             values_dic = dlg.GetDict()
-            options.keys().sort()
-            for key in options:
+            for key in range(1, len(options.keys()) + 1):
                 values.append(values_dic[key])
         dlg.Destroy()
         if len(message) == 1:
