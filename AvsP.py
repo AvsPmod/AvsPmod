@@ -4037,7 +4037,10 @@ class SliderPlus(wx.Panel):
             self.isclicked = True
             self.xdelta = mousepos.x - rectHandle.x
             self.CaptureMouse()
-            dc = wx.BufferedDC(wx.ClientDC(self))
+            if self.IsDoubleBuffered():
+                dc = wx.ClientDC(self)
+            else:
+                dc = wx.BufferedDC(wx.ClientDC(self))
             dc.Clear()
             self._PaintSlider(dc)
         elif self.selmode == 1 and self._HitTestHandleDeadZone(mousepos):
@@ -4074,7 +4077,10 @@ class SliderPlus(wx.Panel):
         if self.HasCapture():
             self.ReleaseMouse()
             self._SendScrollEndEvent()
-            dc = wx.BufferedDC(wx.ClientDC(self))
+            if self.IsDoubleBuffered():
+                dc = wx.ClientDC(self)
+            else:
+                dc = wx.BufferedDC(wx.ClientDC(self))
             dc.Clear()
             self._PaintSlider(dc)
         else:
@@ -4127,7 +4133,10 @@ class SliderPlus(wx.Panel):
         self.GetEventHandler().ProcessEvent(event)
 
     def _OnSize(self, event):
-        dc = wx.BufferedDC(wx.ClientDC(self))
+        if self.IsDoubleBuffered():
+            dc = wx.ClientDC(self)
+        else:
+            dc = wx.BufferedDC(wx.ClientDC(self))
         dc.Clear()
         self._PaintSlider(dc)
 
@@ -4315,7 +4324,10 @@ class SliderPlus(wx.Panel):
 
     def SetValue(self, value):
         self.value = max(min(value, self.maxValue), self.minValue)
-        dc = wx.BufferedDC(wx.ClientDC(self))
+        if self.IsDoubleBuffered():
+            dc = wx.ClientDC(self)
+        else:
+            dc = wx.BufferedDC(wx.ClientDC(self))
         dc.Clear()
         self._PaintSlider(dc)
         return True
@@ -4330,7 +4342,10 @@ class SliderPlus(wx.Panel):
         self.minValue = minValue
         self.maxValue = maxValue
         self.selections = self._createSelections()
-        dc = wx.BufferedDC(wx.ClientDC(self))
+        if self.IsDoubleBuffered():
+            dc = wx.ClientDC(self)
+        else:
+            dc = wx.BufferedDC(wx.ClientDC(self))
         dc.Clear()
         self._PaintSlider(dc)
         return True
@@ -4349,7 +4364,10 @@ class SliderPlus(wx.Panel):
                     self.selections = self._createSelections()
                 else:
                     self.selections = None
-                dc = wx.BufferedDC(wx.ClientDC(self))
+                if self.IsDoubleBuffered():
+                    dc = wx.ClientDC(self)
+                else:
+                    dc = wx.BufferedDC(wx.ClientDC(self))
                 dc.Clear()
                 self._PaintSlider(dc)
             return True
@@ -4364,7 +4382,10 @@ class SliderPlus(wx.Panel):
                     self.selections = self._createSelections()
                 else:
                     self.selections = None
-                dc = wx.BufferedDC(wx.ClientDC(self))
+                if self.IsDoubleBuffered():
+                    dc = wx.ClientDC(self)
+                else:
+                    dc = wx.BufferedDC(wx.ClientDC(self))
                 dc.Clear()
                 self._PaintSlider(dc)
             return True
@@ -4375,7 +4396,10 @@ class SliderPlus(wx.Panel):
         if self.bookmarks:
             self.bookmarks = []
             self.selections = None
-            dc = wx.BufferedDC(wx.ClientDC(self))
+            if self.IsDoubleBuffered():
+                dc = wx.ClientDC(self)
+            else:
+                dc = wx.BufferedDC(wx.ClientDC(self))
             dc.Clear()
             self._PaintSlider(dc)
         return True
@@ -4394,7 +4418,10 @@ class SliderPlus(wx.Panel):
             self.selmode = 1
         else:
             self.selmode = 0
-        dc = wx.BufferedDC(wx.ClientDC(self))
+        if self.IsDoubleBuffered():
+            dc = wx.ClientDC(self)
+        else:
+            dc = wx.BufferedDC(wx.ClientDC(self))
         dc.Clear()
         self._PaintSlider(dc)
 
@@ -9224,7 +9251,10 @@ class MainFrame(wxp.Frame):
         # Paint the crop rectangles
         dc = wx.ClientDC(self.videoWindow)
         dc.SetDeviceOrigin(5,5)
-        bdc = wx.BufferedDC(dc, wx.Size(w,h))
+        if self.IsDoubleBuffered():
+            bdc = dc
+        else:
+            bdc = wx.BufferedDC(dc, wx.Size(w,h))
         self.PaintAVIFrame(bdc, script, self.currentframenum, shift=False)
         #~ self.PaintAVIFrame(dc, script, self.currentframenum)
         self.PaintCropWarnings(spinCtrl)
