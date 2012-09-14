@@ -6532,6 +6532,8 @@ class MainFrame(wxp.Frame):
         )
         menu = self.createMenu(menuInfo)
         nb.contextMenu = menu
+        nb.changed = False
+        nb.dragging = False
         if self.options['usetabimages']:
             color1 = wx.SystemSettings.GetColour(wx.SYS_COLOUR_SCROLLBAR)
             #~ color1 = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNSHADOW)
@@ -6584,7 +6586,6 @@ class MainFrame(wxp.Frame):
         nb.Bind(wx.EVT_LEFT_DCLICK, self.OnLeftDClickNotebook)
         nb.Bind(wx.EVT_RIGHT_UP, self.OnRightClickNotebook)
         nb.Bind(wx.EVT_MOTION, self.OnMouseMotionNotebook)
-        nb.Bind(wx.EVT_LEAVE_WINDOW, self.OnLeftUpNotebook)
         nb.Bind(wx.EVT_FIND, AvsStyledTextCtrl.OnFindPressed)
         nb.Bind(wx.EVT_FIND_NEXT, AvsStyledTextCtrl.OnFindPressed)
         nb.Bind(wx.EVT_FIND_REPLACE, AvsStyledTextCtrl.OnReplacePressed)
@@ -8755,6 +8756,7 @@ class MainFrame(wxp.Frame):
         self.currentScript = script
         self.refreshAVI = True
 
+        self.scriptNotebook.changed = True
         oldSliderWindow = self.currentSliderWindow
         newSliderWindow = script.sliderWindow
         oldSliderWindow.Hide()
@@ -8863,21 +8865,27 @@ class MainFrame(wxp.Frame):
             self.CloseTab(ipage, prompt=True)
             
     def OnLeftDownNotebook(self, event):
-        pos = event.GetPosition()
-        ipage = self.scriptNotebook.HitTest(pos)[0]
-        if ipage == self.scriptNotebook.GetSelection():
-            wx.CallLater(300, self.OnMenuFileRenameTab, ipage, pos)
+        self.scriptNotebook.dragging = False
         event.Skip()
             
     def OnLeftUpNotebook(self, event):
-        if self.scriptNotebook.HasCapture():
-            self.scriptNotebook.ReleaseMouse()
+        if self.scriptNotebook.dragging:
+            self.scriptNotebook.dragging = False
             self.scriptNotebook.SetCursor(wx.StockCursor(wx.CURSOR_DEFAULT))
             if not self.scriptNotebook.dblClicked:
                 index = self.scriptNotebook.GetSelection()
                 ipage = self.scriptNotebook.HitTest(event.GetPosition())[0]
                 if ipage != wx.NOT_FOUND and ipage != index:
                     self.RepositionTab(ipage)
+            else:
+                wx.CallLater(300, setattr, self.scriptNotebook, 'dblClicked' ,False) 
+        else:
+            pos = event.GetPosition()
+            ipage = self.scriptNotebook.HitTest(pos)[0]
+            if not self.scriptNotebook.changed:
+                wx.CallLater(300, self.OnMenuFileRenameTab, ipage, pos)
+            else:
+                self.scriptNotebook.changed = False
         event.Skip()
             
     def OnLeftDClickNotebook(self, event):
@@ -8922,18 +8930,16 @@ class MainFrame(wxp.Frame):
                 
     def OnMouseMotionNotebook(self, event):
         if event.Dragging():
+            self.scriptNotebook.dragging = True
             if self.titleEntry:
                 self.scriptNotebook.SetFocus()
-            if not self.scriptNotebook.HasCapture():
-                self.scriptNotebook.CaptureMouse()
             index = self.scriptNotebook.GetSelection()
             ipage = self.scriptNotebook.HitTest(event.GetPosition())[0]
             if ipage != wx.NOT_FOUND:
                 self.scriptNotebook.SetCursor(wx.CursorFromImage(dragdrop_cursor.GetImage()))
             else:
                 self.scriptNotebook.SetCursor(wx.StockCursor(wx.CURSOR_NO_ENTRY))
-        elif self.scriptNotebook.HasCapture():
-            self.scriptNotebook.ReleaseMouse()
+        else:
             self.scriptNotebook.SetCursor(wx.StockCursor(wx.CURSOR_DEFAULT))
 
     def OnLeftDClickWindow(self, event):
@@ -10287,6 +10293,7 @@ class MainFrame(wxp.Frame):
         self.currentScript.SelectAll()
         self.refreshAVI = True
         self.scriptNotebook.SetSelection(self.scriptNotebook.GetPageCount()-1)
+        self.scriptNotebook.changed = False
         
     def RepositionTab(self, newIndex):
         if type(newIndex) is not int:        
