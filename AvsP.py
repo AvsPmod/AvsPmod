@@ -10134,6 +10134,7 @@ class MainFrame(wxp.Frame):
         if self.options['multilinetab']:
             rows = self.scriptNotebook.GetRowCount()
         self.scriptNotebook.DeletePage(index)
+        self.currentScript = self.scriptNotebook.GetPage(self.scriptNotebook.GetSelection())
         self.UpdateTabImages()
         if self.options['multilinetab']:
             if rows != self.scriptNotebook.GetRowCount():
