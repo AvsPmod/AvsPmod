@@ -10308,14 +10308,8 @@ class MainFrame(wxp.Frame):
         page = self.scriptNotebook.GetPage(index)
         label = self.scriptNotebook.GetPageText(index)
         win = self.FindFocus()
-        if newIndex < index:
-            self.scriptNotebook.InsertPage(newIndex, page, label)
-            self.scriptNotebook.ChangeSelection(newIndex)
-            self.scriptNotebook.RemovePage(index+1)
-        else:
-            self.scriptNotebook.InsertPage(newIndex+1, page, label)
-            self.scriptNotebook.ChangeSelection(newIndex+1)
-            self.scriptNotebook.RemovePage(index)
+        self.scriptNotebook.RemovePage(index)
+        self.scriptNotebook.InsertPage(newIndex, page, label, select=True)
         if win:
             win.SetFocus()
         self.UpdateTabImages()
