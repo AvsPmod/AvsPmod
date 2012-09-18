@@ -8903,6 +8903,8 @@ class MainFrame(wxp.Frame):
             #~ self.currentScript.SelectAll()
             #~ self.refreshAVI = True
             #~ self.scriptNotebook.SetSelection(self.scriptNotebook.GetPageCount()-1)
+        else: # for wxGTK
+            self.NewTab()
 
     def OnRightClickNotebook(self, event):
         win = event.GetEventObject()
@@ -8945,7 +8947,7 @@ class MainFrame(wxp.Frame):
     def OnLeftDClickWindow(self, event):
         x, y = event.GetPosition()
         #~ if y < self.mainSplitter.GetMinimumPaneSize():
-        if y < self.currentScript.GetPosition().y:
+        if y < self.currentScript.GetPosition().y: # event not received on wxGTK
             self.NewTab()
         else:
             lo = self.mainSplitter.GetSashPosition()
