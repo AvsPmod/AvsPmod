@@ -5050,6 +5050,7 @@ class MainFrame(wxp.Frame):
             'recentdirPlugins': '',
             'recentdirSession': '',
             'recentfiles': None,
+            'lastclosed': '',
             #~ 'lasthelpdir': None,
             'scraptext': ('', 0, 0),
             'maximized': False,
@@ -5825,6 +5826,7 @@ class MainFrame(wxp.Frame):
         self.programSplitterSize = None
         
         self.mainSplitter.Bind(wx.EVT_LEFT_DCLICK, self.OnLeftDClickWindow)
+        self.mainSplitter.Bind(wx.EVT_MIDDLE_DOWN, self.OnMiddleDownWindow)
 
         self.clicked_on_divider = False
         def OnMainSplitterLeftDown(event):
@@ -6150,6 +6152,7 @@ class MainFrame(wxp.Frame):
             (_('&File'),
                 (_('New tab'), 'Ctrl+N', self.OnMenuFileNew, _('Create a new tab')),
                 (_('Open...'), 'Ctrl+O', self.OnMenuFileOpen, _('Open an existing script')),
+                (_('Undo close tab'), 'Ctrl+Shift+N', self.OnMenuFileUndoClose, _('Reopen the last closed tab')),
                 (_('Close tab'), 'Ctrl+W', self.OnMenuFileClose, _('Close the current tab')),
                 (_('Close all tabs'), 'Ctrl+Shift+W', self.OnMenuFileCloseAllTabs, _('Close every tab')),
                 (_('Rename tab'), '', self.OnMenuFileRenameTab, _('Rename the current tab. If script file is existing, also rename it')),
@@ -6944,6 +6947,9 @@ class MainFrame(wxp.Frame):
 
     def OnMenuFileOpen(self, event):
         self.OpenFile()
+
+    def OnMenuFileUndoClose(self, event):
+        self.UndoClose()
 
     def OnMenuFileClose(self, event):
         self.CloseTab(prompt=True)
@@ -8863,7 +8869,9 @@ class MainFrame(wxp.Frame):
         ipage = self.scriptNotebook.HitTest(event.GetPosition())[0]
         if ipage != wx.NOT_FOUND:
             self.CloseTab(ipage, prompt=True)
-            
+        else: # for wxGTK
+            self.UndoClose()
+    
     def OnLeftDownNotebook(self, event):
         self.scriptNotebook.dragging = False
         event.Skip()
@@ -8962,6 +8970,12 @@ class MainFrame(wxp.Frame):
                     #~ self.ShowVideoFrame(forceRefresh=True)
                     self.ShowVideoFrame()
 
+    def OnMiddleDownWindow(self, event):
+        x, y = event.GetPosition()
+        if y < self.currentScript.GetPosition().y: # event not received on wxGTK
+            self.UndoClose()
+        event.Skip()
+    
     def OnLeftDClickVideoSplitter(self, event):
         #~ self.ToggleSliderWindow(vidrefresh=True)
         pos = self.currentScript.videoSidebarSizer.CalcMin()[0] + 6
@@ -10089,6 +10103,11 @@ class MainFrame(wxp.Frame):
                 badMenuItem = menu.FindItemByPosition(pos)
                 menu.Delete(badMenuItem.GetId())
     
+    def UndoClose(self):
+        '''Reopen the last closed tab'''
+        if os.path.isfile(self.options['lastclosed']):
+                self.OpenFile(self.options['lastclosed'])
+    
     @AsyncCallWrapper
     def CloseTab(self, index=None, prompt=False, discard=False, boolPrompt=False):
         r'''CloseTab(index=None, prompt=False, discard=False)
@@ -10135,6 +10154,7 @@ class MainFrame(wxp.Frame):
             self.HidePreviewWindow()
         if self.options['multilinetab']:
             rows = self.scriptNotebook.GetRowCount()
+        self.options['lastclosed'] = script.filename
         self.scriptNotebook.DeletePage(index)
         self.currentScript = self.scriptNotebook.GetPage(self.scriptNotebook.GetSelection())
         self.UpdateTabImages()
