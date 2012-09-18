@@ -660,6 +660,7 @@ class OptionsDialog(wx.Dialog):
                         # misc: {width, ident}
                         width = misc['width'] if 'width' in misc else -1
                         ctrl = wx.CheckBox(tabPanel, wx.ID_ANY, label, size=(width,-1))
+                        ctrl.SetMinSize(ctrl.GetBestSize())
                         ctrl.SetValue(bool(optionsValue))
                         if tip:
                             ctrl.SetToolTipString(tip)
