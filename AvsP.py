@@ -4753,6 +4753,7 @@ class MainFrame(wxp.Frame):
             '.tif': (_('Tagged Image File') + ' (*.tif)', wx.BITMAP_TYPE_TIF),
             '.xpm': (_('ASCII Text Array') + ' (*.xpm)', wx.BITMAP_TYPE_XPM),
             '.ico': (_('Windows Icon') + ' (*.ico)', wx.BITMAP_TYPE_ICO),
+            '.cur': (_('Windows Cursor') + ' (*.cur)', wx.BITMAP_TYPE_CUR),
         }
         self.markFrameInOut = self.options['trimmarkframes']
         if self.options['trimreversechoice'] == 0:
@@ -5050,6 +5051,7 @@ class MainFrame(wxp.Frame):
             'recentdirPlugins': '',
             'recentdirSession': '',
             'recentfiles': None,
+            'lastscriptid': None,
             'lastclosed': '',
             #~ 'lasthelpdir': None,
             'scraptext': ('', 0, 0),
@@ -10195,45 +10197,14 @@ class MainFrame(wxp.Frame):
         if not filename:           
             filefilter = (_('AviSynth script') + ' (*.avs, *.avsi)|*.avs;*.avsi|' + 
                           _('All files') + ' (*.*)|*.*')
-            initialdir = None
-            initialname = self.scriptNotebook.GetPageText(index).lstrip('* ')
-            if script.filename:
-                initialdir = script.filename
+            initialpath = script.filename if script.filename else self.GetSourcePath(script)
+            initialdir, initialname = os.path.split(initialpath)
+            if not initialdir:
+                initialdir = self.options['recentdir']
+            if initialname:
+                initialname = '%s.avs' % os.path.splitext(initialname)[0]
             else:
-                stringList = [s.strip('"') for s in re.findall('".+?"', script.GetText())]
-                #~ extList = ['.%s' % s for s in self.options['templates'].keys()]
-                if os.name == 'nt':
-                    sourceFilterList = set(('directshowsource',))
-                else:
-                    sourceFilterList = set(('ffvideosource', 'ffaudiosource'))
-                noMediaFileList = ('import', 'loadplugin', 'loadcplugin', 'load_stdcall_plugin', 
-                                   'loadvirtualdubplugin', 'loadvfapiplugin')
-                re_templates = re.compile(r'\b(\w+)\s*\([^)]*?\[?\*{3}', re.I)
-                for template in self.options['templates'].values():
-                    re_obj = re_templates.search(template)
-                    if re_obj:
-                        function_name = re_obj.group(1).lower() 
-                        if function_name not in noMediaFileList:
-                            sourceFilterList.add(function_name)
-                findpos = -1
-                lastpos = script.GetLength()
-                noMediaExtList = ('.dll', '.vdf', 'vdplugin', '.vfp', '.so', '.avs', '.txt', '.log')
-                for s in stringList:
-                    if os.path.isfile(s) and os.path.splitext(s)[1].lower() not in noMediaExtList:
-                        findpos = script.FindText(findpos+1, lastpos, s)
-                        openpos = script.GetOpenParenthesesPos(findpos)
-                        if openpos is not None:
-                            wordstartpos = script.WordStartPosition(openpos,1)
-                            if openpos == wordstartpos:
-                                wordstartpos = script.WordStartPosition(script.WordStartPosition(openpos,0),1)
-                            if wordstartpos != -1:
-                                sourceFilter = script.GetTextRange(wordstartpos, openpos)
-                                if sourceFilter.strip().lower() in sourceFilterList:
-                                    initaldir, initialname = os.path.split(s)
-                                    initialname = '%s.avs' % os.path.splitext(initialname)[0]
-                                    break
-                if initialdir is None:
-                    initialdir = self.options['recentdir']
+                initialname = self.scriptNotebook.GetPageText(index).lstrip('* ')
             dlg = wx.FileDialog(self,_('Save current script'),
                 initialdir, initialname, filefilter, wx.SAVE | wx.OVERWRITE_PROMPT)
             ID = dlg.ShowModal()
@@ -10306,8 +10277,43 @@ class MainFrame(wxp.Frame):
         text = self.cleanSliders(text)
         text = self.cleanToggleTags(text)
         return text
-        
-
+    
+    def GetSourcePath(self, script=None):
+        '''Parse script for the path on the first source filter'''
+        if script is None:
+            script = self.currentScript
+        stringList = [s.strip('"') for s in re.findall('".+?"', script.GetText())]
+        #~ extList = ['.%s' % s for s in self.options['templates'].keys()]
+        if os.name == 'nt':
+            sourceFilterList = set(('directshowsource',))
+        else:
+            sourceFilterList = set(('ffvideosource', 'ffaudiosource'))
+        noMediaFileList = ('import', 'loadplugin', 'loadcplugin', 'load_stdcall_plugin', 
+                           'loadvirtualdubplugin', 'loadvfapiplugin')
+        re_templates = re.compile(r'\b(\w+)\s*\([^)]*?\[?\*{3}', re.I)
+        for template in self.options['templates'].values():
+            re_obj = re_templates.search(template)
+            if re_obj:
+                function_name = re_obj.group(1).lower() 
+                if function_name not in noMediaFileList:
+                    sourceFilterList.add(function_name)
+        findpos = -1
+        lastpos = script.GetLength()
+        noMediaExtList = ('.dll', '.vdf', 'vdplugin', '.vfp', '.so', '.avs', '.txt', '.log')
+        for s in stringList:
+            if os.path.isfile(s) and os.path.splitext(s)[1].lower() not in noMediaExtList:
+                findpos = script.FindText(findpos+1, lastpos, s)
+                openpos = script.GetOpenParenthesesPos(findpos)
+                if openpos is not None:
+                    wordstartpos = script.WordStartPosition(openpos,1)
+                    if openpos == wordstartpos:
+                        wordstartpos = script.WordStartPosition(script.WordStartPosition(openpos,0),1)
+                    if wordstartpos != -1:
+                        sourceFilter = script.GetTextRange(wordstartpos, openpos)
+                        if sourceFilter.strip().lower() in sourceFilterList:
+                            return s
+        return ''
+    
     def CopyTextToNewTab(self, index=None):
         script, index = self.getScriptAtIndex(index)
         text = script.GetText()
@@ -10545,8 +10551,16 @@ class MainFrame(wxp.Frame):
             maxFilterIndex = len(filefilterList) - 1
             filefilter = '|'.join(filefilterList)
             defaultdir = self.options['imagesavedir']
-            title = os.path.splitext(self.scriptNotebook.GetPageText(index))[0].lstrip('* ')
-            fmt = self.options['imagenameformat']
+            title = script.filename if script.filename else self.GetSourcePath(script)
+            if title:
+                title = os.path.splitext(os.path.basename(title))[0]
+            else:
+                title = self.scriptNotebook.GetPageText(index).lstrip('* ')
+            id = self.currentScript.GetId()
+            if id == self.options['lastscriptid']:
+                fmt = self.options['imagenameformat']
+            else:
+                fmt = '%s%06d'
             try:
                 defaultname =  fmt % (title, self.currentframenum)
             except:
@@ -10575,6 +10589,7 @@ class MainFrame(wxp.Frame):
                              lambda m: '%%0%dd' % len(m.group(0)) if m.group(1) else '%d',
                              fmt, 1)
                 self.options['imagenameformat'] = fmt
+                self.options['lastscriptid'] = id
             dlg.Destroy()
         else:
             filter = None
