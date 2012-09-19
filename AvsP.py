@@ -4796,7 +4796,7 @@ class MainFrame(wxp.Frame):
         # Command line arguments
         self.UpdateRecentFilesList()
         curdir = os.getcwd()
-        self.reloadList = None
+        self.reloadList = []
         if self.options['exitstatus']:
             self.IdleCall.append((wx.MessageBox, (_('A crash detected at the last running!'), _('Warning'), wx.OK|wx.ICON_EXCLAMATION, self), {})) 
         if self.options['startupsession'] or self.options['exitstatus']:
@@ -4816,7 +4816,8 @@ class MainFrame(wxp.Frame):
         #~ else:
             #~ newSliderWindow.Show()
             #~ self.ShowSliderWindow(self.currentScript)
-
+        self.lastClosed = None
+        
         if self.previewWindowVisible:
             #~ self.HidePreviewWindow()
             self.need_to_show_preview = True
@@ -5052,7 +5053,6 @@ class MainFrame(wxp.Frame):
             'recentdirSession': '',
             'recentfiles': None,
             'lastscriptid': None,
-            'lastclosed': '',
             #~ 'lasthelpdir': None,
             'scraptext': ('', 0, 0),
             'maximized': False,
@@ -6154,7 +6154,7 @@ class MainFrame(wxp.Frame):
             (_('&File'),
                 (_('New tab'), 'Ctrl+N', self.OnMenuFileNew, _('Create a new tab')),
                 (_('Open...'), 'Ctrl+O', self.OnMenuFileOpen, _('Open an existing script')),
-                (_('Undo close tab'), 'Ctrl+Shift+N', self.OnMenuFileUndoClose, _('Reopen the last closed tab')),
+                (_('Undo close tab'), 'Ctrl+Shift+N', self.OnMenuFileUndoCloseTab, _('Reopen the last closed tab')),
                 (_('Close tab'), 'Ctrl+W', self.OnMenuFileClose, _('Close the current tab')),
                 (_('Close all tabs'), 'Ctrl+Shift+W', self.OnMenuFileCloseAllTabs, _('Close every tab')),
                 (_('Rename tab'), '', self.OnMenuFileRenameTab, _('Rename the current tab. If script file is existing, also rename it')),
@@ -6950,8 +6950,8 @@ class MainFrame(wxp.Frame):
     def OnMenuFileOpen(self, event):
         self.OpenFile()
 
-    def OnMenuFileUndoClose(self, event):
-        self.UndoClose()
+    def OnMenuFileUndoCloseTab(self, event):
+        self.UndoCloseTab()
 
     def OnMenuFileClose(self, event):
         self.CloseTab(prompt=True)
@@ -8872,7 +8872,7 @@ class MainFrame(wxp.Frame):
         if ipage != wx.NOT_FOUND:
             self.CloseTab(ipage, prompt=True)
         else: # for wxGTK
-            self.UndoClose()
+            self.UndoCloseTab()
     
     def OnLeftDownNotebook(self, event):
         self.scriptNotebook.dragging = False
@@ -8975,7 +8975,7 @@ class MainFrame(wxp.Frame):
     def OnMiddleDownWindow(self, event):
         x, y = event.GetPosition()
         if y < self.currentScript.GetPosition().y: # event not received on wxGTK
-            self.UndoClose()
+            self.UndoCloseTab()
         event.Skip()
     
     def OnLeftDClickVideoSplitter(self, event):
@@ -9734,8 +9734,6 @@ class MainFrame(wxp.Frame):
         # Save scripts if necessary
         frame = self.GetFrameNumber()
         previewvisible = self.previewWindowVisible
-        selected = self.scriptNotebook.GetSelection()
-        #~ selected = self.currentScript.filename
         if self.separatevideowindow:
             if self.videoDialog.IsIconized():
                 self.videoDialog.Iconize(False)
@@ -9771,7 +9769,6 @@ class MainFrame(wxp.Frame):
             self.SaveSession(self.lastSessionFilename, saverecentdir=False,
                 frame=frame,
                 previewvisible=previewvisible,
-                selected=selected,
             )
         # Save the text in the scrap window
         scrapCtrl = self.scrapWindow.textCtrl
@@ -9949,7 +9946,7 @@ class MainFrame(wxp.Frame):
                     dirname = os.path.dirname(filename)
                     if os.path.isdir(dirname):
                         self.options['recentdir'] = dirname
-                    return
+                    return index
             # Get current tab if not specified
             if True: #index is None:
                 # Make a new tab if current one is not empty
@@ -10005,6 +10002,7 @@ class MainFrame(wxp.Frame):
             # Misc stuff
             if os.path.isdir(dirname):
                 self.options['recentdir'] = dirname
+            return index
 
     def GetMarkedScriptFromFile(self, filename, returnFull=False):
         try:
@@ -10105,10 +10103,11 @@ class MainFrame(wxp.Frame):
                 badMenuItem = menu.FindItemByPosition(pos)
                 menu.Delete(badMenuItem.GetId())
     
-    def UndoClose(self):
+    def UndoCloseTab(self):
         '''Reopen the last closed tab'''
-        if os.path.isfile(self.options['lastclosed']):
-                self.OpenFile(self.options['lastclosed'])
+        if self.lastClosed:
+            self.LoadTab(self.lastClosed)
+            self.ReloadModifiedScripts()
     
     @AsyncCallWrapper
     def CloseTab(self, index=None, prompt=False, discard=False, boolPrompt=False):
@@ -10146,6 +10145,8 @@ class MainFrame(wxp.Frame):
                     return False
             elif script.filename:
                 self.SaveScript(script.filename, index)
+        # Save last state
+        self.lastClosed = self.GetTabInfo(index)
         # Delete the tab from the notebook
         script.AVI = None #self.scriptNotebook.GetPage(index).AVI = None # clear memory
         # If only 1 tab, make another
@@ -10156,7 +10157,6 @@ class MainFrame(wxp.Frame):
             self.HidePreviewWindow()
         if self.options['multilinetab']:
             rows = self.scriptNotebook.GetRowCount()
-        self.options['lastclosed'] = script.filename
         self.scriptNotebook.DeletePage(index)
         self.currentScript = self.scriptNotebook.GetPage(self.scriptNotebook.GetSelection())
         self.UpdateTabImages()
@@ -10386,42 +10386,9 @@ class MainFrame(wxp.Frame):
             selectedIndex = None
             self.SelectTab(self.scriptNotebook.GetPageCount() - 1)
             #~ for scriptname, boolSelected, scripttext in session['scripts']:
-            self.reloadList = []
             for index, item in enumerate(session['scripts']):
-                nItems = len(item)
-                defaults = (None, None, None, None, None, 0)
-                scriptname, boolSelected, scripttext, crc, splits, framenum = item + defaults[nItems:]
-                #~ if len(item) == 4:
-                    #~ scriptname, boolSelected, scripttext, crc = item
-                #~ else:
-                    #~ scriptname, boolSelected, scripttext = item
-                    #~ crc = None
-                dirname, basename = os.path.split(scriptname)
-                setSavePoint = False
-                if not os.path.isdir(dirname):
-                    if basename:
-                        scriptname = '%s.avs' % basename
-                    else:
-                        scriptname = '%s.avs' % self.NewFileName
-                else:
-                    if os.path.isfile(scriptname):
-                        txt, txtFromFile = self.GetMarkedScriptFromFile(scriptname, returnFull=True)
-                        #~ if txt == self.getCleanText(scripttext):
-                        try:
-                            if txt == scripttext.encode(encoding):
-                                setSavePoint = True
-                            else:
-                                setSavePoint = False
-                        except UnicodeEncodeError:
-                            setSavePoint = False
-                        if crc is not None:
-                            try:
-                                crc2 = md5(txtFromFile).hexdigest()
-                            except UnicodeEncodeError:
-                                crc2 = md5(txtFromFile.encode(encoding)).hexdigest()
-                            if crc != crc2:
-                                self.reloadList.append((index, scriptname, txt))
-                self.OpenFile(filename=scriptname, scripttext=scripttext, setSavePoint=setSavePoint, splits=splits, framenum=framenum)
+                self.LoadTab(item)
+                boolSelected = (item + (None, None)[len(item):])[1]
                 if boolSelected:
                     selectedIndex = self.scriptNotebook.GetSelection()
             # Prompt to reload modified files
@@ -10455,21 +10422,63 @@ class MainFrame(wxp.Frame):
                 if os.path.isdir(dirname):
                     self.options['recentdirSession'] = dirname
         return True
-
+    
+    def LoadTab(self, item):
+        '''Open/reload a tab from info returned from GetTabInfo'''
+        nItems = len(item)
+        defaults = (None, None, None, None, None, 0)
+        scriptname, boolSelected, scripttext, crc, splits, framenum = item + defaults[nItems:]
+        #~ if len(item) == 4:
+            #~ scriptname, boolSelected, scripttext, crc = item
+        #~ else:
+            #~ scriptname, boolSelected, scripttext = item
+            #~ crc = None
+        dirname, basename = os.path.split(scriptname)
+        reload = False
+        setSavePoint = False
+        if not os.path.isdir(dirname):
+            if basename:
+                scriptname = '%s.avs' % basename
+            else:
+                scriptname = '%s.avs' % self.NewFileName
+        else:
+            if os.path.isfile(scriptname):
+                txt, txtFromFile = self.GetMarkedScriptFromFile(scriptname, returnFull=True)
+                #~ if txt == self.getCleanText(scripttext):
+                try:
+                    if txt == scripttext.encode(encoding):
+                        setSavePoint = True
+                    else:
+                        setSavePoint = False
+                except UnicodeEncodeError:
+                    setSavePoint = False
+                if crc is not None:
+                    try:
+                        crc2 = md5(txtFromFile).hexdigest()
+                    except UnicodeEncodeError:
+                        crc2 = md5(txtFromFile.encode(encoding)).hexdigest()
+                    if crc != crc2:
+                        reload = True
+        index = self.OpenFile(filename=scriptname, scripttext=scripttext, setSavePoint=setSavePoint, splits=splits, framenum=framenum)
+        if reload:
+            self.reloadList.append((index, scriptname, txt))
+        return index
+    
     def ReloadModifiedScripts(self):
-        if self.reloadList is not None:
+        if self.reloadList:
             for index, filename, text in self.reloadList:
                 self.scriptNotebook.SetSelection(index)
                 dlg = wx.MessageDialog(self, _('File has been modified since the session was saved. Reload?'),
-                    os.path.basename(filename), wx.YES_NO|wx.CANCEL)
+                    os.path.basename(filename), wx.YES_NO)
                 ID = dlg.ShowModal()
                 dlg.Destroy()
                 if ID == wx.ID_YES:
                     script = self.currentScript
                     script.SetText(text)
                     script.SetSavePoint()
-
-    def SaveSession(self, filename=None, saverecentdir=True, frame=None, previewvisible=None, selected=None):
+            self.reloadList = []
+    
+    def SaveSession(self, filename=None, saverecentdir=True, frame=None, previewvisible=None):
         # Get the filename to save from the user
         if filename is None:
             filefilter = 'Session (*.ses)|*.ses'
@@ -10485,34 +10494,8 @@ class MainFrame(wxp.Frame):
         if filename is not None:
             # Get the text from each script
             scripts = []
-            selectedIndex = self.scriptNotebook.GetSelection()
-            if selected is not None:
-                selectedIndex = selected
             for index in xrange(self.scriptNotebook.GetPageCount()):
-                script = self.scriptNotebook.GetPage(index)
-                boolSelected = index == selectedIndex
-                scriptname = script.filename
-                if not os.path.isfile(scriptname):
-                    crc = None
-                    title = self.scriptNotebook.GetPageText(index).lstrip('* ')
-                    if not title.startswith(self.NewFileName):
-                        scriptname = title
-                else:
-                    try:
-                        f = open(scriptname, 'r')
-                        txt = f.read()
-                        f.close()
-                        crc = md5(txt).hexdigest()
-                    except UnicodeDecodeError:
-                        f = codecs.open(scriptname, 'rU', encoding)
-                        txt = f.read()
-                        f.close()
-                    #~ f = codecs.open(scriptname, 'rU', encoding)
-                    #~ txt = f.read()
-                    #~ f.close()
-                        crc = md5(txt.encode(encoding)).hexdigest()
-                splits = (script.lastSplitVideoPos, script.lastSplitSliderPos, script.sliderWindowShown)
-                scripts.append((scriptname, boolSelected, script.GetText(), crc, splits, script.lastFramenum))
+                scripts.append(self.GetTabInfo(index))
             # Get the remaining session information, store in a dict
             session = {}
             if frame is None:
@@ -10536,6 +10519,35 @@ class MainFrame(wxp.Frame):
                 if os.path.isdir(dirname):
                     self.options['recentdirSession'] = dirname
             return True
+    
+    def GetTabInfo(self, index=None):
+        '''Get the script text and other info'''
+        if index is None:
+            index = self.scriptNotebook.GetSelection()
+        boolSelected = index == self.scriptNotebook.GetSelection()
+        script = self.scriptNotebook.GetPage(index)
+        scriptname = script.filename
+        if not os.path.isfile(scriptname):
+            crc = None
+            title = self.scriptNotebook.GetPageText(index).lstrip('* ')
+            if not title.startswith(self.NewFileName):
+                scriptname = title
+        else:
+            try:
+                f = open(scriptname, 'r')
+                txt = f.read()
+                f.close()
+                crc = md5(txt).hexdigest()
+            except UnicodeDecodeError:
+                f = codecs.open(scriptname, 'rU', encoding)
+                txt = f.read()
+                f.close()
+                crc = md5(txt.encode(encoding)).hexdigest()
+            #~ f = codecs.open(scriptname, 'rU', encoding)
+            #~ txt = f.read()
+            #~ f.close() 
+        splits = (script.lastSplitVideoPos, script.lastSplitSliderPos, script.sliderWindowShown)
+        return scriptname, boolSelected, script.GetText(), crc, splits, script.lastFramenum
     
     def SaveCurrentImage(self, filename='', index=None, quality=None):
         script, index = self.getScriptAtIndex(index)
