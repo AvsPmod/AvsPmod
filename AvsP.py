@@ -14090,7 +14090,7 @@ class MainFrame(wxp.Frame):
         dlg = wx.Dialog(self, wx.ID_ANY, _('Warning'))
         bmp = wx.StaticBitmap(dlg, wx.ID_ANY, wx.ArtProvider.GetBitmap(wx.ART_WARNING))
         dllnameList.append('\n')
-        message = wx.StaticText(dlg, wx.ID_ANY, '.{}\n'.format('dll' if os.name == 'nt' else 'so').join(dllnameList) +\
+        message = wx.StaticText(dlg, wx.ID_ANY, '.{0}\n'.format('dll' if os.name == 'nt' else 'so').join(dllnameList) +\
                                                 _('Above plugin names contain undesirable symbols.\n'
                                                   'Rename them to only use alphanumeric or underscores,\n'
                                                   'or make sure to use them in short name style only.'))
