@@ -37,7 +37,7 @@ default_insert_path = True
 
 
 # Run in thread
-from os.path import splitext
+import os.path
 
 # Get the bookmarks
 bmlist = avsp.GetBookmarkList(title=True)
@@ -48,8 +48,23 @@ bmlist.sort()
 
 # Prompt for options
 if not default_filename:
-    avs = avsp.GetScriptFilename()
-    if avs: default_filename = splitext(avs)[0] + suffix
+    default_filename = avsp.GetScriptFilename()
+    if default_filename:
+        default_filename = os.path.splitext(default_filename)[0]
+    else:
+        self = avsp.GetWindow()
+        default_filename = self.GetSourcePath()
+        if default_filename:
+            default_filename = os.path.splitext(default_filename)[0]
+        else:
+            dir = self.options['recentdir']
+            basename = self.scriptNotebook.GetPageText(avsp.GetCurrentTabIndex()).lstrip('* ')
+            default_filename = os.path.join(dir, basename)
+            for ext in ('.avs', '.avsi'):
+                if default_filename.endswith(ext):
+                    default_filename = default_filename[:-len(ext)]
+                    break
+default_filename += suffix
 txt_filter = (_('Text files') + ' (*.txt)|*.txt|' + _('All files') + '|*.*')
 while True:
     options = avsp.GetTextEntry(

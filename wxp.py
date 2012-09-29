@@ -603,7 +603,8 @@ class OptionsDialog(wx.Dialog):
         '''
         if title is None:
             title = _('Program Settings')
-        wx.Dialog.__init__(self, parent, wx.ID_ANY, title)
+        wx.Dialog.__init__(self, parent, wx.ID_ANY, title, 
+                           style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
         self.options = options.copy()
         self.optionsOriginal = options
         # Create the options tabs
@@ -660,6 +661,7 @@ class OptionsDialog(wx.Dialog):
                         # misc: {width, ident}
                         width = misc['width'] if 'width' in misc else -1
                         ctrl = wx.CheckBox(tabPanel, wx.ID_ANY, label, size=(width,-1))
+                        ctrl.SetMinSize(ctrl.GetBestSize())
                         ctrl.SetValue(bool(optionsValue))
                         if tip:
                             ctrl.SetToolTipString(tip)

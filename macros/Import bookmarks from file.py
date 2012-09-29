@@ -10,6 +10,7 @@ filename = avsp.GetFilename(_('Select a file'), filefilter=
                             _('TFM log files') + ' (*.log)|*.log|' + 
                             _('XviD log files') + ' (*.log)|*.log|' + 
                             _('QP files') + ' (*.qp)|*.qp|' + 
+                            _('Timecode format v1 files') + ' (*.txt)|*.txt|' + 
                             _('All files') + ' (*.*)|*.*')
 if not filename:
     return
@@ -29,6 +30,18 @@ if not bookmarkDict:
                 bookmarkDict[int(s.split(' ')[0])] = ''
     except:
         bookmarkDict = {}
+
+# parsing Timecode format v1: place a bookmark on every starting frame
+if not bookmarkDict:
+    if lines.startswith('# timecode format v1'):
+        match = re.search(r'^\s*assume\s*(\d*\.*\d+\.*\d*)', lines, re.M|re.I)
+        base_fps = (match.group(1) if match else 'unknown') + ' fps'
+        bookmarkDict[0] = base_fps
+        for line in lines.splitlines():
+            if line and line[0].isdigit():
+                start, end, fps = line.split(',')
+                bookmarkDict[int(start)] = fps + ' fps'
+                bookmarkDict[int(end)+1] = base_fps
 
 # parsing SCXviD log
 if not bookmarkDict:
