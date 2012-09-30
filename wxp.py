@@ -797,7 +797,7 @@ class OptionsDialog(wx.Dialog):
                         ctrl = filebrowse.DirBrowseButton(tabPanel, wx.ID_ANY, size=(width,-1),
                             labelText=label,
                             toolTip=tip,
-                            startDirectory=optionsValue,
+                            startDirectory=startDirectory if startDirectory else optionsValue,
                             newDirectory=True, 
                             buttonText=buttonText,
                             #dialogTitle = ''

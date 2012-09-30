@@ -27,18 +27,7 @@ frames = avsp.Options.get('frames', _('Bookmarks'))
 show_progress = avsp.Options.get('show_progress', False)
 format = avsp.Options.get('format', _('Portable Network Graphics') + ' (*.png)')
 quality = avsp.Options.get('quality', 90)
-filename = avsp.GetScriptFilename()
-if not filename:
-    filename = self.GetSourcePath()
-if not dirname:
-    dirname = os.path.dirname(filename) if filename else self.options['recentdir']
-if not basename:
-    basename = os.path.splitext(os.path.basename(filename))[0] if filename else self.scriptNotebook.GetPageText(avsp.GetCurrentTabIndex()).lstrip('* ')
-    for ext in ('.avs', '.avsi'):
-        if basename.endswith(ext):
-            basename = basename[:-len(ext)]
-            break
-filename = os.path.join(dirname, basename)
+filename = os.path.splitext(self.GetProposedPath(type_='image'))[0]
 format_dict = dict([(name[0], (ext, name[1])) for ext, name in self.imageFormats.iteritems()])
 while True:
     options = avsp.GetTextEntry(title=_('Save image sequence'),

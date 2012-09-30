@@ -2541,7 +2541,7 @@ class ScrapWindow(wx.Dialog):
     def OnSave(self, event):
         filefilter = (_('Text document') + ' (*.txt)|*.txt|' + 
                       _('All files') + ' (*.*)|*.*')
-        initialdir = self.parent.options['recentdir']
+        initialdir = self.parent.GetProposedPath(only='dir')
         dlg = wx.FileDialog(self,_('Save scrap text'),
             initialdir, '', filefilter, wx.SAVE | wx.OVERWRITE_PROMPT)
         ID = dlg.ShowModal()
@@ -3113,11 +3113,11 @@ class AvsFunctionDialog(wx.Dialog):
     def ImportFromFiles(self):
         filenames, filterInfo, unrecognized = [], [], []
         title = _('Open Customization files, Avisynth scripts or Avsp options files')
-        recentdir = os.path.join(self.GetParent().options['avisynthdir'], 'plugins' if os.name == 'nt' else 'avxsynth')
+        initial_dir = os.path.join(self.GetParent().options['avisynthdir'], 'plugins' if os.name == 'nt' else 'avxsynth')
         filefilter = (_('All supported') + '|*.txt;*.avsi;*.avs;*.dat|' + _('Customization file') + ' (*.txt)|*.txt|' + 
                       _('AviSynth script') + ' (*.avs, *.avsi)|*.avs;*.avsi|' + _('AvsP data') + ' (*.dat)|*.dat|' + 
                       _('All files') + ' (*.*)|*.*')
-        dlg = wx.FileDialog(self, title, recentdir, '', filefilter, 
+        dlg = wx.FileDialog(self, title, initial_dir, '', filefilter, 
                             wx.OPEN|wx.MULTIPLE|wx.FILE_MUST_EXIST)
         ID = dlg.ShowModal()
         if ID == wx.ID_OK:
@@ -3326,9 +3326,9 @@ class AvsFunctionDialog(wx.Dialog):
             wx.MessageBox(_('No customizations to export!'), _('Error'), style=wx.OK|wx.ICON_ERROR)
             return
         title = _('Save filter customizations')
-        recentdir = self.GetParent().programdir
+        initial_dir = self.GetParent().programdir
         filefilter = _('Customization file') + ' (*.txt)|*.txt|' + _('All files') + ' (*.*)|*.*'
-        dlg = wx.FileDialog(self, title, recentdir, '', filefilter, wx.SAVE|wx.OVERWRITE_PROMPT)
+        dlg = wx.FileDialog(self, title, initial_dir, '', filefilter, wx.SAVE|wx.OVERWRITE_PROMPT)
         ID = dlg.ShowModal()
         if ID == wx.ID_OK:
             filename = dlg.GetPath()
@@ -5049,6 +5049,7 @@ class MainFrame(wxp.Frame):
             'filterremoved': set(),
             'shortcuts': [],
             'recentdir': '',
+            'userecentdir': True,
             'recentdirPlugins': '',
             'recentdirSession': '',
             'recentfiles': None,
@@ -5065,6 +5066,7 @@ class MainFrame(wxp.Frame):
             'imagechoice': 0,
             'imagenameformat': '%s%06d',
             'imagesavedir': '',
+            'useimagesavedir': True,
             'zoomindex': 2,
             'exitstatus': 0,
             'reservedshortcuts': ['Tab', 'Shift+Tab', 'Ctrl+Z', 'Ctrl+Y', 'Ctrl+X', 'Ctrl+C', 'Ctrl+V', 'Ctrl+A'],
@@ -5679,6 +5681,8 @@ class MainFrame(wxp.Frame):
                 ((_("Don't prompt to save scripts without file"), wxp.OPT_ELEM_CHECK, 'closeneversaved', _("When closing a tab, don't prompt to save the script if it doesn't already exist on the filesystem"), dict() ), ),
                 ((_('Prompt to save scripts on program exit'), wxp.OPT_ELEM_CHECK, 'promptexitsave', _('Prompt to save each script with unsaved changes when exiting the program'), dict() ), ),
                 ((_('Save *.avs scripts with AvsPmod markings'), wxp.OPT_ELEM_CHECK, 'savemarkedavs', _('Save AvsPmod-specific markings (user sliders, toggle tags, etc) as a commented section in the *.avs file'), dict() ), ),
+                ((_('Start dialogs on the last used directory'), wxp.OPT_ELEM_CHECK, 'userecentdir', _("If unchecked, the script's directory is used"), dict() ), ),
+                ((_('Start save image dialogs on the last used directory'), wxp.OPT_ELEM_CHECK, 'useimagesavedir', _("If unchecked, the script's directory is used"), dict() ), ),
             ),
             (_('Misc'),
                 ((_('Language')+' *', wxp.OPT_ELEM_LIST, 'lang', _('Choose the language used for the interface'), dict(choices=self.getTranslations()) ), ),
@@ -7076,7 +7080,7 @@ class MainFrame(wxp.Frame):
         self.print_zoom = not self.print_zoom
     
     def OnMenuFilePrintPreview(self, event):
-        filename = os.path.basename(self.currentScript.filename)
+        filename = self.GetProposedPath(only='base')
         printout = STCPrintout(self.currentScript, page_setup_data=self.print_data, 
                                header=self.print_header, title=filename, job_title=filename, 
                                zoom=self.print_zoom, wrap=self.print_wrap)
@@ -7100,7 +7104,7 @@ class MainFrame(wxp.Frame):
     def OnMenuFilePrint(self, event):
         pdd = wx.PrintDialogData(self.print_data.GetPrintData())
         printer = wx.Printer(pdd)
-        filename = os.path.basename(self.currentScript.filename)
+        filename = self.GetProposedPath(only='base')
         printout = STCPrintout(self.currentScript, page_setup_data=self.print_data, 
                                header=self.print_header, title=filename, job_title=filename, 
                                zoom=self.print_zoom, wrap=self.print_wrap)
@@ -7218,8 +7222,8 @@ class MainFrame(wxp.Frame):
 
     def OnMenuEditInsertFilename(self, event):
         filefilter = _('All files') + ' (*.*)|*.*'
-        recentdir =  self.options['recentdir']
-        dlg = wx.FileDialog(self, _('Select a file'), recentdir, '', filefilter, wx.OPEN)
+        initial_dir = self.GetProposedPath(only='dir')
+        dlg = wx.FileDialog(self, _('Select a file'), initial_dir, '', filefilter, wx.OPEN)
         ID = dlg.ShowModal()
         if ID == wx.ID_OK:
             filename = dlg.GetPath()
@@ -9909,7 +9913,7 @@ class MainFrame(wxp.Frame):
                           _('Source files') + ' (%(extlist1)s)|*.%(extlist2)s|' + 
                           _('All files') + ' (*.*)|*.*') %  locals()
             dlg = wx.FileDialog(self,_('Open a script or source'),
-                self.options['recentdir'], '', filefilter, wx.OPEN|wx.MULTIPLE)
+                self.GetProposedPath(only='dir'), '', filefilter, wx.OPEN|wx.MULTIPLE)
             ID = dlg.ShowModal()
             if ID == wx.ID_OK:
                 filenames = dlg.GetPaths()
@@ -10195,14 +10199,7 @@ class MainFrame(wxp.Frame):
         if not filename:           
             filefilter = (_('AviSynth script') + ' (*.avs, *.avsi)|*.avs;*.avsi|' + 
                           _('All files') + ' (*.*)|*.*')
-            initialpath = script.filename if script.filename else self.GetSourcePath(script)
-            initialdir, initialname = os.path.split(initialpath)
-            if not initialdir:
-                initialdir = self.options['recentdir']
-            if initialname:
-                initialname = '%s.avs' % os.path.splitext(initialname)[0]
-            else:
-                initialname = self.scriptNotebook.GetPageText(index).lstrip('* ')
+            initialdir, initialname = os.path.split(self.GetProposedPath(index))
             dlg = wx.FileDialog(self,_('Save current script'),
                 initialdir, initialname, filefilter, wx.SAVE | wx.OVERWRITE_PROMPT)
             ID = dlg.ShowModal()
@@ -10275,6 +10272,58 @@ class MainFrame(wxp.Frame):
         text = self.cleanSliders(text)
         text = self.cleanToggleTags(text)
         return text
+    
+    def GetProposedPath(self, index=None, only=None, type_=None):
+        r'''Return a proposed filepath for a script based on the script's filename 
+        (if saved), its tab's title, the first source in the script and the user 
+        preferences.  Posible 'type_' values: 'general', 'image'.
+        
+        If 'only' is set to 'dir' or 'base', return only the dirname or basename 
+        respectively.
+        '''
+        # Get script
+        script, index = self.getScriptAtIndex(index)
+        if script is None:
+            return ''
+        
+        # Get script filename
+        dirname, basename = os.path.split(script.filename)
+        if not basename and not only == 'dir':
+            page_text = self.scriptNotebook.GetPageText(index).lstrip('* ')
+            if not page_text.startswith(self.NewFileName):
+                basename = page_text
+        
+        # Get default directory for 'type_'
+        if not only == 'base':
+            if type_ == 'image':
+                type_dirname = self.options['imagesavedir']
+                use_type_dirname = self.options['useimagesavedir']
+            else:
+                type_dirname = self.options['recentdir']
+                use_type_dirname = self.options['userecentdir']
+            if use_type_dirname:
+                dirname = type_dirname
+        
+        # Use the first source in the script if necessary
+        if not dirname and not only == 'base' or not basename and not only == 'dir':
+            dir_source, base_source = os.path.split(self.GetSourcePath(script))
+            if not basename:
+                basename = os.path.splitext(base_source)[0]
+            if not dirname:
+                dirname = dir_source
+        
+        # Last fallback and return
+        if not dirname and not only == 'base':
+            dirname = type_dirname
+        if only == 'dir':
+            return dirname
+        if not basename and not only == 'dir':
+            basename = page_text
+        if os.path.splitext(basename)[1] not in ('.avs', '.avsi'):
+            basename += '.avs'
+        if only == 'base':
+            return basename
+        return os.path.join(dirname, basename)
     
     def GetSourcePath(self, script=None):
         '''Parse script for the path on the first source filter'''
@@ -10559,12 +10608,8 @@ class MainFrame(wxp.Frame):
                 filefilterList.append('%s|*%s' % (self.imageFormats[ext][0], ext))
             maxFilterIndex = len(filefilterList) - 1
             filefilter = '|'.join(filefilterList)
-            defaultdir = self.options['imagesavedir']
-            title = script.filename if script.filename else self.GetSourcePath(script)
-            if title:
-                title = os.path.splitext(os.path.basename(title))[0]
-            else:
-                title = self.scriptNotebook.GetPageText(index).lstrip('* ')
+            defaultdir, title = os.path.split(self.GetProposedPath(index, type_='image'))
+            title = os.path.splitext(title)[0]
             id = self.currentScript.GetId()
             if id == self.options['lastscriptid']:
                 fmt = self.options['imagenameformat']
@@ -10763,8 +10808,8 @@ class MainFrame(wxp.Frame):
             extlist2 = ';*.'.join(extlist)
             filefilter = (_('Source files') + ' (%(extlist1)s)|*.%(extlist2)s|' + 
                           _('All files') + ' (*.*)|*.*') %  locals()
-            recentdir = self.options['recentdir']
-            dlg = wx.FileDialog(self, _('Insert a source'), recentdir, '', filefilter, wx.OPEN)
+            initial_dir = self.GetProposedPath(only='dir')
+            dlg = wx.FileDialog(self, _('Insert a source'), initial_dir, '', filefilter, wx.OPEN)
             ID = dlg.ShowModal()
             if ID == wx.ID_OK:
                 filename = dlg.GetPath()
@@ -12484,11 +12529,8 @@ class MainFrame(wxp.Frame):
 
     def MakePreviewScriptFile(self, script): #, actualsize=None, importname=None):
         # Construct the filename of the temporary avisynth script
-        if script.filename:
-            dirname = os.path.dirname(script.filename)
-        elif os.path.exists(self.options['recentdir']):
-            dirname = self.options['recentdir']
-        else:
+        dirname = self.GetProposedPath(only='dir')
+        if not os.path.isdir(dirname):
             dirname = self.programdir
         previewname = os.path.join(dirname, 'preview.avs')
         i = 1
@@ -13780,9 +13822,9 @@ class MainFrame(wxp.Frame):
         def OnBrowseButton(event):
             dirname = os.path.dirname(textCtrl.GetValue())
             if os.path.isdir(dirname):
-                recentdir = dirname
+                initial_dir = dirname
             else:
-                recentdir = self.options['recentdir']
+                initial_dir = self.GetProposedPath(only='dir')
             extlist = self.options['templates'].keys()
             extlist.sort()
             extlist2 = [s for s in extlist if not s.startswith('avs')]
@@ -13795,7 +13837,7 @@ class MainFrame(wxp.Frame):
                 filefilter = '%s|%s|%s' % (s1, s2, s3) #_('AviSynth script (avs, avsi)|*.avs;*.avsi|Source files (%(extlist1)s)|*.%(extlist2)s|All files (*.*)|*.*') %  locals()
             else:
                 filefilter = s3
-            dlg = wx.FileDialog(self,_('Select a file'), recentdir, '', filefilter, wx.OPEN)
+            dlg = wx.FileDialog(self,_('Select a file'), initial_dir, '', filefilter, wx.OPEN)
             ID = dlg.ShowModal()
             if ID == wx.ID_OK:
                 filename = dlg.GetPath()
@@ -14453,7 +14495,7 @@ class MainFrame(wxp.Frame):
             filefilter = (_('Source files') + ' (%(extlist1)s)|*.%(extlist2)s|' + 
                           _('All files') + ' (*.*)|*.*') %  locals()
         dlg = wx.FileDialog(self, title,
-            self.options['recentdir'], '', filefilter, wx.OPEN|wx.FILE_MUST_EXIST)
+            self.GetProposedPath(only='dir'), '', filefilter, wx.OPEN|wx.FILE_MUST_EXIST)
         ID = dlg.ShowModal()
         if ID == wx.ID_OK:
             filename = dlg.GetPath()
@@ -14474,7 +14516,7 @@ class MainFrame(wxp.Frame):
         
         '''
         dlg = wx.FileDialog(self, title,
-            self.options['recentdir'], '', filefilter, wx.SAVE|wx.OVERWRITE_PROMPT)
+            self.GetProposedPath(only='dir'), '', filefilter, wx.SAVE|wx.OVERWRITE_PROMPT)
         ID = dlg.ShowModal()
         if ID == wx.ID_OK:
             filename = dlg.GetPath()
@@ -14494,8 +14536,7 @@ class MainFrame(wxp.Frame):
         directory if the user clicked "OK", returning an empty string otherwise.
         
         '''
-        # Get the avisynth directory from the user with a dialog box
-        dlg = wx.DirDialog(self, title, self.options['recentdir'])
+        dlg = wx.DirDialog(self, title, self.GetProposedPath(only='dir'))
         ID = dlg.ShowModal()
         if ID==wx.ID_OK:
             dirname = dlg.GetPath()
@@ -14617,9 +14658,12 @@ class MainFrame(wxp.Frame):
                     key += 1
                     flag = (wxp.OPT_ELEM_FILE_OPEN if eachType == 'file_open' 
                             else wxp.OPT_ELEM_FILE_SAVE )
+                    startDirectory = os.path.dirname(eachDefault[0])
+                    if not os.path.isdir(startDirectory):
+                        startDirectory = self.GetProposedPath(only='dir')
                     misc = dict(width=width / lineLen, 
                         fileMask=eachDefault[1] if len(eachDefault) > 1 else '*.*', 
-                        startDirectory=os.path.dirname(self.MacroGetScriptFilename()), 
+                        startDirectory=startDirectory, 
                         buttonText='...', buttonWidth=30, label_position=wx.VERTICAL, 
                         expand=True)
                     colOptions = [eachMessage, flag, key, '', misc]
@@ -14628,8 +14672,9 @@ class MainFrame(wxp.Frame):
                 elif eachType == 'dir':
                     key += 1
                     flag = wxp.OPT_ELEM_DIR
+                    startDirectory = eachDefault[0] if os.path.isdir(eachDefault[0]) else self.GetProposedPath(only='dir')
                     misc = dict(width=width / lineLen, 
-                        startDirectory=os.path.dirname(self.MacroGetScriptFilename()), 
+                        startDirectory=startDirectory, 
                         buttonText='...', buttonWidth=30, label_position=wx.VERTICAL, 
                         expand=True)
                     colOptions = [eachMessage, flag, key, '', misc]

@@ -48,22 +48,7 @@ bmlist.sort()
 
 # Prompt for options
 if not default_filename:
-    default_filename = avsp.GetScriptFilename()
-    if default_filename:
-        default_filename = os.path.splitext(default_filename)[0]
-    else:
-        self = avsp.GetWindow()
-        default_filename = self.GetSourcePath()
-        if default_filename:
-            default_filename = os.path.splitext(default_filename)[0]
-        else:
-            dir = self.options['recentdir']
-            basename = self.scriptNotebook.GetPageText(avsp.GetCurrentTabIndex()).lstrip('* ')
-            default_filename = os.path.join(dir, basename)
-            for ext in ('.avs', '.avsi'):
-                if default_filename.endswith(ext):
-                    default_filename = default_filename[:-len(ext)]
-                    break
+    default_filename = os.path.splitext(avsp.GetWindow().GetProposedPath())[0]
 default_filename += suffix
 txt_filter = (_('Text files') + ' (*.txt)|*.txt|' + _('All files') + '|*.*')
 while True:
