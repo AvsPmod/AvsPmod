@@ -9758,9 +9758,8 @@ class MainFrame(wxp.Frame):
                         tabTitle, wx.YES_NO|wx.CANCEL)
                     ID = dlg.ShowModal()
                     dlg.Destroy()
-                    if ID == wx.ID_YES:
-                        self.SaveScript(script.filename, index)
-                    elif ID == wx.ID_CANCEL:
+                    if (ID == wx.ID_YES and not self.SaveScript(script.filename, index) or
+                        ID == wx.ID_CANCEL):
                         return
         # Save the session
         if self.backupTimer.IsRunning():
@@ -10139,9 +10138,8 @@ class MainFrame(wxp.Frame):
                     tabTitle, wx.YES_NO|wx.CANCEL)
                 ID = dlg.ShowModal()
                 dlg.Destroy()
-                if ID == wx.ID_YES:
-                    self.SaveScript(script.filename, index)
-                elif ID == wx.ID_CANCEL:
+                if (ID == wx.ID_YES and not self.SaveScript(script.filename, index) or
+                    ID == wx.ID_CANCEL):
                     return False
             elif script.filename:
                 self.SaveScript(script.filename, index)
