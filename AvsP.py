@@ -10282,8 +10282,6 @@ class MainFrame(wxp.Frame):
         '''Parse script for the path on the first source filter'''
         if script is None:
             script = self.currentScript
-        stringList = [s.strip('"') for s in re.findall('".+?"', script.GetText())]
-        #~ extList = ['.%s' % s for s in self.options['templates'].keys()]
         if os.name == 'nt':
             sourceFilterList = set(('directshowsource',))
         else:
@@ -10300,8 +10298,9 @@ class MainFrame(wxp.Frame):
         findpos = -1
         lastpos = script.GetLength()
         noMediaExtList = ('.dll', '.vdf', 'vdplugin', '.vfp', '.so', '.avs', '.txt', '.log')
-        for s in stringList:
-            if os.path.isfile(s) and os.path.splitext(s)[1].lower() not in noMediaExtList:
+        for match in re.finditer('"(.+?)"', script.GetText()):
+            s = match.group(1)
+            if os.path.splitext(s)[1].lower() not in noMediaExtList and os.path.isfile(s):
                 findpos = script.FindText(findpos+1, lastpos, s)
                 openpos = script.GetOpenParenthesesPos(findpos)
                 if openpos is not None:
