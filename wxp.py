@@ -744,7 +744,7 @@ class OptionsDialog(wx.Dialog):
                         width = misc['width'] if 'width' in misc else 400
                         expand = misc['expand'] if 'expand' in misc else True
                         label_position = misc['label_position'] if 'label_position' in misc else wx.HORIZONTAL
-                        fileMode = wx.SAVE if flag == OPT_ELEM_FILE_SAVE else wx.OPEN
+                        fileMode = wx.SAVE|wx.OVERWRITE_PROMPT if flag == OPT_ELEM_FILE_SAVE else wx.OPEN|wx.FILE_MUST_EXIST
                         fileMask = misc['fileMask'] if 'fileMask' in misc else '*.*'
                         startDirectory = misc['startDirectory'] if 'startDirectory' in misc else ''
                         buttonText = misc['buttonText'] if 'buttonText' in misc else _('Browse')

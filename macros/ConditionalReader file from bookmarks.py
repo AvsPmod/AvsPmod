@@ -48,7 +48,7 @@ bmlist.sort()
 
 # Prompt for options
 if not default_filename:
-    default_filename = os.path.splitext(avsp.GetWindow().GetProposedPath())[0]
+    default_filename = os.path.splitext(avsp.GetScriptFilename(propose='general'))[0]
 default_filename += suffix
 txt_filter = (_('Text files') + ' (*.txt)|*.txt|' + _('All files') + '|*.*')
 while True:

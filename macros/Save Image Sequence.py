@@ -27,7 +27,14 @@ frames = avsp.Options.get('frames', _('Bookmarks'))
 show_progress = avsp.Options.get('show_progress', False)
 format = avsp.Options.get('format', _('Portable Network Graphics') + ' (*.png)')
 quality = avsp.Options.get('quality', 90)
-filename = os.path.splitext(self.GetProposedPath(type_='image'))[0]
+isdir = os.path.isdir(dirname)
+if not isdir or not basename:
+    source_dir, source_base = os.path.split(avsp.GetScriptFilename(propose='image'))
+    if not isdir:
+        dirname = source_dir
+    if not basename:
+        basename = os.path.splitext(source_base)[0]
+filename = os.path.join(dirname, basename)
 format_dict = dict([(name[0], (ext, name[1])) for ext, name in self.imageFormats.iteritems()])
 while True:
     options = avsp.GetTextEntry(title=_('Save image sequence'),
@@ -115,7 +122,7 @@ for i, frame in enumerate(frames):
     if show_progress and not avsp.SafeCall(progress.Update, 
                                            i, str(i+1) + ' / ' + str(total_frames))[0]:
         break
-    dc = mdc if avsp.Version['AvsP'] > '2.3.1' else mdc.GetHDC()
+    dc = mdc# if avsp.Version['AvsP'] > '2.3.1' else mdc.GetHDC()
     AVS.DrawFrame(frame, dc)
     if ext == '.jpg':
         img = bmp.ConvertToImage()

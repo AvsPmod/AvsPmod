@@ -9891,18 +9891,22 @@ class MainFrame(wxp.Frame):
         self.Thaw()
     
     @AsyncCallWrapper
-    def OpenFile(self, filename='', scripttext=None, setSavePoint=True, splits=None, framenum=None):#, index=None):
-        r'''OpenFile(filename='')
+    def OpenFile(self, filename='', default='', scripttext=None, setSavePoint=True, splits=None, framenum=None):#, index=None):
+        r'''OpenFile(filename='', default='')
         
         If the string 'filename' is a path to an Avisynth script, this function opens 
         the script into a new tab.  If 'filename' is a path to a non-script file, the 
-        filename is inserted as a source (see the InsertSource function for details).  
+        filename is inserted as a source (see the GetSourceString function for details).  
+        
         If 'filename' is not supplied, the user is prompted with an Open File dialog 
-        box.
+        box with 'default' as the default filename; it can be just a directory or 
+        basename.
         
         '''
         # Get filename via dialog box if not specified
         if not filename:
+            default_dir, default_base = (default, '') if os.path.isdir(default) else os.path.split(default)
+            initial_dir = default_dir if os.path.isdir(default_dir) else self.GetProposedPath(only='dir')
             #~ filefilter = _('AviSynth script (*.avs, *.avsi)|*.avs;*.avsi|All files (*.*)|*.*')
             extlist = self.options['templates'].keys()
             extlist.sort()
@@ -9912,8 +9916,8 @@ class MainFrame(wxp.Frame):
             filefilter = (_('AviSynth script') + ' (avs, avsi)|*.avs;*.avsi|' + 
                           _('Source files') + ' (%(extlist1)s)|*.%(extlist2)s|' + 
                           _('All files') + ' (*.*)|*.*') %  locals()
-            dlg = wx.FileDialog(self,_('Open a script or source'),
-                self.GetProposedPath(only='dir'), '', filefilter, wx.OPEN|wx.MULTIPLE)
+            dlg = wx.FileDialog(self,_('Open a script or source'), initial_dir, default_base, 
+                                filefilter, wx.OPEN|wx.FILE_MUST_EXIST|wx.MULTIPLE)
             ID = dlg.ShowModal()
             if ID == wx.ID_OK:
                 filenames = dlg.GetPaths()
@@ -9922,7 +9926,7 @@ class MainFrame(wxp.Frame):
                 else:
                     for filename in filenames:
                         if filename:
-                            self.OpenFile(filename, scripttext, setSavePoint, splits, framenum)
+                            self.OpenFile(filename)
                     return
             dlg.Destroy()
         # Open script if filename exists (user could cancel dialog box...)
@@ -10183,8 +10187,8 @@ class MainFrame(wxp.Frame):
             self.CloseTab(0)
     
     @AsyncCallWrapper
-    def SaveScript(self, filename='', index=None):
-        r'''SaveScriptAs(filename='', index=None)
+    def SaveScript(self, filename='', index=None, default=''):
+        r'''SaveScriptAs(filename='', index=None, default='')
         
         Similar to the function SaveScript(), except that if the filename is an empty 
         string, this function will always prompt the user with a dialog box for the 
@@ -10197,9 +10201,16 @@ class MainFrame(wxp.Frame):
             return None
         # Get filename via dialog box if not specified
         if not filename:           
+            initialdir, initialname = (default, '') if os.path.isdir(default) else os.path.split(default)
+            isdir = os.path.isdir(initialdir)
+            if not isdir or not initialname:
+                source_dir, source_base = os.path.split(self.GetProposedPath())
+                if not isdir:
+                    initialdir = source_dir
+                if not initialname:
+                    initialname = source_base
             filefilter = (_('AviSynth script') + ' (*.avs, *.avsi)|*.avs;*.avsi|' + 
                           _('All files') + ' (*.*)|*.*')
-            initialdir, initialname = os.path.split(self.GetProposedPath(index))
             dlg = wx.FileDialog(self,_('Save current script'),
                 initialdir, initialname, filefilter, wx.SAVE | wx.OVERWRITE_PROMPT)
             ID = dlg.ShowModal()
@@ -10595,7 +10606,7 @@ class MainFrame(wxp.Frame):
         splits = (script.lastSplitVideoPos, script.lastSplitSliderPos, script.sliderWindowShown)
         return scriptname, boolSelected, script.GetText(), crc, splits, script.lastFramenum
     
-    def SaveCurrentImage(self, filename='', index=None, quality=None):
+    def SaveCurrentImage(self, filename='', index=None, default='', quality=None):
         script, index = self.getScriptAtIndex(index)
         if script is None or script.AVI is None:
             wx.MessageBox(_('No image to save'), _('Error'), style=wx.OK|wx.ICON_ERROR)
@@ -10608,8 +10619,14 @@ class MainFrame(wxp.Frame):
                 filefilterList.append('%s|*%s' % (self.imageFormats[ext][0], ext))
             maxFilterIndex = len(filefilterList) - 1
             filefilter = '|'.join(filefilterList)
-            defaultdir, title = os.path.split(self.GetProposedPath(index, type_='image'))
-            title = os.path.splitext(title)[0]
+            defaultdir, title  = (default, '') if os.path.isdir(default) else os.path.split(default)
+            isdir = os.path.isdir(defaultdir)
+            if not isdir or not title:
+                source_dir, source_base = os.path.split(self.GetProposedPath(index, type_='image'))
+                if not isdir:
+                    defaultdir = source_dir
+                if not title:
+                    title = os.path.splitext(source_base)[0]
             id = self.currentScript.GetId()
             if id == self.options['lastscriptid']:
                 fmt = self.options['imagenameformat']
@@ -10790,15 +10807,17 @@ class MainFrame(wxp.Frame):
                     self.ShowVideoFrame()
     
     @AsyncCallWrapper
-    def GetSourceString(self, filename='', return_filename=False):
-        r'''GetSourceString(filename='')
+    def GetSourceString(self, filename='', default='', return_filename=False):
+        r'''GetSourceString(filename='', default='')
         
         Returns an appropriate source string based on the file extension of the input 
         string 'filename'.  For example, if 'filename' is "D:\test.avi", the function 
         returns the string "AviSource("D:\test.avi")".  Any unknown extension is wrapped 
         with "DirectShowSource(____)" (AviSynth) or "FFVideoSource(____)" (AvxSynth).  
-        Templates can be viewed and defined in the options menu of the program.  If 
-        'filename' is empty, the user is prompted to select a file with a dialog box.
+        Templates can be viewed and defined in the options menu of the program.
+        
+        If 'filename' is empty, the user is prompted to select a file from a dialog box 
+        with 'default' as the default filename; it can be just a directory or basename.
         
         '''
         extlist = self.options['templates'].keys()
@@ -10808,8 +10827,10 @@ class MainFrame(wxp.Frame):
             extlist2 = ';*.'.join(extlist)
             filefilter = (_('Source files') + ' (%(extlist1)s)|*.%(extlist2)s|' + 
                           _('All files') + ' (*.*)|*.*') %  locals()
-            initial_dir = self.GetProposedPath(only='dir')
-            dlg = wx.FileDialog(self, _('Insert a source'), initial_dir, '', filefilter, wx.OPEN)
+            default_dir, default_base = (default, '') if os.path.isdir(default) else os.path.split(default)
+            initial_dir = default_dir if os.path.isdir(default_dir) else self.GetProposedPath(only='dir')
+            dlg = wx.FileDialog(self, _('Insert a source'), initial_dir, default_base, 
+                                filefilter, wx.OPEN|wx.FILE_MUST_EXIST)
             ID = dlg.ShowModal()
             if ID == wx.ID_OK:
                 filename = dlg.GetPath()
@@ -10848,15 +10869,18 @@ class MainFrame(wxp.Frame):
                 self.ShowVideoFrame()
     
     @AsyncCallWrapper
-    def GetPluginString(self, filename=''):
-        r'''GetPluginString(filename='')
+    def GetPluginString(self, filename='', default=''):
+        r'''GetPluginString(filename='', default='')
         
         Returns an appropriate load plugin string based on the file extension of the 
         input string 'filename'.  For example, if 'filename' is "D:\plugin.dll", the 
         function returns the string "LoadPlugin("D:\plugin.dll")".  VirtualDub and 
-        VFAPI (TMPGEnc) plugins are also supported.  If 'filename' is empty, the user 
-        is prompted to select a file with a dialog box, always started in the AviSynth 
-        plugin directory for easy selection.
+        VFAPI (TMPGEnc) plugins are also supported.
+        
+        If 'filename' is empty, the user is prompted to select a file with a dialog 
+        box, always started on the last directory from which a plugin was loaded for 
+        easy selection and with 'default' as the default filename; it can be just a 
+        directory or basename.
         
         '''
         # It would be a good idea to deprecate this function as macro in favour of 
@@ -10873,10 +10897,13 @@ class MainFrame(wxp.Frame):
             else:
                 filefilter = (_('AvxSynth plugins') + ' (*.so)|*.so|' + 
                               _('All files') + ' (*.*)|*.*')
-            plugindir = self.options['recentdirPlugins']
-            if not os.path.isdir(plugindir):
-                plugindir = os.path.join(self.options['avisynthdir'], 'plugins' if os.name == 'nt' else 'avxsynth')
-            dlg = wx.FileDialog(self, _('Insert a plugin'), plugindir, '', filefilter, wx.OPEN)
+            default_dir, default_base = (default, '') if os.path.isdir(default) else os.path.split(default)
+            initial_dir = default_dir if os.path.isdir(default_dir) else self.options['recentdirPlugins']
+            if not os.path.isdir(initial_dir):
+                initial_dir = os.path.join(self.options['avisynthdir'], 
+                                         'plugins' if os.name == 'nt' else 'avxsynth')
+            dlg = wx.FileDialog(self, _('Insert a plugin'), initial_dir, default_base, 
+                                filefilter, wx.OPEN|wx.FILE_MUST_EXIST)
             ID = dlg.ShowModal()
             if ID == wx.ID_OK:
                 filename = dlg.GetPath()
@@ -14257,17 +14284,19 @@ class MainFrame(wxp.Frame):
         return False
     
     @AsyncCallWrapper
-    def MacroSaveScript(self, filename='', index=None):
-        r'''SaveScript(filename='', index=None)
+    def MacroSaveScript(self, filename='', index=None, default=''):
+        r'''SaveScript(filename='', index=None, default='')
         
         Saves all the unsaved changes of the script in the tab located at the integer 
         'index'.  If 'index' is None, the script in the currently selected tab is used.
         
         The function will prompt the user with a dialog box for the location to save 
         the file if the string 'filename' is not provided and the script does not 
-        already exist on the hard drive.  If a file with the same name as 'filename' 
-        already exists, it is overwritten without any prompting.  The function returns 
-        the filename of the saved file.
+        already exist on the hard drive, using 'default' as the default filename; 
+        it can be just a directory or basename.
+        
+        If a file with the same name as 'filename' already exists, it is overwritten 
+        without any prompting.  The function returns the filename of the saved file.
         
         '''
         script, index = self.getScriptAtIndex(index)
@@ -14275,7 +14304,7 @@ class MainFrame(wxp.Frame):
             return ''
         if filename == '':
             filename = script.filename
-        self.SaveScript(filename, index)
+        self.SaveScript(filename, index, default=default)
         return script.filename
     
     @AsyncCallWrapper
@@ -14294,8 +14323,8 @@ class MainFrame(wxp.Frame):
         return (not script.GetModify())
     
     @AsyncCallWrapper
-    def MacroGetScriptFilename(self, index=None):
-        r'''GetScriptFilename(index=None)
+    def MacroGetScriptFilename(self, index=None, propose=None, only=None):
+        r'''GetScriptFilename(index=None, propose=None, only=None)
         
         Returns the name of the script at the tab located at the integer 'index', 
         where an index of 0 indicates the first tab.  If 'index' is None, the 
@@ -14303,10 +14332,23 @@ class MainFrame(wxp.Frame):
         script on the hard drive.  If the script has never been saved to the hard 
         drive, the returned name is an empty string.
         
+        If 'propose' is set, return a proposed save filepath for the script based 
+        on its filename, tab's title, first source in the script and user preferences.  
+        This path can be useful to open/save other files.  Posible 'propose' values: 
+        'general', 'image'.  If 'only' is set to 'dir' or 'base', return only the 
+        directory or basename respectively.
         '''
         script, index = self.getScriptAtIndex(index)
         if script is None:
             return None
+        if propose:
+            return self.GetProposedPath(index, type_=propose, only=only)
+        if only:
+            dir, base = os.path.split(script.filename)
+            if only == 'dir':
+                return dir
+            if only == 'base':
+                return base
         return script.filename
     
     @AsyncCallWrapper
@@ -14418,7 +14460,7 @@ class MainFrame(wxp.Frame):
     
     @AsyncCallWrapper
     def MacroGetScrapText(self):
-        r'''WriteToScrap(txt, pos=-1)
+        r'''GetScrapText()
         
         Identical to the GetText function, except that it retrieves all text from the 
         scrap window.
@@ -14479,14 +14521,18 @@ class MainFrame(wxp.Frame):
         return script.GetSelectedText()
     
     @AsyncCallWrapper
-    def MacroGetFilename(self, title=_('Open a script or source'), filefilter=None):
-        r'''GetFilename(title='Open a script or source', filefilter=None)
+    def MacroGetFilename(self, title=_('Open a script or source'), filefilter=None, default=''):
+        r'''GetFilename(title='Open a script or source', filefilter=None, default='')
         
         Displays an open file dialog box, returning the filename of the selected file 
         if the user clicked "OK", returning an empty string otherwise.  filefilter=None 
-        means to apply those extensions defined at "Options|Extension templates"
+        means to apply those extensions defined at "Options|Extension templates".  
+        'default' is the default filename set in the dialog box; it can be just a 
+        directory or basename.
         
         '''
+        default_dir, default_base = (default, '') if os.path.isdir(default) else os.path.split(default)
+        initial_dir = default_dir if os.path.isdir(default_dir) else self.GetProposedPath(only='dir')
         if filefilter is None:
             extlist = self.options['templates'].keys()
             extlist.sort()
@@ -14494,8 +14540,8 @@ class MainFrame(wxp.Frame):
             extlist2 = ';*.'.join(extlist)
             filefilter = (_('Source files') + ' (%(extlist1)s)|*.%(extlist2)s|' + 
                           _('All files') + ' (*.*)|*.*') %  locals()
-        dlg = wx.FileDialog(self, title,
-            self.GetProposedPath(only='dir'), '', filefilter, wx.OPEN|wx.FILE_MUST_EXIST)
+        dlg = wx.FileDialog(self, title, initial_dir, default_base, filefilter, 
+                            wx.OPEN|wx.FILE_MUST_EXIST)
         ID = dlg.ShowModal()
         if ID == wx.ID_OK:
             filename = dlg.GetPath()
@@ -14508,15 +14554,18 @@ class MainFrame(wxp.Frame):
         return filename
     
     @AsyncCallWrapper
-    def MacroGetSaveFilename(self, title=_('Save as'), filefilter = _('All files') + ' (*.*)|*.*'):
-        r'''GetSaveFilename(title='Save as', filefilter=_('All files') + ' (*.*)|*.*')
+    def MacroGetSaveFilename(self, title=_('Save as'), filefilter = _('All files') + ' (*.*)|*.*', default=''):
+        r'''GetSaveFilename(title='Save as', filefilter=_('All files') + ' (*.*)|*.*', default='')
         
         Displays an save file dialog box, returning the entered filename if the user 
-        clicked "OK", returning an empty string otherwise.
+        clicked "OK", returning an empty string otherwise.  'default' is the default 
+        filename set in the dialog box; it can be just a directory or basename.
         
         '''
-        dlg = wx.FileDialog(self, title,
-            self.GetProposedPath(only='dir'), '', filefilter, wx.SAVE|wx.OVERWRITE_PROMPT)
+        default_dir, default_base = (default, '') if os.path.isdir(default) else os.path.split(default)
+        initial_dir = default_dir if os.path.isdir(default_dir) else self.GetProposedPath(only='dir')
+        dlg = wx.FileDialog(self, title, initial_dir, default_base, filefilter, 
+                            wx.SAVE|wx.OVERWRITE_PROMPT)
         ID = dlg.ShowModal()
         if ID == wx.ID_OK:
             filename = dlg.GetPath()
@@ -14529,14 +14578,16 @@ class MainFrame(wxp.Frame):
         return filename
     
     @AsyncCallWrapper
-    def MacroGetDirectory(self, title=_('Select a directory')):
+    def MacroGetDirectory(self, title=_('Select a directory'), default=''):
         r'''GetDirectory(title='Select a directory')
         
-        Displays a dialog box to select a directory, returning the name of the selected 
-        directory if the user clicked "OK", returning an empty string otherwise.
+        Displays a dialog box to select a directory, returning the name of the 
+        selected directory if the user clicked "OK", returning an empty string 
+        otherwise.  'default' is the dialog's starting directory.
         
         '''
-        dlg = wx.DirDialog(self, title, self.GetProposedPath(only='dir'))
+        initial_dir = default if os.path.isdir(default) else self.GetProposedPath(only='dir')
+        dlg = wx.DirDialog(self, title, initial_dir)
         ID = dlg.ShowModal()
         if ID==wx.ID_OK:
             dirname = dlg.GetPath()
@@ -14624,8 +14675,8 @@ class MainFrame(wxp.Frame):
         
         A not recognized type string, including '', defaults to 'text' type.
         
-        width: horizontal length of the dialog box.  The width is distributed uniformly 
-        between the entries in each line.
+        width: minimal horizontal length of the dialog box.  The width is distributed 
+        uniformly between the entries in each line.
         
         Return values: list of entered values if the user clicks "OK", empty list 
         otherwise.
@@ -14658,7 +14709,7 @@ class MainFrame(wxp.Frame):
                     key += 1
                     flag = (wxp.OPT_ELEM_FILE_OPEN if eachType == 'file_open' 
                             else wxp.OPT_ELEM_FILE_SAVE )
-                    startDirectory = os.path.dirname(eachDefault[0])
+                    startDirectory = eachDefault[0] if os.path.isdir(eachDefault[0]) else os.path.dirname(eachDefault[0])
                     if not os.path.isdir(startDirectory):
                         startDirectory = self.GetProposedPath(only='dir')
                     misc = dict(width=width / lineLen, 
@@ -14831,17 +14882,19 @@ class MainFrame(wxp.Frame):
         return script.filename
     
     @AsyncCallWrapper
-    def MacroSaveImage(self, filename='', framenum=None, index=None, quality=None):
-        r'''SaveImage(filename='', framenum=None, index=None, quality=None)
+    def MacroSaveImage(self, filename='', framenum=None, index=None, default='', quality=None):
+        r'''SaveImage(filename='', framenum=None, index=None, default='', quality=None)
         
         Saves the video frame specified by the integer 'framenum' as a file specified 
         by the string 'filename', where the video corresponds with the script at the 
         tab integer 'index'.  
         
-        If 'filename' is an empty string, then the user is prompted with a dialog box.  
-        If 'index' is None, then the currently selected tab is used.  A quality level 
-        (0-100) can be specified for JPEG output. If the quality is not specified, it 
-        gets prompted from a dialog window.
+        If 'filename' is an empty string, then the user is prompted with a dialog box 
+        with 'default' as the default filename; it can be just a directory or basename.  
+        If 'index' is None, then the currently selected tab is used.
+        
+        A quality level (0-100) can be specified for JPEG output. If the quality is 
+        not specified, it gets prompted from a dialog window.
         
         Returns True if the image was saved, False otherwise.
         
@@ -14854,7 +14907,7 @@ class MainFrame(wxp.Frame):
         if self.UpdateScriptAVI(script) is None:
             wx.MessageBox(_('Error loading the script'), _('Error'), style=wx.OK|wx.ICON_ERROR)
             return
-        return self.SaveCurrentImage(filename, index, quality=quality)
+        return self.SaveCurrentImage(filename, index, default=default, quality=quality)
     
     @AsyncCallWrapper
     def MacroGetVideoWidth(self, index=None):
