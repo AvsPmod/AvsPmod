@@ -4797,6 +4797,7 @@ class MainFrame(wxp.Frame):
         self.UpdateRecentFilesList()
         curdir = os.getcwd()
         self.reloadList = []
+        self.lastClosed = None
         if self.options['exitstatus']:
             self.IdleCall.append((wx.MessageBox, (_('A crash detected at the last running!'), _('Warning'), wx.OK|wx.ICON_EXCLAMATION, self), {})) 
         if self.options['startupsession'] or self.options['exitstatus']:
@@ -4816,7 +4817,6 @@ class MainFrame(wxp.Frame):
         #~ else:
             #~ newSliderWindow.Show()
             #~ self.ShowSliderWindow(self.currentScript)
-        self.lastClosed = None
         
         if self.previewWindowVisible:
             #~ self.HidePreviewWindow()
@@ -10435,7 +10435,9 @@ class MainFrame(wxp.Frame):
                     self.HidePreviewWindow()
                 else:
                     self.ShowVideoFrame(session['frame'], resize=resize)
-
+            # Set the last closed tab
+            if session.get('lastclosed'): # backward compatibility
+                self.lastClosed = session['lastclosed']
             # Set the bookmarks
             if 'bookmarks' in session:
                 if startup:
@@ -10536,6 +10538,7 @@ class MainFrame(wxp.Frame):
             else:
                 session['previewWindowVisible'] = previewvisible
             session['scripts'] = scripts
+            session['lastclosed'] = self.lastClosed
             session['bookmarks'] = self.GetBookmarkFrameList()
             session['bookmarkDict'] = self.bookmarkDict
             # Save info to filename
