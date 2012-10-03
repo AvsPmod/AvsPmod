@@ -8147,6 +8147,8 @@ class MainFrame(wxp.Frame):
         if ID == wx.ID_OK:
             self.options['textstyles'] = dlg.GetDict()
             self.options.update(dlg.GetDict2())
+            with open(self.optionsfilename, mode='wb') as f:
+                cPickle.dump(self.options, f, protocol=0)
             for index in xrange(self.scriptNotebook.GetPageCount()):
                 script = self.scriptNotebook.GetPage(index)
                 script.SetUserOptions()
@@ -8181,6 +8183,8 @@ class MainFrame(wxp.Frame):
         # Set the data
         if ID == wx.ID_OK:
             self.options['templates'] = dlg.GetDict()
+            with open(self.optionsfilename, mode='wb') as f:
+                cPickle.dump(self.options, f, protocol=0)
         dlg.Destroy()
 
     def OnMenuOptionsEnableLineByLineUpdate(self, event):
@@ -8218,7 +8222,6 @@ class MainFrame(wxp.Frame):
                 ctrl.Enable()
                 ctrl.Refresh()
     
-            
     def OnMenuOptionsMonospaceFont(self, event):
         id = event.GetId()
         menuItem = self.GetMenuBar().FindItemById(id)
@@ -8381,36 +8384,13 @@ class MainFrame(wxp.Frame):
                     menuItem.SetItemLabel(newLabel)
             self.options['shortcuts'] = shortcutList
             self.options['reservedshortcuts'] = reservedShortcuts
+            with open(self.optionsfilename, mode='wb') as f:
+                cPickle.dump(self.options, f, protocol=0)
             self.bindShortcutsToAllWindows()
         dlg.Destroy()
 
     def OnMenuOptionsSettings(self, event):
-        dlg = wxp.OptionsDialog(self, self.optionsDlgInfo, self.options)
-        ID = dlg.ShowModal()
-        # Set the data
-        if ID == wx.ID_OK:
-            self.options = dlg.GetDict()
-            for i in xrange(self.scriptNotebook.GetPageCount()):
-                script = self.scriptNotebook.GetPage(i)
-                script.SetUserOptions()
-                if not self.options['usetabimages']:
-                    self.scriptNotebook.SetPageImage(i, -1)            
-            self.SetProgramTitle()
-            style = wx.NO_BORDER
-            if self.options['multilinetab']:
-                style |= wx.NB_MULTILINE
-            if self.options['fixedwidthtab']:
-                style |= wx.NB_FIXEDWIDTH
-            self.scriptNotebook.SetWindowStyleFlag(style)
-            # a workaroud for multiline notebook issue
-            w, h = self.scriptNotebook.GetSize()
-            self.scriptNotebook.SetSize((w, h-1))
-            self.scriptNotebook.SetSize((w, h))
-            if self.options['periodicbackup']:
-                self.backupTimer.Start(self.options['periodicbackup'] * 60000)
-            elif self.backupTimer.IsRunning():
-                self.backupTimer.Stop()
-        dlg.Destroy()
+        self.ShowOptions()
 
     def OnMenuHelpAvisynth(self, event):
         helpfile = self.options['avisynthhelpfile']
@@ -9592,6 +9572,8 @@ class MainFrame(wxp.Frame):
             if info is not None:
                 info = self.options['filteroverrides'].get(lowername, info)
                 self.options['filteroverrides'][lowername] = (name, newCalltip, info[2])
+                with open(self.optionsfilename, mode='wb') as f:
+                    cPickle.dump(self.options, f, protocol=0)
                 self.defineScriptFilterInfo()
                 for i in xrange(self.scriptNotebook.GetPageCount()):
                     script = self.scriptNotebook.GetPage(i)
@@ -9599,17 +9581,7 @@ class MainFrame(wxp.Frame):
         dlg.Destroy()
 
     def OnSliderLabelSettings(self, event):
-        dlg = wxp.OptionsDialog(self, self.optionsDlgInfo, self.options, startPageIndex=5)
-        ID = dlg.ShowModal()
-        # Set the data
-        if ID == wx.ID_OK:
-            self.options = dlg.GetDict()
-            self.SetProgramTitle()
-            if self.options['periodicbackup']:
-                self.backupTimer.Start(self.options['periodicbackup'] * 60000)
-            elif self.backupTimer.IsRunning():
-                self.backupTimer.Stop()
-        dlg.Destroy()
+        self.ShowOptions(startPageIndex=5)
 
     def OnSliderLabelModifySliderProperties(self, event):
         ctrl = self.lastContextMenuWin
@@ -11737,6 +11709,8 @@ class MainFrame(wxp.Frame):
             self.options['filterremoved'] = dlg.GetRemovedSet()
             self.options['filterpresets'] = dlg.GetPresetDict()
             self.options['autcompletetypeflags'] = dlg.GetAutcompletetypeFlags()
+            with open(self.optionsfilename, mode='wb') as f:
+                cPickle.dump(self.options, f, protocol=0)
             self.defineScriptFilterInfo()
             for i in xrange(self.scriptNotebook.GetPageCount()):
                 script = self.scriptNotebook.GetPage(i)
@@ -14174,6 +14148,38 @@ class MainFrame(wxp.Frame):
         dlg.SetSizerAndFit(dlgsizer)
         dlg.ShowModal()
         self.options['dllnamewarning'] = not checkbox.IsChecked()
+        dlg.Destroy()
+    
+    def ShowOptions(self, startPageIndex=0):
+        '''Show the program settings dialog, save them, apply them if necessary and save to file'''
+        dlg = wxp.OptionsDialog(self, self.optionsDlgInfo, self.options, 
+                                startPageIndex=startPageIndex)
+        ID = dlg.ShowModal()
+        # Set the data
+        if ID == wx.ID_OK:
+            self.options = dlg.GetDict()
+            with open(self.optionsfilename, mode='wb') as f:
+                cPickle.dump(self.options, f, protocol=0)
+            for i in xrange(self.scriptNotebook.GetPageCount()):
+                script = self.scriptNotebook.GetPage(i)
+                script.SetUserOptions()
+                if not self.options['usetabimages']:
+                    self.scriptNotebook.SetPageImage(i, -1)            
+            self.SetProgramTitle()
+            style = wx.NO_BORDER
+            if self.options['multilinetab']:
+                style |= wx.NB_MULTILINE
+            if self.options['fixedwidthtab']:
+                style |= wx.NB_FIXEDWIDTH
+            self.scriptNotebook.SetWindowStyleFlag(style)
+            # a workaroud for multiline notebook issue
+            w, h = self.scriptNotebook.GetSize()
+            self.scriptNotebook.SetSize((w, h-1))
+            self.scriptNotebook.SetSize((w, h))
+            if self.options['periodicbackup']:
+                self.backupTimer.Start(self.options['periodicbackup'] * 60000)
+            elif self.backupTimer.IsRunning():
+                self.backupTimer.Stop()
         dlg.Destroy()
     
     def getMacrosLabelFromFile(self, filename):
