@@ -9445,6 +9445,7 @@ class MainFrame(wxp.Frame):
             ('%YUV', _('Pixel yuv color (cursor based)')),
             ('%CLR', _('Pixel color (auto-detect colorspace)')),
             ('%Z', _('Program zoom')),
+            ('%BM', _('Bookmark title')),
             ),
         ]
         for eachList in keyList:
