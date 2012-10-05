@@ -85,13 +85,10 @@ except OSError, err:
     app = wx.PySimpleApp()
     wx.MessageBox(message, 'OS Error', wx.OK|wx.ICON_ERROR)
     sys.exit(0)
-if os.name == 'nt':
-    try:
-        import pyavs_gdi as pyavs
-    except AttributeError:
-        import pyavs_avifile as pyavs
-else:
+try:
     import pyavs
+except AttributeError:
+    import pyavs_avifile as pyavs #  VFW, not longer supported
 from icons import AvsP_icon, next_icon, play_icon, skip_icon, spin_icon,\
                   ok_icon, smile_icon, question_icon, rectangle_icon,\
                   dragdrop_cursor

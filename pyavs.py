@@ -17,32 +17,25 @@
 #  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA, or visit
 #  http://www.gnu.org/copyleft/gpl.html .
 
-# pyavs - AVI functions via Avisynth in Python [platform-independent, wxPython only]
+# pyavs - AVI functions via Avisynth in Python
+# Drawing uses VFW on Windows and generical wxPython support on other platforms
 # Dependencies:
-#     Python (tested with v2.4.2)
+#     Python (tested on v2.6 and v2.7)
 # Scripts:
 #     avisynth.py (python Avisynth wrapper)
 
 import sys
 import os
 import ctypes
-import wx
 
 import avisynth
 
 try: _
 except NameError:
     def _(s): return s
-        
-avsfile=None
 
-def InitRoutines():
-    pass
+class AvsClipBase:
     
-def ExitRoutines():
-    pass
-
-class AvsClip:
     def __init__(self, script, filename='', env=None, fitHeight=None, fitWidth=None, oldFramecount=240, keepRaw=False, matrix=['auto', 'tv'], interlaced=False, swapuv=False):
         # Internal variables
         self.initialized = False
@@ -80,6 +73,7 @@ class AvsClip:
         self.HasVideo = None
         self.Colorspace = None
         self.ffms_info_cache = {}
+        
         # Create the Avisynth script clip
         if (env is not None) and not isinstance(env,avisynth.PIScriptEnvironment):
             raise TypeError("env must be a PIScriptEnvironment or None")
@@ -136,6 +130,7 @@ class AvsClip:
                     return
             if not self.env.GetVar("last").IsClip():#.AsClip(self.env)
                 self.env.SetVar("last",avisynth.AVS_Value(self.clip))
+        
         # Set the video properties
         self.vi=self.clip.GetVideoInfo()
         self.HasVideo = self.vi.HasVideo()
@@ -191,47 +186,29 @@ class AvsClip:
         self.HasAudio = self.vi.HasAudio()
         if keepRaw:
             self.clipRaw = self.clip
-            
-        # Initialize display-related variables.  RGB24 allows simpler memory copy operations.
-        try:
-            arg(self.clip)
-        except NameError:
-            arg = avisynth.AVS_Value(self.clip)
-        if self.IsYUV and swapuv:
-            try:
-                avsfile = self.env.Invoke("swapuv", arg, 0)
-                arg.Release()
-                self.clip = avsfile.AsClip(self.env)
-            except avisynth.AvisynthError, err:
-                return
-        arg = avisynth.AVS_Value(self.clip)
+        
+        # Initialize display-related variables
+        if not self.IsRGB:
+            if self.IsYUV and swapuv:
+                try:
+                    arg = avisynth.AVS_Value(self.clip)
+                    avsfile = self.env.Invoke("swapuv", arg, 0)
+                    arg.Release()
+                    self.clip = avsfile.AsClip(self.env)
+                except avisynth.AvisynthError, err:
+                    return
         if isinstance(matrix, basestring):
-            arg1 = avisynth.AVS_Value(matrix)
+            self.matrix = matrix
         else:
             matrix = matrix[:]
             if matrix[0] == 'auto':
                 matrix[0] = '709' if self.HeightActual > 576 else '601'
             matrix[1] = 'Rec' if matrix[1] == 'tv' else 'PC.'
-            arg1 = avisynth.AVS_Value(matrix[1] + matrix[0])
-        if not self.IsYV12:
-            interlaced = False
-        arg2 = avisynth.AVS_Value(interlaced)
-        args = avisynth.AVS_Value([arg, arg1, arg2])
-        try:
-            # Avisynth uses BGR ordering but we need RGB
-            rgb = self.env.Invoke("converttorgb24", args, 0)
-            r = self.env.Invoke("showred", rgb, 0)
-            b = self.env.Invoke("showblue", rgb, 0)
-            merge_args = avisynth.AVS_Value([b, rgb, r, avisynth.AVS_Value("rgb24")])
-            avsfile = self.env.Invoke("mergergb", merge_args, 0)
-            # Release intermediate clips
-            rgb.Release()
-            r.Release()
-            b.Release()
-            arg.Release()
-            self.clip = avsfile.AsClip(self.env)
-        except avisynth.AvisynthError, err:
+            self.matrix = matrix[1] + matrix[0]
+        self.interlaced = interlaced if not self.IsYV12 else False
+        if not self._ConvertToRGB():
             return
+        
         # Add a resize...
         if fitHeight is not None and self.Height != 0:
             fitWidthTemp = int(round(fitHeight *  (self.Width/float(self.Height))))
@@ -254,70 +231,19 @@ class AvsClip:
                     return
                 # Set internal width and height variables appropriately
                 self.Width, self.Height = fitWidth, fitHeight
-        # Initialization complete.
-        self.initialized = True
-        if __debug__:
-            print 'Avisynth clip created successfully'
-        
+        return True
+    
     def __del__(self):
         if self.initialized:
             self.clip = None
             self.clipRaw = None
             if __debug__:
                 print "Deleting allocated video memory..."
-            
-    def _GetFrame(self, frame):
-        if self.initialized:
-            if self.current_frame == frame:
-                return True
-            if frame < 0:
-                frame = 0
-            if frame >= self.Framecount:
-                frame = self.Framecount-1
-            self.current_frame = frame
-            src=self.clip.GetFrame(frame)
-            self.pBits = src.GetReadPtr()
-            #~ try:
-                #~ src=self.clip.GetFrame(frame)
-            #~ except OSError:
-                #~ return False
-            # DrawPitch is the pitch of the RGB24 image for drawing.
-            # pitch is the pitch of the actual raw image from clipRaw.
-            self.DrawPitch=src.GetPitch()
-            if self.clipRaw is not None:
-                frame=self.clipRaw.GetFrame(frame)
-                self.pitch = frame.GetPitch()
-                self.ptrY = frame.GetReadPtr(plane=avisynth.PLANAR_Y)
-                self.ptrU = frame.GetReadPtr(plane=avisynth.PLANAR_U)
-                self.ptrV = frame.GetReadPtr(plane=avisynth.PLANAR_V)
-            return True
-        else:
-            return False
-            
-    def DrawFrame(self, frame, dc=None, offset=(0,0), size=None):
-        if not self._GetFrame(frame):
-            return
-        self.current_frame
-        if dc:
-            if size is None:
-                w = self.Width
-                h = self.Height
-            else:
-                w, h = size
-            buf = ctypes.create_string_buffer(h * w * 3)
-            # Use ctypes.memmove to blit the Avisynth VFB line-by-line
-            read_addr = ctypes.addressof(self.pBits.contents) + (h - 1) * self.DrawPitch
-            write_addr = ctypes.addressof(buf)
-            P_UBYTE = ctypes.POINTER(ctypes.c_ubyte)
-            for i in range(h):
-                read_ptr = ctypes.cast(read_addr, P_UBYTE)
-                write_ptr = ctypes.cast(write_addr, P_UBYTE)
-                ctypes.memmove(write_ptr, read_ptr, w * 3)
-                read_addr -= self.DrawPitch
-                write_addr += w * 3
-            bmp = wx.BitmapFromBuffer(w, h, buf)
-            dc.DrawBitmap(bmp, 0, 0)
-        
+    
+    def _ConvertToRGB(self):
+        '''Convert to RGB for display. Return True if successful'''
+        pass
+    
     def GetPixelYUV(self, x, y):
         if self.clipRaw is not None:
             if self.IsYV12:
@@ -388,8 +314,337 @@ class AvsClip:
         
     def IsErrorClip(self):
         return self.error_message is not None
+    
+    def _x_SaveFrame(self, filename, frame=None):
+        # Get the frame to display
+        if frame == None:
+            if self.pInfo == None or self.pBits == None:
+                self._GetFrame(0)
+        else:
+            self._GetFrame(frame)
+        if isinstance(filename, unicode):
+            filename = filename.encode(sys.getfilesystemencoding())
+        buffer = ctypes.create_string_buffer(filename)
+        hFile = CreateFile(
+                ctypes.byref(buffer),
+                #filename,
+                GENERIC_WRITE,
+                0,
+                NULL,
+                CREATE_ALWAYS,
+                FILE_ATTRIBUTE_NORMAL,
+                NULL
+                )
+        # Write the bitmap file header
+        fileheadersize = 14
+        bmpheadersize = 40
+        #~ extrabytes = (4 - self.bmih.biWidth % 4) % 4
+        #~ widthPadded = self.bmih.biWidth + extrabytes
+        #~ bitmapsize = (widthPadded * self.bmih.biHeight * self.bmih.biBitCount) / 8
+        widthPadded = self.bmih.biWidth
+        self.bmih.biWidth = self.Width
+        src_pitch = widthPadded * self.bmih.biBitCount / 8
+        dst_pitch = self.bmih.biWidth * self.bmih.biBitCount / 8
+        bfType = WORD(0x4d42)
+        bfSize = DWORD(fileheadersize + bmpheadersize + self.bmih.biSizeImage)
+        bfReserved1 = WORD(0)
+        bfReserved2 = WORD(0)
+        bfOffBits = DWORD(fileheadersize + bmpheadersize)
+        dwBytesWritten = DWORD()
+        WriteFile(
+                hFile,
+                ctypes.byref(bfType),
+                2,
+                ctypes.byref(dwBytesWritten),
+                NULL
+                )
+        WriteFile(
+                hFile,
+                ctypes.byref(bfSize),
+                4,
+                ctypes.byref(dwBytesWritten),
+                NULL
+                )
+        WriteFile(
+                hFile,
+                ctypes.byref(bfReserved1),
+                2,
+                ctypes.byref(dwBytesWritten),
+                NULL
+                )
+        WriteFile(
+                hFile,
+                ctypes.byref(bfReserved2),
+                2,
+                ctypes.byref(dwBytesWritten),
+                NULL
+                )
+        WriteFile(
+                hFile,
+                ctypes.byref(bfOffBits),
+                4,
+                ctypes.byref(dwBytesWritten),
+                NULL
+                )
+        # Write the bitmap info header and (unused) color table
+        WriteFile(
+                hFile,
+                self.pInfo,
+                bmpheadersize, #(self.bmih.biSize + self.bmih.biClrUsed * ctypes.sizeof(RGBQUAD)), # + bitmapsize),
+                ctypes.byref(dwBytesWritten),
+                NULL
+                )
+        # Write the bitmap bits
+        for i in range(self.bmih.biHeight):
+            WriteFile(
+                    hFile,
+                    avisynth.ByRefAt(self.pBits, src_pitch*i),
+                    dst_pitch,
+                    ctypes.byref(dwBytesWritten),
+                    NULL
+                    )
+        CloseHandle(hFile)
+        self.bmih.biWidth = widthPadded
+
+
+# on Windows is faster to use DrawDib (VFW)
+if os.name == 'nt':
+    
+    # Define C types and constants
+    DWORD = ctypes.c_ulong
+    UINT = ctypes.c_uint
+    WORD = ctypes.c_ushort
+    LONG = ctypes.c_long
+    BYTE = ctypes.c_byte
+    CHAR = ctypes.c_char
+    HANDLE = ctypes.c_ulong
+    NULL = 0
+    OF_READ = UINT(0)
+    BI_RGB = 0
+    GENERIC_WRITE = 0x40000000L
+    CREATE_ALWAYS = 2
+    FILE_ATTRIBUTE_NORMAL  = 0x00000080
+    
+    # Define C structures
+    class RECT(ctypes.Structure):
+        _fields_ = [("left", LONG),
+                    ("top", LONG),
+                    ("right", LONG),
+                    ("bottom", LONG)]
+    
+    class BITMAPINFOHEADER(ctypes.Structure):
+        _fields_ = [("biSize",  DWORD),
+                    ("biWidth",   LONG),
+                    ("biHeight",   LONG),
+                    ("biPlanes",   WORD),
+                    ("biBitCount",   WORD),
+                    ("biCompression",  DWORD),
+                    ("biSizeImage",  DWORD),
+                    ("biXPelsPerMeter",   LONG),
+                    ("biYPelsPerMeter",   LONG),
+                    ("biClrUsed",  DWORD),
+                    ("biClrImportant",  DWORD)]
+    
+    class BITMAPFILEHEADER(ctypes.Structure):
+        _fields_ = [
+            ("bfType",    WORD),
+            ("bfSize",   DWORD),
+            ("bfReserved1",    WORD),
+            ("bfReserved2",    WORD),
+            ("bfOffBits",   DWORD)]
+                        
+    # Define C functions
+    
+    CreateFile = ctypes.windll.kernel32.CreateFileA
+    WriteFile = ctypes.windll.kernel32.WriteFile
+    CloseHandle = ctypes.windll.kernel32.CloseHandle
+    
+    DrawDibOpen = ctypes.windll.msvfw32.DrawDibOpen
+    DrawDibClose = ctypes.windll.msvfw32.DrawDibClose
+    DrawDibDraw = ctypes.windll.msvfw32.DrawDibDraw
+    handleDib = [None]
+    
+    def InitRoutines():
+        handleDib[0] = DrawDibOpen()
+    
+    def ExitRoutines():
+        DrawDibClose(handleDib[0])
+    
+    
+    class AvsClip(AvsClipBase):
         
+        def __init__(self, *args, **kwargs):
+            
+            if not AvsClipBase.__init__(self, *args, **kwargs):
+                return
+            
+            # Prepare info header
+            self.bmih = BITMAPINFOHEADER()
+            avisynth.CreateBitmapInfoHeader(self.clip, self.bmih)
+            self.pInfo = ctypes.pointer(self.bmih)
+            #~ self.BUF=ctypes.c_ubyte*self.bmih.biSizeImage
+            #~ self.pBits=self.BUF()
+            
+            self.initialized = True
+            if __debug__:
+                print 'AviSynth clip created successfully'
         
+        def _ConvertToRGB(self):
+            if not self.IsRGB:
+                arg = avisynth.AVS_Value(self.clip)
+                arg1 = avisynth.AVS_Value(self.matrix)
+                arg2 = avisynth.AVS_Value(self.interlaced)
+                args = avisynth.AVS_Value([arg, arg1, arg2])
+                try:
+                    avsfile = self.env.Invoke("ConvertToRGB24", args, 0)
+                    arg.Release()
+                    self.clip = avsfile.AsClip(self.env)
+                except avisynth.AvisynthError, err:
+                    return False
+            return True
+        
+        def _GetFrame(self, frame):
+            if self.initialized:
+                if self.current_frame == frame:
+                    return True
+                if frame < 0:
+                    frame = 0
+                if frame >= self.Framecount:
+                    frame = self.Framecount-1
+                self.current_frame = frame
+                src=self.clip.GetFrame(frame)
+                self.pBits = src.GetReadPtr()
+                #~ try:
+                    #~ src=self.clip.GetFrame(frame)
+                #~ except OSError:
+                    #~ return False
+                src_pitch=src.GetPitch()
+                self.bmih.biWidth = src_pitch*8/self.bmih.biBitCount
+                #~ row_size=src.GetRowSize()
+                #~ height=self.bmih.biHeight
+                #~ dst_pitch=self.bmih.biWidth*self.bmih.biBitCount/8
+                #~ self.env.BitBlt(self.pBits,dst_pitch,src.GetReadPtr(),src_pitch,row_size,height)
+                if self.clipRaw is not None:
+                    frame=self.clipRaw.GetFrame(frame)
+                    self.pitch = frame.GetPitch()
+                    self.ptrY = frame.GetReadPtr(plane=avisynth.PLANAR_Y)
+                    self.ptrU = frame.GetReadPtr(plane=avisynth.PLANAR_U)
+                    self.ptrV = frame.GetReadPtr(plane=avisynth.PLANAR_V)
+                return True
+            else:
+                return False
+        
+        def DrawFrame(self, frame, dc=None, offset=(0,0), size=None):
+            if not self._GetFrame(frame):
+                return
+            if dc:
+                hdc = dc.GetHDC()
+                if size is None:
+                    w = self.Width
+                    h = self.Height
+                else:
+                    w, h = size 
+                DrawDibDraw(handleDib[0], hdc, offset[0], offset[1], w, h, 
+                            self.pInfo, self.pBits, 0, 0, w, h, 0)
+
+
+# Use generical wxPython drawing support on other platforms
+else:
+    
+    import wx
+    
+    def InitRoutines():
+        pass
+    
+    def ExitRoutines():
+        pass
+    
+    
+    class AvsClip(AvsClipBase):
+        
+        def __init__(self, *args, **kwargs):
+            
+            if not AvsClipBase.__init__(self, *args, **kwargs):
+                return
+            
+            self.initialized = True
+            if __debug__:
+                print 'AviSynth clip created successfully'
+        
+        def _ConvertToRGB(self):
+            # There's issues with RGB32, we convert to RGB24 
+            # Avisynth uses BGR ordering but we need RGB
+            try:
+                clip = avisynth.AVS_Value(self.clip)
+                if not self.IsRGB24:
+                    arg1 = avisynth.AVS_Value(self.matrix)
+                    arg2 = avisynth.AVS_Value(self.interlaced)
+                    args = avisynth.AVS_Value([clip, arg1, arg2])
+                    clip(self.env.Invoke("ConvertToRGB24", args, 0))
+                r = self.env.Invoke("ShowRed", clip, 0)
+                b = self.env.Invoke("ShowBlue", clip, 0)
+                merge_args = avisynth.AVS_Value([b, clip, r, avisynth.AVS_Value("RGB24")])
+                avsfile = self.env.Invoke("MergeRGB", merge_args, 0)
+                r.Release()
+                b.Release()
+                clip.Release()
+                self.clip = avsfile.AsClip(self.env)
+                return True
+            except avisynth.AvisynthError, err:
+                return False
+        
+        def _GetFrame(self, frame):
+            if self.initialized:
+                if self.current_frame == frame:
+                    return True
+                if frame < 0:
+                    frame = 0
+                if frame >= self.Framecount:
+                    frame = self.Framecount-1
+                self.current_frame = frame
+                src=self.clip.GetFrame(frame)
+                self.pBits = src.GetReadPtr()
+                #~ try:
+                    #~ src=self.clip.GetFrame(frame)
+                #~ except OSError:
+                    #~ return False
+                # DrawPitch is the pitch of the RGB24 image for drawing.
+                # pitch is the pitch of the actual raw image from clipRaw.
+                self.DrawPitch=src.GetPitch()
+                if self.clipRaw is not None:
+                    frame=self.clipRaw.GetFrame(frame)
+                    self.pitch = frame.GetPitch()
+                    self.ptrY = frame.GetReadPtr(plane=avisynth.PLANAR_Y)
+                    self.ptrU = frame.GetReadPtr(plane=avisynth.PLANAR_U)
+                    self.ptrV = frame.GetReadPtr(plane=avisynth.PLANAR_V)
+                return True
+            else:
+                return False
+        
+        def DrawFrame(self, frame, dc=None, offset=(0,0), size=None):
+            if not self._GetFrame(frame):
+                return
+            if dc:
+                if size is None:
+                    w = self.Width
+                    h = self.Height
+                else:
+                    w, h = size
+                buf = ctypes.create_string_buffer(h * w * 3)
+                # Use ctypes.memmove to blit the Avisynth VFB line-by-line
+                read_addr = ctypes.addressof(self.pBits.contents) + (h - 1) * self.DrawPitch
+                write_addr = ctypes.addressof(buf)
+                P_UBYTE = ctypes.POINTER(ctypes.c_ubyte)
+                for i in range(h):
+                    read_ptr = ctypes.cast(read_addr, P_UBYTE)
+                    write_ptr = ctypes.cast(write_addr, P_UBYTE)
+                    ctypes.memmove(write_ptr, read_ptr, w * 3)
+                    read_addr -= self.DrawPitch
+                    write_addr += w * 3
+                bmp = wx.BitmapFromBuffer(w, h, buf)
+                dc.DrawBitmap(bmp, 0, 0)
+
+
 if __name__ == '__main__':
     AVI = AvsClip('Version().ConvertToYV12()', 'example.avs')
     if AVI.initialized:
@@ -420,6 +675,7 @@ if __name__ == '__main__':
         print 'GetParity =', AVI.GetParity 
         print 'HasAudio =', AVI.HasAudio
         print 'HasVideo =', AVI.HasVideo
+        #AVI._x_SaveFrame("C:\\workspace\\test_file.bmp", 100)
     else:
         print AVI.error_message
     AVI = None
@@ -438,6 +694,7 @@ if __name__ == '__main__':
     env = avisynth.avs_create_script_environment(3)
     r=env.Invoke("eval",avisynth.AVS_Value(s),0)
     AVI = AvsClip(r.AsClip(env),env=env)
+    #AVI._x_SaveFrame("C:\\workspace\\test_file2.bmp", 100)
     AVI._GetFrame(100)
     AVI = None
     env.Release()
