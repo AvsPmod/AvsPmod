@@ -215,7 +215,7 @@ class AvsClipBase:
                 matrix[0] = '709' if self.HeightActual > 576 else '601'
             matrix[1] = 'Rec' if matrix[1] == 'tv' else 'PC.'
             self.matrix = matrix[1] + matrix[0]
-        self.interlaced = interlaced if not self.IsYV12 else False
+        self.interlaced = interlaced if self.IsYV12 else False
         if not self._ConvertToRGB():
             return
         
