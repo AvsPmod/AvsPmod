@@ -4883,6 +4883,9 @@ class MainFrame(wxp.Frame):
         self.print_wrap = True
         self.print_zoom = False
         
+        # Other options
+        self.mouse_wheel_rotation = 0
+        
         # Display the program
         if self.separatevideowindow:
             self.Show()
@@ -6592,6 +6595,7 @@ class MainFrame(wxp.Frame):
         nb.Bind(wx.EVT_LEFT_DCLICK, self.OnLeftDClickNotebook)
         nb.Bind(wx.EVT_RIGHT_UP, self.OnRightClickNotebook)
         nb.Bind(wx.EVT_MOTION, self.OnMouseMotionNotebook)
+        nb.Bind(wx.EVT_MOUSEWHEEL, self.OnMouseWheelNotebook)
         nb.Bind(wx.EVT_FIND, AvsStyledTextCtrl.OnFindPressed)
         nb.Bind(wx.EVT_FIND_NEXT, AvsStyledTextCtrl.OnFindPressed)
         nb.Bind(wx.EVT_FIND_REPLACE, AvsStyledTextCtrl.OnReplacePressed)
@@ -8936,6 +8940,19 @@ class MainFrame(wxp.Frame):
         else:
             self.scriptNotebook.SetCursor(wx.StockCursor(wx.CURSOR_DEFAULT))
 
+    
+    def OnMouseWheelNotebook(self, event):
+        '''Rotate between tabs'''
+        rotation = event.GetWheelRotation()
+        if self.mouse_wheel_rotation * rotation < 0:
+            self.mouse_wheel_rotation = rotation
+        else:
+            self.mouse_wheel_rotation += rotation
+        if abs(self.mouse_wheel_rotation) >= event.GetWheelDelta():
+            inc = 1 if self.mouse_wheel_rotation > 0 else -1 
+            self.SelectTab(inc=inc)
+            self.mouse_wheel_rotation = 0
+    
     def OnLeftDClickWindow(self, event):
         x, y = event.GetPosition()
         #~ if y < self.mainSplitter.GetMinimumPaneSize():
