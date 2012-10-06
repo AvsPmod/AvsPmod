@@ -8744,8 +8744,7 @@ class MainFrame(wxp.Frame):
     def OnNotebookPageChanged(self, event):
         # Get the newly selected script
         script = self.scriptNotebook.GetPage(event.GetSelection())
-        if not script.previewtxt:
-            script.Colourise(0, script.GetTextLength())
+
         # Set some related key variables (affects other functions)
         self.currentScript = script
         self.refreshAVI = True
@@ -8927,7 +8926,7 @@ class MainFrame(wxp.Frame):
                 pass
                 
     def OnMouseMotionNotebook(self, event):
-        if event.Dragging():
+        if event.Dragging() and event.LeftIsDown():
             self.scriptNotebook.dragging = True
             if self.titleEntry:
                 self.scriptNotebook.SetFocus()
@@ -9046,10 +9045,18 @@ class MainFrame(wxp.Frame):
     def OnMouseWheelVideoWindow(self, event):
         if not self.options['enabletabscrolling']:
             return
-        if event.GetWheelRotation() > 0:
-            delta = -1
+        rotation = event.GetWheelRotation()
+        if self.mouse_wheel_rotation * rotation < 0:
+            self.mouse_wheel_rotation = rotation
         else:
+            self.mouse_wheel_rotation += rotation
+        if not abs(self.mouse_wheel_rotation) >= event.GetWheelDelta():
+            return
+        self.mouse_wheel_rotation = 0
+        if rotation > 0:
             delta = 1
+        else:
+            delta = -1
         # Create list of indices to loop through
         index = self.scriptNotebook.GetSelection()
         r = range(self.scriptNotebook.GetPageCount())
@@ -12355,12 +12362,12 @@ class MainFrame(wxp.Frame):
     def UpdateScriptAVI(self, script=None, forceRefresh=False, prompt=True):
         if not script:
             script = self.currentScript
-            scriptIndex = self.scriptNotebook.GetSelection()
+            index = self.scriptNotebook.GetSelection()
         else:
-            scriptIndex = 0
+            index = 0
             for index in xrange(self.scriptNotebook.GetPageCount()):
                 if script == self.scriptNotebook.GetPage(index):
-                    scriptIndex = index
+                    break
         updateDisplayClip = False
         if script.AVI is None:
             self.firstToggled = forceRefresh = True
@@ -12390,6 +12397,8 @@ class MainFrame(wxp.Frame):
         boolNewAVI = False
         if self.refreshAVI and self.options['refreshpreview'] or forceRefresh:
             # Compare scripts including style, but excluding comment/newline/space
+            if not script.previewtxt:
+                script.Colourise(0, script.GetTextLength())
             scripttxt = script.GetStyledText(0, script.GetTextLength())
             styledtxt = []
             for i in range(0, len(scripttxt), 2):
@@ -12411,7 +12420,7 @@ class MainFrame(wxp.Frame):
                 #~ previewname = self.MakePreviewScriptFile(script)
                 #~ AVI = PyAVIFile(previewname)
                 sDirname = os.path.dirname(script.filename)
-                sBasename = self.scriptNotebook.GetPageText(scriptIndex).lstrip('* ')
+                sBasename = self.scriptNotebook.GetPageText(index).lstrip('* ')
                 filename = os.path.join(sDirname, sBasename)
                 if script.AVI is None:
                     oldFramecount = 240
@@ -12426,7 +12435,11 @@ class MainFrame(wxp.Frame):
                 else:
                     wx.BeginBusyCursor()
                     script.AVI = None
-                    script.AVI = pyavs.AvsClip(self.getCleanText(scripttxt), filename, interface=self.avisynthVersion[2], fitHeight=fitHeight, fitWidth=fitWidth, oldFramecount=oldFramecount, keepRaw=self.showVideoPixelAvisynth, matrix=self.matrix, interlaced=self.interlaced, swapuv=self.swapuv)
+                    script.AVI = pyavs.AvsClip(
+                        self.getCleanText(scripttxt), filename, interface=self.avisynthVersion[2], 
+                        fitHeight=fitHeight, fitWidth=fitWidth, oldFramecount=oldFramecount, 
+                        keepRaw=self.showVideoPixelAvisynth, matrix=self.matrix, interlaced=self.interlaced, 
+                        swapuv=self.swapuv)
                     wx.EndBusyCursor()
                 os.chdir(cwd)
                 if not script.AVI.initialized:
