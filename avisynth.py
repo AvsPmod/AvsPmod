@@ -10,7 +10,9 @@ else:
     avidll = ctypes.CDLL("libavxsynth.so")
     FUNCTYPE = ctypes.CFUNCTYPE
 
-#constants
+# Interface: 3 + 5's new colorspaces
+
+# Constants
 PLANAR_Y=1<<0
 PLANAR_U=1<<1
 PLANAR_V=1<<2
@@ -18,6 +20,14 @@ PLANAR_ALIGNED=1<<3
 PLANAR_Y_ALIGNED=PLANAR_Y|PLANAR_ALIGNED
 PLANAR_U_ALIGNED=PLANAR_U|PLANAR_ALIGNED
 PLANAR_V_ALIGNED=PLANAR_V|PLANAR_ALIGNED
+PLANAR_A=1<<4
+PLANAR_R=1<<5
+PLANAR_G=1<<6
+PLANAR_B=1<<7
+PLANAR_A_ALIGNED=PLANAR_A|PLANAR_ALIGNED
+PLANAR_R_ALIGNED=PLANAR_R|PLANAR_ALIGNED
+PLANAR_G_ALIGNED=PLANAR_G|PLANAR_ALIGNED
+PLANAR_B_ALIGNED=PLANAR_B|PLANAR_ALIGNED
 
 SAMPLE_INT8  = 1<<0
 SAMPLE_INT16 = 1<<1
@@ -25,11 +35,38 @@ SAMPLE_INT24 = 1<<2
 SAMPLE_INT32 = 1<<3
 SAMPLE_FLOAT = 1<<4
 
+# Colorspace properties
 CS_BGR = 1<<28
 CS_YUV = 1<<29
 CS_INTERLEAVED = 1<<30
 CS_PLANAR = 1<<31
 
+CS_SHIFT_SUB_WIDTH   = 0
+CS_SHIFT_SUB_HEIGHT  = 1 << 3
+CS_SHIFT_SAMPLE_BITS = 1 << 4
+
+CS_SUB_WIDTH_MASK    = 7 << CS_SHIFT_SUB_WIDTH
+CS_SUB_WIDTH_1       = 3 << CS_SHIFT_SUB_WIDTH # YV24
+CS_SUB_WIDTH_2       = 0 << CS_SHIFT_SUB_WIDTH # YV12, I420, YV16
+CS_SUB_WIDTH_4       = 1 << CS_SHIFT_SUB_WIDTH # YUV9, YV411
+
+CS_VPLANEFIRST       = 1 << 3 # YV12, YV16, YV24, YV411, YUV9
+CS_UPLANEFIRST       = 1 << 4 # I420
+
+CS_SUB_HEIGHT_MASK   = 7 << CS_SHIFT_SUB_HEIGHT
+CS_SUB_HEIGHT_1      = 3 << CS_SHIFT_SUB_HEIGHT # YV16, YV24, YV411
+CS_SUB_HEIGHT_2      = 0 << CS_SHIFT_SUB_HEIGHT # YV12, I420
+CS_SUB_HEIGHT_4      = 1 << CS_SHIFT_SUB_HEIGHT # YUV9
+
+CS_SAMPLE_BITS_MASK  = 7 << CS_SHIFT_SAMPLE_BITS
+CS_SAMPLE_BITS_8     = 0 << CS_SHIFT_SAMPLE_BITS
+CS_SAMPLE_BITS_16    = 1 << CS_SHIFT_SAMPLE_BITS
+CS_SAMPLE_BITS_32    = 2 << CS_SHIFT_SAMPLE_BITS
+
+CS_PLANAR_MASK       = CS_PLANAR | CS_INTERLEAVED | CS_YUV | CS_BGR | CS_SAMPLE_BITS_MASK | CS_SUB_HEIGHT_MASK | CS_SUB_WIDTH_MASK
+CS_PLANAR_FILTER     = ~( CS_VPLANEFIRST | CS_UPLANEFIRST )
+
+# Specific colorformats
 CS_UNKNOWN = 0,
 CS_BGR24 = 1<<0 | CS_BGR | CS_INTERLEAVED
 CS_BGR32 = 1<<1 | CS_BGR | CS_INTERLEAVED
@@ -37,6 +74,16 @@ CS_YUY2 = 1<<2 | CS_YUV | CS_INTERLEAVED
 CS_YV12 = 1<<3 | CS_YUV | CS_PLANAR  # y-v-u, planar
 CS_I420 = 1<<4 | CS_YUV | CS_PLANAR  # y-u-v, planar
 CS_IYUV = 1<<4 | CS_YUV | CS_PLANAR
+CS_RAW32 = 1<<5 | CS_INTERLEAVED
+
+CS_YV24  = CS_PLANAR | CS_YUV | CS_SAMPLE_BITS_8 | CS_VPLANEFIRST | CS_SUB_HEIGHT_1 | CS_SUB_WIDTH_1  # YVU 4:4:4 planar
+CS_YV16  = CS_PLANAR | CS_YUV | CS_SAMPLE_BITS_8 | CS_VPLANEFIRST | CS_SUB_HEIGHT_1 | CS_SUB_WIDTH_2  # YVU 4:2:2 planar
+CS_YV12  = CS_PLANAR | CS_YUV | CS_SAMPLE_BITS_8 | CS_VPLANEFIRST | CS_SUB_HEIGHT_2 | CS_SUB_WIDTH_2  # YVU 4:2:0 planar
+CS_I420  = CS_PLANAR | CS_YUV | CS_SAMPLE_BITS_8 | CS_UPLANEFIRST | CS_SUB_HEIGHT_2 | CS_SUB_WIDTH_2  # YUV 4:2:0 planar
+CS_IYUV  = CS_I420,
+CS_YV411 = CS_PLANAR | CS_YUV | CS_SAMPLE_BITS_8 | CS_VPLANEFIRST | CS_SUB_HEIGHT_1 | CS_SUB_WIDTH_4  # YVU 4:1:1 planar
+CS_YUV9  = CS_PLANAR | CS_YUV | CS_SAMPLE_BITS_8 | CS_VPLANEFIRST | CS_SUB_HEIGHT_4 | CS_SUB_WIDTH_4  # YVU 4:1:0 planar
+CS_Y8    = CS_PLANAR | CS_INTERLEAVED | CS_YUV | CS_SAMPLE_BITS_8                                     # Y   4:0:0 planar
 
 IT_BFF = 1<<0
 IT_TFF = 1<<1
@@ -60,7 +107,12 @@ FILTER_OUTPUT_TYPE_DIFFERENT=4
 
 CACHE_NOTHING=0
 CACHE_RANGE=1
+CACHE_ALL=2
+CACHE_AUDIO=3
+CACHE_AUDIO_NONE=4
+CACHE_AUDIO_AUTO=5
 
+# CPU flags               slowest CPU to support extension
 CPU_FORCE        = 0x01   # N/A
 CPU_FPU          = 0x02   # 386/486DX
 CPU_MMX          = 0x04   # P55C, K6, PII
@@ -70,8 +122,13 @@ CPU_SSE2         = 0x20   # PIV, Hammer
 CPU_3DNOW        = 0x40   # K6-2
 CPU_3DNOW_EXT    = 0x80   # Athlon
 CPU_X86_64       = 0xA0   # Hammer (note: equiv. to 3DNow + SSE2, 
+                          # which only Hammer will have anyway)
+CPUF_SSE3       = 0x100   #  PIV+, K8 Venice
+CPUF_SSSE3      = 0x200   #  Core 2
+CPUF_SSE4       = 0x400   #  Penryn, Wolfdale, Yorkfield
+CPUF_SSE4_1     = 0x400
+CPUF_SSE4_2     = 0x800   #  Nehalem
 
-  
 FRAME_ALIGN=16
 
 
@@ -191,12 +248,23 @@ class PVideoInfo:
     def IsRGB32(self): return (self.pixel_type&CS_BGR32)==CS_BGR32
     def IsYUV(self): return self.pixel_type&CS_YUV!=0
     def IsYUY2(self): return (self.pixel_type&CS_YUY2)==CS_YUY2
+    def IsYV24(self):
+        return (self.pixel_type&CS_PLANAR_MASK)==(CS_YV24&CS_PLANAR_FILTER)
+    def IsYV16(self):
+        return (self.pixel_type&CS_PLANAR_MASK)==(CS_YV16&CS_PLANAR_FILTER)
     def IsYV12(self):
-        return ((self.pixel_type&CS_YV12)==CS_YV12) or \
-    ((self.pixel_type&CS_I420)==CS_I420)
-    def IsColorSpace(self,c_space): return (self.pixel_type&c_space)==c_space
+        return (self.pixel_type&CS_PLANAR_MASK)==(CS_YV12&CS_PLANAR_FILTER)
+    def IsYV411(self):
+        return (self.pixel_type&CS_PLANAR_MASK)==(CS_YV411&CS_PLANAR_FILTER)
+    def IsY8(self):
+        return (self.pixel_type&CS_PLANAR_MASK)==(CS_Y8&CS_PLANAR_FILTER)
     def IsProperty(self,Property): return (self.pixel_type&Property)==Property
     def IsPlanar(self): return self.pixel_type&CS_PLANAR!=0
+    def IsColorSpace(self,c_space):
+        if self.IsPlanar():
+            return (self.pixel_type&CS_PLANAR_MASK)==(c_space&CS_PLANAR_FILTER)
+        else:
+            return (self.pixel_type&c_space)==c_space
     def IsFieldBased(self): return self.image_type&IT_FIELDBASED!=0
     def IsParityKnown(self): return (self.image_type&IT_FIELDBASED!=0) and \
         (self.image_type&(IT_BFF|IT_TFF)!=0)
@@ -206,7 +274,11 @@ class PVideoInfo:
         if self.IsRGB24():return 24
         elif self.IsRGB32():return 32
         elif self.IsYUY2():return 16
+        elif self.IsYV24():return 24
+        elif self.IsYV16():return 16
         elif self.IsYV12():return 12
+        elif self.IsY411():return 12
+        elif self.IsY8():return 8
         else :return 0
     def BytesFromPixels(self,pixels):return pixels*(self.BitsPerPixel()>>3)
     def RowSize(self): return self.BytesFromPixels(self.width)

@@ -36,9 +36,10 @@ except NameError:
 
 class AvsClipBase:
     
-    def __init__(self, script, filename='', env=None, fitHeight=None, fitWidth=None, oldFramecount=240, keepRaw=False, matrix=['auto', 'tv'], interlaced=False, swapuv=False):
+    def __init__(self, script, filename='', env=None, interface=3, fitHeight=None, fitWidth=None, oldFramecount=240, keepRaw=False, matrix=['auto', 'tv'], interlaced=False, swapuv=False):
         # Internal variables
         self.initialized = False
+        self.interface = interface
         self.error_message = None
         self.current_frame = -1
         self.pBits = None
@@ -61,9 +62,13 @@ class AvsClipBase:
         self.IsRGB = None
         self.IsRGB24 = None
         self.IsRGB32 = None
-        self.IsYUY2 = None
-        self.IsYV12 = None
         self.IsYUV = None
+        self.IsYUY2 = None
+        self.IsYV24 = None
+        self.IsYV16 = None
+        self.IsYV12 = None
+        self.IsYV411 = None
+        self.IsY8 = None
         self.IsPlanar = None
         self.IsInterleaved = None
         self.IsFieldBased = None
@@ -81,7 +86,7 @@ class AvsClipBase:
             if isinstance(script,avisynth.PClip):
                 raise ValueError("env must be defined when providing a clip") 
             try:
-                self.env=avisynth.avs_create_script_environment(3)
+                self.env=avisynth.avs_create_script_environment(self.interface)
             except OSError:
                 return
         if isinstance(script,avisynth.PClip):
@@ -174,10 +179,15 @@ class AvsClipBase:
         self.IsRGB = self.vi.IsRGB()
         self.IsRGB24 = self.vi.IsRGB24()
         self.IsRGB32 = self.vi.IsRGB32()
-        self.IsYUY2 = self.vi.IsYUY2()
-        self.IsYV12 = self.vi.IsYV12()
         self.IsYUV = self.vi.IsYUV()
-        self.Colorspace = 'RGB24'*self.IsRGB24 + 'RGB32'*self.IsRGB32 + 'YUY2'*self.IsYUY2 + 'YV12'*self.IsYV12
+        self.IsYUY2 = self.vi.IsYUY2()
+        self.IsYV24 = self.vi.IsYV24()
+        self.IsYV16 = self.vi.IsYV16()
+        self.IsYV12 = self.vi.IsYV12()
+        self.IsYV411 = self.vi.IsYV411()
+        self.IsY8 = self.vi.IsY8()
+        self.Colorspace = ('RGB24'*self.IsRGB24 + 'RGB32'*self.IsRGB32 + 'YUY2'*self.IsYUY2 + 'YV12'*self.IsYV12 + 
+                           'YV24'*self.IsYV24 + 'YV16'*self.IsYV16 + 'YV411'*self.IsYV411 + 'Y8'*self.IsY8)
         self.IsPlanar = self.vi.IsPlanar()
         self.IsInterleaved = not self.IsPlanar
         self.IsFieldBased = self.vi.IsFieldBased()
@@ -189,7 +199,7 @@ class AvsClipBase:
         
         # Initialize display-related variables
         if not self.IsRGB:
-            if self.IsYUV and swapuv:
+            if swapuv and self.IsYUV and not self.IsY8:
                 try:
                     arg = avisynth.AVS_Value(self.clip)
                     avsfile = self.env.Invoke("swapuv", arg, 0)
@@ -238,7 +248,7 @@ class AvsClipBase:
             self.clip = None
             self.clipRaw = None
             if __debug__:
-                print "Deleting allocated video memory..."
+                print "Deleting allocated video memory for '{0}'...".format(self.name)
     
     def _ConvertToRGB(self):
         '''Convert to RGB for display. Return True if successful'''
@@ -246,13 +256,24 @@ class AvsClipBase:
     
     def GetPixelYUV(self, x, y):
         if self.clipRaw is not None:
-            if self.IsYV12:
-                indexY = x + y * self.pitch
-                indexU = indexV = (x/2) + (y/2) * (self.pitch/2)
-            elif self.IsYUY2:
+            if self.IsYUY2:
                 indexY = (x*2) + y * self.pitch
                 indexU = 4*(x/2) + 1 + y * self.pitch
                 indexV = 4*(x/2) + 3 + y * self.pitch
+            elif self.IsYV12:
+                indexY = x + y * self.pitch
+                indexU = indexV = (x/2) + (y/2) * (self.pitch/2)
+            elif self.IsYV16:
+                indexY = x + y * self.pitch
+                indexU = indexV = (x/2) + y * (self.pitch/2)
+            elif self.IsYV24:
+                indexY = indexU = indexV = x + y * self.pitch
+            elif self.IsYV411:
+                indexY = x + y * self.pitch
+                indexU = indexV = (x/4) + y * (self.pitch/4)
+            elif self.IsY8:
+                indexY = x + y * self.pitch
+                return (self.ptrY[indexY], 128, 128)
             else:
                 return (-1,-1,-1)
             return (self.ptrY[indexY], self.ptrU[indexU], self.ptrV[indexV])
@@ -487,7 +508,7 @@ if os.name == 'nt':
             
             self.initialized = True
             if __debug__:
-                print 'AviSynth clip created successfully'
+                print "AviSynth clip created successfully: '{0}'".format(self.name)
         
         def _ConvertToRGB(self):
             if not self.IsRGB:
@@ -569,7 +590,7 @@ else:
             
             self.initialized = True
             if __debug__:
-                print 'AviSynth clip created successfully'
+                print "AviSynth clip created successfully: '{0}'".format(self.name)
         
         def _ConvertToRGB(self):
             # There's issues with RGB32, we convert to RGB24 
@@ -665,9 +686,13 @@ if __name__ == '__main__':
         print 'IsRGB =', AVI.IsRGB
         print 'IsRGB24 =', AVI.IsRGB24
         print 'IsRGB32 =', AVI.IsRGB32
-        print 'IsYUY2 =', AVI.IsYUY2
-        print 'IsYV12 =', AVI.IsYV12
         print 'IsYUV =', AVI.IsYUV
+        print 'IsYUY2 =', AVI.IsYUY2
+        print 'IsYV24 =', AVI.IsYV24
+        print 'IsYV16 =', AVI.IsYV16
+        print 'IsYV12 =', AVI.IsYV12
+        print 'IsYV411 =', AVI.IsYV411
+        print 'IsY8 =', AVI.IsY8
         print 'IsPlanar =', AVI.IsPlanar
         print 'IsInterleaved =', AVI.IsInterleaved
         print 'IsFieldBased =', AVI.IsFieldBased

@@ -7877,21 +7877,22 @@ class MainFrame(wxp.Frame):
             else:
                 menuItem.Check(not self.swapuv)
             value = self.yuv2rgbDict[menuItem.GetLabel()]
+        AVI = self.currentScript.AVI
         if value == 'swapuv':
             self.swapuv = not self.swapuv
-            if self.currentScript.AVI:
-                refresh = self.currentScript.AVI.IsYUV
+            if AVI:
+                refresh = AVI.IsYUV and not AVI.IsY8
         elif value in ['Progressive', 'Interlaced']:
             self.interlaced = not self.interlaced
-            if self.currentScript.AVI:
-                refresh = self.currentScript.AVI.IsYV12
+            if AVI:
+                refresh = AVI.IsYV12
         else:
             if value in ('tv', 'pc'):
                 self.matrix[1] = value
             else:
                 self.matrix[0] = value
-            if self.currentScript.AVI:
-                refresh = self.currentScript.AVI.IsYUV
+            if AVI:
+                refresh = AVI.IsYUV
         if self.previewWindowVisible and refresh:
             self.OnMenuVideoRefresh(event)
 
@@ -11502,7 +11503,7 @@ class MainFrame(wxp.Frame):
             aspectratio = '16:9'
         if addon:
             pixelpos, pixelhex, pixelrgb, pixelrgba, pixelyuv = addon
-            if v.IsYUY2 or v.IsYV12:
+            if v.IsYUV:
                 pixelclr = pixelyuv
             elif v.IsRGB32:
                 pixelclr = pixelrgba
@@ -12408,7 +12409,7 @@ class MainFrame(wxp.Frame):
                 else:
                     wx.BeginBusyCursor()
                     script.AVI = None
-                    script.AVI = pyavs.AvsClip(self.getCleanText(scripttxt), filename, fitHeight=fitHeight, fitWidth=fitWidth, oldFramecount=oldFramecount, keepRaw=self.showVideoPixelAvisynth, matrix=self.matrix, interlaced=self.interlaced, swapuv=self.swapuv)
+                    script.AVI = pyavs.AvsClip(self.getCleanText(scripttxt), filename, interface=self.avisynthVersion[2], fitHeight=fitHeight, fitWidth=fitWidth, oldFramecount=oldFramecount, keepRaw=self.showVideoPixelAvisynth, matrix=self.matrix, interlaced=self.interlaced, swapuv=self.swapuv)
                     wx.EndBusyCursor()
                 os.chdir(cwd)
                 if not script.AVI.initialized:
