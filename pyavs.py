@@ -36,10 +36,9 @@ except NameError:
 
 class AvsClipBase:
     
-    def __init__(self, script, filename='', env=None, interface=3, fitHeight=None, fitWidth=None, oldFramecount=240, keepRaw=False, matrix=['auto', 'tv'], interlaced=False, swapuv=False):
+    def __init__(self, script, filename='', env=None, fitHeight=None, fitWidth=None, oldFramecount=240, keepRaw=False, matrix=['auto', 'tv'], interlaced=False, swapuv=False):
         # Internal variables
         self.initialized = False
-        self.interface = interface
         self.error_message = None
         self.current_frame = -1
         self.pBits = None
@@ -86,7 +85,7 @@ class AvsClipBase:
             if isinstance(script,avisynth.PClip):
                 raise ValueError("env must be defined when providing a clip") 
             try:
-                self.env=avisynth.avs_create_script_environment(self.interface)
+                self.env=avisynth.avs_create_script_environment(3)
             except OSError:
                 return
         if isinstance(script,avisynth.PClip):

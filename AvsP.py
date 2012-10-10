@@ -12436,10 +12436,9 @@ class MainFrame(wxp.Frame):
                     wx.BeginBusyCursor()
                     script.AVI = None
                     script.AVI = pyavs.AvsClip(
-                        self.getCleanText(scripttxt), filename, interface=self.avisynthVersion[2], 
-                        fitHeight=fitHeight, fitWidth=fitWidth, oldFramecount=oldFramecount, 
-                        keepRaw=self.showVideoPixelAvisynth, matrix=self.matrix, interlaced=self.interlaced, 
-                        swapuv=self.swapuv)
+                        self.getCleanText(scripttxt), filename, fitHeight=fitHeight, fitWidth=fitWidth, 
+                        oldFramecount=oldFramecount, keepRaw=self.showVideoPixelAvisynth, matrix=self.matrix, 
+                        interlaced=self.interlaced, swapuv=self.swapuv)
                     wx.EndBusyCursor()
                 os.chdir(cwd)
                 if not script.AVI.initialized:

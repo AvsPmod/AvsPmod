@@ -58,7 +58,7 @@ while True:
         break
 
 # Eval the script. Return if error
-AVS = pyavs.AvsClip(avsp.GetText(), interface=self.avisynthVersion[2], matrix=self.matrix, interlaced=self.interlaced, swapuv=self.swapuv)
+AVS = pyavs.AvsClip(avsp.GetText(), matrix=self.matrix, interlaced=self.interlaced, swapuv=self.swapuv)
 if AVS.IsErrorClip():
     avsp.MsgBox(AVS.error_message, _('Error'))
     return
