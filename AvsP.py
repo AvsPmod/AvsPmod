@@ -4605,8 +4605,10 @@ class MainFrame(wxp.Frame):
                 if self.textdata.GetTextLength() > 1:
                     text = self.textdata.GetText()
                     self.textdata.SetText('')
+                    f_encoding = self.win.currentScript.encoding
                     self.win.NewTab(copyselected=False)
                     self.win.currentScript.SetText(text)
+                    self.win.currentScript.encoding = f_encoding
                     self.win.currentScript.SelectAll()
                 else:
                     for filename in self.filedata.GetFilenames():
@@ -6627,6 +6629,7 @@ class MainFrame(wxp.Frame):
         )
         # Bind variables to the window instance
         scriptWindow.filename = ""
+        scriptWindow.encoding = 'latin1'
         scriptWindow.AVI = None
         scriptWindow.previewtxt = []
         scriptWindow.sliderTexts = []
@@ -9842,6 +9845,7 @@ class MainFrame(wxp.Frame):
         self.Freeze()
         # Store the current selected text
         oldselected = self.currentScript.GetSelectedText()
+        oldencoding = self.currentScript.encoding
         # Create a new script window instance
         scriptWindow = self.createScriptWindow()
         self.currentScript = scriptWindow
@@ -9864,6 +9868,7 @@ class MainFrame(wxp.Frame):
             self.scriptNotebook.AddPage(scriptWindow,'%s (%s)' % (self.NewFileName, iMax+1), select=False)
             scriptWindow.SetText(oldselected)
             scriptWindow.SelectAll()
+            scriptWindow.encoding = oldencoding
             self.refreshAVI = True
             if select:
                 self.scriptNotebook.SetSelection(self.scriptNotebook.GetPageCount()-1)
@@ -9883,7 +9888,7 @@ class MainFrame(wxp.Frame):
         self.Thaw()
     
     @AsyncCallWrapper
-    def OpenFile(self, filename='', default='', scripttext=None, setSavePoint=True, splits=None, framenum=None):#, index=None):
+    def OpenFile(self, filename='', default='', f_encoding='latin1', scripttext=None, setSavePoint=True, splits=None, framenum=None):#, index=None):
         r'''OpenFile(filename='', default='')
         
         If the string 'filename' is a path to an Avisynth script, this function opens 
@@ -9934,8 +9939,9 @@ class MainFrame(wxp.Frame):
                         ID = dlg.ShowModal()
                         dlg.Destroy()
                         if ID == wx.ID_YES:
-                            txt = self.GetMarkedScriptFromFile(filename)
+                            txt, f_encoding = self.GetMarkedScriptFromFile(filename)
                             script.SetText(txt)
+                            script.encoding = f_encoding
                             if setSavePoint:
                                 script.EmptyUndoBuffer()
                                 script.SetSavePoint()
@@ -9987,10 +9993,11 @@ class MainFrame(wxp.Frame):
                     self.SetProgramTitle()
                 # Treat the file as an avisynth script
                 if scripttext is None:
-                    txt = self.GetMarkedScriptFromFile(filename)
+                    txt, f_encoding = self.GetMarkedScriptFromFile(filename)
                     script.SetText(txt)
                 else:
                     script.SetText(scripttext)
+                script.encoding = f_encoding
                 if setSavePoint:
                     script.EmptyUndoBuffer()
                     script.SetSavePoint()
@@ -10004,18 +10011,7 @@ class MainFrame(wxp.Frame):
             return index
 
     def GetMarkedScriptFromFile(self, filename, returnFull=False):
-        try:
-            f = open(filename, 'r')
-            txt = f.read()
-            f.close()
-        except UnicodeDecodeError:
-            f = codecs.open(filename, 'rU', encoding)
-            txt = f.read()
-            f.close()
-        #~ f = codecs.open(filename, 'rU', encoding)
-        #~ txt = f.read()
-        #~ f.close()
-        
+        txt, f_encoding = self.GetTextFromFile(filename)
         lines = txt.rstrip().split('\n')
         lines.reverse()
         header = '### AvsP marked script ###'
@@ -10028,20 +10024,44 @@ class MainFrame(wxp.Frame):
                     newlines.append(line[2:])
                 else:
                     if returnFull:
-                        return txt, txt
+                        return (txt, txt), f_encoding
                     else:
-                        return txt
+                        return txt, f_encoding
             newlines.reverse()
             if returnFull:
-                return '\n'.join(newlines), txt
+                return ('\n'.join(newlines), txt), f_encoding
             else:
-                return '\n'.join(newlines)
+                return '\n'.join(newlines), f_encoding
         else:
             if returnFull:
-                return txt, txt
+                return (txt, txt), f_encoding
             else:
-                return txt
-
+                return txt, f_encoding
+    
+    def GetTextFromFile(self, filename):
+        '''Return text and encoding from a file'''
+        with open(filename, mode='rb') as f:
+            raw_txt = f.read()
+        if raw_txt.startswith(codecs.BOM_UTF8):
+            f_encoding = 'utf-8-sig'
+        elif raw_txt.startswith(codecs.BOM_UTF16_LE):
+            f_encoding = 'utf-16-le'
+        elif raw_txt.startswith(codecs.BOM_UTF16_BE):
+            f_encoding = 'utf-16-be'
+        elif raw_txt.startswith(codecs.BOM_UTF32_LE):
+            f_encoding = 'utf-32-le'
+        elif raw_txt.startswith(codecs.BOM_UTF32_BE):
+            f_encoding = 'utf-32-be'
+        else:
+            f_encoding = 'utf8'
+        try:
+            txt = raw_txt.decode(f_encoding)
+        except UnicodeDecodeError:
+            f_encoding = encoding
+            txt = raw_txt.decode(f_encoding)
+        txt = txt.replace('\r\n', '\n')
+        return txt, f_encoding
+    
     def UpdateRecentFilesList(self, filename=None):
         # Update the persistent internal list
         if filename is not None:
@@ -10222,7 +10242,8 @@ class MainFrame(wxp.Frame):
             if os.path.splitext(script.filename)[1].lower() == '.avsi':
                 basename = root+'.avsi'
             filename = os.path.join(dirname, basename)
-            # Save the text to the specified file
+            
+            # Get script's text, adding the marked version of the script if required
             #~ txt = self.regexp.sub(self.re_replace, script.GetText())
             scriptText = script.GetText()
             txt = self.getCleanText(scriptText)
@@ -10230,17 +10251,14 @@ class MainFrame(wxp.Frame):
                 header = '### AvsP marked script ###'
                 base = '\n'.join(['# %s' % line for line in scriptText.split('\n')])
                 txt = '%(txt)s\n%(header)s\n%(base)s\n%(header)s' % locals()
-            try:
-                f = open(filename, 'w')
+            
+            # Encode text and save it to the specified file
+            txt = self.GetEncodedText(txt)
+            with open(filename, 'w') as f:
                 f.write(txt)
-                f.close()
-            except UnicodeEncodeError:
-                #~ f = codecs.open(filename, 'w', encoding)
-                f.write(txt.encode(encoding))
-                f.close()
-            #~ script.SaveFile(filename)
-            script.SetSavePoint()
+            
             # Misc stuff
+            script.SetSavePoint()
             script.filename = filename
             self.scriptNotebook.SetPageText(index, basename)
             self.SetProgramTitle()
@@ -10275,6 +10293,35 @@ class MainFrame(wxp.Frame):
         text = self.cleanSliders(text)
         text = self.cleanToggleTags(text)
         return text
+    
+    def GetEncodedText(self, txt):
+        '''Prepare a script's text for saving it to file
+        
+        Prefer system's encoding to utf-8, just in case other applications
+        won't support it'''
+        # try current encoding, else filesystem's
+        try:
+            encoded_txt = txt.encode(self.currentScript.encoding)
+            encoded = True
+        except UnicodeEncodeError:
+            sys_encoding = sys.getfilesystemencoding()
+            if sys_encoding != self.currentScript.encoding:
+                try:
+                    self.currentScript.encoding = sys_encoding
+                    encoded_txt = txt.encode(self.currentScript.encoding)
+                    encoded = True
+                except UnicodeEncodeError:
+                    encoded = False
+        # mbcs just replaces invalid characters
+        if encoded and self.currentScript.encoding.lower() == 'mbcs':
+            txt2 = encoded_txt.decode(self.currentScript.encoding)
+            if txt != txt2:
+                encoded = False
+        # fallback to utf-8
+        if not encoded:       
+            self.currentScript.encoding = 'utf8'
+            encoded_txt = txt.encode(self.currentScript.encoding)
+        return encoded_txt
     
     def GetProposedPath(self, index=None, only=None, type_=None):
         r'''Return a proposed filepath for a script based on the script's filename 
@@ -10366,9 +10413,11 @@ class MainFrame(wxp.Frame):
     def CopyTextToNewTab(self, index=None):
         script, index = self.getScriptAtIndex(index)
         text = script.GetText()
+        f_encoding = script.encoding
         self.NewTab(copyselected=False, select=False)
         self.currentScript.SetText(text)
         self.currentScript.SelectAll()
+        self.currentScript.encoding = f_encoding
         self.refreshAVI = True
         self.scriptNotebook.SetSelection(self.scriptNotebook.GetPageCount()-1)
         self.scriptNotebook.changed = False
@@ -10477,8 +10526,8 @@ class MainFrame(wxp.Frame):
     def LoadTab(self, item):
         '''Open/reload a tab from info returned from GetTabInfo'''
         nItems = len(item)
-        defaults = (None, None, None, None, None, 0)
-        scriptname, boolSelected, scripttext, crc, splits, framenum = item + defaults[nItems:]
+        defaults = (None, None, None, None, None, 0, 'latin1')
+        scriptname, boolSelected, scripttext, crc, splits, framenum, f_encoding = item + defaults[nItems:]
         #~ if len(item) == 4:
             #~ scriptname, boolSelected, scripttext, crc = item
         #~ else:
@@ -10494,23 +10543,20 @@ class MainFrame(wxp.Frame):
                 scriptname = '%s.avs' % self.NewFileName
         else:
             if os.path.isfile(scriptname):
-                txt, txtFromFile = self.GetMarkedScriptFromFile(scriptname, returnFull=True)
+                txt, txtFromFile = self.GetMarkedScriptFromFile(scriptname, returnFull=True)[0]
                 #~ if txt == self.getCleanText(scripttext):
                 try:
-                    if txt == scripttext.encode(encoding):
+                    if txt == scripttext:
                         setSavePoint = True
                     else:
                         setSavePoint = False
                 except UnicodeEncodeError:
                     setSavePoint = False
                 if crc is not None:
-                    try:
-                        crc2 = md5(txtFromFile).hexdigest()
-                    except UnicodeEncodeError:
-                        crc2 = md5(txtFromFile.encode(encoding)).hexdigest()
+                    crc2 = md5(txtFromFile.encode('utf8')).hexdigest()
                     if crc != crc2:
                         reload = True
-        index = self.OpenFile(filename=scriptname, scripttext=scripttext, setSavePoint=setSavePoint, splits=splits, framenum=framenum)
+        index = self.OpenFile(filename=scriptname, f_encoding=f_encoding, scripttext=scripttext, setSavePoint=setSavePoint, splits=splits, framenum=framenum)
         if reload:
             self.reloadList.append((index, scriptname, txt))
         return index
@@ -10585,21 +10631,10 @@ class MainFrame(wxp.Frame):
             if not title.startswith(self.NewFileName):
                 scriptname = title
         else:
-            try:
-                f = open(scriptname, 'r')
-                txt = f.read()
-                f.close()
-                crc = md5(txt).hexdigest()
-            except UnicodeDecodeError:
-                f = codecs.open(scriptname, 'rU', encoding)
-                txt = f.read()
-                f.close()
-                crc = md5(txt.encode(encoding)).hexdigest()
-            #~ f = codecs.open(scriptname, 'rU', encoding)
-            #~ txt = f.read()
-            #~ f.close() 
+            txt = self.GetTextFromFile(scriptname)[0]
+            crc = md5(txt.encode('utf8')).hexdigest()
         splits = (script.lastSplitVideoPos, script.lastSplitSliderPos, script.sliderWindowShown)
-        return scriptname, boolSelected, script.GetText(), crc, splits, script.lastFramenum
+        return scriptname, boolSelected, script.GetText(), crc, splits, script.lastFramenum, script.encoding
     
     def SaveCurrentImage(self, filename='', index=None, default='', quality=None):
         script, index = self.getScriptAtIndex(index)
@@ -12569,17 +12604,11 @@ class MainFrame(wxp.Frame):
         # Make sure directory is not read-only
         if not os.access(os.path.dirname(previewname), os.W_OK):
             previewname = os.path.join(self.programdir, 'preview.avs')
-        # Get the text to write to the file
-        newScripttxt =  self.getCleanText(script.GetText()) #self.regexp.sub(self.re_replace, script.GetText())
-        # Write the file
-        try:
-            f = open(previewname,'w')
-            f.write(newScripttxt)
-            f.close()
-        except UnicodeEncodeError:
-            #~ f = codecs.open(previewname, 'w', encoding)
-            f.write(newScripttxt.encode(encoding))
-            f.close()
+        # Get the text and write it to the file
+        txt = self.getCleanText(script.GetText()) #self.regexp.sub(self.re_replace, script.GetText())
+        txt = self.GetEncodedText(txt)
+        with open(previewname, 'w') as f:
+            f.write(txt)
         return previewname
         
     def GetFitWindowSize(self):

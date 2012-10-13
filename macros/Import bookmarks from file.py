@@ -15,9 +15,7 @@ filename = avsp.GetFilename(_('Select a file'), filefilter=
 if not filename:
     return
 
-f = open(filename)
-lines = f.read()
-f.close()
+lines = avsp.GetWindow().GetTextFromFile(filename)[0]
 
 bookmarkDict = {}
 

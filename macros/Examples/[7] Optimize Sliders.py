@@ -4,6 +4,7 @@ def main():
     import subprocess
     import os
     
+    app = avsp.GetWindow()
     params = []
     scriptTemplate = ''
     logfilename = 'log.txt'
@@ -191,6 +192,7 @@ def main():
         # Create the AviSynth script
         script = scriptTemplate % paramDict
         inputavsname = os.path.join(os.getcwd(), 'ga_evaluate.avs')
+        script = app.GetEncodedText(script)
         f = open(inputavsname, 'w')
         f.write(script)
         f.close()
@@ -218,6 +220,7 @@ def main():
         '''Write the script to a file'''
         paramDict = decode_params(chromosome, params)
         script = scriptTemplate % paramDict
+        script = app.GetEncodedText(script)
         f = open('optimized.avs', 'w')
         f.write(script)
         f.close()

@@ -218,9 +218,7 @@ class CompressVideoDialog(wx.Dialog):
         par_x = par_y = ''
         avsfilename = self.ctrlDict['video_input'].GetValue().strip()
         if os.path.isfile(avsfilename):
-            f = open(avsfilename, 'r')
-            text = f.read()
-            f.close()
+            text = avsp.GetWindow().GetTextFromFile(avsfilename)[0]
             for s in re.findall('".+?.d2v"', text):
                 d2vfilename = s.strip('"')
                 if os.path.isfile(d2vfilename):
