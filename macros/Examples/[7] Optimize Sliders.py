@@ -1,15 +1,19 @@
+# Optimize script parameters specified on user sliders
+# See http://forum.doom9.org/showpost.php?p=935347&postcount=503
+
 def main():
     import random
     import math
     import subprocess
     import os
+    import os.path
     
     app = avsp.GetWindow()
     params = []
     scriptTemplate = ''
     logfilename = 'log.txt'
-    avs2avidir = r'C:\Program Files\avs2avi\avs2avi.exe'
-
+    avs2avidir = os.path.join(app.toolsfolder, 'avs2avi.exe')
+    
     # Simple Genetic Algorithm implementation
     class SGA(object):
         def __init__(self,
@@ -191,7 +195,7 @@ def main():
         paramDict = decode_params(chromosome, params)
         # Create the AviSynth script
         script = scriptTemplate % paramDict
-        inputavsname = os.path.join(os.getcwd(), 'ga_evaluate.avs')
+        inputavsname = os.path.join(scriptdir, 'ga_evaluate.avs')
         script = app.GetEncodedText(script)
         f = open(inputavsname, 'w')
         f.write(script)
@@ -221,7 +225,7 @@ def main():
         paramDict = decode_params(chromosome, params)
         script = scriptTemplate % paramDict
         script = app.GetEncodedText(script)
-        f = open('optimized.avs', 'w')
+        f = open(os.path.splitext(filename)[0] + '-optimized.avs', 'w')
         f.write(script)
         f.close()
         if score is not None:
@@ -235,12 +239,18 @@ def main():
     filename = avsp.SaveScript()
     if not filename:
         return
-    os.chdir(os.path.dirname(filename))
+    if not avsp.UpdateVideo():
+        avsp.MsgBox(_('The current Avisynth script contains errors.'), _('Error'))
+        return
+    scriptdir = os.path.dirname(filename)
     scriptTemplate = avsp.GetText()
     # Parse the script to determine the log filename
     
     # Create the parameters to optimize based on user sliders in the script
     sliderInfoList = avsp.GetSliderInfo()
+    if not sliderInfoList:
+        avsp.MsgBox(_('Not user sliders on the current Avisynth script!'), _('Error'))
+        return
     length = 0
     for text, label, valuelist, nDecimal in sliderInfoList:
         if valuelist is None:
@@ -252,10 +262,15 @@ def main():
         length += nbits
         scriptTemplate = scriptTemplate.replace(text, '%('+label+').'+str(nDecimal)+'f')
     # Get basic encoder options with a dialog box
-    labels = [_('SSIM log filename:'), _('max generations:'), _('population size:'), 
-              _('crossover probability:'), _('mutation probability:'), _('selection pressure:')]
-    defaults = [logfilename, '10', '30', '0.6', '0.03', '4']
-    entries = avsp.GetTextEntry(labels, defaults, _('Enter optimization info    (%i bits, %i possibilities)') % (length, 2**length))
+    title = _('Enter optimization info    (%i bits, %i possibilities)') % (length, 2**length)
+    message = [_('SSIM log filename:'), [_('max generations:'), _('population size:'), 
+              _('crossover probability:'), _('mutation probability:'), _('selection pressure:')]]
+    dirname, basename = os.path.split(logfilename)
+    if not os.path.isdir(dirname):
+        logfilename = os.path.join(app.GetProposedPath(only='dir'), basename)
+    default = [logfilename, [(10, 1), (30, 1), (0.6, 0, 1, 2, 0.05), (0.03, 0, 1, 2, 0.05), 4]]
+    types = ['file_save', ['spin', 'spin', 'spin', 'spin', 'spin']]
+    entries = avsp.GetTextEntry(message, default, title, types)
     if not entries:
         return
     # First clear the AVI from memory (to close the log file)
@@ -271,9 +286,10 @@ def main():
     print 'n=%s, pc=%s, pm=%s, s=%s, maxgen=%s (%i bits)' % (n, pc, pm, s, maxgen, length)
     sga = SGA(length, evaluate, int(n), float(pc), float(pm), int(s), int(maxgen), False, dump)
     sga.run()
+    os.remove(os.path.join(scriptdir, 'ga_evaluate.avs'))
     print _('Finished optimization.')
     # Show the optimized results
-    avsp.OpenFile(os.path.join(os.getcwd(), 'optimized.avs'))
+    avsp.OpenFile(os.path.splitext(filename)[0] + '-optimized.avs')
     avsp.ShowVideoFrame()
     
 main()
