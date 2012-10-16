@@ -218,7 +218,7 @@ class CompressVideoDialog(wx.Dialog):
         par_x = par_y = ''
         avsfilename = self.ctrlDict['video_input'].GetValue().strip()
         if os.path.isfile(avsfilename):
-            text = avsp.GetWindow().GetTextFromFile(avsfilename)[0]
+            text = self.GetParent().GetTextFromFile(avsfilename)[0]
             for s in re.findall('".+?.d2v"', text):
                 d2vfilename = s.strip('"')
                 if os.path.isfile(d2vfilename):
@@ -426,8 +426,12 @@ class CompressVideoDialog(wx.Dialog):
                 key = ''
             if key.endswith('.exe'):
                 value = exeOptions.setdefault(key, {'path': '', 'extra': ''})
-                if not os.path.isfile(value['path']) and not key in unknownPathKeys:
-                    unknownPathKeys.append(key)
+                if not os.path.isfile(value['path']):
+                    default_path = os.path.join(self.GetParent().toolsfolder, key)
+                    if os.path.isfile(default_path):
+                        value['path'] = default_path
+                    elif not key in unknownPathKeys:
+                        unknownPathKeys.append(key)
         if len(unknownPathKeys) == 0:
             return
         # Prompt for unknown exe paths
@@ -491,7 +495,7 @@ class CompressVideoDialog(wx.Dialog):
         if os.path.exists(inputname):
             recentdir = os.path.dirname(inputname)
         title = _('Open an AviSynth script')
-        filefilter = _('AviSynth script (*.avs)|*.avs')
+        filefilter = _('AviSynth script') + ' (*.avs, *.avsi)|*.avs;*.avsi'
         style = wx.OPEN
         dlg = wx.FileDialog(self, title, recentdir, '', filefilter, style)
         ID = dlg.ShowModal()
@@ -520,7 +524,7 @@ class CompressVideoDialog(wx.Dialog):
     def OnButtonSelectExe(self, event):
         recentdir = ''
         title = _('Select a program')
-        filefilter = _('Program (*.exe)|*.exe')
+        filefilter = _('Executable files') + ' (*.exe)|*.exe'
         style = wx.OPEN
         dlg = wx.FileDialog(self, title, recentdir, '', filefilter, style)
         ID = dlg.ShowModal()
@@ -741,7 +745,7 @@ class CompressVideoOptionsDialog(wx.Dialog):
     def OnButtonSelectExe(self, event):
         recentdir = ''
         title = _('Select a program')
-        filefilter = _('Program (*.exe)|*.exe')
+        filefilter = _('Executable files') + ' (*.exe)|*.exe'
         style = wx.OPEN
         dlg = wx.FileDialog(self, title, recentdir, '', filefilter, style)
         ID = dlg.ShowModal()
