@@ -4955,8 +4955,8 @@ class MainFrame(wxp.Frame):
         if args:
             self.HidePreviewWindow()
             for arg in args:
-                arg = arg.decode(encoding)
-                if os.path.exists(arg):
+                arg = arg.decode(sys.stdin.encoding or encoding)
+                if os.path.isfile(arg):
                     if os.path.dirname(arg) == '':
                         arg = os.path.join(os.getcwd(), arg)
                     self.OpenFile(filename=arg) # BUG: sys.argv gives back short filenames only?!!
