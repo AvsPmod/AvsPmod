@@ -1,6 +1,8 @@
 import string
 import re
-import os, sys
+import os
+import os.path
+import sys
 import cPickle
 import wx
 import MP3Info
@@ -25,7 +27,8 @@ class CompressVideoDialog(wx.Dialog):
 
     def LoadOptions(self):
         self.options = {}
-        self.optionsFilename = __name__ + '.dat'
+        self.optionsFilename = os.path.join(self.GetParent().toolsfolder, 
+                                            __name__ + '.dat')
         if os.path.isfile(self.optionsFilename):
             f = open(self.optionsFilename, mode='rb')
             self.options = cPickle.load(f)
@@ -56,12 +59,12 @@ class CompressVideoDialog(wx.Dialog):
     def LoadPresets(self):
         self.presets = {}
         self.presetKeys = []  # keep separate list to preserve order
-        filenames = os.listdir(os.getcwd())
+        filenames = os.listdir(self.GetParent().toolsfolder)
         filenames.sort()
         for filename in filenames:
             base, ext = os.path.splitext(filename)
             if ext.lower() == '.presets':
-                f = open(filename, 'r')
+                f = open(os.path.join(self.GetParent().toolsfolder, filename), 'r')
                 lines = f.readlines()
                 f.close()
                 encoderName = os.path.basename(base)
@@ -581,7 +584,7 @@ class CompressVideoDialog(wx.Dialog):
             wx.MessageBox(_('Unknown exe paths!'), _('Error'), style=wx.ICON_ERROR)
             return
         else:
-            batchname = 'encode.bat'
+            batchname = os.path.join(self.GetParent().toolsfolder, 'encode.bat')
             f = open(batchname, 'w')
             for line in lines:
                 if type(line) == unicode:

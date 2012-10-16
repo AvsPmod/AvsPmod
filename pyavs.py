@@ -36,8 +36,9 @@ except NameError:
 
 class AvsClipBase:
     
-    def __init__(self, script, filename='', env=None, fitHeight=None, fitWidth=None, oldFramecount=240, keepRaw=False, matrix=['auto', 'tv'], interlaced=False, swapuv=False):
+    def __init__(self, script, filename='', workdir='', env=None, fitHeight=None, fitWidth=None, oldFramecount=240, keepRaw=False, matrix=['auto', 'tv'], interlaced=False, swapuv=False):
         # Internal variables
+        self.workdir = ''
         self.initialized = False
         self.error_message = None
         self.current_frame = -1
@@ -98,11 +99,14 @@ class AvsClipBase:
                 f = script
             arg=avisynth.AVS_Value(f)           #assign to AVSValue
             scriptdirname, scriptbasename = os.path.split(filename)
+            curdir = os.getcwdu()
+            workdir = os.path.isdir(workdir) and workdir or scriptdirname
+            if os.path.isdir(workdir):
+                self.env.SetWorkingDir(workdir)
+                self.workdir = workdir
             self.file = avisynth.AVS_Value(filename)
             self.name = avisynth.AVS_Value(scriptbasename)
             self.dir = avisynth.AVS_Value(scriptdirname)
-            if os.path.isdir(scriptdirname):
-                self.env.SetWorkingDir(scriptdirname)
             self.env.SetGlobalVar("$ScriptFile$", self.file)
             self.env.SetGlobalVar("$ScriptName$", self.name)
             self.env.SetGlobalVar("$ScriptDir$", self.dir)
@@ -132,6 +136,8 @@ class AvsClipBase:
                     self.clip=avsfile.AsClip(self.env)
                 except avisynth.AvisynthError, err:
                     return
+            finally:
+                os.chdir(curdir)
             if not self.env.GetVar("last").IsClip():#.AsClip(self.env)
                 self.env.SetVar("last",avisynth.AVS_Value(self.clip))
         

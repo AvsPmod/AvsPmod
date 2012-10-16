@@ -189,7 +189,7 @@ class StdoutStderrWindow:
         if hasattr(sys,'frozen'):
             self.logfilename = os.path.join(os.path.dirname(sys.executable), logname)
         else:
-            self.logfilename = os.path.join(os.getcwd(), logname)
+            self.logfilename = os.path.join(os.getcwdu(), logname)
         self.firstTime = True
 
     def SetParent(self, parent):

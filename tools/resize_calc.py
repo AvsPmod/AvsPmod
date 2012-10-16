@@ -17,7 +17,8 @@ class ResizeCalculatorDialog(wx.Dialog):
         
     def LoadOptions(self):
         self.options = {}
-        self.optionsFilename = __name__ + '.dat'
+        self.optionsFilename = os.path.join(self.GetParent().toolsfolder, 
+                                            __name__ + '.dat')
         if os.path.isfile(self.optionsFilename):
             f = open(self.optionsFilename, mode='rb')
             self.options = cPickle.load(f)

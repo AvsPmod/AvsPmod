@@ -2635,9 +2635,14 @@ def GenerateMacroReadme(file=None):
     return doc
 
 # Open a file or directory with its associate program
-def startfile(path):
-    '''Open a file or directory with its associate program'''
+def startfile(path, prefer_dir=True):
+    '''Open a file or directory with its associate program
+    
+    'prefer_dir': If True, ensure to open a dir and not an executable with 
+    the same name on Windows (ignore PATHEXT)
+    '''
     if os.name == 'nt':
+        if prefer_dir and os.path.isdir(path):  path += os.sep
         os.startfile(path)
     else: 
         os.system('xdg-open "{0}"'.format(path))
@@ -3218,13 +3223,11 @@ class AvsFunctionDialog(wx.Dialog):
         pattern = r'function\s+(\w+)\s*\((.*?)\)\s*\{(.+?)\}'
         default = r'default\s*\(\s*%s\s*,\s*(.+?)\s*\)'
         filterInfo, text = [], []
-        f = open(filename)
-        for line in f:
-            line = line.strip()
-            line = line.strip('\\')
+        script_text = self.GetParent().GetTextFromFile(filename)[0]
+        for line in script_text.splitlines():
+            line = line.strip().strip('\\')
             if not line.startswith('#'):
                 text.append(line)
-        f.close()
         text = ' '.join(text)
         matches = re.findall(pattern, text, re.I|re.S)
         for filtername, args, body in matches:
@@ -4492,6 +4495,7 @@ class MainFrame(wxp.Frame):
             self.programdir = os.path.abspath(os.path.dirname(sys.argv[0]))
         if type(self.programdir) != unicode:
             self.programdir = unicode(self.programdir, encoding)
+        self.initialworkdir = os.getcwdu()
         self.toolsfolder = os.path.join(self.programdir, 'tools')
         sys.path.insert(0, self.toolsfolder)
         self.macrofolder = os.path.join(self.programdir, 'macros')
@@ -4517,9 +4521,9 @@ class MainFrame(wxp.Frame):
             self.optionsMacros = {}
         
         # load translation file
-        self.translations_dir = 'translations'
+        self.translations_dir = os.path.join(self.programdir, 'translations')
         if self.options['lang'] != 'eng':
-            sys.path.append(self.translations_dir)
+            sys.path.insert(0, self.translations_dir)
             sys.dont_write_bytecode = True
             try:
                 translation = __import__('translation_' + self.options['lang'])
@@ -4589,6 +4593,7 @@ class MainFrame(wxp.Frame):
         else:
             style = wx.DEFAULT_FRAME_STYLE
         self.SetWindowStyle(style)
+        
         # Drag-and-drop target for main window
         class MainFrameDropTarget(wx.PyDropTarget):
             def __init__(self, win):
@@ -4606,11 +4611,10 @@ class MainFrame(wxp.Frame):
                 if self.textdata.GetTextLength() > 1:
                     text = self.textdata.GetText()
                     self.textdata.SetText('')
-                    f_encoding = self.win.currentScript.encoding
-                    self.win.NewTab(copyselected=False)
-                    self.win.currentScript.SetText(text)
-                    self.win.currentScript.encoding = f_encoding
-                    self.win.currentScript.SelectAll()
+                    if text == self.win.currentScript.GetText():
+                        self.win.NewTab()
+                    else:
+                        self.win.NewTab(text=text)
                 else:
                     for filename in self.filedata.GetFilenames():
                         self.win.OpenFile(filename=filename)
@@ -4690,6 +4694,7 @@ class MainFrame(wxp.Frame):
 
         self.SetDropTarget(MainFrameDropTarget(self))
         self.scriptDropTarget = ScriptDropTarget
+        
         # Create all the program's controls and dialogs
         self.NewFileName = _('New File')
         self.scrapWindow = ScrapWindow(self)
@@ -4705,6 +4710,7 @@ class MainFrame(wxp.Frame):
             cropdialogparent = self.videoDialog
         self.cropDialog = self.createCropDialog(cropdialogparent)
         self.trimDialog = self.createTrimDialog(cropdialogparent)
+        
         # Internal class variables
         self.name = title
         self.currentframenum = None
@@ -4795,14 +4801,13 @@ class MainFrame(wxp.Frame):
 
         # Command line arguments
         self.UpdateRecentFilesList()
-        curdir = os.getcwd()
         self.reloadList = []
         self.lastClosed = None
         if self.options['exitstatus']:
             self.IdleCall.append((wx.MessageBox, (_('A crash detected at the last running!'), _('Warning'), wx.OK|wx.ICON_EXCLAMATION, self), {})) 
         if self.options['startupsession'] or self.options['exitstatus']:
             if self.options['alwaysloadstartupsession'] or len(sys.argv) <= 1 or not self.options['promptexitsave'] or self.options['exitstatus']:
-                if os.path.exists(self.lastSessionFilename) and not self.LoadSession(self.lastSessionFilename, saverecentdir=False, resize=False, backup=True, startup=True):
+                if os.path.isfile(self.lastSessionFilename) and not self.LoadSession(self.lastSessionFilename, saverecentdir=False, resize=False, backup=True, startup=True):
                     self.loaderror.append(os.path.basename(self.lastSessionFilename))
                     shutil.copy2(self.lastSessionFilename, os.path.splitext(self.lastSessionFilename)[0] + '.BAD')
         if not self.options['exitstatus']:
@@ -4958,14 +4963,14 @@ class MainFrame(wxp.Frame):
                 arg = arg.decode(sys.stdin.encoding or encoding)
                 if os.path.isfile(arg):
                     if os.path.dirname(arg) == '':
-                        arg = os.path.join(os.getcwd(), arg)
+                        arg = os.path.join(self.initialworkdir, arg)
                     self.OpenFile(filename=arg) # BUG: sys.argv gives back short filenames only?!!
                     self.currentScript.GotoPos(0)
                     self.currentScript.EnsureCaretVisible()
 
     def getOptionsDict(self):
         oldOptions = None
-        if os.path.exists(self.optionsfilename):
+        if os.path.isfile(self.optionsfilename):
             try:
                 with open(self.optionsfilename, mode='rb') as f:
                     oldOptions = cPickle.load(f)
@@ -5077,6 +5082,9 @@ class MainFrame(wxp.Frame):
             'helpdir': os.path.join('%programdir%', 'help'),
             'avisynthdir': '',
             'avisynthhelpfile': '',
+            'workdir': '',
+            'useworkdir': False,
+            'alwaysworkdir': False,
             'externalplayer': '',
             'externalplayerargs': '',
             'docsearchpaths': ';'.join([os.path.join('%avisynthdir%', 'plugins'), 
@@ -5214,6 +5222,10 @@ class MainFrame(wxp.Frame):
                 helpfile = '/usr/local/share/doc/english/index.htm'
                 if os.path.isfile(helpfile):
                     self.options['avisynthhelpfile'] = helpfile
+        if self.options['useworkdir']:
+            workdir = self.options['workdir']
+            if os.path.isdir(workdir):
+                os.chdir(workdir)
         
         # Fix recentfiles as necessary???
         try:
@@ -5252,7 +5264,7 @@ class MainFrame(wxp.Frame):
             '(', ')', '[', ']', '{', '}', '!', '%', '&', '|',
         ]
         self.avsmiscwords = ['__end__']
-        if os.path.exists(self.filterdbfilename):
+        if os.path.isfile(self.filterdbfilename):
             try:
                 with open(self.filterdbfilename, mode='r') as f:
                     text = '\n'.join([line.strip() for line in f.readlines()])
@@ -5616,9 +5628,12 @@ class MainFrame(wxp.Frame):
     def getOptionsDlgInfo(self):
         return (
             (_('Paths'),
-                ((_('AvsP help directory:'), wxp.OPT_ELEM_DIR, 'helpdir', _('Location of the AvsP help directory'), dict(buttonText='...', buttonWidth=30) ), ),
                 ((_('Avisynth directory:'), wxp.OPT_ELEM_DIR, 'avisynthdir', _('Location of the avisynth installation directory'), dict(buttonText='...', buttonWidth=30) ), ),
                 ((_('Avisynth help file/url:'), wxp.OPT_ELEM_FILE_URL, 'avisynthhelpfile', _('Location of the avisynth help file or url'), dict(buttonText='...', buttonWidth=30) ), ),
+                ((_('AvsP help directory:'), wxp.OPT_ELEM_DIR, 'helpdir', _('Location of the AvsP help directory'), dict(buttonText='...', buttonWidth=30) ), ),
+                ((_('Use a custom working directory'), wxp.OPT_ELEM_CHECK, 'useworkdir', _('Override the current working directory'), dict() ),
+                 (_('For all scripts'), wxp.OPT_ELEM_CHECK, 'alwaysworkdir', _("Use the custom directory also for scripts saved to file, instead of its parent"), dict() ), ),
+                ((_('Custom working directory:'), wxp.OPT_ELEM_DIR, 'workdir', _('Specify an alternative working directory'), dict(buttonText='...', buttonWidth=30) ), ),
                 ((_('External player:'), wxp.OPT_ELEM_FILE, 'externalplayer', _('Location of external program for script playback'), dict(fileMask=(_('Executable files') + ' (*.exe)|*.exe|' if os.name == 'nt' else '') + _('All files') + ' (*.*)|*.*', buttonText='...', buttonWidth=30) ), ),
                 ((_('External player extra args:'), wxp.OPT_ELEM_STRING, 'externalplayerargs', _('Additional arguments when running the external player'), dict() ), ),
                 ((_('Documentation search paths:'), wxp.OPT_ELEM_STRING, 'docsearchpaths', _('Specify which directories to search for docs when you click on a filter calltip'), dict() ), ),
@@ -5910,7 +5925,7 @@ class MainFrame(wxp.Frame):
         # Set the shortcut list
         self.options['shortcuts'] = None
         self.options['shortcuts'] = shortcutList
-
+        
         self.bindShortcutsToAllWindows()
         
         # Create the program's video controls
@@ -6544,7 +6559,6 @@ class MainFrame(wxp.Frame):
         )
         menu = self.createMenu(menuInfo)
         nb.contextMenu = menu
-        nb.changed = False
         nb.dragging = False
         if self.options['usetabimages']:
             color1 = wx.SystemSettings.GetColour(wx.SYS_COLOUR_SCROLLBAR)
@@ -6630,6 +6644,7 @@ class MainFrame(wxp.Frame):
         )
         # Bind variables to the window instance
         scriptWindow.filename = ""
+        scriptWindow.workdir = ""
         scriptWindow.encoding = 'latin1'
         scriptWindow.AVI = None
         scriptWindow.previewtxt = []
@@ -7392,8 +7407,8 @@ class MainFrame(wxp.Frame):
             script.ShowFilterDocumentation(word)
     
     def OnMenuEditCopyToNewTab(self, event):
-        self.CopyTextToNewTab()
-
+        self.NewTab(copytab=True)
+    
     def OnMenuCopyUnmarkedScript(self, event):
         txt = self.getCleanText(self.currentScript.GetText()).replace('\n', '\r\n')
         text_data = wx.TextDataObject(txt)
@@ -8029,22 +8044,18 @@ class MainFrame(wxp.Frame):
             self.macrosStack.pop()
 
     def OnMenuMacrosFolder(self, event):
-        if os.path.exists(self.macrofolder):
+        if os.path.isdir(self.macrofolder):
             startfile(self.macrofolder)
         else:
-            wx.MessageBox(_('Could not find the macros folder!') % locals(), _('Error'), style=wx.OK|wx.ICON_ERROR)
+            wx.MessageBox(_('Could not find the macros folder!'), _('Error'), style=wx.OK|wx.ICON_ERROR)
 
     def OnMenuMacrosReadme(self, event):
         readme = os.path.join(self.macrofolder, 'macros_readme.txt')
-        if not os.path.exists(readme):
-            GenerateMacroReadme(file=True)
+        if not os.path.isfile(readme):
+            GenerateMacroReadme(readme)
         startfile(readme)
     
     def OnMenuToolsRunSelected(self, event):
-        try:
-            os.chdir(self.toolsfolder)
-        except:
-            pass
         try:
             name = self.toolsImportNames[event.GetId()]
             obj = __import__(name)
@@ -8326,7 +8337,6 @@ class MainFrame(wxp.Frame):
                 Comment=An Avisynth script editor
                 Type=Application
                 Exec=python -O {dir}/run.py %F
-                Path={dir}
                 Terminal=false
                 StartupNotify=true
                 Icon={dir}/AvsP.ico
@@ -8749,7 +8759,6 @@ class MainFrame(wxp.Frame):
         self.currentScript = script
         self.refreshAVI = True
 
-        self.scriptNotebook.changed = True
         oldSliderWindow = self.currentSliderWindow
         newSliderWindow = script.sliderWindow
         oldSliderWindow.Hide()
@@ -8861,6 +8870,7 @@ class MainFrame(wxp.Frame):
     
     def OnLeftDownNotebook(self, event):
         self.scriptNotebook.dragging = False
+        self.scriptNotebook.oldpage = self.scriptNotebook.GetSelection()
         event.Skip()
             
     def OnLeftUpNotebook(self, event):
@@ -8877,10 +8887,8 @@ class MainFrame(wxp.Frame):
         else:
             pos = event.GetPosition()
             ipage = self.scriptNotebook.HitTest(pos)[0]
-            if not self.scriptNotebook.changed:
+            if ipage == self.scriptNotebook.oldpage:
                 wx.CallLater(300, self.OnMenuFileRenameTab, ipage, pos)
-            else:
-                self.scriptNotebook.changed = False
         event.Skip()
             
     def OnLeftDClickNotebook(self, event):
@@ -8889,15 +8897,7 @@ class MainFrame(wxp.Frame):
         self.scriptNotebook.dblClicked = True
         ipage = self.scriptNotebook.HitTest(event.GetPosition())[0]
         if ipage != wx.NOT_FOUND:
-            #~ self.CloseTab(ipage, boolPrompt=True)
-            self.CopyTextToNewTab(ipage)
-            #~ script, index = self.getScriptAtIndex(ipage)
-            #~ text = script.GetText()
-            #~ self.NewTab(copyselected=False, select=False)
-            #~ self.currentScript.SetText(text)
-            #~ self.currentScript.SelectAll()
-            #~ self.refreshAVI = True
-            #~ self.scriptNotebook.SetSelection(self.scriptNotebook.GetPageCount()-1)
+            self.NewTab(copytab=True)
         else: # for wxGTK
             self.NewTab()
 
@@ -9808,7 +9808,7 @@ class MainFrame(wxp.Frame):
         f = open(self.optionsfilename, mode='wb')
         cPickle.dump(self.options, f, protocol=0)
         f.close()
-        if os.path.isdir('macros'):
+        if os.path.isdir(os.path.dirname(self.macrosfilename)):
             f = open(self.macrosfilename, mode='wb')
             cPickle.dump(self.optionsMacros, f, protocol=0)
             f.close()
@@ -9823,7 +9823,7 @@ class MainFrame(wxp.Frame):
         self.Destroy()
     
     @AsyncCallWrapper
-    def NewTab(self, copyselected=True, select=True, splits=None):
+    def NewTab(self, copyselected=True, copytab=False, text='', select=True, splits=None):
         r'''NewTab(copyselected=True)
         
         Creates a new tab (automatically named "New File (x)", where x is an appropriate 
@@ -9840,12 +9840,6 @@ class MainFrame(wxp.Frame):
                           _('Error'), style=wx.OK|wx.ICON_ERROR)
             return False
         self.Freeze()
-        # Store the current selected text
-        oldselected = self.currentScript.GetSelectedText()
-        oldencoding = self.currentScript.encoding
-        # Create a new script window instance
-        scriptWindow = self.createScriptWindow()
-        self.currentScript = scriptWindow
         # Determine the name of the tab (New File (x))
         index = self.scriptNotebook.GetPageCount()
         if self.options['multilinetab']:
@@ -9859,20 +9853,34 @@ class MainFrame(wxp.Frame):
                 iNewFile = int(match.group(1))
                 if iNewFile > iMax:
                     iMax = iNewFile
-        # Add the tab to the notebook
-        # Paste the old selected text (unless it only contains whitespace)
-        if copyselected and oldselected.strip():
+        # Create a new script window instance
+        scriptWindow = self.createScriptWindow()
+        # Get text and set some script variables
+        if text:
+            copytab = False
+        else:
+            if copytab:
+                text = self.currentScript.GetText()
+            elif copyselected:
+                text = self.currentScript.GetSelectedText()
+                copytab = bool(text.strip())
+        if text and copytab:
+            scriptWindow.workdir = self.currentScript.workdir
+            scriptWindow.encoding = self.currentScript.encoding
+        # Add the tab to the notebook, pasting the text (unless it only contains whitespace)
+        if text.strip():
             self.scriptNotebook.AddPage(scriptWindow,'%s (%s)' % (self.NewFileName, iMax+1), select=False)
-            scriptWindow.SetText(oldselected)
+            scriptWindow.SetText(text)
             scriptWindow.SelectAll()
-            scriptWindow.encoding = oldencoding
-            self.refreshAVI = True
             if select:
+                self.refreshAVI = True
                 self.scriptNotebook.SetSelection(self.scriptNotebook.GetPageCount()-1)
         else:
             if select:
                 self.HidePreviewWindow()
             self.scriptNotebook.AddPage(scriptWindow,'%s (%s)' % (self.NewFileName, iMax+1), select=select)
+        if select:
+            self.currentScript = scriptWindow
         scriptWindow.SetFocus()
         self.UpdateTabImages()
         scriptWindow.EnsureCaretVisible()
@@ -9885,7 +9893,7 @@ class MainFrame(wxp.Frame):
         self.Thaw()
     
     @AsyncCallWrapper
-    def OpenFile(self, filename='', default='', f_encoding='latin1', scripttext=None, setSavePoint=True, splits=None, framenum=None):#, index=None):
+    def OpenFile(self, filename='', default='', f_encoding='latin1', workdir='', scripttext=None, setSavePoint=True, splits=None, framenum=None):#, index=None):
         r'''OpenFile(filename='', default='')
         
         If the string 'filename' is a path to an Avisynth script, this function opens 
@@ -9939,6 +9947,7 @@ class MainFrame(wxp.Frame):
                             txt, f_encoding = self.GetMarkedScriptFromFile(filename)
                             script.SetText(txt)
                             script.encoding = f_encoding
+                            script.workdir = workdir
                             if setSavePoint:
                                 script.EmptyUndoBuffer()
                                 script.SetSavePoint()
@@ -9995,6 +10004,7 @@ class MainFrame(wxp.Frame):
                 else:
                     script.SetText(scripttext)
                 script.encoding = f_encoding
+                script.workdir = workdir
                 if setSavePoint:
                     script.EmptyUndoBuffer()
                     script.SetSavePoint()
@@ -10225,6 +10235,7 @@ class MainFrame(wxp.Frame):
             ID = dlg.ShowModal()
             if ID == wx.ID_OK:
                 filename = dlg.GetPath()
+                script.workdir = os.path.basename(filename)
             dlg.Destroy()
         # Save script if filename exists (either given or user clicked OK)
         if filename:
@@ -10407,18 +10418,6 @@ class MainFrame(wxp.Frame):
                             return s
         return ''
     
-    def CopyTextToNewTab(self, index=None):
-        script, index = self.getScriptAtIndex(index)
-        text = script.GetText()
-        f_encoding = script.encoding
-        self.NewTab(copyselected=False, select=False)
-        self.currentScript.SetText(text)
-        self.currentScript.SelectAll()
-        self.currentScript.encoding = f_encoding
-        self.refreshAVI = True
-        self.scriptNotebook.SetSelection(self.scriptNotebook.GetPageCount()-1)
-        self.scriptNotebook.changed = False
-        
     def RepositionTab(self, newIndex):
         if type(newIndex) is not int:        
             id = newIndex.GetId()
@@ -10523,8 +10522,8 @@ class MainFrame(wxp.Frame):
     def LoadTab(self, item):
         '''Open/reload a tab from info returned from GetTabInfo'''
         nItems = len(item)
-        defaults = (None, None, None, None, None, 0, 'latin1')
-        scriptname, boolSelected, scripttext, crc, splits, framenum, f_encoding = item + defaults[nItems:]
+        defaults = (None, None, None, None, None, 0, 'latin1', '')
+        scriptname, boolSelected, scripttext, crc, splits, framenum, f_encoding, workdir = item + defaults[nItems:]
         #~ if len(item) == 4:
             #~ scriptname, boolSelected, scripttext, crc = item
         #~ else:
@@ -10553,7 +10552,7 @@ class MainFrame(wxp.Frame):
                     crc2 = md5(txtFromFile.encode('utf8')).hexdigest()
                     if crc != crc2:
                         reload = True
-        index = self.OpenFile(filename=scriptname, f_encoding=f_encoding, scripttext=scripttext, setSavePoint=setSavePoint, splits=splits, framenum=framenum)
+        index = self.OpenFile(filename=scriptname, f_encoding=f_encoding, workdir=workdir, scripttext=scripttext, setSavePoint=setSavePoint, splits=splits, framenum=framenum)
         if reload:
             self.reloadList.append((index, scriptname, txt))
         return index
@@ -10631,7 +10630,7 @@ class MainFrame(wxp.Frame):
             txt = self.GetTextFromFile(scriptname)[0]
             crc = md5(txt.encode('utf8')).hexdigest()
         splits = (script.lastSplitVideoPos, script.lastSplitSliderPos, script.sliderWindowShown)
-        return scriptname, boolSelected, script.GetText(), crc, splits, script.lastFramenum, script.encoding
+        return scriptname, boolSelected, script.GetText(), crc, splits, script.lastFramenum, script.encoding, script.workdir
     
     def SaveCurrentImage(self, filename='', index=None, default='', quality=None):
         script, index = self.getScriptAtIndex(index)
@@ -12458,18 +12457,22 @@ class MainFrame(wxp.Frame):
                     oldFramecount = script.AVI.Framecount
                     oldWidth, oldHeight = script.AVI.Width, script.AVI.Height
                     boolOldAVI = True
-                cwd = os.getcwd()
                 if updateDisplayClip and False:
                     script.AVI.CreateDisplayClip(fitHeight, fitWidth)
                 else:
+                    if (self.options['useworkdir'] and self.options['alwaysworkdir'] and 
+                        os.path.isdir(self.options['workdir'])):
+                        workdir = self.options['workdir']
+                    else:
+                        workdir = script.workdir
                     wx.BeginBusyCursor()
                     script.AVI = None
                     script.AVI = pyavs.AvsClip(
-                        self.getCleanText(scripttxt), filename, fitHeight=fitHeight, fitWidth=fitWidth, 
-                        oldFramecount=oldFramecount, keepRaw=self.showVideoPixelAvisynth, matrix=self.matrix, 
+                        self.getCleanText(scripttxt), filename, workdir=workdir, 
+                        fitHeight=fitHeight, fitWidth=fitWidth, oldFramecount=oldFramecount, 
+                        keepRaw=self.showVideoPixelAvisynth, matrix=self.matrix, 
                         interlaced=self.interlaced, swapuv=self.swapuv)
                     wx.EndBusyCursor()
-                os.chdir(cwd)
                 if not script.AVI.initialized:
                     if prompt:
                         self.HidePreviewWindow()
@@ -12482,6 +12485,9 @@ class MainFrame(wxp.Frame):
                         wx.MessageBox('%s\n\n%s' % (s1, s2), _('Error'), style=wx.OK|wx.ICON_ERROR)
                     script.AVI = None
                     return None
+                if not (self.options['useworkdir'] and self.options['alwaysworkdir'] and 
+                        os.path.isdir(self.options['workdir'])):
+                    script.workdir = script.AVI.workdir
                 if not self.zoomwindow:
                     script.zoomwindow_actualsize = None
                     if boolOldAVI and (oldWidth, oldHeight) != (script.AVI.Width, script.AVI.Height):
@@ -14214,6 +14220,10 @@ class MainFrame(wxp.Frame):
             self.options = dlg.GetDict()
             with open(self.optionsfilename, mode='wb') as f:
                 cPickle.dump(self.options, f, protocol=0)
+            if self.options['useworkdir'] and self.options['workdir']:
+                os.chdir(self.options['workdir'])
+            else:
+                os.chdir(self.initialworkdir)
             for i in xrange(self.scriptNotebook.GetPageCount()):
                 script = self.scriptNotebook.GetPage(i)
                 script.SetUserOptions()
@@ -15586,6 +15596,8 @@ class MainFrame(wxp.Frame):
             return self.AvsP_functions(self)
             
         def ShowException():
+            if __debug__:
+                raise
             match = re.match('\w+\((?:\d+,)?\s*[\'"](.*)[\'"],?\)$', 
                              repr(sys.exc_info()[1]).decode('string_escape').decode(encoding))
             message = match.group(1) if match else sys.exc_info()[1]
@@ -15601,7 +15613,6 @@ class MainFrame(wxp.Frame):
             error_string = '%s\n\n%s%s' % (_('Error in the macro:'), message, extra)
             AsyncCall(wx.MessageBox, error_string, _('Error'), style=wx.OK|wx.ICON_ERROR).Wait()  
         
-        os.chdir(self.programdir)
         if os.path.isfile(macrofilename):
             try:
                 #~ execfile(macrofilename, {'avsp':AvsP_functions}, {})
@@ -15657,10 +15668,11 @@ class MainFrame(wxp.Frame):
                         exec macrotxt in self.macroVars, {}
                     except:
                         ShowException()
-                    if hash(repr(self.optionsMacros[macrobasename].items())) != hash_pre:
-                        f = open(self.macrosfilename, mode='wb')
-                        cPickle.dump(self.optionsMacros, f, protocol=0)
-                        f.close()
+                    if (hash(repr(self.optionsMacros[macrobasename].items())) != hash_pre and
+                        os.path.isdir(os.path.dirname(self.macrosfilename))):
+                            f = open(self.macrosfilename, mode='wb')
+                            cPickle.dump(self.optionsMacros, f, protocol=0)
+                            f.close()
                 if thread:    
                     thread = threading.Thread(target=MacroFunction, name='MacroThread')
                     thread.daemon = True

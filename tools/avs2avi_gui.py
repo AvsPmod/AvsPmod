@@ -1,4 +1,5 @@
 import os
+import os.path
 import cPickle
 import ctypes
 import wx
@@ -7,7 +8,10 @@ class Avs2aviDialog(wx.Dialog):
     def __init__(self, parent, inputname='', title='Save as AVI'):
         wx.Dialog.__init__(self, parent, wx.ID_ANY, title)
         self.LoadOptions()
-        self.avs2avipath = self.options.setdefault('avs2avipath', 'avs2avi.exe')
+        default_avs2avipath = os.path.join(parent.toolsfolder, 'avs2avi.exe')
+        self.avs2avipath = self.options.setdefault('avs2avipath', default_avs2avipath)
+        if not os.path.isfile(self.avs2avipath):
+            self.avs2avipath = self.options['avs2avipath'] = default_avs2avipath
         if not os.path.isfile(self.avs2avipath):
             wx.MessageBox(_('Please select the path to avs2avi.exe'), _('Message'))
             dlg = wx.FileDialog(self, title, '', '', '*.exe', wx.OPEN)
@@ -22,6 +26,7 @@ class Avs2aviDialog(wx.Dialog):
                 return
             else:
                 self.options['avs2avipath'] = self.avs2avipath
+        self.SaveOptions()
         self.boolCanceled = False
         self.jobInfo = {
             'pid': None,
@@ -114,7 +119,8 @@ class Avs2aviDialog(wx.Dialog):
         
     def LoadOptions(self):
         self.options = {}
-        self.optionsFilename = __name__ + '.dat'
+        self.optionsFilename = os.path.join(self.GetParent().toolsfolder, 
+                                            __name__ + '.dat')
         if os.path.isfile(self.optionsFilename):
             f = open(self.optionsFilename, mode='rb')
             self.options = cPickle.load(f)
