@@ -1,6 +1,7 @@
 import ctypes
 import sys
 import os
+import sys
 
 # Initialization routines.  Assume AvxSynth/Linux if os.name is not NT.
 if os.name == 'nt':
@@ -9,6 +10,8 @@ if os.name == 'nt':
 else:
     avidll = ctypes.CDLL("libavxsynth.so")
     FUNCTYPE = ctypes.CFUNCTYPE
+
+encoding = sys.getfilesystemencoding()
 
 # Interface: 3 + 5's new colorspaces
 
@@ -536,6 +539,21 @@ class AVS_Value(ctypes.Structure,object):
     def SetString(self,s):
         if self.type!=118:self.Release()
         self.type=115#='s'tring
+        if isinstance(s, unicode):
+            try:
+                s_enc = s.encode(encoding)
+                encoded = True
+            except:
+                encoded = False
+            else: # mbcs just replaces invalid characters
+                if encoding == 'mbcs':
+                    s2 = s_enc.decode(encoding)
+                    if s != s2:
+                        encoded = False
+            if not encoded:
+                s = s.encode('utf8')
+            else:
+                s = s_enc
         self.d.s=s
         self.array_size=1
     def SetBool(self,b):
