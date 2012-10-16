@@ -746,7 +746,8 @@ class OptionsDialog(wx.Dialog):
                         label_position = misc['label_position'] if 'label_position' in misc else wx.HORIZONTAL
                         fileMode = wx.SAVE|wx.OVERWRITE_PROMPT if flag == OPT_ELEM_FILE_SAVE else wx.OPEN|wx.FILE_MUST_EXIST
                         fileMask = misc['fileMask'] if 'fileMask' in misc else '*.*'
-                        startDirectory = misc['startDirectory'] if 'startDirectory' in misc else ''
+                        startDirectory = (self.GetParent().ExpandVars(misc['startDirectory']) if misc.get('startDirectory') 
+                                          else os.path.dirname(self.GetParent().ExpandVars(optionsValue)))
                         buttonText = misc['buttonText'] if 'buttonText' in misc else _('Browse')
                         buttonWidth = misc['buttonWidth'] if 'buttonWidth' in misc else -1
                         itemSizer = wx.BoxSizer(wx.VERTICAL)
@@ -783,7 +784,8 @@ class OptionsDialog(wx.Dialog):
                         width = misc['width'] if 'width' in misc else 400
                         expand = misc['expand'] if 'expand' in misc else True
                         label_position = misc['label_position'] if 'label_position' in misc else wx.HORIZONTAL
-                        startDirectory = misc['startDirectory'] if 'startDirectory' in misc else ''
+                        startDirectory = (self.GetParent().ExpandVars(misc['startDirectory']) if misc.get('startDirectory') 
+                                          else self.GetParent().ExpandVars(optionsValue))
                         buttonText = misc['buttonText'] if 'buttonText' in misc else _('Browse')
                         buttonWidth = misc['buttonWidth'] if 'buttonWidth' in misc else -1         
                         itemSizer = wx.BoxSizer(wx.VERTICAL)
@@ -797,7 +799,7 @@ class OptionsDialog(wx.Dialog):
                         ctrl = filebrowse.DirBrowseButton(tabPanel, wx.ID_ANY, size=(width,-1),
                             labelText=label,
                             toolTip=tip,
-                            startDirectory=startDirectory if startDirectory else optionsValue,
+                            startDirectory=startDirectory,
                             newDirectory=True, 
                             buttonText=buttonText,
                             #dialogTitle = ''
@@ -1026,7 +1028,7 @@ class OptionsDialog(wx.Dialog):
         for key, value in self.controls.items():
             ctrl, flag, tabIndex = value
             if flag in (OPT_ELEM_DIR, OPT_ELEM_DIR_URL):
-                entry = ctrl.GetValue()
+                entry = self.GetParent().ExpandVars(ctrl.GetValue())
                 if entry == '' or os.path.isdir(entry):
                     newValue = entry
                 elif flag == OPT_ELEM_DIR_URL and entry.lstrip().startswith('http://'):
@@ -1036,7 +1038,7 @@ class OptionsDialog(wx.Dialog):
                     self.ShowWarning(ctrl, _('Invalid directory!') + label, tabIndex)
                     return False
             elif flag in (OPT_ELEM_FILE, OPT_ELEM_FILE_OPEN, OPT_ELEM_FILE_SAVE, OPT_ELEM_FILE_URL):
-                entry = ctrl.GetValue()
+                entry = self.GetParent().ExpandVars(ctrl.GetValue())
                 if entry == '' or os.path.isfile(entry) or flag == OPT_ELEM_FILE_SAVE or (
                    flag == OPT_ELEM_FILE_URL and entry.lstrip().startswith('http://')):
                     newValue = entry

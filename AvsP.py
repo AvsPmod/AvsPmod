@@ -1308,21 +1308,12 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
         if not name:
             return
         docsearchpaths = []
-        avisynthdir = self.app.options['avisynthdir']
-        docsearchpathstring = self.app.options['docsearchpaths']
+        avisynthdir = self.app.ExpandVars(self.app.options['avisynthdir'])
+        docsearchpathstring = self.app.ExpandVars(self.app.options['docsearchpaths'])
         for path in docsearchpathstring.split(';'):
             path = path.strip()
-            if path == '':
-                continue
-            if path.rstrip(os.sep) == '%avisynthdir%':
-                docsearchpaths.append(avisynthdir)
-            elif path.startswith('%avisynthdir%' + os.sep):
-                path = os.path.join(avisynthdir, path.split('%avisynthdir%' + os.sep)[1])
-                if os.path.isdir(path):
-                    docsearchpaths.append(path)
-            else:
-                if os.path.isdir(path):
-                    docsearchpaths.append(path)
+            if os.path.isdir(path):
+                docsearchpaths.append(path)
         extensions = ['.htm', '.html', '.txt', '.lnk']
         for dir in docsearchpaths:
             filenames = []
@@ -3116,7 +3107,7 @@ class AvsFunctionDialog(wx.Dialog):
     def ImportFromFiles(self):
         filenames, filterInfo, unrecognized = [], [], []
         title = _('Open Customization files, Avisynth scripts or Avsp options files')
-        initial_dir = os.path.join(self.GetParent().options['avisynthdir'], 'plugins' if os.name == 'nt' else 'avxsynth')
+        initial_dir = self.GetParent().ExpandVars(self.GetParent().options['pluginsdir'])
         filefilter = (_('All supported') + '|*.txt;*.avsi;*.avs;*.dat|' + _('Customization file') + ' (*.txt)|*.txt|' + 
                       _('AviSynth script') + ' (*.avs, *.avsi)|*.avs;*.avsi|' + _('AvsP data') + ' (*.dat)|*.dat|' + 
                       _('All files') + ' (*.*)|*.*')
@@ -4538,6 +4529,8 @@ class MainFrame(wxp.Frame):
             finally:
                 sys.dont_write_bytecode = False
         
+        self.optionsDlgInfo = self.getOptionsDlgInfo()
+        
         # single-instance socket
         self.port = 50009
         self.instance = wx.SingleInstanceChecker(title+wx.GetUserId())
@@ -4565,13 +4558,7 @@ class MainFrame(wxp.Frame):
         else:
             if self.instance.IsAnotherRunning():
                 self.options['exitstatus'] = 0
-
-        self.optionsDlgInfo = self.getOptionsDlgInfo()
-        #~ if self.options['helpdir'].count('%programdir%') > 0:
-            #~ self.options['helpdir'] = self.options['helpdir'].replace('%programdir%', self.programdir)
-        if not os.path.isdir(self.options['helpdir']):
-            self.options['helpdir'] = os.path.join('%programdir%', 'help')
-        self.options['helpdir'] = self.options['helpdir'].replace('%programdir%', self.programdir)
+        
         # Program size and position options
         self.separatevideowindow = self.options['separatevideowindow']
         dimensions = self.options.get('dimensions')
@@ -5079,7 +5066,8 @@ class MainFrame(wxp.Frame):
             'exitstatus': 0,
             'reservedshortcuts': ['Tab', 'Shift+Tab', 'Ctrl+Z', 'Ctrl+Y', 'Ctrl+X', 'Ctrl+C', 'Ctrl+V', 'Ctrl+A'],
             # GENERAL OPTIONS
-            'helpdir': os.path.join('%programdir%', 'help'),
+            'pluginsdir': '',
+            'helpdir': '',
             'avisynthdir': '',
             'avisynthhelpfile': '',
             'workdir': '',
@@ -5087,11 +5075,11 @@ class MainFrame(wxp.Frame):
             'alwaysworkdir': False,
             'externalplayer': '',
             'externalplayerargs': '',
-            'docsearchpaths': ';'.join([os.path.join('%avisynthdir%', 'plugins'), 
-                                        os.path.join('%avisynthdir%', 'docs', 'english', 'corefilters') if os.name == 'nt' 
-                                            else '/usr/local/share/doc/english/corefilters',
-                                        os.path.join('%avisynthdir%', 'docs', 'english', 'externalfilters') if os.name == 'nt' 
-                                            else '/usr/local/share/doc/english/externalfilters']),
+            'docsearchpaths': ';'.join(['%pluginsdir%', 
+                    os.path.join('%avisynthdir%' if os.name == 'nt' 
+                        else '/usr/local/share', 'docs', 'english', 'corefilters'), 
+                    os.path.join('%avisynthdir%' if os.name == 'nt' 
+                        else '/usr/local/share', 'docs', 'english', 'externalfilters')]),
             'docsearchurl':'http://www.google.com/search?q=%filtername%+Avisynth',
             # TEXT OPTIONS
             'calltips': True,
@@ -5190,14 +5178,16 @@ class MainFrame(wxp.Frame):
         self.options['version'] = self.version
         
         # Set paths as necessary
+        avisynthdir_exp = self.ExpandVars(self.options['avisynthdir'])
         if os.name == 'nt':
-            if not os.path.isdir(self.options['avisynthdir']):
+            if not os.path.isdir(avisynthdir_exp):
                 try:
                     # Get the avisynth directory from the registry
                     key = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, 'Software\\AviSynth')
-                    name, value, typereg = _winreg.EnumValue(key, 0)
+                    value = os.path.expandvars(_winreg.EnumValue(key, 0)[1])
                     if os.path.isdir(value):
-                        self.options['avisynthdir'] = value
+                        avisynthdir_exp = value
+                        self.options['avisynthdir'] = self.ExpandVars(avisynthdir_exp, False, 'programdir')
                     else:
                         raise WindowsError
                     key.Close()
@@ -5209,21 +5199,39 @@ class MainFrame(wxp.Frame):
                     dlg = wx.DirDialog(self, 'Select the Avisynth directory', defaultdir)
                     ID = dlg.ShowModal()
                     if ID==wx.ID_OK:
-                        self.options['avisynthdir'] = dlg.GetPath()
+                        avisynthdir_exp = dlg.GetPath()
+                        self.options['avisynthdir'] = self.ExpandVars(avisynthdir_exp, False, 'programdir')
                     dlg.Destroy()
-            if not os.path.isfile(self.options['avisynthhelpfile']):
-                helpfile = os.path.join(self.options['avisynthdir'], 'docs', 'english', 'index.htm')
-                if os.path.isfile(helpfile):
-                    self.options['avisynthhelpfile'] = helpfile
+            if (not os.path.isfile(self.ExpandVars(self.options['avisynthhelpfile'])) and 
+                os.path.isfile(os.path.join(avisynthdir_exp, 'docs', 'english', 'index.htm'))):
+                    self.options['avisynthhelpfile'] = os.path.join('%avisynthdir%', 'docs', 'english', 'index.htm')
+            if not os.path.isdir(self.ExpandVars(self.options['pluginsdir'])):
+                try:
+                    # Get the plugin directory from the registry
+                    key = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, 'Software\\AviSynth')
+                    value = os.path.expandvars(_winreg.QueryValueEx(key, 'plugindir2_5')[0])
+                    if os.path.isdir(value):
+                        self.options['pluginsdir'] = self.ExpandVars(value, False)
+                    else:
+                        raise WindowsError
+                    key.Close()
+                except WindowsError:
+                    if os.path.isdir(os.path.join(avisynthdir_exp, 'plugins')):
+                        self.options['pluginsdir'] = os.path.join('%avisynthdir%', 'plugins')
         else:
-            if not os.path.isdir(self.options['avisynthdir']):
+            if not os.path.isdir(avisynthdir_exp):
                 self.options['avisynthdir'] = '/usr/local/lib'
-            if not os.path.isfile(self.options['avisynthhelpfile']):
+            if not os.path.isfile(self.ExpandVars(self.options['avisynthhelpfile'])):
                 helpfile = '/usr/local/share/doc/english/index.htm'
                 if os.path.isfile(helpfile):
                     self.options['avisynthhelpfile'] = helpfile
+            if (not os.path.isdir(self.ExpandVars(self.options['pluginsdir'])) and 
+                os.path.isdir(os.path.join(avisynthdir_exp, 'avxsynth'))):
+                    self.options['pluginsdir'] = os.path.join('%avisynthdir%', 'avxsynth')
+        if not os.path.isdir(self.ExpandVars(self.options['helpdir'])):
+            self.options['helpdir'] = os.path.join('%programdir%', 'help')
         if self.options['useworkdir']:
-            workdir = self.options['workdir']
+            workdir = self.ExpandVars(self.options['workdir'])
             if os.path.isdir(workdir):
                 os.chdir(workdir)
         
@@ -8405,7 +8413,7 @@ class MainFrame(wxp.Frame):
         self.ShowOptions()
 
     def OnMenuHelpAvisynth(self, event):
-        helpfile = self.options['avisynthhelpfile']
+        helpfile = self.ExpandVars(self.options['avisynthhelpfile'])
         # Check if the given doc path exists on the computer or is a url
         if os.path.isfile(helpfile) or helpfile.startswith('http://'):
             startfile(helpfile)
@@ -8416,42 +8424,42 @@ class MainFrame(wxp.Frame):
     def OnMenuHelpAvisynthPlugins(self, event):
         plugindir = self.options['recentdirPlugins']
         if not os.path.isdir(plugindir):
-            plugindir = os.path.join(self.options['avisynthdir'], 'plugins' if os.name == 'nt' else 'avxsynth')
-        if os.path.exists(plugindir):
+            plugindir = self.ExpandVars(self.options['pluginsdir'])
+        if os.path.isdir(plugindir):
             startfile(plugindir)
         else:
-            wx.MessageBox(_('Could not find the Avisynth plugins folder!') % locals(), _('Error'), style=wx.OK|wx.ICON_ERROR)
+            wx.MessageBox(_('Could not find the Avisynth plugins folder!'), _('Error'), style=wx.OK|wx.ICON_ERROR)
 
     def OnMenuHelpAnimatedTutorial(self, event):
-        filename = os.path.join(self.options['helpdir'], 'Demo.htm')
+        filename = os.path.join(self.ExpandVars(self.options['helpdir']), 'Demo.htm')
         if os.path.isfile(filename):
             startfile(filename)
         else:
             startfile('http://www.avisynth.org/qwerpoi/Demo.htm')
 
     def OnMenuHelpTextFeatures(self, event):
-        filename = os.path.join(self.options['helpdir'], 'Text.html')
+        filename = os.path.join(self.ExpandVars(self.options['helpdir']), 'Text.html')
         if os.path.isfile(filename):
             startfile(filename)
         else:
             startfile('http://avisynth.org/qwerpoi/Text.html')
 
     def OnMenuHelpVideoFeatures(self, event):
-        filename = os.path.join(self.options['helpdir'], 'Video.html')
+        filename = os.path.join(self.ExpandVars(self.options['helpdir']), 'Video.html')
         if os.path.isfile(filename):
             startfile(filename)
         else:
             startfile('http://avisynth.org/qwerpoi/Video.html')
 
     def OnMenuHelpUserSliderFeatures(self, event):
-        filename = os.path.join(self.options['helpdir'], 'UserSliders.html')
+        filename = os.path.join(self.ExpandVars(self.options['helpdir']), 'UserSliders.html')
         if os.path.isfile(filename):
             startfile(filename)
         else:
             startfile('http://avisynth.org/qwerpoi/UserSliders.html')
 
     def OnMenuHelpMacroFeatures(self, event):
-        filename = os.path.join(self.options['helpdir'], 'Macros.html')
+        filename = os.path.join(self.ExpandVars(self.options['helpdir']), 'Macros.html')
         if os.path.isfile(filename):
             startfile(filename)
         else:
@@ -8459,7 +8467,7 @@ class MainFrame(wxp.Frame):
 
     def OnMenuHelpReadme(self, event):
         readme = os.path.join(self.programdir, 'readme.txt')
-        if os.path.exists(readme):
+        if os.path.isfile(readme):
             startfile(readme)
         else:
             wx.MessageBox(_('Could not find %(readme)s!') % locals(), _('Error'), style=wx.OK|wx.ICON_ERROR)
@@ -10926,8 +10934,7 @@ class MainFrame(wxp.Frame):
             default_dir, default_base = (default, '') if os.path.isdir(default) else os.path.split(default)
             initial_dir = default_dir if os.path.isdir(default_dir) else self.options['recentdirPlugins']
             if not os.path.isdir(initial_dir):
-                initial_dir = os.path.join(self.options['avisynthdir'], 
-                                         'plugins' if os.name == 'nt' else 'avxsynth')
+                initial_dir = self.ExpandVars(self.options['pluginsdir'])
             dlg = wx.FileDialog(self, _('Insert a plugin'), initial_dir, default_base, 
                                 filefilter, wx.OPEN|wx.FILE_MUST_EXIST)
             ID = dlg.ShowModal()
@@ -12810,6 +12817,7 @@ class MainFrame(wxp.Frame):
             path = self.options['externalplayer']
         if args is None:
             args = self.options['externalplayerargs']
+        path = self.ExpandVars(path)
         if not os.path.isfile(path):
             if not prompt:
                 return False
@@ -12825,7 +12833,7 @@ class MainFrame(wxp.Frame):
             if path != '':
                 wx.MessageBox(_('A program must be specified to use this feature!'), _('Error'), style=wx.OK|wx.ICON_ERROR)
             return
-        self.options['externalplayer'] = path
+        self.options['externalplayer'] = self.ExpandVars(path, False)
         # Run the process
         process = wx.Process(self)
         def OnEndProcess(event):
@@ -14218,6 +14226,9 @@ class MainFrame(wxp.Frame):
         # Set the data
         if ID == wx.ID_OK:
             self.options = dlg.GetDict()
+            self.options['avisynthdir'] = self.ExpandVars(self.options['avisynthdir'], False, 'programdir')
+            for key in ['pluginsdir', 'workdir', 'avisynthhelpfile', 'helpdir', 'externalplayer', 'docsearchpaths']:
+                self.options[key] = self.ExpandVars(self.options[key], False)
             with open(self.optionsfilename, mode='wb') as f:
                 cPickle.dump(self.options, f, protocol=0)
             if self.options['useworkdir'] and self.options['workdir']:
@@ -14250,6 +14261,27 @@ class MainFrame(wxp.Frame):
         f = open(filename)
         text = f.readline().strip('#').strip()
         f.close()
+        return text
+    
+    def ExpandVars(self, text, expand=True, only=None):
+        '''Expand and unexpand program variables
+        
+        Variables: %programdir%, %avisynthdir%, %pluginsdir%
+        
+        '''
+        if only == 'pluginsdir':
+            vars_ = (('%pluginsdir%', self.options['pluginsdir']),)
+        elif only == 'avisynthdir':
+            vars_ = (('%avisynthdir%', self.options['avisynthdir']),)
+        elif only == 'programdir':
+            vars_ = (('%programdir%', self.programdir),)
+        else:
+            vars_ = (('%pluginsdir%', self.options['pluginsdir']), 
+                     ('%avisynthdir%', self.options['avisynthdir']), 
+                     ('%programdir%', self.programdir))
+        index = (0, 1) if expand else (1, 0)
+        for var in [var for var in vars_ if var[1]]:
+            text = text.replace(var[index[0]], var[index[1]])
         return text
     
     def FormatTime(self, s):
