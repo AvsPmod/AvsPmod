@@ -8271,29 +8271,25 @@ class MainFrame(wxp.Frame):
                                      _(' Admin rights are needed.'), '', wx.YES_NO|wx.CANCEL|wx.ICON_QUESTION)
                 if ret != wx.CANCEL:
                     if hasattr(sys,'frozen'): # run in py2exe binary mode
-                        value = '"%s" "%%1"' % sys.executable
+                        value = u'"%s" "%%1"' % sys.executable
                     else: # run in source mode
-                        dirname = os.path.dirname(__file__)
-                        basename = os.path.basename(__file__)
-                        if not dirname:
-                            dirname = os.getcwd()
-                        script = os.path.join(dirname, basename)
-                        value = '"%s" -O "%s" "%%1"' % (sys.executable, script)
+                        script = os.path.join(self.programdir, 'run.py')
+                        value = u'"%s" -O "%s" "%%1"' % (sys.executable, script)
                     f = tempfile.NamedTemporaryFile(delete=False)
                     if restore:
-                        txt = textwrap.dedent('''\
+                        txt = textwrap.dedent(u'''\
                         HKCU\\Software\\Classes\\avsfile\\shell\\Open\\command
                         = notepad "%1"
                         HKCU\\Software\\Classes\\avs_auto_file\\shell\\Open\\command
                         = notepad "%1"''')
                         if ret == wx.YES:
-                            txt += textwrap.dedent('''
+                            txt += textwrap.dedent(u'''
                             HKLM\\Software\\Classes\\avsfile\\shell\\Open\\command
                             = notepad "%1"
                             HKLM\\Software\\Classes\\avs_auto_file\\shell\\Open\\command
                             = notepad "%1"''')
                     else:
-                        txt = textwrap.dedent('''\
+                        txt = textwrap.dedent(u'''\
                         HKCU\\Software\\Classes\\avsfile\\shell\\Open\\command
                         = "{value}"
                         HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\FileExts\\.avs
@@ -8308,12 +8304,12 @@ class MainFrame(wxp.Frame):
                         HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\FileExts\\.avsi\\UserChoice [DELETE]
                         ''').format(value=value)
                         if ret == wx.YES:
-                            txt += textwrap.dedent('''
+                            txt += textwrap.dedent(u'''
                             HKLM\\Software\\Classes\\avsfile\\shell\\Open\\command
                             = "{value}"
                             HKLM\\Software\\Classes\\avs_auto_file\\shell\\Open\\command
                             = "{value}"''').format(value=value)
-                    f.write(txt)
+                    f.write(txt.encode('utf16'))
                     f.close()
                     if ret == wx.YES:
                         ctypes.windll.shell32.ShellExecuteW(None, u'runas', u'cmd', u'/k "regini "{f}" & del "{f}""'.format(f=f.name), None, 0)
