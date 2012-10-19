@@ -2,6 +2,42 @@ CHANGELOG
 =========
 
 
+Version 2.X.X [2012-??-??]
+--------------------------
+
+- Add AvxSynth support. AvsPmod runs now natively on *nix
+- Add option to specify directly the location of avisynth.dll/libavxsynth.so
+- Add option to change the autoload plugins directory
+- Add option to choose an alternative working directory
+- Accept some variables on 'program settings' paths: %programdir%, %avisynthdir%, %pluginsdir%. Useful for portable use.
+- Add 'undo close tab':
+  - file menu -> undo close tab
+  - middle click on empty tab bar space
+  - Ctrl+Shift+N default hotkey
+- Add new variable to video status bar - bookmark title (%BM)
+- Improve avs and avsi files association option:
+  - on Windows, prompt to associate files for all users or only the current one and ask for permissions for the former
+  - on *nix, this choice is made by starting AvsPmod as root to associate for all users. The application is also registered on the desktop environment's menu.
+  - make the option toggleable
+- Improve default filename on prompts:
+  - add two new settings to the options dialog, 'save/load' tab
+  - better basename choice on save image dialog and fix last saved image's name still being used when changing tabs
+  - add 'default' parameter to several macro functions
+- Detect correctly AviSynth 2.60 new color spaces
+- Fix opening and saving scripts with Unicode encodings
+- Fix decoding of command line arguments
+- Fix ScriptFile, ScriptName and ScriptDir functions not returning the right value [AviSynth 2.60]
+- Fix 'Stop' button of the avs2avi GUI tool
+- Fix tabs without filename still being closed when canceling a save dialog
+- Add 'propose' and 'only' parameters to the GetScriptFilename macro function
+- Improvements on the 'Import bookmarks from file' macro:
+  - add timecode format v1 parsing
+  - add support for list of frames on TFM log u/b section and optimize its parsing
+- Merge 'Save bookmarks to images' macro into 'Save Image Sequence'
+- Fix Python 2.6 compatibility
+- Other minor changes and fixes
+
+
 Version 2.3.1 [2012-07-22]
 --------------------------
 
