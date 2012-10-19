@@ -1,6 +1,7 @@
-# wxp - General framework classes for wxPython
+# wxp - general framework classes for wxPython
+# 
 # Copyright 2007 Peter Jang <http://www.avisynth.org/qwerpoi>
-#           2010-2012 the AvsPmod authors <http://forum.doom9.org/showthread.php?t=153248>
+#           2010-2012 the AvsPmod authors <https://github.com/avspmod/avspmod>
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -18,8 +19,10 @@
 #  http://www.gnu.org/copyleft/gpl.html .
 
 # Dependencies:
-# Python (tested with v2.5.1)
-# wxPython (tested with v2.6.3.3 unicode)
+#     Python (tested on v2.6 and 2.7)
+#     wxPython (tested on v2.8 Unicode and 2.9)
+# Scripts:
+#     icon.py (icons embedded in a Python script)
 
 import wx
 import wx.lib.buttons as wxButtons
@@ -180,13 +183,15 @@ class StdoutStderrWindow:
     the stream at which point it will create a Frame with a text area
     and write the text there.
     """
-    def __init__(self, title = "Error Window"):
+    def __init__(self, title=None):
+        if title is None:
+            title = _('Error Window')
         self.frame  = None
         self.title  = title
         self.pos    = wx.DefaultPosition
         self.size   = (450, 300)
         self.parent = None
-        logname = 'avsp_error_log.txt'
+        logname = 'error_log.txt'
         if hasattr(sys,'frozen'):
             self.logfilename = os.path.join(os.path.dirname(sys.executable), logname)
         else:
@@ -655,7 +660,8 @@ class OptionsDialog(wx.Dialog):
                         else:
                             itemSizer.AddSpacer((-1, 3))
                         staticLine = wx.StaticLine(tabPanel, wx.ID_ANY, size=(width, -1))
-                        itemSizer.Add(staticLine, 0, expand|wx.TOP|wx.BOTTOM, 2)
+                        margin = 0 if not width and not expand else 2
+                        itemSizer.Add(staticLine, 0, expand|wx.TOP|wx.BOTTOM, margin)
                     
                     elif flag == OPT_ELEM_CHECK:
                         # simple check box, with the label on the right

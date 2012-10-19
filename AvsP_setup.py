@@ -1,12 +1,36 @@
+# AvsP - an AviSynth editor
+# 
+# Copyright 2007 Peter Jang <http://www.avisynth.org/qwerpoi>
+#           2010-2012 the AvsPmod authors <https://github.com/avspmod/avspmod>
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+# 
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+# 
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA, or visit
+#  http://www.gnu.org/copyleft/gpl.html .
+
+# AvsP_setup - AvsP py2exe setup script
+# 
+# Dependencies:
+#     Python (tested on v2.6 and v2.7)
+#     wxPython (tested on v2.8 Unicode and v2.9)
+#     py2exe (tested on v0.6.9)
+
 from distutils.core import setup
 import os, sys
 import py2exe
-import AvsP
+import wx
 
-appName = "AvsPmod"
-description = "%s - an AviSynth script editor" % appName
-url = ''
-license = 'GNU GPL v2'
+import globals
 
 MANIFEST_TEMPLATE = """
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -57,7 +81,7 @@ manifest_extra = """\
   </dependency>
 """
 
-lib_extra = [os.path.join(os.path.dirname(AvsP.wx.__file__), 'gdiplus.dll')]
+lib_extra = [os.path.join(os.path.dirname(wx.__file__), 'gdiplus.dll')]
 
 data_files = [
         ('', [
@@ -80,6 +104,7 @@ data_files = [
             'AvsP_i18n.py',
             'AvsP.ico',
             'icons.py',
+            'globals.py',
             'build_instructions.txt',
         ]),
     ]
@@ -142,11 +167,11 @@ for dir, ext_filter, include in dirs:
 
 # Generate the dist files
 setup(
-    name = appName,
-    description = description,
-    version = AvsP.version,
-    url = url,
-    license = license,
+    name = globals.name,
+    description = globals.description,
+    version = globals.version,
+    url = globals.url,
+    license = globals.license,
     options = {"py2exe":{
         "compressed": True,
         "optimize": 1,
@@ -158,11 +183,11 @@ setup(
     data_files = data_files,
     windows = [
         {  
-            'copyright' : license,
+            'copyright' : globals.license,
             "script": "run.py",
             "icon_resources": [(1, "AvsP.ico")],
             "other_resources" : [(24, 1, MANIFEST_TEMPLATE % 
-                dict(prog=appName, extra=manifest_extra)
+                dict(prog=globals.name, extra=manifest_extra)
             )],
         }
     ],

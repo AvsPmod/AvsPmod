@@ -1,6 +1,7 @@
 # AvsP - an AviSynth editor
+# 
 # Copyright 2007 Peter Jang <http://www.avisynth.org/qwerpoi>
-#           2010-2012 the AvsPmod authors <http://forum.doom9.org/showthread.php?t=153248>
+#           2010-2012 the AvsPmod authors <https://github.com/avspmod/avspmod>
 #
 # Printing support based on stcprint.py from Peppy/Editra (wxWidgets license)
 # Copyright 2007 Cody Precord <staff@editra.org>
@@ -22,16 +23,16 @@
 #  http://www.gnu.org/copyleft/gpl.html .
 
 # Dependencies:
-#     Python (tested with v2.7.1)
-#     wxPython (tested with v2.8.12 unicode)
+#     Python (tested on v2.6 and 2.7)
+#     wxPython (tested on v2.8 Unicode and 2.9)
 # Scripts:
 #     wxp.py (general wxPython framework classes)
-#     avisynth.py (python Avisynth wrapper)
-#     pyavs.py (python AVI support through Avisynth routines)
-#     pyavs_avifile.py (python AVI support through Windows AVIFile routines)
-#     AvsP_icon.py (icons embedded in a python script)
-#     next_icon.py
-#     play_icon.py
+#     avisynth.py (Python AviSynth/AvxSynth wrapper)
+#     pyavs.py (AvsP AviSynth support by loading AviSynth directly as a library)
+#     pyavs_avifile.py (AvsP AviSynth support through Windows AVIFile routines)
+#     icon.py (icons embedded in a Python script)
+#     AvsP_i18n (internationalization and localization)
+#     globals.py (application info and other shared variables)
 
 import os
 import sys
@@ -82,9 +83,6 @@ import wxp
 from icons import AvsP_icon, next_icon, play_icon, skip_icon, spin_icon,\
                   ok_icon, smile_icon, question_icon, rectangle_icon,\
                   dragdrop_cursor
-
-
-version = '2.3.1'
 
 
 # Custom styled text control for avisynth language
@@ -4464,10 +4462,10 @@ class SliderPlus(wx.Panel):
 # Main program window
 class MainFrame(wxp.Frame):
     # Initialization functions
-    def __init__(self, parent=None, id=wx.ID_ANY, title='AvsPmod', pos=wx.DefaultPosition, size=(700, 550), style=wx.DEFAULT_FRAME_STYLE):
+    def __init__(self, parent=None, id=wx.ID_ANY, title=globals.name, pos=wx.DefaultPosition, size=(700, 550), style=wx.DEFAULT_FRAME_STYLE):
         wxp.Frame.__init__(self, parent, id, pos=pos, size=size, style=style)
         self.name = title
-        self.version = version
+        self.version = globals.version
         self.firsttime = False
         # Define program directories
         if hasattr(sys,'frozen'):
@@ -4909,9 +4907,9 @@ class MainFrame(wxp.Frame):
                         translation_version = translation.version
                     except AttributeError:
                         translation_version = None
-                    if translation_version != version:
+                    if translation_version != self.version:
                         if AvsP_i18n.UpdateTranslationFile(os.path.join(self.programdir, self.translations_dir), 
-                                                           self.options['lang'], version):
+                                                           self.options['lang'], self.version):
                             wx.MessageBox(_('%s translation file updated with new messages to translate') 
                                             % self.options['lang'], _('Translation updated'))
                         else:
@@ -8397,21 +8395,22 @@ class MainFrame(wxp.Frame):
                     else:
                         os.system('regini "{f}" & del "{f}"'.format(f=f.name))
         else:
-            app_file = os.path.join(tempfile.gettempdir(), 'avspmod.desktop')
+            app_file = os.path.join(tempfile.gettempdir(), globals.name.lower() + '.desktop')
             with open(app_file, 'w') as f:
                 txt = textwrap.dedent('''\
                 [Desktop Entry]
                 Version=1.0
-                Name=AvsPmod
+                Name={name}
                 GenericName=Video Editor
-                Comment=An Avisynth script editor
+                Comment={comment}
                 Type=Application
                 Exec=python -O {dir}/run.py %F
                 Terminal=false
                 StartupNotify=true
                 Icon={dir}/AvsP.ico
                 Categories=AudioVideo;
-                MimeType=text/x-avisynth;''').format(dir=self.programdir)
+                MimeType=text/x-avisynth;''').format(name=self.name, 
+                    comment=globals.description, dir=self.programdir)
                 f.write(txt)
             if 'avsp' in subprocess.check_output(['xdg-mime', 'query', 'default', 'text/x-avisynth']):
                 text_editor = subprocess.check_output(['xdg-mime', 'query', 'default', 'text/plain']).strip()
@@ -8544,7 +8543,7 @@ class MainFrame(wxp.Frame):
         font.SetPointSize(12)
         font.SetWeight(wx.FONTWEIGHT_BOLD)
         title.SetFont(font)
-        description = wx.StaticText(dlg, wx.ID_ANY, _('An AviSynth script editor'))
+        description = wx.StaticText(dlg, wx.ID_ANY, _(globals.description))
         link = wx.StaticText(dlg, wx.ID_ANY, _('AvsP Website'))
         font = link.GetFont()
         font.SetUnderlined(True)
@@ -8556,6 +8555,18 @@ class MainFrame(wxp.Frame):
             startfile(url)
         link.SetToolTip(wx.ToolTip(url))
         link.Bind(wx.EVT_LEFT_DOWN, OnClick)
+        
+        link0 = wx.StaticText(dlg, wx.ID_ANY, _("AvsPmod repository"))
+        font = link0.GetFont()
+        font.SetUnderlined(True)
+        link0.SetFont(font)
+        link0.SetForegroundColour(wx.Colour(0,0,255))
+        link0.SetCursor(wx.StockCursor(wx.CURSOR_HAND))
+        url0 = globals.url
+        def OnClick0(event):
+            startfile(url0)
+        link0.SetToolTip(wx.ToolTip(url0))
+        link0.Bind(wx.EVT_LEFT_DOWN, OnClick0)
         
         link1 = wx.StaticText(dlg, wx.ID_ANY, _("Active thread on Doom9's forum"))
         font = link1.GetFont()
@@ -8590,6 +8601,7 @@ class MainFrame(wxp.Frame):
         sizer.Add(inner, 0, wx.TOP, 20)
         sizer.Add(description, 0, wx.ALIGN_CENTER|wx.ALL, 10)
         sizer.Add(link, 0, wx.ALIGN_CENTER|wx.ALL, 5)
+        sizer.Add(link0, 0, wx.ALIGN_CENTER|wx.ALL, 5)
         sizer.Add(link1, 0, wx.ALIGN_CENTER|wx.ALL, 5)
         sizer.Add((0,5), 0, wx.EXPAND)
         sizer.Add(wx.StaticLine(dlg), 0, wx.EXPAND|wx.TOP, 10)
@@ -15709,7 +15721,7 @@ class MainFrame(wxp.Frame):
             def GetWindow():
                 r'''GetWindow()
                 
-                Get the handler of avsp's main window.  Don't use this except you know what 
+                Get the handler of AvsP's main window.  Don't use this except you know what 
                 you are doing.
                 
                 '''

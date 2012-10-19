@@ -1,3 +1,30 @@
+# AvsP - an AviSynth editor
+# 
+# Copyright 2007 Peter Jang <http://www.avisynth.org/qwerpoi>
+#           2010-2012 the AvsPmod authors <https://github.com/avspmod/avspmod>
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+# 
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+# 
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA, or visit
+#  http://www.gnu.org/copyleft/gpl.html .
+
+# AvsP_i18n - internationalization and localization
+# 
+# Dependencies:
+#     Python (tested on v2.6 and v2.7)
+#     wxPython (tested on v2.8 Unicode and v2.9)
+# Scripts:
+#     globals.py (application info and other shared variables)
 
 import __builtin__
 import sys
@@ -5,6 +32,8 @@ import os
 import os.path
 import glob
 import re
+
+import globals
 
 def _(s): return s
 __builtin__._ = _
@@ -14,11 +43,9 @@ pygettextpath = os.path.join(sys.prefix, 'Tools', 'i18n', 'pygettext.py')
 toolsdir = 'tools'
 macrosdir = 'macros'
 
-def main(version=None):
-    if version is None:
-        from AvsP import version
+def main(version=globals.version):
     
-    argsList = ['AvsP.py wxp.py pyavs.py pyavs_avifile.py']
+    argsList = ['AvsP.py wxp.py pyavs.py pyavs_avifile.py globals.py']
     # Get additional files to translate from the tools directory
     sys.path.insert(0, toolsdir)
     try:
@@ -125,9 +152,7 @@ def GenerateMessages(messageSet, args):
                 multiline = False
     return newlines
 
-def UpdateTranslationFile(dir, lang=None, version=None):
-    if version is None:
-        from AvsP import version
+def UpdateTranslationFile(dir, lang=None, version=globals.version):
     try:
         from __translation_new import new_translation_string
     except ImportError:
@@ -168,7 +193,7 @@ def UpdateTranslationFile(dir, lang=None, version=None):
             '# format.  If required, you can change the coding on the first line of this \n'
             '# document to a coding appropriate for your translated language. DO NOT \n'
             '# touch line breaks (\\n) and any words inside formatted strings (ie, any \n'
-            '# portions of the text which look like %(...)s, %(...)i, etc.)\n'
+            '# portions of the text which look like {...}, %(...)s, %(...)i, etc.)\n'
             ).split('\n')
         else:
             newlines = []

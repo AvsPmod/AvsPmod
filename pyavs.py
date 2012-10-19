@@ -1,6 +1,7 @@
 # AvsP - an AviSynth editor
+# 
 # Copyright 2007 Peter Jang <http://www.avisynth.org/qwerpoi>
-#           2010-2012 the AvsPmod authors <http://forum.doom9.org/showthread.php?t=153248>
+#           2010-2012 the AvsPmod authors <https://github.com/avspmod/avspmod>
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -17,12 +18,14 @@
 #  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA, or visit
 #  http://www.gnu.org/copyleft/gpl.html .
 
-# pyavs - AVI functions via Avisynth in Python
+# pyavs - AVI functions via AviSynth in Python
 # Drawing uses VFW on Windows and generical wxPython support on other platforms
+# 
 # Dependencies:
 #     Python (tested on v2.6 and v2.7)
+#     wxPython (for *nix, tested on v2.8 and v2.9)
 # Scripts:
-#     avisynth.py (python Avisynth wrapper)
+#     avisynth.py (Python AviSynth/AvxSynth wrapper)
 
 import sys
 import os

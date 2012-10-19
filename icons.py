@@ -1,77 +1,30 @@
-#----------------------------------------------------------------------
-# Name:        wx.lib.embeddedimage
-# Purpose:     Defines a class used for embedding PNG images in Python
-#              code. The primary method of using this module is via
-#              the code generator in wx.tools.img2py.
+# AvsP - an AviSynth editor
+# 
+# Copyright 2007 Peter Jang <http://www.avisynth.org/qwerpoi>
+#           2010-2012 the AvsPmod authors <https://github.com/avspmod/avspmod>
 #
-# Author:      Anthony Tuininga
-#
-# Created:     26-Nov-2007
-# RCS-ID:      $Id: embeddedimage.py 65197 2010-08-04 20:22:24Z RD $
-# Copyright:   (c) 2007 by Anthony Tuininga
-# Licence:     wxWindows license
-#----------------------------------------------------------------------
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+# 
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+# 
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA, or visit
+#  http://www.gnu.org/copyleft/gpl.html .
 
-import base64
-import cStringIO
-import wx
+# icons - icons embedded in a python script
+# 
+# Dependencies:
+#     Python (tested on v2.6 and v2.7)
+#     wxPython (tested on v2.8 Unicode and v2.9)
 
-try:
-    b64decode = base64.b64decode
-except AttributeError:
-    b64decode = base64.decodestring
-    
-
-class PyEmbeddedImage(object):
-    """
-    PyEmbeddedImage is primarily intended to be used by code generated
-    by img2py as a means of embedding image data in a python module so
-    the image can be used at runtime without needing to access the
-    image from an image file.  This makes distributing icons and such
-    that an application uses simpler since tools like py2exe will
-    automatically bundle modules that are imported, and the
-    application doesn't have to worry about how to locate the image
-    files on the user's filesystem.
-
-    The class can also be used for image data that may be acquired
-    from some other source at runtime, such as over the network or
-    from a database.  In this case pass False for isBase64 (unless the
-    data actually is base64 encoded.)  Any image type that
-    wx.ImageFromStream can handle should be okay.
-    """
-
-    def __init__(self, data, isBase64=True):
-        self.data = data
-        self.isBase64 = isBase64
-
-    def GetBitmap(self):
-        return wx.BitmapFromImage(self.GetImage())
-
-    def GetData(self):
-        data = self.data
-        if self.isBase64:
-            data = b64decode(self.data)
-        return data
-
-    def GetIcon(self):
-        icon = wx.EmptyIcon()
-        icon.CopyFromBitmap(self.GetBitmap())
-        return icon
-
-    def GetImage(self):
-        stream = cStringIO.StringIO(self.GetData())
-        return wx.ImageFromStream(stream)
-
-    # added for backwards compatibility
-    getBitmap = GetBitmap
-    getData = GetData
-    getIcon = GetIcon
-    getImage = GetImage
-
-    # define properties, for convenience
-    Bitmap = property(GetBitmap)
-    Icon = property(GetIcon)
-    Image = property(GetImage)
+from wx.lib.embeddedimage import PyEmbeddedImage
 
 AvsP_icon = PyEmbeddedImage(
     "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAABHNCSVQICAgIfAhkiAAAAgZJ"

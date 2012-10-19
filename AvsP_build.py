@@ -1,11 +1,29 @@
-# Build script for AvsP
+# AvsP - an AviSynth editor
+# 
+# Copyright 2007 Peter Jang <http://www.avisynth.org/qwerpoi>
+#           2010-2012 the AvsPmod authors <https://github.com/avspmod/avspmod>
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+# 
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+# 
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA, or visit
+#  http://www.gnu.org/copyleft/gpl.html .
+
+# AvsP_build - build script for AvsP
+#
 # Dependencies:
-#     Python
-#     py2exe
-# Scripts:
-#     AvsP_setup.py
-#     AvsP_i18n.py
-#     AvsP.py
+#     Python (tested on v2.6 and v2.7)
+#     wxPython (tested on v2.8 Unicode and v2.9)
+#     py2exe (tested on v0.6.9)
 
 import os
 import sys
@@ -13,8 +31,10 @@ import shutil
 import tempfile
 import zipfile
 import subprocess
+
 import AvsP
 import AvsP_i18n
+import globals
 
 def isinpath(path):
     '''Check if a file is in PATH or in the working directory'''
@@ -30,14 +50,13 @@ def isinpath(path):
 def main():
     # Define names and paths
     pythonexe = sys.executable
-    programdirname = 'AvsPmod'
-    zipname = 'AvsPmod_v%s.zip' % AvsP.version
+    zipname = '{0}_v{1}.zip'.format(globals.name, globals.version)
     upx = os.path.join(os.environ['PROGRAMFILES'], 'upx', 'upx.exe')
     exe7z = os.path.join(os.environ['PROGRAMFILES'], '7-Zip', '7z.exe')
     editbin = os.path.join(os.environ['PROGRAMFILES'], 'Microsoft Visual Studio 10.0', 
                           'VC', 'bin', 'amd64', 'editbin.exe')
     tempdir = tempfile.mkdtemp()
-    programdirname = os.path.join(tempdir, programdirname)
+    programdirname = os.path.join(tempdir, globals.name)
     
     # Create/update the master translation file
     print '\nCreating translation file...'
@@ -49,7 +68,7 @@ def main():
         return
     
     # Update the translation files in the temporal subdirectory
-    AvsP_i18n.UpdateTranslationFile(os.path.join(programdirname, 'translations'), version=AvsP.version)
+    AvsP_i18n.UpdateTranslationFile(os.path.join(programdirname, 'translations'), version=globals.version)
     
     # Create/update 'macros_readme.txt' in the macros subdirectory
     AvsP.GenerateMacroReadme(os.path.join(programdirname, 'macros', 'macros_readme.txt'))
@@ -79,7 +98,7 @@ def main():
     
     # Manage the files
     os.rename(os.path.join(programdirname, 'run.exe'), 
-              os.path.join(programdirname, 'AvsPmod.exe'))
+              os.path.join(programdirname, '{0}.exe'.format(globals.name)))
     os.rename(os.path.join(programdirname, 'README.md'), 
               os.path.join(programdirname, 'readme.txt'))
     shutil.rmtree('build')
