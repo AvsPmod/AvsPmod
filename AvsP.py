@@ -61,6 +61,7 @@ if hasattr(sys,'frozen'):
     programdir = os.path.dirname(sys.executable)
     sys.path.insert(0, programdir)
 
+import globals
 import AvsP_i18n
 messages = None
 def _(s):
@@ -77,18 +78,7 @@ from wx import stc
 import wx.lib.buttons as wxButtons
 import  wx.lib.colourselect as  colourselect
 import wxp
-try:
-    import avisynth
-except OSError, err:
-    lib = ('AviSynth', '.dll') if os.name == 'nt' else ('AvxSynth', '.so')
-    message = "{0}\nLoading {1}{2} failed!\nMake sure that {3} is installed.".format(err, lib[0].lower(), lib[1], lib[0])
-    app = wx.PySimpleApp()
-    wx.MessageBox(message, 'OS Error', wx.OK|wx.ICON_ERROR)
-    sys.exit(0)
-try:
-    import pyavs
-except AttributeError:
-    import pyavs_avifile as pyavs #  VFW, not longer supported
+
 from icons import AvsP_icon, next_icon, play_icon, skip_icon, spin_icon,\
                   ok_icon, smile_icon, question_icon, rectangle_icon,\
                   dragdrop_cursor
@@ -1308,7 +1298,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
         if not name:
             return
         docsearchpaths = []
-        avisynthdir = self.app.ExpandVars(self.app.options['avisynthdir'])
+        avisynthdir = self.app.ExpandVars(self.app.avisynthdir)
         docsearchpathstring = self.app.ExpandVars(self.app.options['docsearchpaths'])
         for path in docsearchpathstring.split(';'):
             path = path.strip()
@@ -4476,9 +4466,9 @@ class MainFrame(wxp.Frame):
     # Initialization functions
     def __init__(self, parent=None, id=wx.ID_ANY, title='AvsPmod', pos=wx.DefaultPosition, size=(700, 550), style=wx.DEFAULT_FRAME_STYLE):
         wxp.Frame.__init__(self, parent, id, pos=pos, size=size, style=style)
+        self.name = title
         self.version = version
         self.firsttime = False
-        pyavs.InitRoutines()
         # Define program directories
         if hasattr(sys,'frozen'):
             self.programdir = os.path.dirname(sys.executable)
@@ -4490,13 +4480,16 @@ class MainFrame(wxp.Frame):
         self.toolsfolder = os.path.join(self.programdir, 'tools')
         sys.path.insert(0, self.toolsfolder)
         self.macrofolder = os.path.join(self.programdir, 'macros')
+        self.helpdir = os.path.join(self.programdir, 'help')
         # Get persistent options
         self.optionsfilename = os.path.join(self.programdir, 'options.dat')
         self.filterdbfilename = os.path.join(self.programdir, 'filterdb.dat')
         self.lastSessionFilename = os.path.join(self.programdir, '_last_session_.ses')
         self.macrosfilename = os.path.join(self.programdir, 'macros', 'macros.dat')
         self.loaderror = []
-        self.getOptionsDict()        
+        self.getOptionsDict()
+        self.SetPaths()        
+        self.LoadAvisynth()
         self.IdleCall = []
         self.defineFilterInfo()
         if os.path.isfile(self.macrosfilename):
@@ -4699,7 +4692,6 @@ class MainFrame(wxp.Frame):
         self.trimDialog = self.createTrimDialog(cropdialogparent)
         
         # Internal class variables
-        self.name = title
         self.currentframenum = None
         self.zoomfactor = 1
         self.zoomwindow = False
@@ -5066,11 +5058,11 @@ class MainFrame(wxp.Frame):
             'exitstatus': 0,
             'reservedshortcuts': ['Tab', 'Shift+Tab', 'Ctrl+Z', 'Ctrl+Y', 'Ctrl+X', 'Ctrl+C', 'Ctrl+V', 'Ctrl+A'],
             # GENERAL OPTIONS
+            'altdir': os.path.join('%programdir%', 'tools'),
+            'usealtdir': False,
             'pluginsdir': '',
-            'helpdir': '',
-            'avisynthdir': '',
             'avisynthhelpfile': '',
-            'workdir': '',
+            'workdir': os.path.join('%programdir%', 'tools'),
             'useworkdir': False,
             'alwaysworkdir': False,
             'externalplayer': '',
@@ -5177,64 +5169,6 @@ class MainFrame(wxp.Frame):
                     #~ self.optionsTextStyles[key] = value
         self.options['version'] = self.version
         
-        # Set paths as necessary
-        avisynthdir_exp = self.ExpandVars(self.options['avisynthdir'])
-        if os.name == 'nt':
-            if not os.path.isdir(avisynthdir_exp):
-                try:
-                    # Get the avisynth directory from the registry
-                    key = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, 'Software\\AviSynth')
-                    value = os.path.expandvars(_winreg.EnumValue(key, 0)[1])
-                    if os.path.isdir(value):
-                        avisynthdir_exp = value
-                        self.options['avisynthdir'] = self.ExpandVars(avisynthdir_exp, False, 'programdir')
-                    else:
-                        raise WindowsError
-                    key.Close()
-                except WindowsError:
-                    # Get the avisynth directory from the user with a dialog box
-                    defaultdir = os.environ.get('PROGRAMFILES')
-                    if defaultdir is None:
-                        defaultdir = ''
-                    dlg = wx.DirDialog(self, 'Select the Avisynth directory', defaultdir)
-                    ID = dlg.ShowModal()
-                    if ID==wx.ID_OK:
-                        avisynthdir_exp = dlg.GetPath()
-                        self.options['avisynthdir'] = self.ExpandVars(avisynthdir_exp, False, 'programdir')
-                    dlg.Destroy()
-            if (not os.path.isfile(self.ExpandVars(self.options['avisynthhelpfile'])) and 
-                os.path.isfile(os.path.join(avisynthdir_exp, 'docs', 'english', 'index.htm'))):
-                    self.options['avisynthhelpfile'] = os.path.join('%avisynthdir%', 'docs', 'english', 'index.htm')
-            if not os.path.isdir(self.ExpandVars(self.options['pluginsdir'])):
-                try:
-                    # Get the plugin directory from the registry
-                    key = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, 'Software\\AviSynth')
-                    value = os.path.expandvars(_winreg.QueryValueEx(key, 'plugindir2_5')[0])
-                    if os.path.isdir(value):
-                        self.options['pluginsdir'] = self.ExpandVars(value, False)
-                    else:
-                        raise WindowsError
-                    key.Close()
-                except WindowsError:
-                    if os.path.isdir(os.path.join(avisynthdir_exp, 'plugins')):
-                        self.options['pluginsdir'] = os.path.join('%avisynthdir%', 'plugins')
-        else:
-            if not os.path.isdir(avisynthdir_exp):
-                self.options['avisynthdir'] = '/usr/local/lib'
-            if not os.path.isfile(self.ExpandVars(self.options['avisynthhelpfile'])):
-                helpfile = '/usr/local/share/doc/english/index.htm'
-                if os.path.isfile(helpfile):
-                    self.options['avisynthhelpfile'] = helpfile
-            if (not os.path.isdir(self.ExpandVars(self.options['pluginsdir'])) and 
-                os.path.isdir(os.path.join(avisynthdir_exp, 'avxsynth'))):
-                    self.options['pluginsdir'] = os.path.join('%avisynthdir%', 'avxsynth')
-        if not os.path.isdir(self.ExpandVars(self.options['helpdir'])):
-            self.options['helpdir'] = os.path.join('%programdir%', 'help')
-        if self.options['useworkdir']:
-            workdir = self.ExpandVars(self.options['workdir'])
-            if os.path.isdir(workdir):
-                os.chdir(workdir)
-        
         # Fix recentfiles as necessary???
         try:
             for i, s in enumerate(self.options['recentfiles']):
@@ -5255,6 +5189,132 @@ class MainFrame(wxp.Frame):
         self.options['textstyles'].setdefault('highlightline', 'back:#E8E8FF')
         self.options['textstyles'].setdefault('scrapwindow', 'face:Comic Sans MS,size:10,fore:#0000AA,back:#F5EF90')
 
+    def SetPaths(self):
+        '''Set configurable paths'''
+        self.avisynthdir = ''
+        altdir_exp = self.ExpandVars(self.options['altdir'])
+        if os.name == 'nt':
+            try:
+                # Get the avisynth directory from the registry
+                key = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, 'Software\\AviSynth')
+                value = os.path.expandvars(_winreg.EnumValue(key, 0)[1])
+                if os.path.isdir(value):
+                    self.defaultavisynthdir = value
+                else:
+                    raise WindowsError
+                key.Close()
+            except WindowsError:
+                self.defaultavisynthdir = ''
+            if self.options['usealtdir'] and os.path.isdir(altdir_exp):
+                self.avisynthdir = self.options['altdir']
+                globals.avisynth_library_dir = altdir_exp
+            else:
+                self.options['usealtdir'] = False
+                if os.path.isdir(self.defaultavisynthdir):
+                    self.avisynthdir = self.ExpandVars(self.defaultavisynthdir, False, '%avisynthdir%')
+            avisynthdir_exp = self.ExpandVars(self.avisynthdir)
+            if (not os.path.isfile(self.ExpandVars(self.options['avisynthhelpfile'])) and 
+                os.path.isfile(os.path.join(avisynthdir_exp, 'docs', 'english', 'index.htm'))):
+                    self.options['avisynthhelpfile'] = os.path.join('%avisynthdir%', 'docs', 'english', 'index.htm')
+            self.defaultpluginsdir = self.ExpandVars(os.path.join('%avisynthdir%', 'plugins'))
+            try:
+                # Get the plugins directory from the registry (current user, only AviSynth 2.6)
+                key = _winreg.OpenKey(_winreg.HKEY_CURRENT_USER, 'Software\\AviSynth')
+                value = os.path.expandvars(_winreg.QueryValueEx(key, 'plugindir2_5')[0])
+                if os.path.isdir(value):
+                    self.options['pluginsdir'] = self.ExpandVars(value, False, '%pluginsdir%')
+                else:
+                    raise WindowsError
+                key.Close()
+            except WindowsError:
+                try:
+                    # Get the plugins directory from the registry (local machine, AviSynth 2.5-2.6)
+                    key = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, 'Software\\AviSynth')
+                    value = os.path.expandvars(_winreg.QueryValueEx(key, 'plugindir2_5')[0])
+                    if os.path.isdir(value):
+                        self.options['pluginsdir'] = self.ExpandVars(value, False, '%pluginsdir%')
+                    else:
+                        raise WindowsError
+                    key.Close()
+                except WindowsError:
+                    if os.path.isdir(self.defaultpluginsdir):
+                        self.options['pluginsdir'] = self.defaultpluginsdir
+        else:
+            if self.options['usealtdir'] and os.path.isdir(altdir_exp):
+                self.avisynthdir = self.options['altdir']
+                globals.avisynth_library_dir = altdir_exp
+            else:
+                self.options['usealtdir'] = False
+                self.avisynthdir = '/usr/local/lib'
+            if not os.path.isfile(self.ExpandVars(self.options['avisynthhelpfile'])):
+                helpfile = '/usr/local/share/doc/english/index.htm'
+                if os.path.isfile(helpfile):
+                    self.options['avisynthhelpfile'] = helpfile
+            self.defaultpluginsdir = self.ExpandVars(os.path.join('%avisynthdir%', 'avxsynth'))
+            pluginsdir = os.environ.get('AVXSYNTH_RUNTIME_PLUGIN_PATH', '')
+            if os.path.isdir(pluginsdir):
+                self.options['pluginsdir'] = self.ExpandVars(pluginsdir, False, '%pluginsdir%')
+            elif os.path.isdir(self.defaultpluginsdir):
+                self.options['pluginsdir'] = self.defaultpluginsdir
+        if self.options['useworkdir']:
+            workdir = self.ExpandVars(self.options['workdir'])
+            if os.path.isdir(workdir):
+                os.chdir(workdir)
+    
+    def LoadAvisynth(self):
+        '''Load avisynth.dll/avxsynth.so'''    
+        global avisynth
+        exception = path_used = altdir_used = False
+        while True:
+            try:
+                import avisynth
+                break
+            except OSError, err:
+                if __debug__:
+                    print err
+                exception = True
+                if self.options['usealtdir']:
+                    if not path_used:
+                        globals.avisynth_library_dir = ''
+                        path_used = True
+                        continue
+                elif self.options['altdir'] and not altdir_used:
+                    globals.avisynth_library_dir = self.ExpandVars(self.options['altdir'])
+                    altdir_used = True
+                    continue
+                lib = ('AviSynth', 'avisynth.dll') if os.name == 'nt' else ('AvxSynth', 'libavxsynth.so')
+                message = (_('{0}\n\nLoading {1} failed! Make sure that {2} is installed.'
+                           '\n\n' + _('Alternatively, specify now its directory.')).format(
+                          err, lib[1], lib[0]))
+                ret = wx.MessageBox(message, ' '.join((self.name, self.version)), wx.YES_NO|wx.ICON_ERROR)
+                if ret == wx.YES:
+                        # Get the shared library directory from the user with a dialog box
+                        dlg = wx.DirDialog(self, _('Select the {0} directory').format(lib[1]),
+                                           os.path.expanduser('~'))
+                        ID = dlg.ShowModal()
+                        if ID==wx.ID_OK:
+                            globals.avisynth_library_dir = dlg.GetPath()
+                            dlg.Destroy()
+                        else:
+                            dlg.Destroy()
+                            sys.exit(0)
+                else:
+                    sys.exit(0)
+        if exception:
+            if globals.avisynth_library_dir:
+                self.options['usealtdir'] = True
+                self.options['altdir'] = self.ExpandVars(
+                        globals.avisynth_library_dir, False, 'avisynthdir')
+            else:
+                self.options['usealtdir'] = False
+            self.SetPaths() # some paths may depend on %avisynthdir%
+        try:
+            global pyavs
+            import pyavs
+        except AttributeError:
+            import pyavs_avifile as pyavs #  VFW, not longer supported
+        pyavs.InitRoutines()
+    
     def defineFilterInfo(self):
         self.optionsFilters = self.getFilterInfoFromAvisynth()
         self.installedfilternames = set(self.optionsFilters) #set([key.lower() for key in self.optionsFilters.keys()])
@@ -5636,14 +5696,16 @@ class MainFrame(wxp.Frame):
     def getOptionsDlgInfo(self):
         return (
             (_('Paths'),
-                ((_('Avisynth directory:'), wxp.OPT_ELEM_DIR, 'avisynthdir', _('Location of the avisynth installation directory'), dict(buttonText='...', buttonWidth=30) ), ),
-                ((_('Avisynth help file/url:'), wxp.OPT_ELEM_FILE_URL, 'avisynthhelpfile', _('Location of the avisynth help file or url'), dict(buttonText='...', buttonWidth=30) ), ),
-                ((_('AvsP help directory:'), wxp.OPT_ELEM_DIR, 'helpdir', _('Location of the AvsP help directory'), dict(buttonText='...', buttonWidth=30) ), ),
+                ((_('Available variables: %programdir%, %avisynthdir%, %pluginsdir%'), wxp.OPT_ELEM_SEP, None, '', dict(width=0, expand=False) ), ),
+                ((_('Use a custom AviSynth directory')+' *', wxp.OPT_ELEM_CHECK, 'usealtdir', _('Choose a different version than the installed'), dict() ), ),
+                ((_('Custom AviSynth directory:')+' *', wxp.OPT_ELEM_DIR, 'altdir', _('Alternative location of avisynth.dll/avxsynth.so'), dict(buttonText='...', buttonWidth=30) ), ),
+                ((_('Plugins autoload directory:'), wxp.OPT_ELEM_DIR, 'pluginsdir', _('Leave blank to use the default directory. Changing it needs admin rights on Windows'), dict(buttonText='...', buttonWidth=30) ), ),
                 ((_('Use a custom working directory'), wxp.OPT_ELEM_CHECK, 'useworkdir', _('Override the current working directory'), dict() ),
                  (_('For all scripts'), wxp.OPT_ELEM_CHECK, 'alwaysworkdir', _("Use the custom directory also for scripts saved to file, instead of its parent"), dict() ), ),
-                ((_('Custom working directory:'), wxp.OPT_ELEM_DIR, 'workdir', _('Specify an alternative working directory'), dict(buttonText='...', buttonWidth=30) ), ),
+                ((_('Working directory:'), wxp.OPT_ELEM_DIR, 'workdir', _('Specify an alternative working directory'), dict(buttonText='...', buttonWidth=30) ), ),
                 ((_('External player:'), wxp.OPT_ELEM_FILE, 'externalplayer', _('Location of external program for script playback'), dict(fileMask=(_('Executable files') + ' (*.exe)|*.exe|' if os.name == 'nt' else '') + _('All files') + ' (*.*)|*.*', buttonText='...', buttonWidth=30) ), ),
                 ((_('External player extra args:'), wxp.OPT_ELEM_STRING, 'externalplayerargs', _('Additional arguments when running the external player'), dict() ), ),
+                ((_('Avisynth help file/url:'), wxp.OPT_ELEM_FILE_URL, 'avisynthhelpfile', _('Location of the avisynth help file or url'), dict(buttonText='...', buttonWidth=30) ), ),
                 ((_('Documentation search paths:'), wxp.OPT_ELEM_STRING, 'docsearchpaths', _('Specify which directories to search for docs when you click on a filter calltip'), dict() ), ),
                 ((_('Documentation search url:'), wxp.OPT_ELEM_STRING, 'docsearchurl', _("The web address to search if docs aren't found (the filter's name replaces %filtername%)"), dict() ), ),
             ),
@@ -8431,35 +8493,35 @@ class MainFrame(wxp.Frame):
             wx.MessageBox(_('Could not find the Avisynth plugins folder!'), _('Error'), style=wx.OK|wx.ICON_ERROR)
 
     def OnMenuHelpAnimatedTutorial(self, event):
-        filename = os.path.join(self.ExpandVars(self.options['helpdir']), 'Demo.htm')
+        filename = os.path.join(self.helpdir, 'Demo.htm')
         if os.path.isfile(filename):
             startfile(filename)
         else:
             startfile('http://www.avisynth.org/qwerpoi/Demo.htm')
 
     def OnMenuHelpTextFeatures(self, event):
-        filename = os.path.join(self.ExpandVars(self.options['helpdir']), 'Text.html')
+        filename = os.path.join(self.helpdir, 'Text.html')
         if os.path.isfile(filename):
             startfile(filename)
         else:
             startfile('http://avisynth.org/qwerpoi/Text.html')
 
     def OnMenuHelpVideoFeatures(self, event):
-        filename = os.path.join(self.ExpandVars(self.options['helpdir']), 'Video.html')
+        filename = os.path.join(self.helpdir, 'Video.html')
         if os.path.isfile(filename):
             startfile(filename)
         else:
             startfile('http://avisynth.org/qwerpoi/Video.html')
 
     def OnMenuHelpUserSliderFeatures(self, event):
-        filename = os.path.join(self.ExpandVars(self.options['helpdir']), 'UserSliders.html')
+        filename = os.path.join(self.helpdir, 'UserSliders.html')
         if os.path.isfile(filename):
             startfile(filename)
         else:
             startfile('http://avisynth.org/qwerpoi/UserSliders.html')
 
     def OnMenuHelpMacroFeatures(self, event):
-        filename = os.path.join(self.ExpandVars(self.options['helpdir']), 'Macros.html')
+        filename = os.path.join(self.helpdir, 'Macros.html')
         if os.path.isfile(filename):
             startfile(filename)
         else:
@@ -11782,7 +11844,7 @@ class MainFrame(wxp.Frame):
         # Build and show the dialog
         startDirectory = self.options['lasthelpdir']
         if startDirectory is None:
-            startDirectory = self.options['avisynthdir']
+            startDirectory = self.avisynthdir
             if startDirectory is None:
                 startDirectory = '.'
         dlg = AvsFunctionDialog(
@@ -12467,11 +12529,14 @@ class MainFrame(wxp.Frame):
                 if updateDisplayClip and False:
                     script.AVI.CreateDisplayClip(fitHeight, fitWidth)
                 else:
-                    if (self.options['useworkdir'] and self.options['alwaysworkdir'] and 
-                        os.path.isdir(self.options['workdir'])):
-                        workdir = self.options['workdir']
+                    workdir_exp = self.ExpandVars(self.options['workdir'])
+                    if (self.options['useworkdir'] and self.options['alwaysworkdir']
+                        and os.path.isdir(workdir_exp)):
+                            workdir = workdir_exp
+                            used_workdir = True
                     else:
                         workdir = script.workdir
+                        used_workdir = False
                     wx.BeginBusyCursor()
                     script.AVI = None
                     script.AVI = pyavs.AvsClip(
@@ -12492,8 +12557,7 @@ class MainFrame(wxp.Frame):
                         wx.MessageBox('%s\n\n%s' % (s1, s2), _('Error'), style=wx.OK|wx.ICON_ERROR)
                     script.AVI = None
                     return None
-                if not (self.options['useworkdir'] and self.options['alwaysworkdir'] and 
-                        os.path.isdir(self.options['workdir'])):
+                if not used_workdir:
                     script.workdir = script.AVI.workdir
                 if not self.zoomwindow:
                     script.zoomwindow_actualsize = None
@@ -14225,14 +14289,17 @@ class MainFrame(wxp.Frame):
         ID = dlg.ShowModal()
         # Set the data
         if ID == wx.ID_OK:
+            oldpluginsdirectory = self.ExpandVars(self.options['pluginsdir'])
             self.options = dlg.GetDict()
-            self.options['avisynthdir'] = self.ExpandVars(self.options['avisynthdir'], False, 'programdir')
-            for key in ['pluginsdir', 'workdir', 'avisynthhelpfile', 'helpdir', 'externalplayer', 'docsearchpaths']:
-                self.options[key] = self.ExpandVars(self.options[key], False)
+            if self.options['pluginsdir'] != oldpluginsdirectory:
+                self.SetPluginsDirectory(oldpluginsdirectory)
+            for key in ['altdir', 'workdir', 'pluginsdir', 'avisynthhelpfile', 
+                        'externalplayer', 'docsearchpaths']:
+                self.options[key] = self.ExpandVars(self.options[key], False, '%' + key + '%')
             with open(self.optionsfilename, mode='wb') as f:
                 cPickle.dump(self.options, f, protocol=0)
             if self.options['useworkdir'] and self.options['workdir']:
-                os.chdir(self.options['workdir'])
+                os.chdir(self.ExpandVars(self.options['workdir']))
             else:
                 os.chdir(self.initialworkdir)
             for i in xrange(self.scriptNotebook.GetPageCount()):
@@ -14257,29 +14324,79 @@ class MainFrame(wxp.Frame):
                 self.backupTimer.Stop()
         dlg.Destroy()
     
+    def SetPluginsDirectory(self, oldpluginsdirectory):
+        '''Set the plugins autoload directory
+        
+        AviSynth: write to registry (admin rights needed)
+        AvxSynth: set an environment variable
+        '''
+        if not self.options['pluginsdir']:
+            self.options['pluginsdir'] = self.defaultpluginsdir
+        pluginsdir_exp = self.ExpandVars(self.options['pluginsdir'])
+        if os.name == 'nt':
+            s1 = (_('Changing the plugins autoload directory writes to the Windows registry.') + 
+                  _(' Admin rights are needed.'))
+            s2 = _('Do you wish to continue?')
+            ret = wx.MessageBox('%s\n\n%s' % (s1, s2), _('Warning'), wx.YES_NO|wx.ICON_EXCLAMATION)
+            if ret == wx.YES:
+                f = tempfile.NamedTemporaryFile(delete=False)
+                txt = textwrap.dedent(u'''\
+                HKCU\\Software\\Avisynth
+                'plugindir2_5'= "{dir}"
+                HKLM\\Software\\Avisynth
+                'plugindir2_5'= "{dir}"
+                ''').format(dir=pluginsdir_exp)
+                f.write(txt.encode('utf16'))
+                f.close()
+                if ctypes.windll.shell32.ShellExecuteW(None, u'runas', u'cmd', 
+                        u'/k "regini "{f}" & del "{f}""'.format(f=f.name), None, 0) > 32:
+                    return
+            self.options['pluginsdir'] = oldpluginsdirectory
+        else:
+            pluginsdir_exp = self.ExpandVars(self.options['pluginsdir'])
+            os.environ['AVXSYNTH_RUNTIME_PLUGIN_PATH'] = pluginsdir_exp
+            shell = os.environ.get('SHELL') # write to the shell's rc file
+            if shell:
+                rc = os.path.expandvars(os.path.join('$HOME', '.{0}rc'.format(
+                                        os.path.basename(shell))))
+                if os.path.isfile(rc):
+                    export = u'export AVXSYNTH_RUNTIME_PLUGIN_PATH="{0}"'.format(pluginsdir_exp)
+                    with open(rc, 'r+') as f:
+                        lines = f.readlines()
+                        for i, line in enumerate(lines):
+                            if 'AVXSYNTH_RUNTIME_PLUGIN_PATH' in line:
+                                lines[i] = export
+                                f.seek(0)
+                                f.truncate()
+                                f.writelines(lines)
+                                break
+                        else:
+                            f.write(export)
+    
     def getMacrosLabelFromFile(self, filename):
         f = open(filename)
         text = f.readline().strip('#').strip()
         f.close()
         return text
     
-    def ExpandVars(self, text, expand=True, only=None):
+    def ExpandVars(self, text, expand=True, blacklist=''):
         '''Expand and unexpand program variables
         
         Variables: %programdir%, %avisynthdir%, %pluginsdir%
         
         '''
-        if only == 'pluginsdir':
-            vars_ = (('%pluginsdir%', self.options['pluginsdir']),)
-        elif only == 'avisynthdir':
-            vars_ = (('%avisynthdir%', self.options['avisynthdir']),)
-        elif only == 'programdir':
-            vars_ = (('%programdir%', self.programdir),)
+        vars_ = [('%pluginsdir%', self.options['pluginsdir']), 
+                 ('%avisynthdir%', self.avisynthdir), 
+                 ('%programdir%', self.programdir)]
+        blacklist = blacklist.split(';')
+        if expand:
+            index = 0, 1
+            text = os.path.expandvars(text)
         else:
-            vars_ = (('%pluginsdir%', self.options['pluginsdir']), 
-                     ('%avisynthdir%', self.options['avisynthdir']), 
-                     ('%programdir%', self.programdir))
-        index = (0, 1) if expand else (1, 0)
+            index = 1, 0
+            if '%altdir%' in blacklist:
+                blacklist.append('%avisynthdir%')
+        vars_ = filter(lambda x:x[0] not in blacklist, vars_)
         for var in [var for var in vars_ if var[1]]:
             text = text.replace(var[index[0]], var[index[1]])
         return text

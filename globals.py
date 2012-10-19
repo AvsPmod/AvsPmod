@@ -1,0 +1,1 @@
+avisynth_library_dir = ''

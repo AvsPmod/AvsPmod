@@ -31,6 +31,7 @@ from wx import stc
 import string
 import keyword
 import os
+import os.path
 import sys
 import copy
 import time

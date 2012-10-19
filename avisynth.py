@@ -1,14 +1,32 @@
 import ctypes
 import sys
 import os
+import os.path
 import sys
 
 # Initialization routines.  Assume AvxSynth/Linux if os.name is not NT.
+try:
+    import globals
+    dir = globals.avisynth_library_dir
+except:
+    dir = ''
 if os.name == 'nt':
-    avidll = ctypes.windll.avisynth
+    if __debug__:
+        if dir:
+            print 'Using a custom AviSynth directory:', dir
+        else:
+            print 'Using AviSynth from PATH'
+    path = os.path.join(dir, 'avisynth.dll')
+    avidll = ctypes.WinDLL(path)
     FUNCTYPE = ctypes.WINFUNCTYPE
 else:
-    avidll = ctypes.CDLL("libavxsynth.so")
+    if __debug__:
+        if dir:
+            print 'Using a custom AvxSynth directory:', dir
+        else:
+            print 'Using AvxSynth from LD_LIBRARY_PATH'
+    path = os.path.join(dir, 'libavxsynth.so')
+    avidll = ctypes.CDLL(path)
     FUNCTYPE = ctypes.CFUNCTYPE
 
 encoding = sys.getfilesystemencoding()
