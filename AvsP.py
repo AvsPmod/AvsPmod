@@ -7751,9 +7751,6 @@ class MainFrame(wxp.Frame):
         self.SaveCurrentImage()
 
     def OnMenuVideoCropEditor(self, event):
-        if self.zoomfactor != 1 or self.zoomwindow or self.flip:
-            wx.MessageBox(_('Cannot use crop editor unless zoom set to 100% and non-flipped!'), _('Error'), style=wx.OK|wx.ICON_ERROR)
-            return False
         script = self.currentScript
         dlg = self.cropDialog
         dlg.boolInvalidCrop = False
@@ -9206,6 +9203,12 @@ class MainFrame(wxp.Frame):
             xPos, yPos = self.videoWindow.CalcUnscrolledPosition(event.GetX(), event.GetY())
             xPos -= self.xo
             yPos -= self.yo
+            xPos = int(round(xPos / float(self.zoomfactor)))
+            yPos = int(round(yPos / float(self.zoomfactor)))
+            if 'fliphorizontal' in self.flip:
+                xPos = w - xPos
+            if 'flipvertical' in self.flip:
+                yPos = h - yPos
             xcenter = (w - left - mright) / 2 + left
             ycenter = (h - top - mbottom)/2 + top
             xdist = xcenter - xPos
@@ -9270,6 +9273,12 @@ class MainFrame(wxp.Frame):
             xPos, yPos = self.videoWindow.CalcUnscrolledPosition(event.GetX(), event.GetY())
             xPos -= self.xo
             yPos -= self.yo
+            xPos = int(round(xPos / float(self.zoomfactor)))
+            yPos = int(round(yPos / float(self.zoomfactor)))
+            if 'fliphorizontal' in self.flip:
+                xPos = w - xPos
+            if 'flipvertical' in self.flip:
+                yPos = h - yPos
             if self.lastcrop == 'top':
                 top = yPos
                 if top < 0:
@@ -9375,13 +9384,15 @@ class MainFrame(wxp.Frame):
         self.cropDialog.ctrls['-bottom'].SetRange(0, h-self.options['cropminy']-self.cropValues['top'])
         # Paint the crop rectangles
         dc = wx.ClientDC(self.videoWindow)
-        dc.SetDeviceOrigin(5,5)
+        dc.SetDeviceOrigin(self.xo, self.yo)
         if self.IsDoubleBuffered():
             bdc = dc
         else:
+            w = int(round(w * float(self.zoomfactor)))
+            h = int(round(h * float(self.zoomfactor)))
             bdc = wx.BufferedDC(dc, wx.Size(w,h))
-        self.PaintAVIFrame(bdc, script, self.currentframenum, shift=False)
-        #~ self.PaintAVIFrame(dc, script, self.currentframenum)
+        shift = False if os.name == 'nt' else True # XXX
+        self.PaintAVIFrame(bdc, script, self.currentframenum, shift=shift)
         self.PaintCropWarnings(spinCtrl)
         self.SetVideoStatusText()
 
@@ -11554,12 +11565,22 @@ class MainFrame(wxp.Frame):
             ar = '4:3'
         if ar == '1.778:1':
             ar = '16:9'
+        zoom = ''
+        if self.zoomwindow and script.zoomwindow_actualsize is not None:
+            width, height = script.zoomwindow_actualsize
+            zoomfactor = script.AVI.Width / float(width)
+            zoom  = '(%.2fx) ' % zoomfactor
+        elif self.zoomfactor != 1:
+            if self.zoomfactor < 1 or self.zoomwindow:
+                zoom = '(%.2fx) ' % self.zoomfactor
+            else:
+                zoom = '(%ix) ' % self.zoomfactor
         text = (
-            ' Crop(%i,%i,-%i,-%i) - %ix%i (%s) - %s  %s \\T\\T %ix%i (%s)  -  %.03f fps      ' %
+            ' Crop(%i,%i,-%i,-%i) - %ix%i (%s) - %s  %s \\T\\T %s %ix%i (%s)  -  %.03f fps      ' %
             (
                 left, top, mright, mbottom,
                 wcrop, hcrop, arCrop, wmod, hmod,
-                script.AVI.Width, script.AVI.Height, ar, script.AVI.Framerate
+                zoom, script.AVI.Width, script.AVI.Height, ar, script.AVI.Framerate
             )
         )
         text2 = text.rsplit('\\T\\T', 1)
@@ -11631,7 +11652,6 @@ class MainFrame(wxp.Frame):
         if self.zoomwindow and script.zoomwindow_actualsize is not None:
             width, height = script.zoomwindow_actualsize
             zoomfactor = v.Width / float(width)
-            zoom  = '(%.2fx) ' % zoomfactor
             zoom  = '(%.2fx) ' % zoomfactor
         else:
             width, height = v.Width, v.Height
@@ -12764,6 +12784,8 @@ class MainFrame(wxp.Frame):
             inputdc.DrawPolygon([wx.Point(0,0), wx.Point(8,0), wx.Point(0,8)])
         if shift:
             inputdc.SetDeviceOrigin(self.xo, self.yo)
+        else:
+            inputdc.SetDeviceOrigin(0, 0)
         if self.zoomfactor == 1 and not self.flip and not self.zoomwindow:            
             w = script.AVI.Width
             h = script.AVI.Height
@@ -12805,7 +12827,8 @@ class MainFrame(wxp.Frame):
                     bmp = wx.BitmapFromImage(img)
                     dc.SelectObject(bmp)
                 self.PaintTrimSelectionMark(dc, script, frame)
-                #~ self.PaintCropRectangles(dc, script)
+                if self.cropDialog.IsShown():
+                    self.PaintCropRectangles(dc, script)
                 self.bmpVideo = bmp
             try: # DoPrepareDC causes NameError in wx2.9.1 and fixed in wx2.9.2
                 self.videoWindow.DoPrepareDC(inputdc)
@@ -12840,7 +12863,7 @@ class MainFrame(wxp.Frame):
                     dc.DrawCircle(25, 25, 20)
 
     def PaintCropRectangles(self, dc, script):
-        # Paint the trim rectangles
+        '''Paint the crop editor's rectangles'''
         w = script.AVI.Width
         h = script.AVI.Height
         left = self.cropValues['left']
@@ -12848,6 +12871,10 @@ class MainFrame(wxp.Frame):
         mright = self.cropValues['-right']
         mbottom = self.cropValues['-bottom']
         dc.SetLogicalFunction(wx.INVERT)
+        if 'flipvertical' in self.flip:
+            top, mbottom = mbottom, top
+        if 'fliphorizontal' in self.flip:
+            left, mright = mright, left
         if top > 0:
             dc.DrawRectangle(0, 0, w, top)
         if mbottom > 0:
@@ -12868,13 +12895,14 @@ class MainFrame(wxp.Frame):
             labelCtrl = self.cropDialog.ctrls[key+'Label']
             textCtrl = self.cropDialog.ctrls[key]
             value = textCtrl.GetValue()
-            if value % 2 and script.AVI.Colorspace.lower() in ('yv12', 'yuy2'):
-                #~ textCtrl.SetBackgroundColour('pink')
-                labelCtrl.SetForegroundColour('red')
-                self.cropDialog.boolInvalidCrop = True
+            colorspace = script.AVI.Colorspace.lower()
+            if (colorspace in ('yuy2', 'yv16') and key in ('left', '-right') and value % 2 or 
+                colorspace == 'yv411' and key in ('left', '-right') and value % 4 or 
+                colorspace == 'yv12' and value % 2):
+                    labelCtrl.SetForegroundColour('red')
+                    self.cropDialog.boolInvalidCrop = True
             else:
-                #~ textCtrl.SetBackgroundColour(color)
-                labelCtrl.SetForegroundColour(wx.NullColour)
+                    labelCtrl.SetForegroundColour(wx.NullColour)
             labelCtrl.Refresh()
 
     def RunExternalPlayer(self, path=None, script=None, args=None, prompt=True):

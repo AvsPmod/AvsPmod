@@ -37,6 +37,8 @@ IsYUY2()
 IsYV24()
 IsYV16()
 IsYV12()
+IsYV411()
+IsY8()
 
 [SCRIPTFUNCTIONS]
 abs(float)
