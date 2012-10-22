@@ -5108,7 +5108,7 @@ class MainFrame(wxp.Frame):
             #~ 'zoomresizescript': 'BicubicResize(width-width%8, height-height%8, b=1/3, c=1/3)',
             'customjump': 10,
             'customjumpunits': 'sec',
-            'enabletabscrolling': True,
+            'enabletabscrolling': False,
             'enableframepertab': True,
             # AUTOSLIDER OPTIONS
             'keepsliderwindowhidden': False,
@@ -9125,57 +9125,70 @@ class MainFrame(wxp.Frame):
             event.Skip()
 
     def OnMouseWheelVideoWindow(self, event):
-        if not self.options['enabletabscrolling']:
-            return
-        rotation = event.GetWheelRotation()
-        if self.mouse_wheel_rotation * rotation < 0:
-            self.mouse_wheel_rotation = rotation
+        # Scroll similar tabs
+        if self.options['enabletabscrolling']:
+            rotation = event.GetWheelRotation()
+            if self.mouse_wheel_rotation * rotation < 0:
+                self.mouse_wheel_rotation = rotation
+            else:
+                self.mouse_wheel_rotation += rotation
+            if not abs(self.mouse_wheel_rotation) >= event.GetWheelDelta():
+                return
+            self.mouse_wheel_rotation = 0
+            if rotation > 0:
+                delta = 1
+            else:
+                delta = -1
+            # Create list of indices to loop through
+            index = self.scriptNotebook.GetSelection()
+            r = range(self.scriptNotebook.GetPageCount())
+            if delta == 1:
+                for i in xrange(index+1):
+                    j = r.pop(0)
+                    r.append(j)
+            else:
+                r.reverse()
+                for i in xrange(index):
+                    j = r.pop()
+                    r.insert(0,j)
+            # Loop through r to find next suitable tab
+            curframe = self.videoSlider.GetValue()
+            oldWidth = self.oldWidth
+            oldHeight = self.oldHeight
+            oldFramecount = self.oldFramecount
+            oldInfo = (self.oldWidth, self.oldHeight, self.oldFramecount)
+            for index in r:
+                script = self.scriptNotebook.GetPage(index)
+                self.refreshAVI = True
+                if self.UpdateScriptAVI(script, prompt=True) is None:
+                    try:
+                        if not script.AVI.initialized:
+                            continue
+                    except AttributeError:
+                        return False
+                newInfo = (
+                    int(script.AVI.Width * self.zoomfactor),
+                    int(script.AVI.Height * self.zoomfactor),
+                    script.AVI.Framecount
+                )
+                if newInfo == oldInfo:
+                #~ if script.AVI and script.AVI.Width == oldWidth and script.AVI.Height == oldHeight and script.AVI.Framecount == oldFramecount:
+                    self.SelectTab(index)
+                    break
+        # Scroll video preview
         else:
-            self.mouse_wheel_rotation += rotation
-        if not abs(self.mouse_wheel_rotation) >= event.GetWheelDelta():
-            return
-        self.mouse_wheel_rotation = 0
-        if rotation > 0:
-            delta = 1
-        else:
-            delta = -1
-        # Create list of indices to loop through
-        index = self.scriptNotebook.GetSelection()
-        r = range(self.scriptNotebook.GetPageCount())
-        if delta == 1:
-            for i in xrange(index+1):
-                j = r.pop(0)
-                r.append(j)
-        else:
-            r.reverse()
-            for i in xrange(index):
-                j = r.pop()
-                r.insert(0,j)
-        # Loop through r to find next suitable tab
-        curframe = self.videoSlider.GetValue()
-        oldWidth = self.oldWidth
-        oldHeight = self.oldHeight
-        oldFramecount = self.oldFramecount
-        oldInfo = (self.oldWidth, self.oldHeight, self.oldFramecount)
-        for index in r:
-            script = self.scriptNotebook.GetPage(index)
-            self.refreshAVI = True
-            if self.UpdateScriptAVI(script, prompt=True) is None:
-                try:
-                    if not script.AVI.initialized:
-                        continue
-                except AttributeError:
-                    return False
-            newInfo = (
-                int(script.AVI.Width * self.zoomfactor),
-                int(script.AVI.Height * self.zoomfactor),
-                script.AVI.Framecount
-            )
-            if newInfo == oldInfo:
-            #~ if script.AVI and script.AVI.Width == oldWidth and script.AVI.Height == oldHeight and script.AVI.Framecount == oldFramecount:
-                self.SelectTab(index)
-                break
-
+            x0, y0 = self.videoWindow.GetViewStart()
+            scrolls_by_pixel = self.zoomfactor / float(10) * event.GetWheelRotation() / event.GetWheelDelta()
+            horizontal = event.ControlDown()
+            if wx.version() >= '2.9':
+                horizontal = horizontal or event.GetWheelAxis() == wx.MOUSE_WHEEL_HORIZONTAL
+            if horizontal:
+                scrolls = int(round(self.currentScript.AVI.Width * scrolls_by_pixel))
+                self.videoWindow.Scroll(x0 + scrolls, -1)
+            else:
+                scrolls = int(round(self.currentScript.AVI.Height * scrolls_by_pixel))
+                self.videoWindow.Scroll(-1, y0 - scrolls)
+    
     def OnMiddleDownVideoWindow(self, event):
         self.HidePreviewWindow()
 
