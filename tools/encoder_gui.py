@@ -2,7 +2,9 @@ import string
 import re
 import os
 import os.path
+import stat
 import sys
+import subprocess
 import cPickle
 import wx
 import MP3Info
@@ -426,15 +428,34 @@ class CompressVideoDialog(wx.Dialog):
             try:
                 key = s.split(None, 1)[0].lower()
             except IndexError:
-                key = ''
-            if key.endswith('.exe'):
-                value = exeOptions.setdefault(key, {'path': '', 'extra': ''})
-                if not os.path.isfile(value['path']):
-                    default_path = os.path.join(self.GetParent().toolsfolder, key)
-                    if os.path.isfile(default_path):
-                        value['path'] = default_path
-                    elif not key in unknownPathKeys:
-                        unknownPathKeys.append(key)
+                continue
+            if os.name == 'nt' and not key.endswith('.exe'):
+                continue
+            value = exeOptions.setdefault(key, {'path': '', 'extra': ''})
+            if not os.path.isfile(value['path']):
+                default_path = os.path.join(self.GetParent().toolsfolder, key)
+                if os.path.isfile(default_path):
+                    value['path'] = default_path
+                    continue
+                elif os.name == 'nt':
+                    try:
+                        path = subprocess.check_output('for %i in ({0}) do @echo. %~$PATH:i'.format(key), 
+                                                       shell=True).strip().splitlines()[0]
+                        if os.path.isfile(path) or os.path.isfile(path + '.exe'):
+                            value['path'] = path
+                            continue
+                    except:
+                        pass
+                else:
+                    key2, ext = os.path.splitext(key)
+                    key2 = key2 if ext == '.exe' else key
+                    try:
+                        value['path'] = subprocess.check_output(['which', key2]).strip().splitlines()[0]
+                        continue
+                    except:
+                        pass
+                if not key in unknownPathKeys:
+                    unknownPathKeys.append(key)
         if len(unknownPathKeys) == 0:
             return
         # Prompt for unknown exe paths
@@ -527,7 +548,7 @@ class CompressVideoDialog(wx.Dialog):
     def OnButtonSelectExe(self, event):
         recentdir = ''
         title = _('Select a program')
-        filefilter = _('Executable files') + ' (*.exe)|*.exe'
+        filefilter = _('Executable files') + ' (*.exe)|*.exe' if os.name == 'nt' else ''
         style = wx.OPEN
         dlg = wx.FileDialog(self, title, recentdir, '', filefilter, style)
         ID = dlg.ShowModal()
@@ -560,31 +581,43 @@ class CompressVideoDialog(wx.Dialog):
             s2 = '\n'.join(unreplacedList)
             wx.MessageBox('%s\n\n%s' % (s1, s2), _('Error'), style=wx.OK|wx.ICON_ERROR)
             return
-        lines = ['@echo off\n']
-        startline = 'start /%s /b /w' % self.options['priority']
-        for s in commandline.split('\n'):
-            s2 = s.split(None, 1)
-            key = s2[0].lower()
-            if key.endswith('.exe'):
-                try:
-                    path = self.options['exe_options'][key]['path']
-                    if not os.path.isfile(path):
+        if os.name == 'nt':
+            lines = ['@echo off\n']
+            startline = 'start /%s /b /w' % self.options['priority']
+            for s in commandline.split('\n'):
+                s2 = s.split(None, 1)
+                key = s2[0].lower()
+                if key.endswith('.exe'):
+                    try:
+                        path = self.options['exe_options'][key]['path']
+                        if not os.path.isfile(path):
+                            unknownPathKeys.append(key)
+                    except KeyError:
+                        path = key
                         unknownPathKeys.append(key)
-                except KeyError:
-                    path = key
-                    unknownPathKeys.append(key)
-                dirname, exename = os.path.split(path)
-                if len(s2) == 2:
-                    lines.append('%s /d"%s" %s %s\n' % (startline, dirname, exename, s2[1]))
+                    dirname, exename = os.path.split(path)
+                    if len(s2) == 2:
+                        lines.append('%s /d "%s" %s %s\n' % (startline, dirname, exename, s2[1]))
+                    else:
+                        lines.append('%s /d "%s" %s\n' % (startline, dirname, exename))
                 else:
-                    lines.append('%s /d"%s" %s\n' % (startline, dirname, exename))
-            else:
-                lines.append('%s %s\n' % (startline, s))
+                    lines.append('%s %s\n' % (startline, s))
+        else:
+            lines = []
+            ret = 'if [ "$?" -ne "0" ]\nthen\n  exit\nfi\n'
+            for s in commandline.split('\n'):
+                s2 = s.split(None, 1)
+                key = s2[0].lower()
+                if key.endswith('.exe'):
+                    key = key[:-4]
+                args = s2[1].replace('NUL ', '/dev/null ')  
+                lines.append('"%s" %s\n%s' % (key, args, ret))
         if unknownPathKeys != []:
             wx.MessageBox(_('Unknown exe paths!'), _('Error'), style=wx.ICON_ERROR)
             return
         else:
-            batchname = os.path.join(self.GetParent().toolsfolder, 'encode.bat')
+            batchname = os.path.join(self.GetParent().toolsfolder, 
+                                     'encode' + ('.bat' if os.name == 'nt' else '.sh'))
             f = open(batchname, 'w')
             for line in lines:
                 if type(line) == unicode:
@@ -604,7 +637,11 @@ class CompressVideoDialog(wx.Dialog):
                         avsp.InsertText('#~ %s' % line)
                     avsp.SaveScript(avsname)
             #~ os.startfile(batchname)
-            os.system('start "AvsP encoding" '+batchname)
+            if os.name == 'nt':
+                os.system('start "AvsP encoding" "%s"' % batchname.encode(sys.getfilesystemencoding()))
+            else:
+                os.chmod(batchname, os.stat(batchname).st_mode | stat.S_IXUSR)
+                os.system('"%s"' % batchname.encode(sys.getfilesystemencoding()))
             self.Close()
 
     def OnButtonCalculate(self, event):
@@ -748,7 +785,7 @@ class CompressVideoOptionsDialog(wx.Dialog):
     def OnButtonSelectExe(self, event):
         recentdir = ''
         title = _('Select a program')
-        filefilter = _('Executable files') + ' (*.exe)|*.exe'
+        filefilter = _('Executable files') + ' (*.exe)|*.exe' if os.name == 'nt' else ''
         style = wx.OPEN
         dlg = wx.FileDialog(self, title, recentdir, '', filefilter, style)
         ID = dlg.ShowModal()
