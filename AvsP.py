@@ -9421,11 +9421,16 @@ class MainFrame(wxp.Frame):
         tol = 70
         avs_clip = self.currentScript.AVI
         frames = avs_clip.Framecount
-        def float_range(start=0, end=10, step=1):
-            while start < end:
-                yield int(round(start))
-                start += step
-        frames = float_range(frames/10, 9*frames/10 - 1, 8.0*frames/(10*samples))
+        samples = min(samples, frames)
+        if samples <= 2:
+            frames = range(samples)
+        else:
+            def float_range(start=0, end=10, step=1):
+                '''Range with float step'''
+                while start < end:
+                    yield int(round(start))
+                    start += step
+            frames = float_range(frames/10, 9*frames/10 - 1, 8.0*frames/(10*samples))
         crop_values = []
         for i, frame in enumerate(frames):
             button.SetLabel(_('Cancel') + ' ({0}/{1})'.format(i+1, samples))
