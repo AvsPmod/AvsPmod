@@ -1026,10 +1026,11 @@ class OptionsDialog(wx.Dialog):
         else:
             dlgSizer.Add(tabPanel, 0, wx.EXPAND|wx.ALL, 0)
         dlgSizer.Add(btns, 0, wx.EXPAND|wx.ALL, 10)
-        self.SetSizer(dlgSizer)
         dlgSizer.Fit(self)
-        self.sizer = dlgSizer
         self.Center()
+        self.SetSizer(dlgSizer)
+        dlgSizer.SetSizeHints(self)
+        dlgSizer.Layout()
         # Misc
         okay.SetDefault()
         if starText:
