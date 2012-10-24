@@ -56,7 +56,7 @@ if os.name == 'nt':
     import _winreg
 from hashlib import md5
 import __builtin__
-from collections import Iterable, Sequence, MutableSequence
+from collections import Iterable, Sequence, MutableSequence, defaultdict
 
 if hasattr(sys,'frozen'):
     programdir = os.path.dirname(sys.executable)
@@ -6891,6 +6891,14 @@ class MainFrame(wxp.Frame):
             )
         )
         staticText.Wrap(spinSizer.GetMinSize()[0])
+        # Create the autocrop button
+        buttonAutocrop = wx.Button(dlg, wx.ID_ANY, _('Auto-crop'))
+        buttonAutocrop.SetMinSize(wx.Size(
+            buttonAutocrop.GetTextExtent(_('Cancel') + ' (10/10)    ')[0], -1))
+        buttonAutocrop.running = False
+        dlg.Bind(wx.EVT_BUTTON, self.OnCropAutocrop, buttonAutocrop)
+        autocropSizer = wx.BoxSizer(wx.HORIZONTAL)
+        autocropSizer.Add(buttonAutocrop, 0, wx.ALIGN_CENTER, 5)
         # Create the choice box for insertion options
         choiceBox = wx.Choice(
             dlg, wx.ID_ANY,
@@ -6917,6 +6925,7 @@ class MainFrame(wxp.Frame):
         # Size the elements
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(spinSizer, 0, wx.ALL, 10)
+        sizer.Add(autocropSizer, 0, wx.ALIGN_CENTER)
         sizer.Add(choiceSizer, 0, wx.TOP|wx.BOTTOM, 10)
         sizer.Add(wx.StaticLine(dlg), 0, wx.EXPAND)
         sizer.Add(staticText, 0, wx.ALIGN_CENTER|wx.EXPAND|wx.ALL, 5)
@@ -9369,7 +9378,10 @@ class MainFrame(wxp.Frame):
         script = self.currentScript
         # Display actual spin control value (integer only)
         if not event: # SpinCtrl.SetValue() doesn't generate EVT_TEXT in wx2.9 
-            spinCtrl = self.cropDialog.ctrls[self.lastcrop]
+            if self.lastcrop:
+                spinCtrl = self.cropDialog.ctrls[self.lastcrop]
+            else:
+                spinCtrl = None
         else:
             spinCtrl = event.GetEventObject()
             spinCtrl.SetValue(spinCtrl.GetValue())
@@ -9396,6 +9408,64 @@ class MainFrame(wxp.Frame):
         self.PaintCropWarnings(spinCtrl)
         self.SetVideoStatusText()
 
+    def OnCropAutocrop(self, event):
+        button = event.GetEventObject()
+        button.running = not button.running 
+        if button.running:
+            wx.CallAfter(self.Autocrop, button)
+    
+    def Autocrop(self, button):
+        '''Run crop editor's auto-crop option'''
+        # Get crop values for a number of frames
+        samples = 10
+        tol = 70
+        avs_clip = self.currentScript.AVI
+        frames = avs_clip.Framecount
+        def float_range(start=0, end=10, step=1):
+            while start < end:
+                yield int(round(start))
+                start += step
+        frames = float_range(frames/10, 9*frames/10 - 1, 8.0*frames/(10*samples))
+        crop_values = []
+        for i, frame in enumerate(frames):
+            button.SetLabel(_('Cancel') + ' ({0}/{1})'.format(i+1, samples))
+            crop_values.append(avs_clip.AutocropFrame(frame, tol))
+            wx.Yield()
+            if not button.running:
+                button.SetLabel(_('Auto-crop'))
+                return
+        
+        # Get and apply final crop values
+        final_crop_values = []
+        for seq in zip(*crop_values):
+            final_crop_values.append(self.GetAutocropValue(seq))
+        self.cropDialog.ctrls['left'].SetValue(final_crop_values[0])
+        self.cropDialog.ctrls['top'].SetValue(final_crop_values[1])
+        self.cropDialog.ctrls['-right'].SetValue(final_crop_values[2])
+        self.cropDialog.ctrls['-bottom'].SetValue(final_crop_values[3])
+        self.lastcrop = None
+        self.SetVideoStatusText()
+        self.OnCropDialogSpinTextChange()
+        button.SetLabel(_('Auto-crop'))
+        button.running = False
+    
+    @staticmethod
+    def GetAutocropValue(seq):
+        """Get the most repeated value on a sequence if it repeats more than 50%, 
+        the minimum value otherwise"""
+        d = defaultdict(int)
+        for i in seq:
+            d[i] += 1
+        max = sorted(d.keys(), key=lambda x:-d[x])[0]
+        if d[max] > len(seq) / 2:
+            return max
+        else:
+            ret_val = max
+            for value in seq:
+                if value < ret_val:
+                    ret_val = value
+            return ret_val
+    
     def OnCropDialogApply(self, event):
         if self.cropDialog.boolInvalidCrop:
             dlg = wx.MessageDialog(self, _('Invalid crop values detected.  Continue?'),
@@ -12614,6 +12684,8 @@ class MainFrame(wxp.Frame):
                 # Update the script tag properties
                 self.UpdateScriptTagProperties(script, scripttxt)
                 self.GetAutoSliderInfo(script, scripttxt)
+                if self.cropDialog.IsShown():
+                    self.PaintCropWarnings()
                 boolNewAVI = True
             if script == self.currentScript:
                 self.refreshAVI = False

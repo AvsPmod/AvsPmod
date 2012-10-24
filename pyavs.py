@@ -256,11 +256,34 @@ class AvsClipBase:
             self.clip = None
             self.clipRaw = None
             if __debug__:
-                print "Deleting allocated video memory for '{0}'...".format(self.name)
+                print "Deleting allocated video memory for '{0}'".format(self.name)
     
     def _ConvertToRGB(self):
         '''Convert to RGB for display. Return True if successful'''
         pass
+    
+    def _GetFrame(self, frame):
+        if self.initialized:
+            if self.current_frame == frame:
+                return True
+            if frame < 0:
+                frame = 0
+            if frame >= self.Framecount:
+                frame = self.Framecount - 1
+            self.current_frame = frame
+            src = self.clip.GetFrame(frame)
+            self.pBits = src.GetReadPtr()
+            # DrawPitch is the pitch of the RGB24 image for drawing.
+            # pitch is the pitch of the actual raw image from clipRaw.
+            self.DrawPitch = src.GetPitch()
+            if self.clipRaw is not None:
+                frame = self.clipRaw.GetFrame(frame)
+                self.pitch = frame.GetPitch()
+                self.ptrY = frame.GetReadPtr(plane=avisynth.PLANAR_Y)
+                self.ptrU = frame.GetReadPtr(plane=avisynth.PLANAR_U)
+                self.ptrV = frame.GetReadPtr(plane=avisynth.PLANAR_V)
+            return True
+        return False
     
     def GetPixelYUV(self, x, y):
         if self.clipRaw is not None:
@@ -343,6 +366,70 @@ class AvsClipBase:
         
     def IsErrorClip(self):
         return self.error_message is not None
+    
+    def AutocropFrame(self, frame, tol=70):
+        '''Return crop values for a specific frame'''
+        width, height = self.Width, self.Height
+        if self.clipRaw is not None: # Get pixel color from the original clip
+            self._GetFrame(frame)
+            GetPixelColor = self.GetPixelRGB if self.IsRGB else self.GetPixelYUV
+        else: # Get pixel color from the video preview (slower)
+            bmp = wx.EmptyBitmap(width, height)
+            mdc = wx.MemoryDC()
+            mdc.SelectObject(bmp)
+            self.DrawFrame(frame, mdc)
+            img = bmp.ConvertToImage()
+            GetPixelColor = lambda x, y : (img.GetRed(x, y), img.GetGreen(x, y), img.GetBlue(x, y))
+        w, h = width - 1, height - 1
+        top_left0, top_left1, top_left2 = GetPixelColor(0, 0)
+        bottom_right0, bottom_right1, bottom_right2 = GetPixelColor(w, h)
+        top = bottom = left = right = 0
+        
+        # top & bottom
+        top_done = bottom_done = False
+        for i in range(height):
+            for j in range(width):
+                if not top_done:
+                    color0, color1, color2 = GetPixelColor(j, i)
+                    if (abs(color0 - top_left0) > tol or 
+                        abs(color1 - top_left1) > tol or 
+                        abs(color2 - top_left2) > tol):
+                            top = i
+                            top_done = True
+                if not bottom_done:
+                    color0, color1, color2 = GetPixelColor(j, h - i)
+                    if (abs(color0 - bottom_right0) > tol or 
+                        abs(color1 - bottom_right1) > tol or 
+                        abs(color2 - bottom_right2) > tol):
+                            bottom = i
+                            bottom_done = True
+                if top_done and bottom_done: break
+            else: continue
+            break
+        
+        # left & right
+        left_done = right_done = False
+        for j in range(width):
+            for i in range(height):
+                if not left_done:
+                    color0, color1, color2 = GetPixelColor(j, i)
+                    if (abs(color0 - top_left0) > tol or 
+                        abs(color1 - top_left1) > tol or 
+                        abs(color2 - top_left2) > tol):
+                            left = j
+                            left_done = True
+                if not right_done:
+                    color0, color1, color2 = GetPixelColor(w - j, i)
+                    if (abs(color0 - bottom_right0) > tol or 
+                        abs(color1 - bottom_right1) > tol or 
+                        abs(color2 - bottom_right2) > tol):
+                            right = j
+                            right_done = True
+                if left_done and right_done: break
+            else: continue
+            break
+        
+        return left, top, right, bottom
     
     def _x_SaveFrame(self, filename, frame=None):
         # Get the frame to display
@@ -533,35 +620,14 @@ if os.name == 'nt':
             return True
         
         def _GetFrame(self, frame):
-            if self.initialized:
-                if self.current_frame == frame:
-                    return True
-                if frame < 0:
-                    frame = 0
-                if frame >= self.Framecount:
-                    frame = self.Framecount-1
-                self.current_frame = frame
-                src=self.clip.GetFrame(frame)
-                self.pBits = src.GetReadPtr()
-                #~ try:
-                    #~ src=self.clip.GetFrame(frame)
-                #~ except OSError:
-                    #~ return False
-                src_pitch=src.GetPitch()
-                self.bmih.biWidth = src_pitch*8/self.bmih.biBitCount
+            if AvsClipBase._GetFrame(self, frame):
+                self.bmih.biWidth = self.DrawPitch * 8 / self.bmih.biBitCount
                 #~ row_size=src.GetRowSize()
                 #~ height=self.bmih.biHeight
                 #~ dst_pitch=self.bmih.biWidth*self.bmih.biBitCount/8
                 #~ self.env.BitBlt(self.pBits,dst_pitch,src.GetReadPtr(),src_pitch,row_size,height)
-                if self.clipRaw is not None:
-                    frame=self.clipRaw.GetFrame(frame)
-                    self.pitch = frame.GetPitch()
-                    self.ptrY = frame.GetReadPtr(plane=avisynth.PLANAR_Y)
-                    self.ptrU = frame.GetReadPtr(plane=avisynth.PLANAR_U)
-                    self.ptrV = frame.GetReadPtr(plane=avisynth.PLANAR_V)
                 return True
-            else:
-                return False
+            return False
         
         def DrawFrame(self, frame, dc=None, offset=(0,0), size=None):
             if not self._GetFrame(frame):
@@ -620,34 +686,6 @@ else:
                 self.clip = avsfile.AsClip(self.env)
                 return True
             except avisynth.AvisynthError, err:
-                return False
-        
-        def _GetFrame(self, frame):
-            if self.initialized:
-                if self.current_frame == frame:
-                    return True
-                if frame < 0:
-                    frame = 0
-                if frame >= self.Framecount:
-                    frame = self.Framecount-1
-                self.current_frame = frame
-                src=self.clip.GetFrame(frame)
-                self.pBits = src.GetReadPtr()
-                #~ try:
-                    #~ src=self.clip.GetFrame(frame)
-                #~ except OSError:
-                    #~ return False
-                # DrawPitch is the pitch of the RGB24 image for drawing.
-                # pitch is the pitch of the actual raw image from clipRaw.
-                self.DrawPitch=src.GetPitch()
-                if self.clipRaw is not None:
-                    frame=self.clipRaw.GetFrame(frame)
-                    self.pitch = frame.GetPitch()
-                    self.ptrY = frame.GetReadPtr(plane=avisynth.PLANAR_Y)
-                    self.ptrU = frame.GetReadPtr(plane=avisynth.PLANAR_U)
-                    self.ptrV = frame.GetReadPtr(plane=avisynth.PLANAR_V)
-                return True
-            else:
                 return False
         
         def DrawFrame(self, frame, dc=None, offset=(0,0), size=None):

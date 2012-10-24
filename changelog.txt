@@ -14,8 +14,9 @@ Version 2.X.X [2012-??-??]
   - file menu -> undo close tab
   - middle click on empty tab bar space
   - Ctrl+Shift+N default hotkey
-- Add new variable to video status bar - bookmark title (%BM)
+- Add auto-crop option to the crop editor
 - The crop editor can be used now with the video preview zoomed or flipped
+- Add new variable to video status bar - bookmark title (%BM)
 - Improve avs and avsi files association option:
   - on Windows, prompt to associate files for all users or only the current one and ask for permissions for the former
   - on *nix, this choice is made by starting AvsPmod as root to associate for all users. The application is also registered on the desktop environment's menu.
