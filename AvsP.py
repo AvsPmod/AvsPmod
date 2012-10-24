@@ -4515,6 +4515,9 @@ class MainFrame(wxp.Frame):
                 try:
                     global messages
                     messages = translation.messages
+                    helpdir = '_'.join((self.helpdir, self.options['lang']))
+                    if os.path.isdir(helpdir):
+                        self.helpdir = helpdir
                 except AttributeError:
                     pass
             finally:
