@@ -10442,7 +10442,7 @@ class MainFrame(wxp.Frame):
                 txt = '%(txt)s\n%(header)s\n%(base)s\n%(header)s' % locals()
             
             # Encode text and save it to the specified file
-            txt = self.GetEncodedText(txt)
+            txt = self.GetEncodedText(txt, bom=True)
             with open(filename, 'w') as f:
                 f.write(txt)
             
@@ -10483,11 +10483,15 @@ class MainFrame(wxp.Frame):
         text = self.cleanToggleTags(text)
         return text
     
-    def GetEncodedText(self, txt):
+    def GetEncodedText(self, txt, bom=False):
         '''Prepare a script's text for saving it to file
         
         Prefer system's encoding to utf-8, just in case other applications
-        won't support it'''
+        won't support it
+        
+        If bom == True, insert the BOM at the beginning (except for UTF-8 
+        without BOM on the original file)
+        '''
         # try current encoding, else filesystem's
         try:
             encoded_txt = txt.encode(self.currentScript.encoding)
@@ -10510,6 +10514,20 @@ class MainFrame(wxp.Frame):
         if not encoded:       
             self.currentScript.encoding = 'utf8'
             encoded_txt = txt.encode(self.currentScript.encoding)
+        
+        # Add BOM
+        if bom:
+            if self.currentScript.encoding == 'utf-8-sig':
+                encoded_txt = codecs.BOM_UTF8 + encoded_txt
+            elif self.currentScript.encoding == 'utf-16-le':
+                encoded_txt = codecs.BOM_UTF16_LE + encoded_txt
+            elif self.currentScript.encoding == 'utf-16-be':
+                encoded_txt = codecs.BOM_UTF16_BE + encoded_txt
+            elif self.currentScript.encoding == 'utf-32-le':
+                encoded_txt = codecs.BOM_UTF32_LE + encoded_txt
+            elif self.currentScript.encoding == 'utf-32-be':
+                encoded_txt = codecs.BOM_UTF32_BE + encoded_txt
+        
         return encoded_txt
     
     def GetProposedPath(self, index=None, only=None, type_=None):
@@ -12802,7 +12820,7 @@ class MainFrame(wxp.Frame):
             previewname = os.path.join(self.programdir, 'preview.avs')
         # Get the text and write it to the file
         txt = self.getCleanText(script.GetText()) #self.regexp.sub(self.re_replace, script.GetText())
-        txt = self.GetEncodedText(txt)
+        txt = self.GetEncodedText(txt, bom=True)
         with open(previewname, 'w') as f:
             f.write(txt)
         return previewname

@@ -196,7 +196,7 @@ def main():
         # Create the AviSynth script
         script = scriptTemplate % paramDict
         inputavsname = os.path.join(scriptdir, 'ga_evaluate.avs')
-        script = app.GetEncodedText(script)
+        script = app.GetEncodedText(script, bom=True)
         f = open(inputavsname, 'w')
         f.write(script)
         f.close()
@@ -224,7 +224,7 @@ def main():
         '''Write the script to a file'''
         paramDict = decode_params(chromosome, params)
         script = scriptTemplate % paramDict
-        script = app.GetEncodedText(script)
+        script = app.GetEncodedText(script, bom=True)
         f = open(os.path.splitext(filename)[0] + '-optimized.avs', 'w')
         f.write(script)
         f.close()
