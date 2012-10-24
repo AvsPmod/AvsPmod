@@ -1969,7 +1969,7 @@ class AvsStyleDialog(wx.Dialog):
         # Create the font buttons
         self.controls = {}
         self.controls2 = {}
-        self.notebook = wx.Notebook(self, wx.ID_ANY, style=wx.NO_BORDER)
+        self.notebook = wxp.Notebook(self, wx.ID_ANY, style=wx.NO_BORDER)
         def OnNotebookPageChanged(event):
             event.GetEventObject().GetCurrentPage().SetFocus()
             event.Skip()
@@ -2805,7 +2805,7 @@ class AvsFunctionDialog(wx.Dialog):
             self.AddNewFunction(functionName)
 
     def CreateWindowElements(self):
-        self.notebook = wx.Notebook(self, wx.ID_ANY, style=wx.NO_BORDER)
+        self.notebook = wxp.Notebook(self, wx.ID_ANY, style=wx.NO_BORDER)
         pageInfo = (
             (_('Core filters'), 0),
             (_('Plugins'), 2),

@@ -595,7 +595,55 @@ class Frame(wx.Frame):
         button.Bind(wx.EVT_MOTION, OnMouseMove)
         button.Bind(wx.EVT_LEAVE_WINDOW, OnMouseLeave)
         return button
+
+
+class Notebook(wx.Notebook):
+    """wx.Notebook, changing selected tab on mouse scroll"""
+    
+    def __init__(self, *args, **kwargs):
+        wx.Notebook.__init__(self, *args, **kwargs)
+        self.mouse_wheel_rotation = 0
+        self.Bind(wx.EVT_MOUSEWHEEL, self.OnMouseWheelNotebook)
+    
+    def OnMouseWheelNotebook(self, event):
+        """Rotate between tabs"""
+        rotation = event.GetWheelRotation()
+        if self.mouse_wheel_rotation * rotation < 0:
+            self.mouse_wheel_rotation = rotation
+        else:
+            self.mouse_wheel_rotation += rotation
+        if abs(self.mouse_wheel_rotation) >= event.GetWheelDelta():
+            inc = 1 if self.mouse_wheel_rotation > 0 else -1 
+            self.SelectTab(inc=inc)
+            self.mouse_wheel_rotation = 0
+    
+    def SelectTab(self, index=None, inc=0):
+        """Change to another tab
         
+        index: go the specified tab
+        inc: increment, with wrap-around"""
+        nTabs = self.GetPageCount()
+        if nTabs == 1:
+            self.SetSelection(0)
+            return True
+        if index is None:
+            index = inc + self.GetSelection()
+            # Allow for wraparound with user-specified inc
+            if index < 0:
+                index = nTabs - abs(index) % nTabs
+                if index == nTabs:
+                    index = 0
+            if index > nTabs - 1:
+                index = index % nTabs
+        # Limit index if specified directly by user
+        if index < 0:
+            return False
+        if index > nTabs - 1:
+            return False
+        self.SetSelection(index)
+        return True
+
+
 class OptionsDialog(wx.Dialog):
     def __init__(self, parent, dlgInfo, options, title=None, startPageIndex=0, starText=True):
         '''Init the OptionsDialog window
@@ -620,7 +668,7 @@ class OptionsDialog(wx.Dialog):
         self.starList = []
         notebook = len(dlgInfo) > 1
         if notebook:
-            nb = self.nb = wx.Notebook(self, wx.ID_ANY, style=wx.NO_BORDER)
+            nb = self.nb = Notebook(self, wx.ID_ANY, style=wx.NO_BORDER)
         for tabInfo in dlgInfo:
             if notebook:
                 tabPanel = wx.Panel(nb, wx.ID_ANY)
