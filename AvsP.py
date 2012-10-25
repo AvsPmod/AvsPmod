@@ -10875,6 +10875,8 @@ class MainFrame(wxp.Frame):
                             defaultname = fmt % title
                         except:
                             defaultname = fmt
+            if os.name != 'nt' and '2.9' <= wx.version() < '2.9.5': # XXX
+                defaultname = defaultname + extlist[self.options['imagechoice']]
             dlg = wx.FileDialog(self,_('Save current frame'), defaultdir, defaultname,
                 filefilter,wx.SAVE | wx.OVERWRITE_PROMPT,(0,0))
             dlg.SetFilterIndex(min(self.options['imagechoice'], maxFilterIndex))
