@@ -2483,7 +2483,7 @@ class ScrapWindow(wx.Dialog):
                 if itemName.endswith(label):
                     counter += 1
                     accel = wx.GetAccelFromString('\t'+shortcut)
-                    if accel:
+                    if accel and accel.IsOk():
                         accList.append((accel.GetFlags(), accel.GetKeyCode(), id))
                     menuItem = menu.FindItemById(id)
                     label = '%s\t%s' % (menuItem.GetItemLabelText(), shortcut)

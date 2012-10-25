@@ -518,7 +518,7 @@ class Frame(wx.Frame):
                     continue
                 #~ index = [z for x,y,z in shortcutInfo].index(id)
                 accel = wx.GetAccelFromString('\t'+accelString)
-                if accel is not None:
+                if accel is not None and accel.IsOk():
                     accelList.append((accel.GetFlags(), accel.GetKeyCode(), id))
                 else:
                     for key in numpadDict:
@@ -545,7 +545,7 @@ class Frame(wx.Frame):
                 id = menuItem.GetId()
                 text = menuItem.GetText()
                 accel = wx.GetAccelFromString(text)
-                if accel is not None:
+                if accel is not None and accel.IsOk():
                     accelList.append((accel.GetFlags(), accel.GetKeyCode(), id))
                     
     def createButton(self, parent, label='', id=wx.ID_ANY, handler=None, pos=(0,0)):
