@@ -480,8 +480,8 @@ class Frame(wx.Frame):
             else:
                 shortcutString = ''
             # Append the menu item
-            if os.name != 'nt' and '2.9' <= wx.version() < '2.9.5': # XXX
-                shortcutString = ''
+            if os.name != 'nt' and wx.version() >= '2.9': # XXX
+                shortcutString = shortcutString[:-1]
             menuItem = menu.Append(id, '%s%s' % (label, shortcutString), status, kind)
             id = menuItem.GetId()
             self.Bind(wx.EVT_MENU, handler, menuItem)

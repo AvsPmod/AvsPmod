@@ -8470,6 +8470,8 @@ class MainFrame(wxp.Frame):
                     label = menuItem.GetLabel()
                     if shortcut != '':
                         shortcut = u'\t%s\u00a0' % wxp.GetTranslatedShortcut(shortcut)
+                        if os.name != 'nt' and wx.version() >= '2.9': # XXX
+                            shortcut = shortcut[:-1]
                     newLabel = '%s%s' % (label, shortcut)
                     menuItem.SetItemLabel(newLabel)
             self.options['shortcuts'] = shortcutList
