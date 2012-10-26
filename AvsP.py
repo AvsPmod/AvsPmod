@@ -9223,39 +9223,29 @@ class MainFrame(wxp.Frame):
                 xPos = w - xPos
             if 'flipvertical' in self.flip:
                 yPos = h - yPos
-            xcenter = (w - left - mright) / 2 + left
-            ycenter = (h - top - mbottom)/2 + top
-            xdist = xcenter - xPos
-            ydist = ycenter - yPos
-            disttop = (xdist ** 2 + (top - yPos) ** 2) ** 0.5
-            distbottom = (xdist ** 2 + (h - mbottom - yPos) ** 2) ** 0.5
-            distleft = (ydist ** 2 + (left - xPos) ** 2) ** 0.5
-            distright = (ydist ** 2 + (w - mright - xPos) ** 2) ** 0.5
-            mindist = min(disttop, distbottom, distleft, distright)
-            if disttop == mindist:
-                top = yPos
-                if (h - mbottom) - top < self.options['cropminy']:
-                    top = (h - mbottom) - self.options['cropminy']
-                self.cropDialog.ctrls['top'].SetValue(top)
-                self.lastcrop = 'top'
-            elif distbottom == mindist:
-                mbottom = h - yPos
-                if (h - mbottom) - top < self.options['cropminy']:
-                    mbottom = h - top - self.options['cropminy']
-                self.cropDialog.ctrls['-bottom'].SetValue(mbottom)
-                self.lastcrop = '-bottom'
-            elif distleft == mindist:
-                left = xPos
-                if (w - mright) - left < self.options['cropminx']:
-                    left = (w - mright)  - self.options['cropminx']
-                self.cropDialog.ctrls['left'].SetValue(left)
-                self.lastcrop = 'left'
-            elif distright == mindist:
-                mright = w - xPos
-                if (w - mright) - left < self.options['cropminx']:
-                    mright = w - left  - self.options['cropminx']
-                self.cropDialog.ctrls['-right'].SetValue(mright)
-                self.lastcrop = '-right'
+            xcenter = (w - left - mright) / float(2) + left
+            ycenter = (h - top - mbottom) / float(2) + top
+            xPos0 = xPos - xcenter
+            yPos0 = - (yPos - ycenter)
+            if xPos0 == 0:
+                choice = 'top' if yPos0 > 0 else '-bottom'
+            else:
+                m = float(h - top - mbottom) / (w - left - mright)
+                mo = yPos0 / xPos0
+                if -m < mo < m:
+                    choice = '-right' if xPos0 > 0 else 'left'
+                else:
+                    choice = 'top' if yPos0 > 0 else '-bottom'
+            if choice == 'top':
+                new_value = min(yPos, h - mbottom - self.options['cropminy'])
+            elif choice == '-bottom':
+                new_value = min(h - yPos, h - top - self.options['cropminy'])
+            elif choice == 'left':
+                new_value = min(xPos, w - mright - self.options['cropminx'])
+            elif choice == '-right':
+                new_value = min(w - xPos, w - left - self.options['cropminx'])
+            self.cropDialog.ctrls[choice].SetValue(new_value)
+            self.lastcrop = choice
             self.SetVideoStatusText()
             if wx.VERSION > (2, 9):
                 self.OnCropDialogSpinTextChange()
