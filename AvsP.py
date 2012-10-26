@@ -5048,6 +5048,7 @@ class MainFrame(wxp.Frame):
             'maximized2': False,
             'dimensions': (50, 50, 700, 550),
             'cropchoice': 0,
+            'autocrop_samples': 10,
             'triminsertchoice': 0,
             'trimreversechoice': 0,
             'trimmarkframes': True,
@@ -6894,14 +6895,22 @@ class MainFrame(wxp.Frame):
             )
         )
         staticText.Wrap(spinSizer.GetMinSize()[0])
-        # Create the autocrop button
+        # Create the autocrop controls
         buttonAutocrop = wx.Button(dlg, wx.ID_ANY, _('Auto-crop'))
         buttonAutocrop.SetMinSize(wx.Size(
             buttonAutocrop.GetTextExtent(_('Cancel') + ' (10/10)    ')[0], -1))
         buttonAutocrop.running = False
         dlg.Bind(wx.EVT_BUTTON, self.OnCropAutocrop, buttonAutocrop)
+        spinAutocrop = wx.SpinCtrl(dlg, wx.ID_ANY, size=(100,-1), 
+            value='{0} ({1})'.format(_('Samples'), self.options['autocrop_samples']), 
+            min=1, initial=self.options['autocrop_samples'], 
+            style=wx.TE_PROCESS_ENTER|wx.SP_ARROW_KEYS|wx.ALIGN_RIGHT)
+        dlg.Bind(wx.EVT_SPINCTRL, lambda event : 
+            self.options.__setitem__('autocrop_samples', event.GetEventObject().GetValue()), 
+            spinAutocrop)
         autocropSizer = wx.BoxSizer(wx.HORIZONTAL)
-        autocropSizer.Add(buttonAutocrop, 0, wx.ALIGN_CENTER, 5)
+        autocropSizer.Add(buttonAutocrop, 0, wx.ALIGN_CENTER|wx.ALL, 5)
+        autocropSizer.Add(spinAutocrop, 0, wx.ALIGN_CENTER|wx.ALL, 5)
         # Create the choice box for insertion options
         choiceBox = wx.Choice(
             dlg, wx.ID_ANY,
@@ -9412,7 +9421,7 @@ class MainFrame(wxp.Frame):
     def Autocrop(self, button):
         '''Run crop editor's auto-crop option'''
         # Get crop values for a number of frames
-        samples = 10
+        samples = self.options['autocrop_samples']
         tol = 70
         avs_clip = self.currentScript.AVI
         frames = avs_clip.Framecount
