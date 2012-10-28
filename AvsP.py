@@ -2392,7 +2392,7 @@ class STCPrintout(wx.Printout):
 # Dialog for scrap window
 class ScrapWindow(wx.Dialog):
     def __init__(self, parent, title=_('Scrap Window'), pos=wx.DefaultPosition, size=(250,250)):
-        style = wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER | wx.STAY_ON_TOP
+        style = wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER
         wx.Dialog.__init__(self, parent, wx.ID_ANY, title, pos, size, style=style)
         self.parent = parent
         # Create the stc control
