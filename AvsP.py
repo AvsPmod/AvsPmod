@@ -107,8 +107,6 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
     STC_AVS_MISCWORD = stc.STC_LUA_WORD8
     STC_AVS_DATATYPE = stc.STC_LUA_PREPROCESSOR
     STC_AVS_IDENTIFIER = stc.STC_LUA_IDENTIFIER
-    finddata = wx.FindReplaceData(wx.FR_DOWN)
-    replacedata = wx.FindReplaceData(wx.FR_DOWN)
     def __init__(self, parent, app, id=wx.ID_ANY, pos=wx.DefaultPosition, size=wx.DefaultSize, style=wx.SIMPLE_BORDER,
             #~ filterDict=None,
             #~ filterPresetDict=None,
@@ -136,8 +134,6 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
         self.UsePopUp(0)
         self.showLinenumbers = 1
         #~ self.enableFolding = 1
-        #~ self.finddata = wx.FindReplaceData(wx.FR_DOWN)
-        #~ self.replacedata = wx.FindReplaceData(wx.FR_DOWN)
         self.calltipFilter = None
         self.calltiptext = None
         self.calltipOpenpos = None
@@ -199,11 +195,6 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
         self.Bind(stc.EVT_STC_NEEDSHOWN, self.OnNeedShown)
         self.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
         self.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
-        #~ self.Bind(wx.EVT_FIND, self.OnFindPressed)
-        #~ self.Bind(wx.EVT_FIND_NEXT, self.OnFindPressed)
-        #~ self.Bind(wx.EVT_FIND_REPLACE, self.OnReplacePressed)
-        #~ self.Bind(wx.EVT_FIND_REPLACE_ALL, self.OnReplaceAllPressed)
-        #~ self.Bind(wx.EVT_FIND_CLOSE, self.OnFindClose)
         self.Bind(wx.EVT_LEFT_DOWN, self.OnLeftMouseDown)
         self.Bind(stc.EVT_STC_CALLTIP_CLICK, self.OnCalltipClick)
         self.Bind(wx.EVT_KILL_FOCUS, self.OnKillFocus)
@@ -537,27 +528,35 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
             self.SetMarginWidth(0, w)
 
     # New utility functions
-    def ShowFindDialog(self):
-        if hasattr(self, 'frdlg'):
-            return
-        text = self.GetTextRange(self.GetSelectionStart(), self.GetSelectionEnd())
-        if text != '':
-            self.finddata.SetFindString(text)
-        AvsStyledTextCtrl.frdlg = wx.FindReplaceDialog(self.GetParent(), self.finddata, _('Find'))
-        self.frdlg.Show()
-        
-    def ShowReplaceDialog(self):
-        if hasattr(self, 'frdlg'):
-            return
-        text = self.GetTextRange(self.GetSelectionStart(), self.GetSelectionEnd())
-        if text != '':
-            self.replacedata.SetFindString(text)
-        AvsStyledTextCtrl.frdlg = wx.FindReplaceDialog(self.GetParent(), self.replacedata, _('Replace'), wx.FR_REPLACEDIALOG)
-        self.frdlg.Show()
+    def ShowQuickFindDialog(self):
+        if self.app.findDialog.IsShown():
+            self.app.findDialog.SetFocus()
+        else:
+            x0, y0 = self.app.currentScript.GetScreenPosition()
+            w0, h0 = self.app.currentScript.GetSize()
+            w, h = self.app.findDialog.GetSize()
+            self.app.findDialog.SetPosition((x0 + w0 - w - 5, y0 + 5))
+            self.app.findDialog.Show()
+        text = self.GetSelectedText()
+        if text:
+            self.app.findDialog.UpdateText(text)
+    
+    def ShowFindReplaceDialog(self):
+        self.app.findDialog.Hide()
+        if self.app.replaceDialog.IsShown():
+            self.app.replaceDialog.SetFocus()
+        else:
+            self.app.replaceDialog.Show()
+        text = self.GetSelectedText()
+        if text:
+            self.app.replaceDialog.UpdateText(text)
     
     def FindNext(self):
-        self.OnFindNext(self)
-
+        if self.app.replaceDialog.GetFindText():
+            self.app.replaceDialog.OnFindNext()
+        else:
+            self.ShowQuickFindDialog()
+    
     def IndentSelection(self):
         self.CmdKeyExecute(stc.STC_CMD_TAB)
 
@@ -1335,100 +1334,6 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
         return word
 
     # Event functions
-    @staticmethod
-    def OnFindPressed(event):
-        #~ if wx.VERSION > (2, 9) and hasattr(event, 'GetEventObject'):
-            #~ event = event.GetEventObject().GetData()
-        if hasattr(event, 'GetEventObject'):
-            nb = event.GetEventObject().GetParent()
-            self = nb.GetPage(nb.GetSelection())
-        else:
-            self = event
-            event = self.finddata
-        dlgflags = event.GetFlags()
-        text = event.GetFindString()
-        stcflags = 0
-        if wx.FR_MATCHCASE & dlgflags:
-            stcflags = stcflags|stc.STC_FIND_MATCHCASE
-        if wx.FR_WHOLEWORD & dlgflags:
-            stcflags = stcflags|stc.STC_FIND_WHOLEWORD
-        if wx.FR_DOWN & dlgflags:
-            minPos = self.GetCurrentPos()
-            maxPos = self.GetLineEndPosition(self.GetLineCount()-1)
-            findpos = self.FindText(minPos,maxPos,text,stcflags)
-            if findpos==-1:
-                findpos = self.FindText(0,maxPos,text,stcflags)
-            if findpos==-1:
-                self.app.GetStatusBar().SetStatusText(_('Cannot find "%(text)s"') % locals())
-            else:
-                self.SetSelection(findpos, findpos+len(text))
-        else:
-            minPos = self.GetSelectionStart()-1
-            maxPos = 0
-            findpos = self.FindText(minPos,maxPos,text,stcflags)
-            if findpos==-1:
-                minPos = self.GetLineEndPosition(self.GetLineCount()-1)
-                findpos = self.FindText(minPos,maxPos,text,stcflags)
-            if findpos==-1:
-                self.app.GetStatusBar().SetStatusText(_('Cannot find "%(text)s"') % locals())
-            else:
-                self.SetAnchor(findpos)
-                self.SetCurrentPos(findpos+len(text))
-        return findpos
-        
-    @staticmethod
-    def OnReplacePressed(event):
-        #~ if wx.VERSION > (2, 9) and hasattr(event, 'GetEventObject'):
-            #~ event = event.GetEventObject().GetData()
-        nb = event.GetEventObject().GetParent()
-        self = nb.GetPage(nb.GetSelection())
-        if self.GetSelectedText() == event.GetFindString():
-            self.ReplaceSelection(event.GetReplaceString())
-            self.OnFindPressed(event)
-        else:
-            self.OnFindPressed(event)
-
-    @staticmethod
-    def OnReplaceAllPressed(event):
-        #~ if wx.VERSION > (2, 9) and hasattr(event, 'GetEventObject'):
-            #~ event = event.GetEventObject().GetData()
-        nb = event.GetEventObject().GetParent()
-        self = nb.GetPage(nb.GetSelection())
-        self.GotoPos(0)
-        exitflag = 0
-        count = 0
-        while exitflag!=1:
-            dlgflags = event.GetFlags()
-            text = event.GetFindString()
-            stcflags = 0
-            if wx.FR_MATCHCASE&dlgflags:   stcflags = stcflags|stc.STC_FIND_MATCHCASE
-            if wx.FR_WHOLEWORD&dlgflags:   stcflags = stcflags|stc.STC_FIND_WHOLEWORD
-            minPos = self.GetCurrentPos()
-            maxPos = self.GetLineEndPosition(self.GetLineCount()-1)
-            findpos = self.FindText(minPos,maxPos,text,stcflags)
-            if findpos!=-1:
-                self.SetAnchor(findpos)
-                self.SetCurrentPos(findpos+len(text))
-                replacetext = event.GetReplaceString()
-                self.ReplaceSelection(replacetext)
-                self.SetAnchor(self.GetCurrentPos()-len(replacetext))
-                count = count+1
-            else:
-                exitflag = 1
-        self.GotoPos(0)
-        self.app.GetStatusBar().SetStatusText(_('Replaced %(count)i times') % locals())
-
-    @staticmethod
-    def OnFindNext(self):
-        if self.finddata.GetFindString()=='':
-            self.ShowFindDialog()
-        else:
-            self.OnFindPressed(self)
-
-    @staticmethod
-    def OnFindClose(event):
-        AvsStyledTextCtrl.frdlg.Destroy()
-        del AvsStyledTextCtrl.frdlg
 
     def OnUpdateUI(self, event):
         # Get the character before the caret
@@ -4691,6 +4596,8 @@ class MainFrame(wxp.Frame):
             cropdialogparent = self.videoDialog
         self.cropDialog = self.createCropDialog(cropdialogparent)
         self.trimDialog = self.createTrimDialog(cropdialogparent)
+        self.findDialog = wxp.QuickFindDialog(self.scriptNotebook)
+        self.replaceDialog = wxp.FindReplaceDialog(self.scriptNotebook)
         
         # Internal class variables
         self.currentframenum = None
@@ -5047,6 +4954,8 @@ class MainFrame(wxp.Frame):
             'maximized': False,
             'maximized2': False,
             'dimensions': (50, 50, 700, 550),
+            'find_recent': [],
+            'replace_recent': [],
             'cropchoice': 0,
             'autocrop_samples': 10,
             'triminsertchoice': 0,
@@ -6612,6 +6521,7 @@ class MainFrame(wxp.Frame):
         if self.options['fixedwidthtab']:
             style |= wx.NB_FIXEDWIDTH
         nb = wx.Notebook(self.mainSplitter, wx.ID_ANY, style=style)
+        nb.app = self
         # Create the right-click menu
         menuInfo = (
             (_('Close'), '', self.OnMenuFileClose),
@@ -6685,11 +6595,6 @@ class MainFrame(wxp.Frame):
         nb.Bind(wx.EVT_RIGHT_UP, self.OnRightClickNotebook)
         nb.Bind(wx.EVT_MOTION, self.OnMouseMotionNotebook)
         nb.Bind(wx.EVT_MOUSEWHEEL, self.OnMouseWheelNotebook)
-        nb.Bind(wx.EVT_FIND, AvsStyledTextCtrl.OnFindPressed)
-        nb.Bind(wx.EVT_FIND_NEXT, AvsStyledTextCtrl.OnFindPressed)
-        nb.Bind(wx.EVT_FIND_REPLACE, AvsStyledTextCtrl.OnReplacePressed)
-        nb.Bind(wx.EVT_FIND_REPLACE_ALL, AvsStyledTextCtrl.OnReplaceAllPressed)
-        nb.Bind(wx.EVT_FIND_CLOSE, AvsStyledTextCtrl.OnFindClose)
         return nb
 
     def createScriptWindow(self):
@@ -7312,7 +7217,7 @@ class MainFrame(wxp.Frame):
 
     def OnMenuEditFind(self, event):
         script = self.currentScript
-        script.ShowFindDialog()
+        script.ShowQuickFindDialog()
 
     def OnMenuEditFindNext(self, event):
         script = self.currentScript
@@ -7320,7 +7225,7 @@ class MainFrame(wxp.Frame):
 
     def OnMenuEditReplace(self, event):
         script = self.currentScript
-        script.ShowReplaceDialog()
+        script.ShowFindReplaceDialog()
 
     def OnMenuEditSelectAll(self, event):
         script = self.currentScript
@@ -8926,8 +8831,10 @@ class MainFrame(wxp.Frame):
             #~ script.SetFocus()
         if self.boolVideoWindowFocused:
             self.videoWindow.SetFocus()
-        elif hasattr(script, 'frdlg'):
-            script.frdlg.SetFocus()
+        elif self.findDialog.IsShown():
+            self.findDialog.SetFocus()
+        elif self.replaceDialog.IsShown():
+            self.replaceDialog.SetFocus()
         else:
             script.SetFocus()
         self.SetProgramTitle()
