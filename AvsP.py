@@ -542,15 +542,18 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
         if text:
             self.app.findDialog.UpdateText(text)
     
-    def ShowFindReplaceDialog(self):
+    def ShowFindReplaceDialog(self, find=False):
         self.app.findDialog.Hide()
+        text = self.GetSelectedText()
         if self.app.replaceDialog.IsShown():
             self.app.replaceDialog.SetFocus()
+            if text:
+                ctrl = 'find' if find else 'replace'
+                self.app.replaceDialog.UpdateText(text, ctrl)
         else:
             self.app.replaceDialog.Show()
-        text = self.GetSelectedText()
-        if text:
-            self.app.replaceDialog.UpdateText(text)
+            if text:
+                self.app.replaceDialog.UpdateText(text, 'find')
     
     def FindNext(self):
         if self.app.replaceDialog.GetFindText():
@@ -7238,7 +7241,7 @@ class MainFrame(wxp.Frame):
     def OnMenuEditFind(self, event):
         script = self.currentScript
         if self.replaceDialog.IsShown():
-            script.ShowFindReplaceDialog()
+            script.ShowFindReplaceDialog(find=True)
         else:
             script.ShowQuickFindDialog()
 

@@ -827,7 +827,6 @@ class FindReplaceDialog(wx.Dialog):
         dlgSizer = wx.BoxSizer(wx.VERTICAL)
         dlgSizer.Add(col_sizer, 0, wx.EXPAND|wx.ALL, 5)
         dlgSizer.Fit(self)
-        self.Center()
         self.SetSizer(dlgSizer)
         dlgSizer.SetSizeHints(self)
         dlgSizer.Layout()
@@ -840,19 +839,24 @@ class FindReplaceDialog(wx.Dialog):
         return self.replace_text_ctrl.GetValue()
     
     def SetFindText(self, text):
-        return self.find_text_ctrl.SetValue(text)
+        self.find_text_ctrl.SetValue(text)
+        if self.IsShown():
+            self.find_text_ctrl.SetFocus()
+            self.find_text_ctrl.SetInsertionPointEnd()
     
     def SetReplaceText(self, text):
-        return self.replace_text_ctrl.SetValue(text)
+        self.replace_text_ctrl.SetValue(text)
+        if self.IsShown():
+            self.replace_text_ctrl.SetFocus()
+            self.replace_text_ctrl.SetInsertionPointEnd()
     
-    def UpdateText(self, text=None):
-        '''Update 'find' text control, or 'replace' if it's on focus'''
+    def UpdateText(self, text=None, ctrl='find'):
         if text is None:
             text = self.app.currentScript.GetSelectedText()
-        if self.FindFocus() == self.replace_text_ctrl:
-            self.SetReplaceText(text)
-        else:
+        if ctrl == 'find':
             self.SetFindText(text)
+        else:
+            self.SetReplaceText(text)
     
     def OnFindNext(self, event=None, range=None, update_list=True):
         text = self.GetFindText()
