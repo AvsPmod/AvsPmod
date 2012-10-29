@@ -668,9 +668,10 @@ class QuickFindDialog(wx.Dialog):
         sizer.Layout()
         
         self.Bind(wx.EVT_BUTTON, self.OnClose, self.close)
+        self.Bind(wx.EVT_TEXT, self.OnInstantFindNext, self.find_text_ctrl)
         self.Bind(wx.EVT_TEXT_ENTER, self.OnFindNext, self.find_text_ctrl)
-        self.find_text_ctrl.Bind(wx.EVT_SET_FOCUS, lambda event:self.timer.Stop())
-        self.find_text_ctrl.Bind(wx.EVT_KILL_FOCUS, lambda event:self.timer.Start(3000))
+        self.find_text_ctrl.Bind(wx.EVT_SET_FOCUS, self.OnSetFocus)
+        self.find_text_ctrl.Bind(wx.EVT_KILL_FOCUS, self.OnKillFocus)
         
         # Auto-hide timer
         class QuickFindTimer(wx.Timer):
@@ -689,26 +690,54 @@ class QuickFindDialog(wx.Dialog):
         accel_list = []
         accel_list.append(wx.AcceleratorEntry(wx.ACCEL_NORMAL, wx.WXK_UP, up_id))
         accel_list.append(wx.AcceleratorEntry(wx.ACCEL_NORMAL, wx.WXK_DOWN, down_id))
+        find = replace = False
+        find_menu = u'{0} -> {1}'.format(_('&Edit'), _('Find...')).replace('&', '')
+        replace_menu = u'{0} -> {1}'.format(_('&Edit'), _('Replace...')).replace('&', '')
         for menu_item, shortcut, id in self.app.options['shortcuts']:
-            if menu_item == 'Edit -> Replace...':
+            if not find and menu_item.replace('&', '') == find_menu:
+                accel = wx.GetAccelFromString('\t' + shortcut)
+                if accel is not None and accel.IsOk():
+                    accel_list.append(wx.AcceleratorEntry(accel.GetFlags(), accel.GetKeyCode(), id))
+                    self.Bind(wx.EVT_MENU, lambda event:self.UpdateText(), id=id)
+                find = True
+            if not replace and menu_item.replace('&', '') == replace_menu:
                 accel = wx.GetAccelFromString('\t' + shortcut)
                 if accel is not None and accel.IsOk():
                     accel_list.append(wx.AcceleratorEntry(accel.GetFlags(), accel.GetKeyCode(), id))
                     self.Bind(wx.EVT_MENU, self.app.OnMenuEditReplace, id=id)
-                break
+                replace = True
+            if find and replace: break
         self.SetAcceleratorTable(wx.AcceleratorTable(accel_list))
+    
+    def SetFocus(self):
+        self.find_text_ctrl.SetFocus()
+    
+    def OnSetFocus(self, event):
+        self.timer.Stop()
+        self.find_text_ctrl.SelectAll()
+    
+    def OnKillFocus(self, event):
+        self.timer.Start(3000)
     
     def GetFindText(self):
         return self.find_text_ctrl.GetValue()
     
     def SetFindText(self, text):
-        return self.find_text_ctrl.SetValue(text)
+        self.find_text_ctrl.ChangeValue(text)
+        self.find_text_ctrl.SetInsertionPointEnd()
     
     def UpdateText(self, text=None):
         if text is None:
             text = self.app.currentScript.GetSelectedText()
         self.SetFindText(text)
         self.app.replaceDialog.SetFindText(text)
+    
+    def OnInstantFindNext(self, event):
+        script = self.app.currentScript
+        range = (script.GetSelectionStart(), 
+                 script.GetLineEndPosition(script.GetLineCount() - 1))
+        self.app.replaceDialog.SetFindText(self.GetFindText())
+        self.app.replaceDialog.OnFindNext(range=range, update_list=False)
     
     def OnFindNext(self, event):
         self.app.replaceDialog.SetFindText(self.GetFindText())
@@ -726,7 +755,7 @@ class FindReplaceDialog(wx.Dialog):
     ''' Find/replace dialog for a wx.StyledTextCtrl'''
     
     def __init__(self, parent, text=''):
-        wx.Dialog.__init__(self, parent, wx.ID_ANY, _('Find/replace'), 
+        wx.Dialog.__init__(self, parent, wx.ID_ANY, _('Find/replace text'), 
                            style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
         self.app = parent.app
         self.find_recent = self.app.options['find_recent']
@@ -735,29 +764,25 @@ class FindReplaceDialog(wx.Dialog):
         # Set controls
         find_text = wx.StaticText(self, wx.ID_ANY, _('Search for'))
         self.find_text_ctrl = wx.ComboBox(self, wx.ID_ANY, style=wx.CB_DROPDOWN, 
-                                          value=text, choices=self.find_recent)
+                            size=(200,-1), value=text, choices=self.find_recent)
         replace_text = wx.StaticText(self, wx.ID_ANY, _('Replace with'))
-        self.replace_text_ctrl = wx.ComboBox(self, wx.ID_ANY, 
+        self.replace_text_ctrl = wx.ComboBox(self, wx.ID_ANY, size=(200,-1), 
                                     style=wx.CB_DROPDOWN|wx.TE_PROCESS_ENTER, 
                                     value='', choices=self.replace_recent)
         self.find_next = wx.Button(self, wx.ID_ANY, label=_('Find next'))
         self.find_previous = wx.Button(self, wx.ID_ANY, label=_('Find previous'))
         self.replace_next = wx.Button(self, wx.ID_ANY, label=_('Replace next'))
         self.replace_all = wx.Button(self, wx.ID_ANY, label=_('Replace all'))
-        self.replace_selection = wx.Button(self, wx.ID_ANY, label=_('In selection'))
-        self.match_case = wx.CheckBox(self, wx.ID_ANY, label=_('Case sensitive'))
+        id = wx.ID_CLOSE if wx.version() >= '2.9' else wx.ID_OK
+        self.close = wx.Button(self, id, label=_('Close'))
         self.word_start = wx.CheckBox(self, wx.ID_ANY, label=_('Only on word start'))
         self.whole_word = wx.CheckBox(self, wx.ID_ANY, label=_('Only whole words'))
+        self.only_selection = wx.CheckBox(self, wx.ID_ANY, label=_('Only in selection'))
+        self.match_case = wx.CheckBox(self, wx.ID_ANY, label=_('Case sensitive'))
         self.find_regexp = wx.CheckBox(self, wx.ID_ANY, label=_('Use regular expressions'))
         re_url = HyperLinkCtrl(self, wx.ID_ANY, label='?', 
                                URL=r'http://www.yellowbrain.com/stc/regexp.html')
-        
-        # Standard buttons
-        id = wx.ID_CLOSE if wx.version() >= '2.9' else wx.ID_OK
-        self.close = wx.Button(self, id, _('Close'))
-        btns = wx.StdDialogButtonSizer()
-        btns.AddButton(self.close)
-        btns.Realize()
+        self.dont_wrap = wx.CheckBox(self, wx.ID_ANY, label=_("Don't wrap-around"))
         
         # Bind events
         self.Bind(wx.EVT_TEXT_ENTER, self.OnReplace, self.replace_text_ctrl)
@@ -765,19 +790,20 @@ class FindReplaceDialog(wx.Dialog):
         self.Bind(wx.EVT_BUTTON, self.OnFindPrevious, self.find_previous)
         self.Bind(wx.EVT_BUTTON, self.OnReplace, self.replace_next)
         self.Bind(wx.EVT_BUTTON, self.OnReplaceAll, self.replace_all)
-        self.Bind(wx.EVT_BUTTON, self.OnReplaceSelection, self.replace_selection)
         self.Bind(wx.EVT_BUTTON, self.OnClose, self.close)
         
         # Organize controls
         check1_sizer = wx.BoxSizer(wx.VERTICAL)
         check1_sizer.Add(self.word_start, 0, wx.EXPAND|wx.RIGHT|wx.TOP|wx.BOTTOM, 4)
         check1_sizer.Add(self.whole_word, 0, wx.EXPAND|wx.RIGHT|wx.TOP|wx.BOTTOM, 4)
+        check1_sizer.Add(self.only_selection, 0, wx.EXPAND|wx.RIGHT|wx.TOP|wx.BOTTOM, 4)
         check2_sizer = wx.BoxSizer(wx.VERTICAL)
         check2_sizer.Add(self.match_case, 0, wx.EXPAND|wx.ALL, 4)
         re_sizer = wx.BoxSizer(wx.HORIZONTAL)
         re_sizer.Add(self.find_regexp, 0)
         re_sizer.Add(re_url, wx.LEFT, 5)
         check2_sizer.Add(re_sizer, 0, wx.EXPAND|wx.ALL, 4)
+        check2_sizer.Add(self.dont_wrap, 0, wx.EXPAND|wx.ALL, 4)
         check_sizer = wx.BoxSizer(wx.HORIZONTAL)
         check_sizer.Add(check1_sizer, 0)
         check_sizer.Add(check2_sizer, 0)
@@ -792,7 +818,7 @@ class FindReplaceDialog(wx.Dialog):
         button_sizer.Add(self.find_previous, 0, wx.EXPAND|wx.ALL, 3)
         button_sizer.Add(self.replace_next, 0, wx.EXPAND|wx.ALL, 3)
         button_sizer.Add(self.replace_all, 0, wx.EXPAND|wx.ALL, 3)
-        button_sizer.Add(self.replace_selection, 0, wx.EXPAND|wx.ALL, 3)
+        button_sizer.Add(self.close, 0, wx.EXPAND|wx.ALL, 3)
         col_sizer = wx.BoxSizer(wx.HORIZONTAL)
         col_sizer.Add(ctrl_sizer, 1, wx.EXPAND|wx.ALIGN_CENTER)
         col_sizer.Add(button_sizer, 0, wx.EXPAND|wx.ALIGN_CENTER|wx.LEFT, 2)
@@ -800,7 +826,6 @@ class FindReplaceDialog(wx.Dialog):
         # Size the elements
         dlgSizer = wx.BoxSizer(wx.VERTICAL)
         dlgSizer.Add(col_sizer, 0, wx.EXPAND|wx.ALL, 5)
-        dlgSizer.Add(btns, 0, wx.EXPAND|wx.ALL, 5)
         dlgSizer.Fit(self)
         self.Center()
         self.SetSizer(dlgSizer)
@@ -829,23 +854,29 @@ class FindReplaceDialog(wx.Dialog):
         else:
             self.SetFindText(text)
     
-    def OnFindNext(self, event=None):
+    def OnFindNext(self, event=None, range=None, update_list=True):
         text = self.GetFindText()
-        if text not in self.find_recent:
-            self.find_recent[9:] = []
+        if not text: return
+        if update_list and text not in self.find_recent:
+            self.find_recent[11:] = []
             self.find_recent.insert(0, text)
             self.find_text_ctrl.Insert(text, 0)
-        self.Find(text, True)
+        if self.Find(text, True, range):
+            script = self.app.currentScript
+            script.EnsureCaretVisible()
     
     def OnFindPrevious(self, event=None):
         text = self.GetFindText()
+        if not text: return
         if text not in self.find_recent:
-            self.find_recent[9:] = []
+            self.find_recent[11:] = []
             self.find_recent.insert(0, text)
             self.find_text_ctrl.Insert(text, 0)
-        self.Find(text, False)
+        if self.Find(text, False):
+            script = self.app.currentScript
+            script.EnsureCaretVisible()
     
-    def Find(self, text, top2bottom=True, start=None, end=None):
+    def Find(self, text, top2bottom=True, range=None, wrap=None):
         script = self.app.currentScript
         text = self.GetFindText()
         if not text:
@@ -860,82 +891,82 @@ class FindReplaceDialog(wx.Dialog):
             stcflags = stcflags | stc.STC_FIND_WHOLEWORD
         if self.find_regexp.IsChecked():
             stcflags = stcflags | stc.STC_FIND_REGEXP
-        if top2bottom:
-            minPos = start if start is not None else script.GetSelectionEnd()
-            maxPos = end if end is not None else script.GetLineEndPosition(script.GetLineCount() - 1)
-            findpos = script.FindText(minPos, maxPos, text, stcflags)
-            if findpos == -1 and not (start or end):
-                findpos = script.FindText(0, maxPos, text, stcflags)
-            if findpos == -1:
-                script.app.GetStatusBar().SetStatusText(_('Cannot find "%(text)s"') % locals())
+        if self.only_selection.IsChecked() and not range:
+            range = script.GetSelection()
+        if range:
+            wrap = False
+        elif wrap is None:
+            wrap = not self.dont_wrap.IsChecked()
+        if not range:
+            if top2bottom:
+                minPos, maxPos = (script.GetSelectionEnd(), 
+                                  script.GetLineEndPosition(script.GetLineCount() - 1))
             else:
-                script.app.GetStatusBar().SetStatusText('')
-                script.SetSelection(findpos, findpos + len(text.encode('utf-8')))
+                minPos, maxPos = script.GetSelectionStart(), 0
+        elif top2bottom:
+            minPos, maxPos = range
         else:
-            minPos = end if end is not None else script.GetSelectionEnd() - 1
-            maxPos = start if start is not None else 0
+            minPos, maxPos = reversed(range)
+        findpos = script.FindText(minPos, maxPos, text, stcflags)
+        if findpos == -1 and wrap:
+            minPos = 0 if top2bottom else script.GetLineEndPosition(script.GetLineCount() - 1)
             findpos = script.FindText(minPos, maxPos, text, stcflags)
-            if findpos == -1 and not (start or end):
-                minPos = script.GetLineEndPosition(script.GetLineCount() - 1)
-                findpos = script.FindText(minPos, maxPos, text, stcflags)
-            if findpos == -1:
-                script.app.GetStatusBar().SetStatusText(_('Cannot find "%(text)s"') % locals())
-            else:
-                script.app.GetStatusBar().SetStatusText('')
-                script.SetAnchor(findpos)
-                script.SetCurrentPos(findpos + len(text.encode('utf-8')))
+        if findpos == -1:
+            script.app.GetStatusBar().SetStatusText(_('Cannot find "%(text)s"') % locals())
+        else:
+            script.app.GetStatusBar().SetStatusText('')
+            script.SetAnchor(findpos)
+            script.SetCurrentPos(findpos + len(text.encode('utf-8')))
         return findpos
     
-    def OnReplace(self, event):
+    def OnReplace(self, event=None):
         find_text = self.GetFindText()
         replace_text = self.GetReplaceText()
+        if not find_text or find_text == replace_text: return
         if find_text not in self.find_recent:
-            self.find_recent[9:] = []
+            self.find_recent[11:] = []
             self.find_recent.insert(0, find_text)
             self.find_text_ctrl.Insert(find_text, 0)
         if replace_text not in self.replace_recent:
-            self.replace_recent[9:] = []
+            self.replace_recent[11:] = []
             self.replace_recent.insert(0, replace_text)
             self.replace_text_ctrl.Insert(replace_text, 0)
-        self.Replace(find_text, replace_text)
-    
-    def Replace(self, find_text, replace_text, start=None, end=None):
         script = self.app.currentScript
-        if script.GetSelectedText() != find_text:
-            self.Find(find_text, True, start, end)
-        if script.GetSelectedText() == find_text:
+        script.GotoPos(script.GetSelectionStart())
+        if self.Replace(find_text, replace_text):
+            script.EnsureCaretVisible()
+    
+    def Replace(self, find_text, replace_text, range=None, wrap=True):
+        script = self.app.currentScript
+        if self.Find(find_text, True, range, wrap) != -1:
             script.ReplaceSelection(replace_text)
             return True
     
     def OnReplaceAll(self, event):
-        self.ReplaceAll()
-    
-    def OnReplaceSelection(self, event):
-        self.ReplaceAll(only_selection=True)
-    
-    def ReplaceAll(self, only_selection=False):
         find_text = self.GetFindText()
         replace_text = self.GetReplaceText()
+        if not find_text or find_text == replace_text: return
         if find_text not in self.find_recent:
-            self.find_recent[9:] = []
+            self.find_recent[11:] = []
             self.find_recent.insert(0, find_text)
             self.find_text_ctrl.Insert(find_text, 0)
         if replace_text not in self.replace_recent:
-            self.replace_recent[9:] = []
+            self.replace_recent[11:] = []
             self.replace_recent.insert(0, replace_text)
             self.replace_text_ctrl.Insert(replace_text, 0)
         offset = len(replace_text.encode('utf8')) - len(find_text.encode('utf8'))
         script = self.app.currentScript
-        start, end = script.GetSelection() if only_selection else (None, None)
+        if self.only_selection.IsChecked():
+            start, end = script.GetSelection()
+        else:
+            start, end = 0, script.GetLineEndPosition(script.GetLineCount() - 1)
         pos = script.GetCurrentPos()
-        script.GotoPos(0)
         count = pos_count = 0
         while True:
-            if not self.Replace(find_text, replace_text, start, end):
+            if not self.Replace(find_text, replace_text, (start, end)):
                 break
-            if only_selection:
-                start = script.GetSelectionEnd()
-                end += offset
+            start = script.GetSelectionEnd()
+            end += offset
             count += 1
             if script.GetSelectionEnd() < pos:
                 pos_count += 1

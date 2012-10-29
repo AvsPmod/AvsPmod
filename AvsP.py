@@ -537,6 +537,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
             w, h = self.app.findDialog.GetSize()
             self.app.findDialog.SetPosition((x0 + w0 - w - 5, y0 + 5))
             self.app.findDialog.Show()
+            self.app.findDialog.SetFocus()
         text = self.GetSelectedText()
         if text:
             self.app.findDialog.UpdateText(text)
@@ -554,8 +555,25 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
     def FindNext(self):
         if self.app.replaceDialog.GetFindText():
             self.app.replaceDialog.OnFindNext()
+        elif self.app.replaceDialog.IsShown():
+            self.ShowFindReplaceDialog()
         else:
             self.ShowQuickFindDialog()
+    
+    def FindPrevious(self):
+        if self.app.replaceDialog.GetFindText():
+            self.app.replaceDialog.OnFindPrevious()
+        elif self.app.replaceDialog.IsShown():
+            self.ShowFindReplaceDialog()
+        else:
+            self.ShowQuickFindDialog()
+    
+    def ReplaceNext(self):
+        if (self.app.replaceDialog.GetFindText() and 
+            self.app.replaceDialog.GetReplaceText()):
+                self.app.replaceDialog.OnReplace()
+        else:
+                self.ShowFindReplaceDialog()
     
     def IndentSelection(self):
         self.CmdKeyExecute(stc.STC_CMD_TAB)
@@ -6199,7 +6217,9 @@ class MainFrame(wxp.Frame):
                 (''),
                 (_('Find...'), 'Ctrl+F', self.OnMenuEditFind, _('Open a find text dialog box')),
                 (_('Find next'), 'F3', self.OnMenuEditFindNext, _('Find the next instance of given text')),
+                (_('Find previous'), 'Shift+F3', self.OnMenuEditFindPrevious, _('Find the previous instance of given text')),
                 (_('Replace...'), 'Ctrl+H', self.OnMenuEditReplace, _('Open a replace text dialog box')),
+                (_('Replace next'), 'F4', self.OnMenuEditReplaceNext, _('Replace the next instance of given text')),
                 (''),
                 (_('Select All'), 'Ctrl+A', self.OnMenuEditSelectAll, _('Select all the text')),
                 (''),
@@ -7217,16 +7237,27 @@ class MainFrame(wxp.Frame):
 
     def OnMenuEditFind(self, event):
         script = self.currentScript
-        script.ShowQuickFindDialog()
+        if self.replaceDialog.IsShown():
+            script.ShowFindReplaceDialog()
+        else:
+            script.ShowQuickFindDialog()
 
     def OnMenuEditFindNext(self, event):
         script = self.currentScript
         script.FindNext()
 
+    def OnMenuEditFindPrevious(self, event):
+        script = self.currentScript
+        script.FindPrevious()
+    
     def OnMenuEditReplace(self, event):
         script = self.currentScript
         script.ShowFindReplaceDialog()
-
+    
+    def OnMenuEditReplaceNext(self, event):
+        script = self.currentScript
+        script.ReplaceNext()
+    
     def OnMenuEditSelectAll(self, event):
         script = self.currentScript
         script.SelectAll()
