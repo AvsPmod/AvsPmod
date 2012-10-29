@@ -9968,7 +9968,7 @@ class MainFrame(wxp.Frame):
         if self.options['multilinetab']:
             rows = self.scriptNotebook.GetRowCount()
         iMax = 0
-        re_newfile = re.compile(r'\*?\s*{0}\s*\((\d+)\)\s*(?:\.avsi?)?$'.format(self.NewFileName), re.I)
+        re_newfile = re.compile(ur'\*?\s*{0}\s*\((\d+)\)\s*(?:\.avsi?)?$'.format(self.NewFileName), re.I)
         for i in range(index):
             title = self.scriptNotebook.GetPageText(i)
             match = re_newfile.match(title)
