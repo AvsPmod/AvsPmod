@@ -9995,6 +9995,7 @@ class MainFrame(wxp.Frame):
             self.scriptNotebook.AddPage(scriptWindow,'%s (%s)' % (self.NewFileName, iMax+1), select=False)
             scriptWindow.SetText(text)
             scriptWindow.SelectAll()
+            scriptWindow.EmptyUndoBuffer()
             if select:
                 self.refreshAVI = True
                 self.scriptNotebook.SetSelection(self.scriptNotebook.GetPageCount()-1)
@@ -10128,8 +10129,8 @@ class MainFrame(wxp.Frame):
                     script.SetText(scripttext)
                 script.encoding = f_encoding
                 script.workdir = workdir
+                script.EmptyUndoBuffer()
                 if setSavePoint:
-                    script.EmptyUndoBuffer()
                     script.SetSavePoint()
                 self.refreshAVI = True
                 if self.previewWindowVisible:
