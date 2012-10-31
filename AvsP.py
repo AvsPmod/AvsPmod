@@ -11832,9 +11832,14 @@ class MainFrame(wxp.Frame):
                     avsYUV = script.AVI.GetPixelYUV(x, y)
                     if avsYUV != (-1,-1,-1):
                         Y,U,V = avsYUV
-                    avsRGBA = script.AVI.GetPixelRGBA(x, y)
-                    if avsRGBA != (-1,-1,-1,-1):
-                        R,G,B,A = avsRGBA
+                    if script.AVI.IsRGB32:
+                        avsRGBA = script.AVI.GetPixelRGBA(x, y)
+                        if avsRGBA != (-1,-1,-1,-1):
+                            R,G,B,A = avsRGBA
+                    else:
+                        avsRGB = script.AVI.GetPixelRGB(x, y)
+                        if avsRGB != (-1,-1,-1):
+                            R,G,B = avsRGB
                 except:
                     pass
             if not string_:
