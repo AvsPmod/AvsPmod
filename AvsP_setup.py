@@ -28,6 +28,9 @@
 from distutils.core import setup
 import os, sys
 import py2exe
+
+import wxversion
+wxversion.select('2.8')
 import wx
 
 import globals
