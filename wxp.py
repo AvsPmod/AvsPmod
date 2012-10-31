@@ -897,9 +897,7 @@ class FindReplaceDialog(wx.Dialog):
             stcflags = stcflags | stc.STC_FIND_REGEXP
         if self.only_selection.IsChecked() and not range:
             range = script.GetSelection()
-        if range:
-            wrap = False
-        elif wrap is None:
+        if wrap is None:
             wrap = not self.dont_wrap.IsChecked()
         if not range:
             if top2bottom:
@@ -967,7 +965,7 @@ class FindReplaceDialog(wx.Dialog):
         pos = script.GetCurrentPos()
         count = pos_count = 0
         while True:
-            if not self.Replace(find_text, replace_text, (start, end)):
+            if not self.Replace(find_text, replace_text, (start, end), False):
                 break
             start = script.GetSelectionEnd()
             end += offset
