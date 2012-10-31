@@ -32,6 +32,7 @@ Version 2.X.X [2012-??-??]
 - Fix ScriptFile, ScriptName and ScriptDir functions not returning the right value [AviSynth 2.60]
 - Fix 'Stop' button of the avs2avi GUI tool
 - Fix tabs without filename still being closed when canceling a save dialog
+- Add new macro function Pipe, for sending frame data to external applications
 - Add 'propose' and 'only' parameters to the GetScriptFilename macro function
 - Improvements on the 'Import bookmarks from file' macro:
   - add timecode format v1 parsing

@@ -43,7 +43,8 @@ import string
 import codecs
 import re
 import functools
-import random, subprocess, math, copy
+import random, math, copy
+import subprocess, shlex
 import socket
 import thread
 import threading
@@ -4855,11 +4856,11 @@ class MainFrame(wxp.Frame):
         
         # Timer for saving the session periodically
         class BackupTimer(wx.Timer):
-            def __init__(self, self_frame):
+            def __init__(self, parent):
                 wx.Timer.__init__(self)
-                self.self_frame = self_frame
+                self.parent = parent
             def Notify(self):
-                self.self_frame.SaveSession(self.self_frame.lastSessionFilename, saverecentdir=False, previewvisible=False)
+                self.parent.SaveSession(self.parent.lastSessionFilename, saverecentdir=False, previewvisible=False)
         self.backupTimer = BackupTimer(self)
         if self.options['periodicbackup']:
             self.backupTimer.Start(self.options['periodicbackup'] * 60000)
@@ -15497,6 +15498,99 @@ class MainFrame(wxp.Frame):
             return False
         return True
     
+    # Don't use decorator on this one
+    def MacroPipe(self, cmd, text=None, frames=None, y4m=False, reorder_rgb=False, wait=False, stdout=None, stderr=None):
+        r"""Pipe(cmd, text=avsp.GetText(), frames=<all frames>, y4m=False, reorder_rgb=False, wait=False, stdout=None, stderr=None)
+        
+        Pipe raw frame data to an external application (video only)
+        
+        cmd: right side of the pipe (Unicode string).
+        text : script evaluated.  Defaults to the script in the current tab.
+        frames: sequence of frames to send.  Defaults to the complete frame range 
+                of the evaluated text.
+        y4m: add a yuv4mpeg2 header.  It can be a logical value or optionally a 
+             dict with some of the following keys: 
+             - colorspace: overrides the clip colorspace.
+             - depth: for >8 bits per channel. It's appended to 'colorspace'.
+             - width, height: may be necessary when piping fake data. It can be 
+               either an int or a modifier '[x*/]\d+', e.g. 'width':'/2' will 
+               signal half the width of the evaluated clip.
+             - sar: 'X:Y' string.
+             - X_stream, X_frame.
+        reorder_rgb: convert BGR to RGB and BGRA to RGBA before piping.
+        wait: wait for the process to finish and return its return code.
+        stdout: file object where redirect stdout.  Defaults to None.
+        stderr: file object where redirect stderr.  Defaults to stdout.
+        """
+        
+        # Evaluate text
+        workdir_exp = self.ExpandVars(self.options['workdir'])
+        if (self.options['useworkdir'] and self.options['alwaysworkdir']
+            and os.path.isdir(workdir_exp)):
+                workdir = workdir_exp
+        else:
+            workdir = self.currentScript.workdir if text is None else ''
+        if text is None:
+            text = self.currentScript.GetText()
+            filename = self.currentScript.filename
+        else:
+            filename = 'AVS script'
+        clip = pyavs.AvsClip(text, filename, workdir, onlyRaw=True, reorder_rgb=reorder_rgb, interlaced=self.interlaced)   
+        if not clip.initialized or clip.IsErrorClip():
+            self.MacroMsgBox('\n\n'.join((_('Error loading the script'), clip.error_message)), 
+                             _('Error'))
+            return
+        if not frames:
+            frames = range(clip.Framecount)
+        
+        # Create pipe
+        cmd = cmd.encode(encoding)
+        cmd = shlex.split(cmd)
+        if stdout is None:
+            stdout = sys.stdout if __debug__ else subprocess.PIPE
+        if stderr is None:
+            stderr = subprocess.STDOUT
+        if os.name == 'nt':
+            info = subprocess.STARTUPINFO()
+            try:
+                info.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+                info.wShowWindow = subprocess.SW_HIDE
+            except AttributeError:
+                import _subprocess
+                info.dwFlags |= _subprocess.STARTF_USESHOWWINDOW
+                info.wShowWindow = _subprocess.SW_HIDE
+            cmd = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=stdout, 
+                                   stderr=stderr, startupinfo=info)
+        else:
+            cmd = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=stdout, 
+                                   stderr=stderr)
+        
+        # Pipe the data and wait for the process to finish
+        try:
+            if y4m:
+                if isinstance(y4m, dict):
+                    y4m_frame = y4m.get('X_frame', True)
+                    if 'X_stream' in y4m:
+                        y4m['X'] = y4m['X_stream']
+                        del y4m['X_stream']
+                    cmd.stdin.write(clip.Y4MHeader(**y4m))
+                else:
+                    y4m_frame = True
+                    cmd.stdin.write(clip.Y4MHeader())
+            else:
+                y4m_frame = False
+            for frame in frames:
+                cmd.stdin.write(clip.RawFrame(frame, y4m_frame))
+            cmd.stdin.close()
+            if wait:
+                return cmd.wait()
+        except Exception, err:
+            try:
+                if cmd.poll() is None:
+                    cmd.terminate()
+            except: pass
+            raise err
+    
     @AsyncCallWrapper
     def MacroGetBookmarkFrameList(self, title=False):
         r'''GetBookmarkList(title=False)
@@ -15672,8 +15766,8 @@ class MainFrame(wxp.Frame):
     
     class AvsP_functions(object):
         
-        def __init__(self, self_frame):
-            self.__doc__ = self_frame.FormatDocstring(docstring='''AVSPMOD MACRO API
+        def __init__(self, parent):
+            self.__doc__ = parent.FormatDocstring(docstring='''AVSPMOD MACRO API
                 
                     AvsP allows you to define your own macros using the Python programming 
                 language.  In order to use this functionality, simply write your own Python 
@@ -15710,103 +15804,105 @@ class MainFrame(wxp.Frame):
                 help(avsp.FunctionName)).\n
                 ''')
             # Text setting and retrieving
-            self.InsertText = self_frame.InsertText
-            self.__doc__ += self_frame.FormatDocstring(self.InsertText)
-            self.SetText = self_frame.MacroSetText
-            self.__doc__ += self_frame.FormatDocstring(self.SetText)
-            #~ ReplaceText = self_frame.MacroReplaceText
-            self.GetText = self_frame.MacroGetText
-            self.__doc__ += self_frame.FormatDocstring(self.GetText)
-            self.GetSelectedText = self_frame.MacroGetSelectedText
-            self.__doc__ += self_frame.FormatDocstring(self.GetSelectedText)
-            self.GetSourceString = self_frame.GetSourceString
-            self.__doc__ += self_frame.FormatDocstring(self.GetSourceString)
-            self.GetPluginString = self_frame.GetPluginString
-            self.__doc__ += self_frame.FormatDocstring(self.GetPluginString)
-            self.GetFilename = self_frame.MacroGetFilename
-            self.__doc__ += self_frame.FormatDocstring(self.GetFilename)
-            self.GetSaveFilename = self_frame.MacroGetSaveFilename
-            self.__doc__ += self_frame.FormatDocstring(self.GetSaveFilename)
-            self.GetDirectory = self_frame.MacroGetDirectory
-            self.__doc__ += self_frame.FormatDocstring(self.GetDirectory)
-            self.GetTextEntry = self_frame.MacroGetTextEntry
-            self.__doc__ += self_frame.FormatDocstring(self.GetTextEntry)
-            self.WriteToScrap = self_frame.MacroWriteToScrap
-            self.__doc__ += self_frame.FormatDocstring(self.WriteToScrap)
-            self.GetScrapText = self_frame.MacroGetScrapText
-            self.__doc__ += self_frame.FormatDocstring(self.GetScrapText)
+            self.InsertText = parent.InsertText
+            self.__doc__ += parent.FormatDocstring(self.InsertText)
+            self.SetText = parent.MacroSetText
+            self.__doc__ += parent.FormatDocstring(self.SetText)
+            #~ ReplaceText = parent.MacroReplaceText
+            self.GetText = parent.MacroGetText
+            self.__doc__ += parent.FormatDocstring(self.GetText)
+            self.GetSelectedText = parent.MacroGetSelectedText
+            self.__doc__ += parent.FormatDocstring(self.GetSelectedText)
+            self.GetSourceString = parent.GetSourceString
+            self.__doc__ += parent.FormatDocstring(self.GetSourceString)
+            self.GetPluginString = parent.GetPluginString
+            self.__doc__ += parent.FormatDocstring(self.GetPluginString)
+            self.GetFilename = parent.MacroGetFilename
+            self.__doc__ += parent.FormatDocstring(self.GetFilename)
+            self.GetSaveFilename = parent.MacroGetSaveFilename
+            self.__doc__ += parent.FormatDocstring(self.GetSaveFilename)
+            self.GetDirectory = parent.MacroGetDirectory
+            self.__doc__ += parent.FormatDocstring(self.GetDirectory)
+            self.GetTextEntry = parent.MacroGetTextEntry
+            self.__doc__ += parent.FormatDocstring(self.GetTextEntry)
+            self.WriteToScrap = parent.MacroWriteToScrap
+            self.__doc__ += parent.FormatDocstring(self.WriteToScrap)
+            self.GetScrapText = parent.MacroGetScrapText
+            self.__doc__ += parent.FormatDocstring(self.GetScrapText)
             # Program tab control
-            self.NewTab = self_frame.NewTab
-            self.__doc__ += self_frame.FormatDocstring(self.NewTab)
-            self.CloseTab = self_frame.CloseTab
-            self.__doc__ += self_frame.FormatDocstring(self.CloseTab)
-            self.SelectTab = self_frame.SelectTab
-            self.__doc__ += self_frame.FormatDocstring(self.SelectTab)
-            #~ GetTabFilename = self_frame.MacroGetTabFilename
-            self.GetTabCount = self_frame.MacroGetScriptCount
-            self.__doc__ += self_frame.FormatDocstring(self.GetTabCount)
-            self.GetCurrentTabIndex = self_frame.MacroGetCurrentIndex
-            self.__doc__ += self_frame.FormatDocstring(self.GetCurrentTabIndex)
-            self.GetScriptFilename = self_frame.MacroGetScriptFilename
-            self.__doc__ += self_frame.FormatDocstring(self.GetScriptFilename)
+            self.NewTab = parent.NewTab
+            self.__doc__ += parent.FormatDocstring(self.NewTab)
+            self.CloseTab = parent.CloseTab
+            self.__doc__ += parent.FormatDocstring(self.CloseTab)
+            self.SelectTab = parent.SelectTab
+            self.__doc__ += parent.FormatDocstring(self.SelectTab)
+            #~ GetTabFilename = parent.MacroGetTabFilename
+            self.GetTabCount = parent.MacroGetScriptCount
+            self.__doc__ += parent.FormatDocstring(self.GetTabCount)
+            self.GetCurrentTabIndex = parent.MacroGetCurrentIndex
+            self.__doc__ += parent.FormatDocstring(self.GetCurrentTabIndex)
+            self.GetScriptFilename = parent.MacroGetScriptFilename
+            self.__doc__ += parent.FormatDocstring(self.GetScriptFilename)
             # File opening and saving
-            self.OpenFile = self_frame.OpenFile
-            self.__doc__ += self_frame.FormatDocstring(self.OpenFile)
-            self.SaveScript = self_frame.MacroSaveScript
-            self.__doc__ += self_frame.FormatDocstring(self.SaveScript)
-            self.SaveScriptAs = self_frame.SaveScript
-            self.__doc__ += self_frame.FormatDocstring(self.SaveScriptAs)
-            self.IsScriptSaved = self_frame.MacroIsScriptSaved
-            self.__doc__ += self_frame.FormatDocstring(self.IsScriptSaved)
+            self.OpenFile = parent.OpenFile
+            self.__doc__ += parent.FormatDocstring(self.OpenFile)
+            self.SaveScript = parent.MacroSaveScript
+            self.__doc__ += parent.FormatDocstring(self.SaveScript)
+            self.SaveScriptAs = parent.SaveScript
+            self.__doc__ += parent.FormatDocstring(self.SaveScriptAs)
+            self.IsScriptSaved = parent.MacroIsScriptSaved
+            self.__doc__ += parent.FormatDocstring(self.IsScriptSaved)
             # Video related functions
-            self.ShowVideoFrame = self_frame.MacroShowVideoFrame
-            self.__doc__ += self_frame.FormatDocstring(self.ShowVideoFrame)
-            self.ShowVideoOffset = self_frame.MacroShowVideoOffset
-            self.__doc__ += self_frame.FormatDocstring(self.ShowVideoOffset)
-            self.UpdateVideo = self_frame.MacroUpdateVideo
-            self.__doc__ += self_frame.FormatDocstring(self.UpdateVideo)
-            self.HideVideoWindow = self_frame.HidePreviewWindow
-            self.__doc__ += self_frame.FormatDocstring(self.HideVideoWindow)
-            #~ ToggleVideoWindow = self_frame.MacroToggleVideoWindow
-            self.GetFrameNumber = self_frame.GetFrameNumber
-            self.__doc__ += self_frame.FormatDocstring(self.GetFrameNumber)
-            self.GetVideoWidth = self_frame.MacroGetVideoWidth
-            self.__doc__ += self_frame.FormatDocstring(self.GetVideoWidth)
-            self.GetVideoHeight = self_frame.MacroGetVideoHeight
-            self.__doc__ += self_frame.FormatDocstring(self.GetVideoHeight)
-            self.GetVideoFramerate = self_frame.MacroGetVideoFramerate
-            self.__doc__ += self_frame.FormatDocstring(self.GetVideoFramerate)
-            self.GetVideoFramecount = self_frame.MacroGetVideoFramecount
-            self.__doc__ += self_frame.FormatDocstring(self.GetVideoFramecount)
-            self.GetPixelInfo = self_frame.MacroGetPixelInfo
-            self.__doc__ += self_frame.FormatDocstring(self.GetPixelInfo)
-            self.GetVar = self_frame.MacroGetVar
-            self.__doc__ += self_frame.FormatDocstring(self.GetVar)
-            self.RunExternalPlayer = self_frame.MacroRunExternalPlayer
-            self.__doc__ += self_frame.FormatDocstring(self.RunExternalPlayer)
-            self.SaveImage = self_frame.MacroSaveImage
-            self.__doc__ += self_frame.FormatDocstring(self.SaveImage)
+            self.ShowVideoFrame = parent.MacroShowVideoFrame
+            self.__doc__ += parent.FormatDocstring(self.ShowVideoFrame)
+            self.ShowVideoOffset = parent.MacroShowVideoOffset
+            self.__doc__ += parent.FormatDocstring(self.ShowVideoOffset)
+            self.UpdateVideo = parent.MacroUpdateVideo
+            self.__doc__ += parent.FormatDocstring(self.UpdateVideo)
+            self.HideVideoWindow = parent.HidePreviewWindow
+            self.__doc__ += parent.FormatDocstring(self.HideVideoWindow)
+            #~ ToggleVideoWindow = parent.MacroToggleVideoWindow
+            self.GetFrameNumber = parent.GetFrameNumber
+            self.__doc__ += parent.FormatDocstring(self.GetFrameNumber)
+            self.GetVideoWidth = parent.MacroGetVideoWidth
+            self.__doc__ += parent.FormatDocstring(self.GetVideoWidth)
+            self.GetVideoHeight = parent.MacroGetVideoHeight
+            self.__doc__ += parent.FormatDocstring(self.GetVideoHeight)
+            self.GetVideoFramerate = parent.MacroGetVideoFramerate
+            self.__doc__ += parent.FormatDocstring(self.GetVideoFramerate)
+            self.GetVideoFramecount = parent.MacroGetVideoFramecount
+            self.__doc__ += parent.FormatDocstring(self.GetVideoFramecount)
+            self.GetPixelInfo = parent.MacroGetPixelInfo
+            self.__doc__ += parent.FormatDocstring(self.GetPixelInfo)
+            self.GetVar = parent.MacroGetVar
+            self.__doc__ += parent.FormatDocstring(self.GetVar)
+            self.RunExternalPlayer = parent.MacroRunExternalPlayer
+            self.__doc__ += parent.FormatDocstring(self.RunExternalPlayer)
+            self.Pipe = parent.MacroPipe
+            self.__doc__ += parent.FormatDocstring(self.Pipe)
+            self.SaveImage = parent.MacroSaveImage
+            self.__doc__ += parent.FormatDocstring(self.SaveImage)
             # Bookmarks
-            self.GetBookmarkList = self_frame.MacroGetBookmarkFrameList
-            self.__doc__ += self_frame.FormatDocstring(self.GetBookmarkList)
-            self.SetBookmark = self_frame.MacroSetBookmark
-            self.__doc__ += self_frame.FormatDocstring(self.SetBookmark)
-            self.GetSelectionList = self_frame.MacroGetSliderSelections
-            self.__doc__ += self_frame.FormatDocstring(self.GetSelectionList)
+            self.GetBookmarkList = parent.MacroGetBookmarkFrameList
+            self.__doc__ += parent.FormatDocstring(self.GetBookmarkList)
+            self.SetBookmark = parent.MacroSetBookmark
+            self.__doc__ += parent.FormatDocstring(self.SetBookmark)
+            self.GetSelectionList = parent.MacroGetSliderSelections
+            self.__doc__ += parent.FormatDocstring(self.GetSelectionList)
             # Miscellaneous
-            self.MsgBox = self_frame.MacroMsgBox
-            self.__doc__ += self_frame.FormatDocstring(self.MsgBox)
-            self.ProgressBox = self_frame.MacroProgressBox
-            self.__doc__ += self_frame.FormatDocstring(self.ProgressBox)
-            #~ GetAvs2aviDir = self_frame.MacroGetAvs2aviDir
-            #~ SetAvs2aviDir = self_frame.MacroSetAvs2aviDir
-            self.GetSliderInfo = self_frame.MacroGetSliderInfo
-            self.__doc__ += self_frame.FormatDocstring(self.GetSliderInfo)
-            #~ UpdateFunctionDefinitions = self_frame.UpdateFunctionDefinitions
-            self.ExecuteMenuCommand = self_frame.MacroExecuteMenuCommand
-            self.__doc__ += self_frame.FormatDocstring(self.ExecuteMenuCommand)
-            self.IsMenuChecked = self_frame.MacroIsMenuChecked
-            self.__doc__ += self_frame.FormatDocstring(self.IsMenuChecked)
+            self.MsgBox = parent.MacroMsgBox
+            self.__doc__ += parent.FormatDocstring(self.MsgBox)
+            self.ProgressBox = parent.MacroProgressBox
+            self.__doc__ += parent.FormatDocstring(self.ProgressBox)
+            #~ GetAvs2aviDir = parent.MacroGetAvs2aviDir
+            #~ SetAvs2aviDir = parent.MacroSetAvs2aviDir
+            self.GetSliderInfo = parent.MacroGetSliderInfo
+            self.__doc__ += parent.FormatDocstring(self.GetSliderInfo)
+            #~ UpdateFunctionDefinitions = parent.UpdateFunctionDefinitions
+            self.ExecuteMenuCommand = parent.MacroExecuteMenuCommand
+            self.__doc__ += parent.FormatDocstring(self.ExecuteMenuCommand)
+            self.IsMenuChecked = parent.MacroIsMenuChecked
+            self.__doc__ += parent.FormatDocstring(self.IsMenuChecked)
             def GetWindow():
                 r'''GetWindow()
                 
@@ -15814,9 +15910,9 @@ class MainFrame(wxp.Frame):
                 you are doing.
                 
                 '''
-                return self_frame
+                return parent
             self.GetWindow = GetWindow
-            self.__doc__ += self_frame.FormatDocstring(self.GetWindow)
+            self.__doc__ += parent.FormatDocstring(self.GetWindow)
             def SafeCall(method, *args, **kwargs):
                 r'''SafeCall(callable [, param1, ...])
                 
@@ -15830,7 +15926,7 @@ class MainFrame(wxp.Frame):
                 '''
                 return AsyncCallWrapper(method)(*args, **kwargs)
             self.SafeCall = SafeCall
-            self.__doc__ += self_frame.FormatDocstring(self.SafeCall)
+            self.__doc__ += parent.FormatDocstring(self.SafeCall)
             self.__doc__ += '\n' + '** VARIABLES **' + '\n'*3
             self.__doc__ += ('Version\n=======\n\nDictionary containing version info.  Keys:\n'
                              '[AvsP, AviSynth_string, AviSynth_number, AviSynth_interface]\n\n\n')

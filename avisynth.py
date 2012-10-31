@@ -323,7 +323,7 @@ class PVideoInfo:
         elif self.IsYV24():return 24
         elif self.IsYV16():return 16
         elif self.IsYV12():return 12
-        elif self.IsY411():return 12
+        elif self.IsYV411():return 12
         elif self.IsY8():return 8
         else :return 0
     def BytesFromPixels(self,pixels):return pixels*(self.BitsPerPixel()>>3)

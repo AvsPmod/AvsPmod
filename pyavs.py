@@ -30,6 +30,7 @@
 import sys
 import os
 import ctypes
+import re
 
 import avisynth
 
@@ -39,7 +40,9 @@ except NameError:
 
 class AvsClipBase:
     
-    def __init__(self, script, filename='', workdir='', env=None, fitHeight=None, fitWidth=None, oldFramecount=240, keepRaw=False, matrix=['auto', 'tv'], interlaced=False, swapuv=False):
+    def __init__(self, script, filename='', workdir='', env=None, fitHeight=None, 
+                 fitWidth=None, oldFramecount=240, keepRaw=False, onlyRaw=False, 
+                 reorder_rgb=False, matrix=['auto', 'tv'], interlaced=False, swapuv=False):
         # Internal variables
         self.workdir = ''
         self.initialized = False
@@ -47,6 +50,7 @@ class AvsClipBase:
         self.current_frame = -1
         self.pBits = None
         self.clipRaw = None
+        self.onlyRaw = onlyRaw
         self.ptrY = self.ptrU = self.ptrV = None
         # Avisynth script properties
         self.Width = -1
@@ -197,16 +201,18 @@ class AvsClipBase:
         self.Colorspace = ('RGB24'*self.IsRGB24 + 'RGB32'*self.IsRGB32 + 'YUY2'*self.IsYUY2 + 'YV12'*self.IsYV12 + 
                            'YV24'*self.IsYV24 + 'YV16'*self.IsYV16 + 'YV411'*self.IsYV411 + 'Y8'*self.IsY8)
         self.IsPlanar = self.vi.IsPlanar()
-        self.IsInterleaved = not self.IsPlanar
+        self.IsInterleaved = not self.IsPlanar or self.IsY8
         self.IsFieldBased = self.vi.IsFieldBased()
         self.IsFrameBased = not self.IsFieldBased
         self.GetParity = avisynth.avs_get_parity(self.clip,0)#self.vi.image_type
         self.HasAudio = self.vi.HasAudio()
-        if keepRaw:
+        if keepRaw or onlyRaw:
             self.clipRaw = self.clip
+            if onlyRaw and self.IsRGB and reorder_rgb:
+                self.clipRaw = self.BGR2RGB(self.clipRaw)
         
         # Initialize display-related variables
-        if not self.IsRGB:
+        if not self.IsRGB and not onlyRaw:
             if swapuv and self.IsYUV and not self.IsY8:
                 try:
                     arg = avisynth.AVS_Value(self.clip)
@@ -224,7 +230,7 @@ class AvsClipBase:
             matrix[1] = 'Rec' if matrix[1] == 'tv' else 'PC.'
             self.matrix = matrix[1] + matrix[0]
         self.interlaced = interlaced if self.IsYV12 else False
-        if not self._ConvertToRGB():
+        if not onlyRaw and not self._ConvertToRGB():
             return
         
         # Add a resize...
@@ -310,36 +316,39 @@ class AvsClipBase:
             return (self.ptrY[indexY], self.ptrU[indexU], self.ptrV[indexV])
         else:
             return (-1,-1,-1)
-            
-    def GetPixelRGB(self, x, y):
-        if self.clipRaw is not None:
-            if self.IsRGB32:
-                indexB = (x*4) + (self.HeightActual - 1 - y) * self.pitch
-                indexG = indexB + 1
-                indexR = indexB + 2
-            if self.IsRGB24:
-                indexB = (x*3) + (self.HeightActual - 1 - y) * self.pitch
+    
+    def GetPixelRGB(self, x, y, BGR=True):
+        if self.clipRaw is not None and self.IsRGB:
+            bytes = self.vi.BytesFromPixels(1)
+            if BGR:
+                indexB = (x * bytes) + (self.HeightActual - 1 - y) * self.pitch
                 indexG = indexB + 1
                 indexR = indexB + 2
             else:
-                return (-1,-1,-1)
+                indexR = (x * bytes) + y * self.pitch
+                indexG = indexR + 1
+                indexB = indexR + 2
             return (self.ptrY[indexR], self.ptrY[indexG], self.ptrY[indexB])
         else:
             return (-1,-1,-1)
-            
-    def GetPixelRGBA(self, x, y):
-        if self.clipRaw is not None:
-            if self.IsRGB32:
-                indexB = (x*4) + (self.HeightActual - 1 - y) * self.pitch
+    
+    def GetPixelRGBA(self, x, y, BGR=True):
+        if self.clipRaw is not None and self.IsRGB32:
+            bytes = self.vi.BytesFromPixels(1)
+            if BGR:
+                indexB = (x * bytes) + (self.HeightActual - 1 - y) * self.pitch
                 indexG = indexB + 1
                 indexR = indexB + 2
                 indexA = indexB + 3
             else:
-                return (-1,-1,-1,-1)
+                indexR = (x * bytes) + y * self.pitch
+                indexG = indexR + 1
+                indexB = indexR + 2
+                indexA = indexB + 3
             return (self.ptrY[indexR], self.ptrY[indexG], self.ptrY[indexB], self.ptrY[indexA])
         else:
             return (-1,-1,-1,-1)
-                
+    
     def GetVarType(self, strVar):
         try:
             arg = self.env.GetVar(strVar)
@@ -366,6 +375,103 @@ class AvsClipBase:
         
     def IsErrorClip(self):
         return self.error_message is not None
+    
+    def BGR2RGB(self, clip):
+        '''Reorder AviSynth's RGB (BGR) to RGB
+        
+        BGR -> RGB
+        BGRA -> RGBA
+        '''
+        if self.IsRGB:
+            clip = avisynth.AVS_Value(clip)
+            clip = self.env.Invoke("FlipVertical", clip, 0)
+            r = self.env.Invoke("ShowRed", clip, 0)
+            b = self.env.Invoke("ShowBlue", clip, 0)
+            if self.IsRGB24:
+                merge_args = avisynth.AVS_Value([b, clip, r, avisynth.AVS_Value("RGB24")])
+                return self.env.Invoke("MergeRGB", merge_args, 0).AsClip(self.env)
+            else:
+                merge_args = avisynth.AVS_Value([clip, b, clip, r])
+                return self.env.Invoke("MergeARGB", merge_args, 0).AsClip(self.env)
+    
+    def Y4MHeader(self, colorspace=None, depth=None, width=None, height=None, sar='0:0', X=None): 
+        '''Return a header for a yuv4mpeg2 stream'''
+        re_res = re.compile(r'([x*/])(\d+)')
+        if width is None:
+            width = self.Width
+        elif isinstance(width, basestring):
+            match = re_res.match(width)
+            if match:
+                if match.group(1) == '/':
+                    width = self.Width / int(match.group(2))
+                else:
+                    width = self.Width * int(match.group(2))
+            else:
+                raise Exception(_('Invalid string: ') + width)
+        if height is None:
+            height = self.Height
+        elif isinstance(height, basestring):
+            match = re_res.match(height)
+            if match:
+                if match.group(1) == '/':
+                    height = self.Height / int(match.group(2))
+                else:
+                    height = self.Height * int(match.group(2))
+            else:
+                raise Exception(_('Invalid string: ') + height)
+        if self.interlaced:
+            interlaced = 'b' if self.vi.IsBFF() else 't'
+        else:
+            interlaced = 'p'
+        colorspace_dict = {'YV24': '444', 
+                           'YV16': '422', 
+                           'YV12': '420', 
+                           'YV411': '411', 
+                           'Y8': 'mono'}
+        if colorspace is None:
+            if self.Colorspace not in colorspace_dict:
+                raise Exception(_("{colorspace} can't be used with a yuv4mpeg2 "
+                    "header.\nSpecify the right colorspace if piping fake video data.\n"
+                    .format(colorspace=self.Colorspace)))
+            colorspace = colorspace_dict[self.Colorspace]
+        if depth:
+            colorspace = 'p'.join((colorspace, str(depth)))
+        X = ' X' + X if X is not None else ''
+        return 'YUV4MPEG2 W{0} H{1} I{2} F{3}:{4} A{5} C{6}{7}\n'.format(width, 
+            height, interlaced, self.FramerateNumerator, self.FramerateDenominator, 
+            sar, colorspace, X)
+    
+    def RawFrame(self, frame, y4m_header=False):
+        '''Get a buffer of raw video data'''
+        if self.initialized and self.clipRaw is not None:
+            if frame < 0:
+                frame = 0
+            if frame >= self.Framecount:
+                frame = self.Framecount - 1
+            frame = self.clipRaw.GetFrame(frame)
+            total_bytes = self.Width * self.Height * self.vi.BitsPerPixel() >> 3
+            if y4m_header is not False:
+                X = ' ' + y4m_header if isinstance(y4m_header, basestring) else ''
+                y4m_header = 'FRAME{0}\n'.format(X)
+            else:
+                y4m_header = ''
+            y4m_header_len = len(y4m_header)
+            buf = ctypes.create_string_buffer(total_bytes + y4m_header_len)
+            buf[:y4m_header_len] = y4m_header
+            write_addr = ctypes.addressof(buf) + y4m_header_len
+            P_UBYTE = ctypes.POINTER(ctypes.c_ubyte)
+            if self.IsPlanar and not self.IsY8:
+                for plane in (avisynth.PLANAR_Y, avisynth.PLANAR_U, avisynth.PLANAR_V):
+                    write_ptr = ctypes.cast(write_addr, P_UBYTE)
+                    self.env.BitBlt(write_ptr, frame.GetRowSize(plane), frame.GetReadPtr(plane), 
+                        frame.GetPitch(plane), frame.GetRowSize(plane), frame.GetHeight(plane))
+                    write_addr += frame.GetRowSize(plane) * frame.GetHeight(plane)
+            else:
+                # Note that AviSynth uses BGR
+                write_ptr = ctypes.cast(write_addr, P_UBYTE)
+                self.env.BitBlt(write_ptr, frame.GetRowSize(), frame.GetReadPtr(), 
+                            frame.GetPitch(), frame.GetRowSize(), frame.GetHeight())
+            return buf
     
     def AutocropFrame(self, frame, tol=70):
         '''Return crop values for a specific frame'''
@@ -594,12 +700,13 @@ if os.name == 'nt':
             if not AvsClipBase.__init__(self, *args, **kwargs):
                 return
             
-            # Prepare info header
-            self.bmih = BITMAPINFOHEADER()
-            avisynth.CreateBitmapInfoHeader(self.clip, self.bmih)
-            self.pInfo = ctypes.pointer(self.bmih)
-            #~ self.BUF=ctypes.c_ubyte*self.bmih.biSizeImage
-            #~ self.pBits=self.BUF()
+            if not self.onlyRaw:
+                # Prepare info header for displaying
+                self.bmih = BITMAPINFOHEADER()
+                avisynth.CreateBitmapInfoHeader(self.clip, self.bmih)
+                self.pInfo = ctypes.pointer(self.bmih)
+                #~ self.BUF=ctypes.c_ubyte*self.bmih.biSizeImage
+                #~ self.pBits=self.BUF()
             
             self.initialized = True
             if __debug__:
