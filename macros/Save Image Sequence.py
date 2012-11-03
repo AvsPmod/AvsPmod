@@ -27,6 +27,12 @@ frames = avsp.Options.get('frames', _('Bookmarks'))
 show_progress = avsp.Options.get('show_progress', False)
 format = avsp.Options.get('format', _('Portable Network Graphics') + ' (*.png)')
 quality = avsp.Options.get('quality', 90)
+use_dir = avsp.Options.get('use_dir', False)
+use_base = avsp.Options.get('use_base', False)
+if use_dir and not dirname:
+    dirname = avsp.Options.get('dirname', '')
+if use_base and not basename:
+    basename = avsp.Options.get('basename', '')
 isdir = os.path.isdir(dirname)
 if not isdir or not basename:
     source_dir, source_base = os.path.split(avsp.GetScriptFilename(propose='image'))
@@ -40,22 +46,32 @@ while True:
     options = avsp.GetTextEntry(title=_('Save image sequence'),
             message=[[_('Select frames'), _('Show saving progress')], 
                      [_('Output format'), _('Quality (JPEG only)')], 
-                     _('Output directory and basename. The padded frame number is added as suffix')],
+                     _('Output directory and basename. The padded frame number is added as suffix'), 
+                     [_('Use always this directory'), _('Use always this basename')]],
             default=[[(_('Bookmarks'), _('Range between bookmarks'), _('Trim editor selections'), 
                        _('All frames'), frames), show_progress], 
-                     [sorted(format_dict.keys()) + [format], (quality, 0, 100)], filename],
-            types=[['list_read_only', 'check'], ['list_read_only', 'spin'], 'file_save'],
+                     [sorted(format_dict.keys()) + [format], (quality, 0, 100)], 
+                     filename, [use_dir, use_base]],
+            types=[['list_read_only', 'check'], ['list_read_only', 'spin'], 'file_save', 
+                   ['check', 'check']],
             )
     if not options: return
-    frames, show_progress, format, quality, filename = options
+    frames, show_progress, format, quality, filename, use_dir, use_base = options
     if not filename:
         avsp.MsgBox(_('Select an output directory and basename for the new images files'), _('Error'))
-    else:
-        avsp.Options['frames'] = frames
-        avsp.Options['show_progress'] = show_progress
-        avsp.Options['format'] = format
-        avsp.Options['quality'] = quality
-        break
+    else: break
+
+# Save options
+avsp.Options['frames'] = frames
+avsp.Options['show_progress'] = show_progress
+avsp.Options['format'] = format
+avsp.Options['quality'] = quality
+avsp.Options['use_dir'] = use_dir
+avsp.Options['use_base'] = use_base
+if use_dir:
+    avsp.Options['dirname'] = os.path.dirname(filename)
+if use_base:
+    avsp.Options['basename'] = os.path.basename(filename)
 
 # Eval the script. Return if error
 AVS = pyavs.AvsClip(avsp.GetText(), matrix=self.matrix, interlaced=self.interlaced, swapuv=self.swapuv)
