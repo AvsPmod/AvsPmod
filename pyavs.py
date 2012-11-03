@@ -468,9 +468,12 @@ class AvsClipBase:
             if self.IsPlanar and not self.IsY8:
                 for plane in (avisynth.PLANAR_Y, avisynth.PLANAR_U, avisynth.PLANAR_V):
                     write_ptr = ctypes.cast(write_addr, P_UBYTE)
-                    self.env.BitBlt(write_ptr, frame.GetRowSize(plane), frame.GetReadPtr(plane), 
-                        frame.GetPitch(plane), frame.GetRowSize(plane), frame.GetHeight(plane))
-                    write_addr += frame.GetRowSize(plane) * frame.GetHeight(plane)
+                    # using GetRowSize(plane) and GetHeight(plane) breaks v2.5.8
+                    width = frame.GetRowSize() >> self.vi.GetPlaneWidthSubsampling(plane)
+                    height = frame.GetHeight() >> self.vi.GetPlaneHeightSubsampling(plane)
+                    self.env.BitBlt(write_ptr, width, frame.GetReadPtr(plane), 
+                                    frame.GetPitch(plane), width, height)
+                    write_addr += width * height
             else:
                 # Note that AviSynth uses BGR
                 write_ptr = ctypes.cast(write_addr, P_UBYTE)

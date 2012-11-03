@@ -260,6 +260,8 @@ class PIScriptEnvironment:
         return avs_subframe(self,src,rel_offset,new_pitch,new_row_size,
                             new_height,rel_offsetU,rel_offsetV,new_pitchUV)
 
+ 
+# Now in interface.cpp 
     
 class VideoInfo(ctypes.Structure):
     _fields_ = [("width",ctypes.c_int),
@@ -304,7 +306,7 @@ class PVideoInfo:
         return (self.pixel_type&CS_PLANAR_MASK)==(CS_YV411&CS_PLANAR_FILTER)
     def IsY8(self):
         return (self.pixel_type&CS_PLANAR_MASK)==(CS_Y8&CS_PLANAR_FILTER)
-    def IsProperty(self,Property): return (self.pixel_type&Property)==Property
+    def IsProperty(self,property): return (self.pixel_type&property)==property
     def IsPlanar(self): return self.pixel_type&CS_PLANAR!=0
     def IsColorSpace(self,c_space):
         if self.IsPlanar():
@@ -316,26 +318,72 @@ class PVideoInfo:
         (self.image_type&(IT_BFF|IT_TFF)!=0)
     def IsBFF(self): return self.image_type&IT_BFF!=0
     def IsTFF(self): return self.image_type&IT_TFF!=0
-    def BitsPerPixel(self):
-        if self.IsRGB24():return 24
-        elif self.IsRGB32():return 32
-        elif self.IsYUY2():return 16
-        elif self.IsYV24():return 24
-        elif self.IsYV16():return 16
-        elif self.IsYV12():return 12
-        elif self.IsYV411():return 12
-        elif self.IsY8():return 8
-        else :return 0
-    def BytesFromPixels(self,pixels):return pixels*(self.BitsPerPixel()>>3)
-    def RowSize(self): return self.BytesFromPixels(self.width)
-    def BMPSize(self):
+    
+    def IsVPlaneFirst(self):
+        return not self.IsY8() and self.IsPlanar() and (self.pixel_type & (CS_VPLANEFIRST | CS_UPLANEFIRST)) == CS_VPLANEFIRST # Shouldn't use this
+    
+    def GetPlaneWidthSubsampling(self, plane): # Subsampling in bitshifts!
+        if plane == PLANAR_Y:  # No subsampling
+            return 0
+        if self.IsY8():
+            raise AvisynthError("Filter error: GetPlaneWidthSubsampling not available on Y8 pixel type.")
+        if (plane == PLANAR_U or plane == PLANAR_V):
+            if self.IsYUY2():
+                return 1
+            elif self.IsPlanar():
+                return ((self.pixel_type >> CS_SHIFT_SUB_WIDTH) + 1) & 3
+            else:
+                raise AvisynthError("Filter error: GetPlaneWidthSubsampling called with unsupported pixel type.")
+        raise AvisynthError("Filter error: GetPlaneWidthSubsampling called with unsupported plane.")
+    
+    def GetPlaneHeightSubsampling(self, plane): # Subsampling in bitshifts!
+        if plane == PLANAR_Y:  # No subsampling
+            return 0
+        if self.IsY8():
+            raise AvisynthError("Filter error: GetPlaneWidthSubsampling not available on Y8 pixel type.")
+        if (plane == PLANAR_U or plane == PLANAR_V):
+            if self.IsYUY2():
+                return 0
+            elif self.IsPlanar():
+                return ((self.pixel_type >> CS_SHIFT_SUB_HEIGHT) + 1) & 3
+            else:
+                raise AvisynthError("Filter error: GetPlaneHeightSubsampling called with unsupported pixel type.")
+        raise AvisynthError("Filter error: GetPlaneHeightSubsampling called with supported plane.")
+    
+    def BitsPerPixel(self): # Lookup Interleaved, calculate PLANAR's
+        for csp in ((CS_BGR24, 24), (CS_BGR32, 32), (CS_YUY2, 16), (CS_Y8, 8)):
+            if self.pixel_type == csp[0]: return csp[1]
         if self.IsPlanar():
-            p = self.height * ((self.RowSize()+3) & ~3)
-            p+=p>>1
-            return p
-        return self.height * ((self.RowSize()+3) & ~3)
+            S = self.GetPlaneWidthSubsampling(PLANAR_U) + self.GetPlaneHeightSubsampling(PLANAR_U) if self.IsYUV() else 0
+            return ( ((1 << S) + 2) * (8 << ((self.pixel_type >> CS_SHIFT_SAMPLE_BITS) & 3)) ) >> S
+        return 0
+    
+    def BytesFromPixels(self, pixels):
+        if not self.IsY8() and self.IsPlanar(): # For planar images, will return luma plane
+            return pixels << ((self.pixel_type >> CS_SHIFT_SAMPLE_BITS) & 3)
+        else:
+            return pixels * (self.BitsPerPixel() >> 3)
+    
+    def RowSize(self, plane):
+        rowsize = self.BytesFromPixels(self.width)
+        if plane in (PLANAR_U, PLANAR_V):
+            return (rowsize >> self.GetPlaneWidthSubsampling(plane)) if not self.IsY8() and self.IsPlanar() else 0
+        elif plane in (PLANAR_U_ALIGNED, PLANAR_V_ALIGNED): # Aligned rowsize
+            return ((rowsize >> self.GetPlaneWidthSubsampling(plane)) + FRAME_ALIGN-1) & (~(FRAME_ALIGN-1)) if not self.IsY8() and self.IsPlanar() else 0
+        elif plane == PLANAR_Y_ALIGNED: # Aligned rowsize
+            return (rowsize + FRAME_ALIGN-1) & (~(FRAME_ALIGN-1))
+        return rowsize
+
+    def BMPSize(self):
+        if not self.IsY8() and self.IsPlanar(): # Y plane
+            Ybytes  = ((self.RowSize(PLANAR_Y) + 3) & ~3) * self.height
+            UVbytes = ((self.RowSize(PLANAR_U) + 3) & ~3) * self.height >> self.GetPlaneHeightSubsampling(PLANAR_U)
+            return Ybytes + UVbytes * 2
+        return self.height * ((self.RowSize() + 3) & ~3)
+    
     def SamplesPerSecond(self):return self.audio_samples_per_second
-    def BytesPerChannel(self):
+    def IsSampleType(self, testtype): return (self.sample_type&testtype)!=0
+    def BytesPerChannelSample(self):
         if self.sample_type==SAMPLE_INT8:return ctypes.sizeof(ctypes.c_char)
         elif self.sample_type==SAMPLE_INT16:return ctypes.sizeof(ctypes.c_short)
         if self.sample_type==SAMPLE_INT24:return 3
@@ -344,40 +392,47 @@ class PVideoInfo:
         return 0
     def BytesPerAudioSample(self):return self.BytesPerChannel()*self.nchannels
     def AudioSamplesFromFrames(self,frames):
-        return frames * self.audio_samples_per_second\
-        * self.fps_denominator / self.fps_numerator
+        if self.HasAudio() and self.fps_denominator:
+            return frames * self.audio_samples_per_second\
+                * self.fps_denominator / self.fps_numerator
+        else: return 0
     def FramesFromAudioSamples(self,samples):
-        return samples * self.fps_numerator / self.fps_denominator \
-        / self.audio_samples_per_second
+        if self.HasAudio() and self.fps_denominator:
+            return samples * self.fps_numerator / self.fps_denominator \
+                / self.audio_samples_per_second
+        else: return 0
     def AudioSamplesFromBytes(self,bytes):
-        return bytes/self.BytesPerAudioSample()
+        return bytes/self.BytesPerAudioSample() if self.HasAudio() else 0
     def BytesFromAudioSamples(self,samples):
         return samples*self.BytesPerAudioSample()
     def AudioChannels(self):
-        return self.nchannels
+        return self.nchannels if self.HasAudio() else 0
     def SampleType(self):
         return self.sample_type
-    def SetProperty(self,Property):
-        self.image_type|=Property
-    def ClearProperty(self,Property):
-        self.image_type&=~Property
+    def SetProperty(self,property):
+        self.image_type|=property
+    def ClearProperty(self,property):
+        self.image_type&=~property
     def SetFieldBased(self, isfieldbased):
         if isfieldbased: self.image_type|=IT_FIELDBASED
         else: self.image_type&=~IT_FIELDBASED
-    def SetFPS(self,numerator,denominator):
-        x=numerator
-        y=denominator
-        while y!=0:
-            t=x%y
-            x=y
-            y=t
-        self.fps_numerator=numerator/x
-        self.fps_denominator=denominator/x
+     
+    def SetFPS(self, numerator, denominator): # useful mutator
+        if numerator == 0 or denominator == 0:
+            self.fps_numerator = 0
+            self.fps_denominator = 1
+        else:
+            x = numerator
+            y = denominator
+            while y: # find gcd
+                x, y = y, x % y
+            self.fps_numerator = numerator / x
+            self.fps_denominator = denominator / x
+    
     def IsSameColorspace(self,vi):
         return (self.pixel_type==vi.pixeltype)or(self.IsYV12()and vi.IsYV12())
 
 
-    
 class PClip:
     def __init__(self,pin):
         self.p=pin
@@ -412,15 +467,17 @@ class VideoFrameBuffer(ctypes.Structure):
                 ("refcount",ctypes.c_long)]
 class VideoFrame(ctypes.Structure):
     _fields_ = [("refcount",ctypes.c_int),
-                ("AVS_VideoFrameBuffer",ctypes.POINTER(VideoFrameBuffer)),
+                ("vfb",ctypes.POINTER(VideoFrameBuffer)),
                 ("offset",ctypes.c_int),
                 ("pitch",ctypes.c_int),
                 ("row_size",ctypes.c_int),
                 ("height",ctypes.c_int),
                 ("offsetU",ctypes.c_int),
                 ("offsetV",ctypes.c_int),
-                ("pitchUV",ctypes.c_int)]
-
+                ("pitchUV",ctypes.c_int),
+                #("row_sizeUV",ctypes.c_int), # 5
+                #("heightUV",ctypes.c_int),
+               ]
 
 class PVideoFrame:
     #Wrapper for pointer(VideoFrame)
@@ -432,57 +489,57 @@ class PVideoFrame:
             raise TypeError("Wrong argument: PVideoFrame expected")
         return obj._as_parameter_
     def GetPitch(self,plane=PLANAR_Y):
-        if plane==PLANAR_Y: return self.p.contents.pitch
-        elif plane==PLANAR_U or plane==PLANAR_V:
+        if plane in (PLANAR_U, PLANAR_V):
             return self.p.contents.pitchUV
         return self.p.contents.pitch
-    def GetRowSize(self,plane=PLANAR_Y):
-        if(plane==PLANAR_Y):return self.p.contents.row_size
-        elif plane==PLANAR_U or plane==PLANAR_V:
-            if self.p.contents.pitchUV!=0: return self.p.contents.row_size/2
-        elif plane==PLANAR_U_ALIGNED or plane==PLANAR_V_ALIGNED:
-            r=((self.p.contents.row_size+FRAME_ALIGN-1)&(~(FRAME_ALIGN-1)) )>>1
-            if r<=self.p.contents.pitchUV:return r
-            else: return self.p.contents.row_size>>1
-        elif plane==PLANAR_Y_ALIGNED:
-            r=((self.p.contents.row_size+FRAME_ALIGN-1)&(~(FRAME_ALIGN-1)) )
-            if r<=self.p.contents.pitch:return r
-            else: return self.p.contents.row_size  
-        return self.p.contents.pitch
-    def GetHeight(self,plane=PLANAR_Y):
-        if self.p.contents.pitchUV!=0 and (plane==PLANAR_U or plane==PLANAR_V):
-            return self.p.contents.height/2
+    
+    def GetRowSize(self, plane=PLANAR_Y):
+        if plane in (PLANAR_U, PLANAR_V):
+            #return self.p.contents.row_sizeUV if self.p.contents.pitchUV != 0 else 0 # 5
+            return self.p.contents.row_size / 2 if self.p.contents.pitchUV != 0 else 0
+        elif plane in (PLANAR_U_ALIGNED, PLANAR_V_ALIGNED):
+            if self.p.contents.pitchUV != 0:
+                #r = (self.p.contents.row_sizeUV + FRAME_ALIGN-1) & (~(FRAME_ALIGN-1)) # Aligned rowsize
+                r = (self.p.contents.row_size / 2 + FRAME_ALIGN-1) & (~(FRAME_ALIGN-1)) # Aligned rowsize
+                if r <= self.p.contents.pitchUV:
+                    return r
+                #return self.p.contents.row_sizeUV
+                return self.p.contents.row_size / 2
+            else: return 0
+        elif plane in (PLANAR_ALIGNED, PLANAR_Y_ALIGNED):
+            r = (self.p.contents.row_size + FRAME_ALIGN-1) & (~(FRAME_ALIGN-1)) # Aligned rowsize
+            if r <= self.p.contents.pitch:
+                return r
+            return self.p.contents.row_size
+        return self.p.contents.row_size
+    
+    def GetHeight(self, plane=PLANAR_Y):
+        if plane in (PLANAR_U, PLANAR_V):
+            #return self.p.contents.heightUV if self.p.contents.pitchUV != 0 else 0 # 5
+            return self.p.contents.height / 2 if self.p.contents.pitchUV != 0 else 0
         return self.p.contents.height
-    def GetReadPtr(self,plane=PLANAR_Y):
-        if plane==PLANAR_Y:
-            return ByRefAt(self.p.contents.AVS_VideoFrameBuffer.contents.data,
-                           self.p.contents.offset)
-        elif plane==PLANAR_U:
-            return ByRefAt(self.p.contents.AVS_VideoFrameBuffer.contents.data,
-                           self.p.contents.offsetU)
-        elif plane==PLANAR_V:
-            return ByRefAt(self.p.contents.AVS_VideoFrameBuffer.contents.data,
-                           self.p.contents.offsetV)
-        return ByRefAt(self.p.contents.AVS_VideoFrameBuffer.contents.data,
-                       self.p.contents.offset)
+    
+    def GetFrameBuffer(self): return self.p.contents.vfb
+    
+    def GetOffset(self, plane=PLANAR_Y):
+        if plane == PLANAR_U: return self.p.contents.offsetU
+        elif plane == PLANAR_V: return self.p.contents.offsetV
+        return self.p.contents.offset
+    
+    def GetReadPtr(self, plane=PLANAR_Y):
+        return ByRefAt(self.GetFrameBuffer().contents.data, self.GetOffset(plane))
+    
     def IsWritable(self):
-        return (self.p.contents.refcount==1 and \
-                self.p.contents.AVS_VideoFrameBuffer.contents.refcount == 1)
-    def GetWritePtr(self,plane=PLANAR_Y):
-        if plane==PLANAR_Y and self.p.contents.IsWritable():
-            self.p.contents.AVS_VideoFrameBuffer.contents.sequence_number = \
-            self.p.contents.AVS_VideoFrameBuffer.contents.sequence_number+1
-            return self.p.contents.AVS_VideoFrameBuffer.contents.data \
-                   +self.p.contents.offset
-        elif plane==PLANAR_Y:return 0
-        elif plane==PLANAR_U:
-            return ByRefAt(self.p.contents.AVS_VideoFrameBuffer.contents.data,
-                           self.p.contents.offsetU)
-        elif plane==PLANAR_V:
-            return ByRefAt(self.p.contents.AVS_VideoFrameBuffer.contents.data,
-                           self.p.contents.offsetV)
-        return ByRefAt(self.p.contents.AVS_VideoFrameBuffer.contents.data,
-                       self.p.contents.offset)
+        return self.p.contents.refcount==1 and self.GetFrameBuffer().contents.refcount == 1
+    
+    def GetWritePtr(self, plane=PLANAR_Y):
+        if (not plane or plane == PLANAR_Y):
+            if self.IsWritable():
+                self.GetFrameBuffer().contents.sequence_number += 1
+                return ByRefAt(self.GetFrameBuffer().contents.data, self.GetOffset(plane))
+            else: return 0
+        return ByRefAt(self.GetFrameBuffer().contents.data, self.GetOffset(plane))
+    
     def Copy(self):
         return avs_copy_video_frame(self)
     def Release(self):
@@ -563,6 +620,10 @@ class AVS_Value(ctypes.Structure,object):
     def AsArray(self):
         if self.IsArray(): return [i.GetValue() for i in self]
         raise AvisynthError("Not an array")
+    def ArraySize(self, val):
+        return val.array_size if val.IsArray() else 1
+    def ArrayElt(self, val, index):
+        return val.d.a[index] if val.IsArray() else val
     def IsError(self):return self.type==101
     def AsError(self):
         if self.IsError():return self.d.s
