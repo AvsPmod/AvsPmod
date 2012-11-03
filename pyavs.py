@@ -226,7 +226,10 @@ class AvsClipBase:
         else:
             matrix = matrix[:]
             if matrix[0] == 'auto':
-                matrix[0] = '709' if self.HeightActual > 576 else '601'
+                if self.Width > 1024 or self.Height > 576:
+                    matrix[0] = '709'
+                else:
+                    matrix[0] = '601'
             matrix[1] = 'Rec' if matrix[1] == 'tv' else 'PC.'
             self.matrix = matrix[1] + matrix[0]
         self.interlaced = interlaced if self.IsYV12 else False
@@ -234,7 +237,9 @@ class AvsClipBase:
             return
         
         # Add a resize...
-        if fitHeight is not None and self.Height != 0:
+        # Update: Not used anymore, resizing is done nowadays on AvsP.LayoutVideoWindows
+        #         Width == WidthActual, Height == HeightActual
+        if 0 and fitHeight is not None and self.Height != 0:
             fitWidthTemp = int(round(fitHeight *  (self.Width/float(self.Height))))
             if fitWidth is None:
                 fitWidth = fitWidthTemp
