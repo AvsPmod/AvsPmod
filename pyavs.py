@@ -201,7 +201,7 @@ class AvsClipBase:
         self.Colorspace = ('RGB24'*self.IsRGB24 + 'RGB32'*self.IsRGB32 + 'YUY2'*self.IsYUY2 + 'YV12'*self.IsYV12 + 
                            'YV24'*self.IsYV24 + 'YV16'*self.IsYV16 + 'YV411'*self.IsYV411 + 'Y8'*self.IsY8)
         self.IsPlanar = self.vi.IsPlanar()
-        self.IsInterleaved = not self.IsPlanar or self.IsY8
+        self.IsInterleaved = self.vi.IsInterleaved()
         self.IsFieldBased = self.vi.IsFieldBased()
         self.IsFrameBased = not self.IsFieldBased
         self.GetParity = avisynth.avs_get_parity(self.clip,0)#self.vi.image_type
@@ -291,8 +291,9 @@ class AvsClipBase:
                 frame = self.clipRaw.GetFrame(frame)
                 self.pitch = frame.GetPitch()
                 self.ptrY = frame.GetReadPtr(plane=avisynth.PLANAR_Y)
-                self.ptrU = frame.GetReadPtr(plane=avisynth.PLANAR_U)
-                self.ptrV = frame.GetReadPtr(plane=avisynth.PLANAR_V)
+                if not self.IsY8:
+                    self.ptrU = frame.GetReadPtr(plane=avisynth.PLANAR_U)
+                    self.ptrV = frame.GetReadPtr(plane=avisynth.PLANAR_V)
             return True
         return False
     

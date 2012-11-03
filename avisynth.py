@@ -269,7 +269,7 @@ class VideoInfo(ctypes.Structure):
                 ("fps_numerator",ctypes.c_uint),
                 ("fps_denominator",ctypes.c_uint),
                 ("num_frames",ctypes.c_int),
-                ("pixel_type",ctypes.c_int),
+                ("pixel_type",ctypes.c_uint),
                 ("audio_samples_per_second",ctypes.c_int),
                 ("sample_type",ctypes.c_int),
                 ("num_audio_samples",ctypes.c_int64),
@@ -308,6 +308,7 @@ class PVideoInfo:
         return (self.pixel_type&CS_PLANAR_MASK)==(CS_Y8&CS_PLANAR_FILTER)
     def IsProperty(self,property): return (self.pixel_type&property)==property
     def IsPlanar(self): return self.pixel_type&CS_PLANAR!=0
+    def IsInterleaved(self): return self.pixel_type&CS_INTERLEAVED!=0
     def IsColorSpace(self,c_space):
         if self.IsPlanar():
             return (self.pixel_type&CS_PLANAR_MASK)==(c_space&CS_PLANAR_FILTER)
