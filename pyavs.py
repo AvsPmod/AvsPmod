@@ -457,7 +457,7 @@ class AvsClipBase:
             frame = self.clipRaw.GetFrame(frame)
             total_bytes = self.Width * self.Height * self.vi.BitsPerPixel() >> 3
             if y4m_header is not False:
-                X = ' ' + y4m_header if isinstance(y4m_header, basestring) else ''
+                X = ' X' + y4m_header if isinstance(y4m_header, basestring) else ''
                 y4m_header = 'FRAME{0}\n'.format(X)
             else:
                 y4m_header = ''

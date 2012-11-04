@@ -15569,10 +15569,9 @@ class MainFrame(wxp.Frame):
         try:
             if y4m:
                 if isinstance(y4m, dict):
-                    y4m_frame = y4m.get('X_frame', True)
+                    y4m_frame = y4m.pop('X_frame', True)
                     if 'X_stream' in y4m:
-                        y4m['X'] = y4m['X_stream']
-                        del y4m['X_stream']
+                        y4m['X'] = y4m.pop('X_stream')
                     cmd.stdin.write(clip.Y4MHeader(**y4m))
                 else:
                     y4m_frame = True
