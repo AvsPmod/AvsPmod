@@ -55,6 +55,8 @@ class AvsClipBase:
         # Avisynth script properties
         self.Width = -1
         self.Height = -1
+        self.WidthSubsampling = -1
+        self.HeightSubsampling = -1
         self.Framecount = -1
         self.Framerate = -1.0
         self.FramerateNumerator = -1
@@ -167,7 +169,10 @@ class AvsClipBase:
         self.Framecount = self.vi.num_frames
         self.Width = self.vi.width
         self.Height = self.vi.height
-        self.WidthActual, self.HeightActual = self.Width, self.Height
+        if self.vi.IsYUV() and not self.vi.IsY8():
+            self.WidthSubsampling = self.vi.GetPlaneWidthSubsampling(avisynth.PLANAR_U)
+            self.HeightSubsampling = self.vi.GetPlaneHeightSubsampling(avisynth.PLANAR_U)
+        self.WidthActual, self.HeightActual = self.Width, self.Height # not used anymore
         self.FramerateNumerator = self.vi.fps_numerator 
         self.FramerateDenominator = self.vi.fps_denominator
         try:
@@ -290,6 +295,7 @@ class AvsClipBase:
             if self.clipRaw is not None:
                 frame = self.clipRaw.GetFrame(frame)
                 self.pitch = frame.GetPitch()
+                self.pitchUV = frame.GetPitch(avisynth.PLANAR_U)
                 self.ptrY = frame.GetReadPtr(plane=avisynth.PLANAR_Y)
                 if not self.IsY8:
                     self.ptrU = frame.GetReadPtr(plane=avisynth.PLANAR_U)
@@ -299,24 +305,17 @@ class AvsClipBase:
     
     def GetPixelYUV(self, x, y):
         if self.clipRaw is not None:
-            if self.IsYUY2:
+            if self.IsPlanar:
+                indexY = x + y * self.pitch
+                if self.IsY8:
+                    return (self.ptrY[indexY], -1, -1)
+                x = x >> self.WidthSubsampling
+                y = y >> self.HeightSubsampling
+                indexU = indexV = x + y * (self.pitchUV)
+            elif self.IsYUY2:
                 indexY = (x*2) + y * self.pitch
                 indexU = 4*(x/2) + 1 + y * self.pitch
                 indexV = 4*(x/2) + 3 + y * self.pitch
-            elif self.IsYV12:
-                indexY = x + y * self.pitch
-                indexU = indexV = (x/2) + (y/2) * (self.pitch/2)
-            elif self.IsYV16:
-                indexY = x + y * self.pitch
-                indexU = indexV = (x/2) + y * (self.pitch/2)
-            elif self.IsYV24:
-                indexY = indexU = indexV = x + y * self.pitch
-            elif self.IsYV411:
-                indexY = x + y * self.pitch
-                indexU = indexV = (x/4) + y * (self.pitch/4)
-            elif self.IsY8:
-                indexY = x + y * self.pitch
-                return (self.ptrY[indexY], 128, 128)
             else:
                 return (-1,-1,-1)
             return (self.ptrY[indexY], self.ptrU[indexU], self.ptrV[indexV])
