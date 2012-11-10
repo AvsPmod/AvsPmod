@@ -5184,11 +5184,15 @@ class MainFrame(wxp.Frame):
                 if os.path.isfile(helpfile):
                     self.options['avisynthhelpfile'] = helpfile
             self.defaultpluginsdir = self.ExpandVars(os.path.join('%avisynthdir%', 'avxsynth'))
-            pluginsdir = os.environ.get('AVXSYNTH_RUNTIME_PLUGIN_PATH', '')
-            if os.path.isdir(pluginsdir):
-                self.options['pluginsdir'] = self.ExpandVars(pluginsdir, False, '%pluginsdir%')
-            elif os.path.isdir(self.defaultpluginsdir):
-                self.options['pluginsdir'] = self.defaultpluginsdir
+            pluginsdir_exp = self.ExpandVars(self.options['pluginsdir'])
+            if os.path.isdir(pluginsdir_exp):
+                os.environ['AVXSYNTH_RUNTIME_PLUGIN_PATH'] = pluginsdir_exp
+            else:
+                pluginsdir = os.environ.get('AVXSYNTH_RUNTIME_PLUGIN_PATH', '')
+                if os.path.isdir(pluginsdir):
+                    self.options['pluginsdir'] = self.ExpandVars(pluginsdir, False, '%pluginsdir%')
+                elif os.path.isdir(self.defaultpluginsdir):
+                    self.options['pluginsdir'] = self.defaultpluginsdir
         if self.options['useworkdir']:
             workdir = self.ExpandVars(self.options['workdir'])
             if os.path.isdir(workdir):
@@ -14462,18 +14466,24 @@ class MainFrame(wxp.Frame):
                 rc = os.path.expandvars(os.path.join('$HOME', '.{0}rc'.format(
                                         os.path.basename(shell))))
                 if os.path.isfile(rc):
-                    export = u'export AVXSYNTH_RUNTIME_PLUGIN_PATH="{0}"'.format(pluginsdir_exp)
-                    with open(rc, 'r+') as f:
-                        lines = f.readlines()
-                        for i, line in enumerate(lines):
-                            if 'AVXSYNTH_RUNTIME_PLUGIN_PATH' in line:
-                                lines[i] = export
-                                f.seek(0)
-                                f.truncate()
-                                f.writelines(lines)
-                                break
-                        else:
-                            f.write(export)
+                    warning = _("You're changing the plugins autoload directory.\n"
+                                'Do you wish to change it for all applications? This will\n'
+                                'require writing to {0}'
+                               ).format(rc)
+                    ret = wx.MessageBox(warning, _('Warning'), wx.YES_NO|wx.ICON_EXCLAMATION)
+                    if ret == wx.YES:
+                        export = u'export AVXSYNTH_RUNTIME_PLUGIN_PATH="{0}"'.format(pluginsdir_exp)
+                        with open(rc, 'r+') as f:
+                            lines = f.readlines()
+                            for i, line in enumerate(lines):
+                                if 'AVXSYNTH_RUNTIME_PLUGIN_PATH' in line:
+                                    lines[i] = export
+                                    f.seek(0)
+                                    f.truncate()
+                                    f.writelines(lines)
+                                    break
+                            else:
+                                f.write(export)
     
     def getMacrosLabelFromFile(self, filename):
         f = open(filename)
