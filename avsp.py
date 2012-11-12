@@ -5483,13 +5483,20 @@ class MainFrame(wxp.Frame):
         self.avisynthVersion = (None,) * 3
         self.dllnameunderscored = set()
         try:
-            avisynth
-        except NameError:
-            return {}
-        try:
             env = avisynth.avs_create_script_environment(3)
         except OSError:
-            return {}
+            error = _('Make sure you have AviSynth installed and that there are no '
+                      'unstable plugins or avsi files in the AviSynth plugins directory.')
+            error = '\n'.join(textwrap.wrap(error, 70))
+        else:
+            if hasattr(env, 'GetError'):
+                error = env.GetError()
+            else:
+                error = None
+        if error:
+            wx.SafeShowMessage(' '.join((self.name, self.version)), 
+                              '\n\n'.join((_('Error loading AviSynth!'), error)))
+            sys.exit(0)
         self.avisynthVersion = (env.Invoke('VersionString'),
                                 env.Invoke('VersionNumber'),
                                 env.Invoke('Version').AsClip(env).GetVersion())
@@ -12645,11 +12652,14 @@ class MainFrame(wxp.Frame):
                     if prompt:
                         self.HidePreviewWindow()
                         s1 = _('Error loading AviSynth!')
-                        s2 = _(
-                            'Make sure you have AviSynth installed and that there are no '
-                            'unstable plugins or avsi files in the AviSynth plugins directory.'
-                        )
-                        s2 = '\n'.join(textwrap.wrap(s2, 70))
+                        if script.AVI.error_message:
+                            s2 = script.AVI.error_message
+                        else:
+                            s2 = _(
+                                'Make sure you have AviSynth installed and that there are no '
+                                'unstable plugins or avsi files in the AviSynth plugins directory.'
+                            )
+                            s2 = '\n'.join(textwrap.wrap(s2, 70))
                         wx.MessageBox('%s\n\n%s' % (s1, s2), _('Error'), style=wx.OK|wx.ICON_ERROR)
                     script.AVI = None
                     return None

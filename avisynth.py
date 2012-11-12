@@ -56,7 +56,7 @@ else:
 
 encoding = sys.getfilesystemencoding()
 
-# Interface: 3 + 5's new colorspaces
+# Interface: 3 + 5's new colorspaces and some of its other additions
 
 # Constants
 PLANAR_Y=1<<0
@@ -228,6 +228,10 @@ class PIScriptEnvironment:
         if retval.type==101: #'e'rror
             raise AvisynthError(retval.d.s)
         else: return retval
+    try: # 5
+        avidll.avs_get_error
+        def GetError(self): return avs_get_error(self)
+    except: pass
     def GetCPUFlags(self):return avs_get_cpu_flags(self)
     def CheckVersion(self,version):return avs_check_version(self,version)
     def SaveString(self,string):return avs_save_string(self,string,len(string))
@@ -787,6 +791,12 @@ PIScriptEnvironment.avs_create_script_environment=avs_create_script_environment
 avs_delete_script_environment=avidll.avs_delete_script_environment
 avs_delete_script_environment.restype = None
 avs_delete_script_environment.argtypes=[PIScriptEnvironment]
+
+try: # 5
+    avs_get_error = avidll.avs_get_error
+    avs_get_error.restype = ctypes.c_char_p
+    avs_get_error.argtypes = [PIScriptEnvironment]
+except: pass
 
 avs_get_cpu_flags=avidll.avs_get_cpu_flags
 avs_get_cpu_flags.restype = ctypes.c_long

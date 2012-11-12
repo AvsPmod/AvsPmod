@@ -98,6 +98,9 @@ class AvsClipBase:
                 self.env=avisynth.avs_create_script_environment(3)
             except OSError:
                 return
+            if hasattr(self.env, 'GetError'):
+                self.error_message = self.env.GetError()
+                if self.error_message: return
         if isinstance(script,avisynth.PClip):
             self.clip=script
             self.env=env
