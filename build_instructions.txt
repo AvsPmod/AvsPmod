@@ -1,7 +1,7 @@
 How to build
 ------------
 
-To build AvsPmod, check that all the requirements are met and run 'AvsP_build.py'.
+To build AvsPmod, check that all the requirements are met and run 'build.py'.
 A ZIP or 7z archive will be created in its same directory.
 
 

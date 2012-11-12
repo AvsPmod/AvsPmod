@@ -21,7 +21,7 @@
 # Dependencies:
 #     Python (tested on v2.6 and v2.7)
 # Optional:
-#     globals.py (for specifing a custom shared library location)
+#     global_vars.py (for specifying a custom shared library location)
 
 import ctypes
 import sys
@@ -31,8 +31,8 @@ import sys
 
 # Initialization routines.  Assume AvxSynth/Linux if os.name is not NT.
 try:
-    import globals
-    dir = globals.avisynth_library_dir
+    import global_vars
+    dir = global_vars.avisynth_library_dir
 except:
     dir = ''
 if os.name == 'nt':

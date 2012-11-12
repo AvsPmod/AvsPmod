@@ -26,17 +26,18 @@
 #     Python (tested on v2.6 and 2.7)
 #     wxPython (tested on v2.8 Unicode and 2.9)
 # Scripts:
+#     avsp.py (main application)
 #     wxp.py (general wxPython framework classes)
 #     avisynth.py (Python AviSynth/AvxSynth wrapper)
 #     pyavs.py (AvsP AviSynth support by loading AviSynth directly as a library)
 #     pyavs_avifile.py (AvsP AviSynth support through Windows AVIFile routines)
 #     icon.py (icons embedded in a Python script)
-#     AvsP_i18n (internationalization and localization)
-#     globals.py (application info and other shared variables)
+#     i18n.py (internationalization and localization)
+#     global_vars.py (application info and other shared variables)
 
 import os, sys
 if hasattr(sys,'frozen'):
     sys.path.insert(0, os.path.dirname(sys.executable))
     
-import AvsP
-AvsP.main()
+import avsp
+avsp.main()

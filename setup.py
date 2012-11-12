@@ -18,7 +18,7 @@
 #  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA, or visit
 #  http://www.gnu.org/copyleft/gpl.html .
 
-# AvsP_setup - AvsP py2exe setup script
+# setup - AvsP py2exe setup script
 # 
 # Dependencies:
 #     Python (tested on v2.6 and v2.7)
@@ -33,7 +33,7 @@ import wxversion
 wxversion.select('2.8')
 import wx
 
-import globals
+import global_vars
 
 MANIFEST_TEMPLATE = """
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -97,17 +97,17 @@ data_files = [
         ('lib', lib_extra),
         ('src', [
             'run.py',
-            'AvsP.py',
+            'avsp.py',
             'wxp.py',
             'avisynth.py',
             'pyavs.py',
             'pyavs_avifile.py',
-            'AvsP_build.py',
-            'AvsP_setup.py',
-            'AvsP_i18n.py',
+            'build.py',
+            'setup.py',
+            'i18n.py',
             'AvsP.ico',
             'icons.py',
-            'globals.py',
+            'global_vars.py',
             'build_instructions.txt',
         ]),
     ]
@@ -170,11 +170,11 @@ for dir, ext_filter, include in dirs:
 
 # Generate the dist files
 setup(
-    name = globals.name,
-    description = globals.description,
-    version = globals.version,
-    url = globals.url,
-    license = globals.license,
+    name = global_vars.name,
+    description = global_vars.description,
+    version = global_vars.version,
+    url = global_vars.url,
+    license = global_vars.license,
     options = {"py2exe":{
         "compressed": True,
         "optimize": 1,
@@ -186,11 +186,11 @@ setup(
     data_files = data_files,
     windows = [
         {  
-            'copyright' : globals.license,
+            'copyright' : global_vars.license,
             "script": "run.py",
             "icon_resources": [(1, "AvsP.ico")],
             "other_resources" : [(24, 1, MANIFEST_TEMPLATE % 
-                dict(prog=globals.name, extra=manifest_extra)
+                dict(prog=global_vars.name, extra=manifest_extra)
             )],
         }
     ],

@@ -18,7 +18,7 @@
 #  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA, or visit
 #  http://www.gnu.org/copyleft/gpl.html .
 
-# AvsP_build - build script for AvsP
+# build - build script for AvsP
 #
 # Dependencies:
 #     Python (tested on v2.6 and v2.7)
@@ -32,9 +32,9 @@ import tempfile
 import zipfile
 import subprocess
 
-import AvsP
-import AvsP_i18n
-import globals
+import avsp
+import i18n
+import global_vars
 
 def isinpath(path):
     '''Check if a file is in PATH or in the working directory'''
@@ -50,28 +50,28 @@ def isinpath(path):
 def main():
     # Define names and paths
     pythonexe = sys.executable
-    zipname = '{0}_v{1}.zip'.format(globals.name, globals.version)
+    zipname = '{0}_v{1}.zip'.format(global_vars.name, global_vars.version)
     upx = os.path.join(os.environ['PROGRAMFILES'], 'upx', 'upx.exe')
     exe7z = os.path.join(os.environ['PROGRAMFILES'], '7-Zip', '7z.exe')
     editbin = os.path.join(os.environ['PROGRAMFILES'], 'Microsoft Visual Studio 10.0', 
                           'VC', 'bin', 'amd64', 'editbin.exe')
     tempdir = tempfile.mkdtemp()
-    programdirname = os.path.join(tempdir, globals.name)
+    programdirname = os.path.join(tempdir, global_vars.name)
     
     # Create/update the master translation file
     print '\nCreating translation file...'
-    if not AvsP_i18n.main():
+    if not i18n.main():
         return
     
     # Create the program executable using py2exe
-    if os.system('""%s" -OO AvsP_setup.py py2exe -d %s"' % (pythonexe, programdirname)):
+    if os.system('""%s" -OO setup.py py2exe -d %s"' % (pythonexe, programdirname)):
         return
     
     # Update the translation files in the temporal subdirectory
-    AvsP_i18n.UpdateTranslationFile(os.path.join(programdirname, 'translations'), version=globals.version)
+    i18n.UpdateTranslationFile(os.path.join(programdirname, 'translations'), version=global_vars.version)
     
     # Create/update 'macros_readme.txt' in the macros subdirectory
-    AvsP.GenerateMacroReadme(os.path.join(programdirname, 'macros', 'macros_readme.txt'))
+    avsp.GenerateMacroReadme(os.path.join(programdirname, 'macros', 'macros_readme.txt'))
     
     # Set the large address aware flag in the executable
     if not os.path.isfile(editbin):
@@ -98,7 +98,7 @@ def main():
     
     # Manage the files
     os.rename(os.path.join(programdirname, 'run.exe'), 
-              os.path.join(programdirname, '{0}.exe'.format(globals.name)))
+              os.path.join(programdirname, '{0}.exe'.format(global_vars.name)))
     os.rename(os.path.join(programdirname, 'README.md'), 
               os.path.join(programdirname, 'readme.txt'))
     shutil.rmtree('build')

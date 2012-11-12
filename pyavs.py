@@ -242,7 +242,7 @@ class AvsClipBase:
             return
         
         # Add a resize...
-        # Update: Not used anymore, resizing is done nowadays on AvsP.LayoutVideoWindows
+        # Update: Not used anymore, resizing is done nowadays on avsp.LayoutVideoWindows
         #         Width == WidthActual, Height == HeightActual
         if 0 and fitHeight is not None and self.Height != 0:
             fitWidthTemp = int(round(fitHeight *  (self.Width/float(self.Height))))

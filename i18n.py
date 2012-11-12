@@ -18,13 +18,13 @@
 #  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA, or visit
 #  http://www.gnu.org/copyleft/gpl.html .
 
-# AvsP_i18n - internationalization and localization
+# i18n - internationalization and localization
 # 
 # Dependencies:
 #     Python (tested on v2.6 and v2.7)
 #     wxPython (tested on v2.8 Unicode and v2.9)
 # Scripts:
-#     globals.py (application info and other shared variables)
+#     global_vars.py (application info and other shared variables)
 
 import __builtin__
 import sys
@@ -33,7 +33,7 @@ import os.path
 import glob
 import re
 
-import globals
+import global_vars
 
 def _(s): return s
 __builtin__._ = _
@@ -43,9 +43,9 @@ pygettextpath = os.path.join(sys.prefix, 'Tools', 'i18n', 'pygettext.py')
 toolsdir = 'tools'
 macrosdir = 'macros'
 
-def main(version=globals.version):
+def main(version=global_vars.version):
     
-    argsList = ['AvsP.py wxp.py pyavs.py pyavs_avifile.py globals.py']
+    argsList = ['avsp.py wxp.py pyavs.py pyavs_avifile.py global_vars.py']
     # Get additional files to translate from the tools directory
     sys.path.insert(0, toolsdir)
     try:
@@ -152,7 +152,7 @@ def GenerateMessages(messageSet, args):
                 multiline = False
     return newlines
 
-def UpdateTranslationFile(dir, lang=None, version=globals.version):
+def UpdateTranslationFile(dir, lang=None, version=global_vars.version):
     try:
         from __translation_new import new_translation_string
     except ImportError:

@@ -18,7 +18,7 @@
 #  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA, or visit
 #  http://www.gnu.org/copyleft/gpl.html .
 
-# icons - icons embedded in a python script
+# icons - icons embedded in a Python script
 # 
 # Dependencies:
 #     Python (tested on v2.6 and v2.7)

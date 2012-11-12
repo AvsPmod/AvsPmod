@@ -31,8 +31,8 @@
 #     pyavs.py (AvsP AviSynth support by loading AviSynth directly as a library)
 #     pyavs_avifile.py (AvsP AviSynth support through Windows AVIFile routines)
 #     icon.py (icons embedded in a Python script)
-#     AvsP_i18n (internationalization and localization)
-#     globals.py (application info and other shared variables)
+#     i18n.py (internationalization and localization)
+#     global_vars.py (application info and other shared variables)
 
 import os
 import sys
@@ -63,8 +63,8 @@ if hasattr(sys,'frozen'):
     programdir = os.path.dirname(sys.executable)
     sys.path.insert(0, programdir)
 
-import globals
-import AvsP_i18n
+import global_vars
+import i18n
 messages = None
 def _(s):
     if messages:
@@ -4389,10 +4389,10 @@ class SliderPlus(wx.Panel):
 # Main program window
 class MainFrame(wxp.Frame):
     # Initialization functions
-    def __init__(self, parent=None, id=wx.ID_ANY, title=globals.name, pos=wx.DefaultPosition, size=(700, 550), style=wx.DEFAULT_FRAME_STYLE):
+    def __init__(self, parent=None, id=wx.ID_ANY, title=global_vars.name, pos=wx.DefaultPosition, size=(700, 550), style=wx.DEFAULT_FRAME_STYLE):
         wxp.Frame.__init__(self, parent, id, pos=pos, size=size, style=style)
         self.name = title
-        self.version = globals.version
+        self.version = global_vars.version
         self.firsttime = False
         # Define program directories
         if hasattr(sys,'frozen'):
@@ -4840,8 +4840,8 @@ class MainFrame(wxp.Frame):
                     except AttributeError:
                         translation_version = None
                     if translation_version != self.version:
-                        if AvsP_i18n.UpdateTranslationFile(os.path.join(self.programdir, self.translations_dir), 
-                                                           self.options['lang'], self.version):
+                        if i18n.UpdateTranslationFile(os.path.join(self.programdir, self.translations_dir), 
+                                                      self.options['lang'], self.version):
                             wx.MessageBox(_('%s translation file updated with new messages to translate') 
                                             % self.options['lang'], _('Translation updated'))
                         else:
@@ -5140,7 +5140,7 @@ class MainFrame(wxp.Frame):
                 self.defaultavisynthdir = ''
             if self.options['usealtdir'] and os.path.isdir(altdir_exp):
                 self.avisynthdir = self.options['altdir']
-                globals.avisynth_library_dir = altdir_exp
+                global_vars.avisynth_library_dir = altdir_exp
             else:
                 self.options['usealtdir'] = False
                 if os.path.isdir(self.defaultavisynthdir):
@@ -5175,7 +5175,7 @@ class MainFrame(wxp.Frame):
         else:
             if self.options['usealtdir'] and os.path.isdir(altdir_exp):
                 self.avisynthdir = self.options['altdir']
-                globals.avisynth_library_dir = altdir_exp
+                global_vars.avisynth_library_dir = altdir_exp
             else:
                 self.options['usealtdir'] = False
                 self.avisynthdir = '/usr/local/lib'
@@ -5212,11 +5212,11 @@ class MainFrame(wxp.Frame):
                 exception = True
                 if self.options['usealtdir']:
                     if not path_used:
-                        globals.avisynth_library_dir = ''
+                        global_vars.avisynth_library_dir = ''
                         path_used = True
                         continue
                 elif self.options['altdir'] and not altdir_used:
-                    globals.avisynth_library_dir = self.ExpandVars(self.options['altdir'])
+                    global_vars.avisynth_library_dir = self.ExpandVars(self.options['altdir'])
                     altdir_used = True
                     continue
                 lib = ('AviSynth', 'avisynth.dll') if os.name == 'nt' else ('AvxSynth', 'libavxsynth.so')
@@ -5230,7 +5230,7 @@ class MainFrame(wxp.Frame):
                                            os.path.expanduser('~'))
                         ID = dlg.ShowModal()
                         if ID==wx.ID_OK:
-                            globals.avisynth_library_dir = dlg.GetPath()
+                            global_vars.avisynth_library_dir = dlg.GetPath()
                             dlg.Destroy()
                         else:
                             dlg.Destroy()
@@ -5238,10 +5238,10 @@ class MainFrame(wxp.Frame):
                 else:
                     sys.exit(0)
         if exception:
-            if globals.avisynth_library_dir:
+            if global_vars.avisynth_library_dir:
                 self.options['usealtdir'] = True
                 self.options['altdir'] = self.ExpandVars(
-                        globals.avisynth_library_dir, False, 'avisynthdir')
+                        global_vars.avisynth_library_dir, False, 'avisynthdir')
             else:
                 self.options['usealtdir'] = False
             self.SetPaths() # some paths may depend on %avisynthdir%
@@ -8357,7 +8357,7 @@ class MainFrame(wxp.Frame):
                     else:
                         os.system('regini "{f}" & del "{f}"'.format(f=f.name))
         else:
-            app_file = os.path.join(tempfile.gettempdir(), globals.name.lower() + '.desktop')
+            app_file = os.path.join(tempfile.gettempdir(), global_vars.name.lower() + '.desktop')
             with open(app_file, 'w') as f:
                 txt = textwrap.dedent('''\
                 [Desktop Entry]
@@ -8372,7 +8372,7 @@ class MainFrame(wxp.Frame):
                 Icon={dir}/AvsP.ico
                 Categories=AudioVideo;
                 MimeType=text/x-avisynth;''').format(name=self.name, 
-                    comment=globals.description, dir=self.programdir)
+                    comment=global_vars.description, dir=self.programdir)
                 f.write(txt)
             if 'avsp' in subprocess.check_output(['xdg-mime', 'query', 'default', 'text/x-avisynth']):
                 text_editor = subprocess.check_output(['xdg-mime', 'query', 'default', 'text/plain']).strip()
@@ -8507,7 +8507,7 @@ class MainFrame(wxp.Frame):
         font.SetPointSize(12)
         font.SetWeight(wx.FONTWEIGHT_BOLD)
         title.SetFont(font)
-        description = wx.StaticText(dlg, wx.ID_ANY, _(globals.description))
+        description = wx.StaticText(dlg, wx.ID_ANY, _(global_vars.description))
         link = wx.StaticText(dlg, wx.ID_ANY, _('AvsP Website'))
         font = link.GetFont()
         font.SetUnderlined(True)
@@ -8526,7 +8526,7 @@ class MainFrame(wxp.Frame):
         link0.SetFont(font)
         link0.SetForegroundColour(wx.Colour(0,0,255))
         link0.SetCursor(wx.StockCursor(wx.CURSOR_HAND))
-        url0 = globals.url
+        url0 = global_vars.url
         def OnClick0(event):
             startfile(url0)
         link0.SetToolTip(wx.ToolTip(url0))
