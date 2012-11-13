@@ -4681,6 +4681,7 @@ class MainFrame(wxp.Frame):
             self.videoStatusBarInfo = self.options['videostatusbarinfo']
         self.videoStatusBarInfoParsed, self.showVideoPixelInfo, self.showVideoPixelAvisynth = self.ParseVideoStatusBarInfo(self.videoStatusBarInfo)
         self.foldAllSliders = True
+        self.reuse_environment = False
         self.matrix = ['auto', 'tv']
         self.interlaced = self.swapuv = False
         self.flip = []
@@ -6366,6 +6367,7 @@ class MainFrame(wxp.Frame):
                     (reverseMatrixDict['Interlaced'], '', self.OnMenuVideoYUV2RGB, _('For YV12 only, assume it is interlaced'), wx.ITEM_RADIO, False),
                     ),
                 ),
+                (_('Keep variables on refreshing'), '', self.OnMenuVideoReuseEnvironment, _('Create the new AviSynth clip on the same environment. Useful for tweaking parameters'), wx.ITEM_CHECK, False),
                 (''),
                 (_('Save image as...'), '', self.OnMenuVideoSaveImage, _('Save the current frame as a bitmap')),
                 (''),
@@ -7956,6 +7958,9 @@ class MainFrame(wxp.Frame):
         if self.previewWindowVisible and refresh:
             self.OnMenuVideoRefresh(event)
 
+    def OnMenuVideoReuseEnvironment(self, event):
+        self.reuse_environment = not self.reuse_environment
+    
     def OnMenuVideoRefresh(self, event):
         self.ShowVideoFrame(forceRefresh=True, forceLayout=True, focus=self.options['focusonrefresh'])
 
@@ -9658,6 +9663,7 @@ class MainFrame(wxp.Frame):
 
     def UserSliderVideoUpdate(self, slider):
         script = self.currentScript
+        keep_env = not self.ScriptChanged(script)
         label = slider.GetName()
         sOpen = self.sliderOpenString
         sClose = self.sliderCloseString
@@ -9677,10 +9683,11 @@ class MainFrame(wxp.Frame):
                 newSliderText = '%s"%s", %s, %s, %s%s' % (sOpen, label, items[1], items[2], newVal, sClose)
             script.ReplaceTarget(newSliderText)
             self.refreshAVI = True
-        self.ShowVideoFrame(userScrolling=True)
+        self.ShowVideoFrame(userScrolling=True, keep_env=keep_env)
 
     def OnToggleTagChecked(self, event):
         script = self.currentScript
+        keep_env = not self.ScriptChanged(script)
         label = event.GetEventObject().GetName()
         if event.IsChecked():
             value = 1
@@ -9691,7 +9698,7 @@ class MainFrame(wxp.Frame):
         script.SetText(newText)
         # Update the video
         self.refreshAVI = True
-        self.ShowVideoFrame(userScrolling=False)
+        self.ShowVideoFrame(userScrolling=False, keep_env=keep_env)
 
     def OnSliderLabelToggleAllFolds(self, event):
         script = self.currentScript
@@ -12155,7 +12162,7 @@ class MainFrame(wxp.Frame):
 
         self.currentScript.SetFocus()
 
-    def ShowVideoFrame(self, framenum=None, forceRefresh=False, wrap=True, script=None, userScrolling=False, forceLayout=False, doLayout=True, resize=None, focus=True):
+    def ShowVideoFrame(self, framenum=None, forceRefresh=False, wrap=True, script=None, userScrolling=False, keep_env=None, forceLayout=False, doLayout=True, resize=None, focus=True):
         # Exit if disable preview option is turned on
         if self.options['disablepreview']:
             return
@@ -12164,7 +12171,7 @@ class MainFrame(wxp.Frame):
             script = self.currentScript
         if script.AVI is None:
             forceRefresh = True
-        if self.UpdateScriptAVI(script, forceRefresh) is None:
+        if self.UpdateScriptAVI(script, forceRefresh, keep_env=keep_env) is None:
             #~ wx.MessageBox(_('Error loading the script'), _('Error'), style=wx.OK|wx.ICON_ERROR)
             return False
         #~ # Exit if invalid user sliders
@@ -12559,7 +12566,7 @@ class MainFrame(wxp.Frame):
             #~ new_frame = bookmarkValues[diffs.index(min(diffs))]
         self.ShowVideoFrame(new_frame)
 
-    def UpdateScriptAVI(self, script=None, forceRefresh=False, prompt=True):
+    def UpdateScriptAVI(self, script=None, forceRefresh=False, keep_env=None, prompt=True):
         if not script:
             script = self.currentScript
             index = self.scriptNotebook.GetSelection()
@@ -12596,20 +12603,9 @@ class MainFrame(wxp.Frame):
                     #~ updateDisplayClip = True
         boolNewAVI = False
         if self.refreshAVI and self.options['refreshpreview'] or forceRefresh:
-            # Compare scripts including style, but excluding comment/newline/space
             if not script.previewtxt:
                 script.Colourise(0, script.GetTextLength())
-            scripttxt = script.GetStyledText(0, script.GetTextLength())
-            styledtxt = []
-            for i in range(0, len(scripttxt), 2):
-                style = ord(scripttxt[i+1]) & 31
-                if style in script.commentStyle\
-                or (style == script.STC_AVS_DEFAULT and scripttxt[i] in ' \t\n'):
-                    continue
-                styledtxt.append(scripttxt[i])
-                styledtxt.append(style)
-            if styledtxt != script.previewtxt or forceRefresh:
-                script.previewtxt = styledtxt
+            if self.ScriptChanged(script) or forceRefresh:
                 scripttxt = script.GetText()
                 # Replace any user-inserted sliders (defined with self.regexp)
                 #~ script.SetFocus()
@@ -12625,10 +12621,12 @@ class MainFrame(wxp.Frame):
                 if script.AVI is None:
                     oldFramecount = 240
                     boolOldAVI = False
+                    env = None
                 else:
                     oldFramecount = script.AVI.Framecount
                     oldWidth, oldHeight = script.AVI.Width, script.AVI.Height
                     boolOldAVI = True
+                    env = script.AVI.env if keep_env or self.reuse_environment else None
                 if updateDisplayClip and False:
                     script.AVI.CreateDisplayClip(fitHeight, fitWidth)
                 else:
@@ -12643,7 +12641,7 @@ class MainFrame(wxp.Frame):
                     wx.BeginBusyCursor()
                     script.AVI = None
                     script.AVI = pyavs.AvsClip(
-                        self.getCleanText(scripttxt), filename, workdir=workdir, 
+                        self.getCleanText(scripttxt), filename, workdir=workdir, env=env, 
                         fitHeight=fitHeight, fitWidth=fitWidth, oldFramecount=oldFramecount, 
                         keepRaw=self.showVideoPixelAvisynth, matrix=self.matrix, 
                         interlaced=self.interlaced, swapuv=self.swapuv)
@@ -12675,13 +12673,32 @@ class MainFrame(wxp.Frame):
                 # Update the script tag properties
                 self.UpdateScriptTagProperties(script, scripttxt)
                 self.GetAutoSliderInfo(script, scripttxt)
+                script.previewtxt = self.ScriptChanged(script, return_styledtext=True)[1]
                 if self.cropDialog.IsShown():
                     self.PaintCropWarnings()
                 boolNewAVI = True
             if script == self.currentScript:
                 self.refreshAVI = False
         return boolNewAVI
-
+    
+    def ScriptChanged(self, script=None, return_styledtext=False):
+        """Compare scripts including style, but excluding comment/newline/space"""
+        if script is None:
+            script = self.currentScript
+        scripttxt = script.GetStyledText(0, script.GetTextLength())
+        styledtxt = []
+        for i in range(0, len(scripttxt), 2):
+            style = ord(scripttxt[i+1]) & 31
+            if style in script.commentStyle\
+            or (style == script.STC_AVS_DEFAULT and scripttxt[i] in ' \t\n'):
+                continue
+            styledtxt.append(scripttxt[i])
+            styledtxt.append(style)
+        script_changed = styledtxt != script.previewtxt
+        if return_styledtext:
+            return script_changed, styledtxt
+        return script_changed
+    
     def UpdateScriptTagProperties(self, script, scripttxt=None):
         if scripttxt is None:
             scripttxt = script.GetText()
@@ -14177,13 +14194,14 @@ class MainFrame(wxp.Frame):
         argText, posA, posB = self.GetArgTextAndPos(control)
         if argText is None:
             return
+        keep_env = not self.ScriptChanged(script)
         # Create the new arg text
         script.SetTargetStart(posA)
         script.SetTargetEnd(posB)
         script.ReplaceTarget(newValue)
         if refreshvideo:
             self.refreshAVI = True
-            self.ShowVideoFrame(userScrolling=True)
+            self.ShowVideoFrame(userScrolling=True, keep_env=keep_env)
 
     def GetArgTextAndPos(self, slider):
         # Find the filter in the text

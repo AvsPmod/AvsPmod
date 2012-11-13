@@ -89,9 +89,12 @@ class AvsClipBase:
         self.ffms_info_cache = {}
         
         # Create the Avisynth script clip
-        if (env is not None) and not isinstance(env,avisynth.PIScriptEnvironment):
-            raise TypeError("env must be a PIScriptEnvironment or None")
-        if env is None:
+        if env is not None:
+            if isinstance(env,avisynth.PIScriptEnvironment):
+                self.env = env
+            else:
+                raise TypeError("env must be a PIScriptEnvironment or None")
+        else:
             if isinstance(script,avisynth.PClip):
                 raise ValueError("env must be defined when providing a clip") 
             try:
@@ -103,7 +106,6 @@ class AvsClipBase:
                 if self.error_message: return
         if isinstance(script,avisynth.PClip):
             self.clip=script
-            self.env=env
         else:
             if type(script) != unicode:
                 f=unicode(script)

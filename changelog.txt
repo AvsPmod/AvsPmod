@@ -14,6 +14,7 @@ Version 2.X.X [2012-??-??]
   - file menu -> undo close tab
   - middle click on empty tab bar space
   - Ctrl+Shift+N default hotkey
+- Add 'keep variables on refreshing' option, useful for dealing with heavy scripts
 - Add auto-crop option to the crop editor
 - The crop editor can be used now with the video preview zoomed or flipped
 - Add new variable to video status bar - bookmark title (%BM)
