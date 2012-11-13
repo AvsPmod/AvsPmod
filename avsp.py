@@ -14853,19 +14853,23 @@ class MainFrame(wxp.Frame):
         return True
     
     @AsyncCallWrapper
-    def MacroGetText(self, index=None):
-        r'''GetText(index=None)
+    def MacroGetText(self, index=None, clean=False):
+        r'''GetText(index=None, clean=False)
         
         Returns the string containing all the text in the script of the tab located 
         at the zero-based integer 'index'.  If the input 'index' is None, the text 
-        is retrieved from the script of the currently selected tab.  Returns False 
+        is retrieved from the script of the currently selected tab.  If 'clean' is 
+        True, strip sliders and tags from the returned text.  Returns False 
         if the operation failed.
         
         '''
         script, index = self.getScriptAtIndex(index)
         if script is None:
             return False
-        return script.GetText()
+        txt = script.GetText()
+        if clean:
+            txt = self.getCleanText(txt)
+        return txt
     
     @AsyncCallWrapper
     def MacroGetSelectedText(self, index=None):
@@ -15538,7 +15542,7 @@ class MainFrame(wxp.Frame):
     
     # Don't use decorator on this one
     def MacroPipe(self, cmd, text=None, frames=None, y4m=False, reorder_rgb=False, wait=False, stdout=None, stderr=None):
-        r"""Pipe(cmd, text=avsp.GetText(), frames=<all frames>, y4m=False, reorder_rgb=False, wait=False, stdout=None, stderr=None)
+        r"""Pipe(cmd, text=None, frames=None, y4m=False, reorder_rgb=False, wait=False, stdout=None, stderr=None)
         
         Pipe raw frame data to an external application (video only)
         
@@ -15557,8 +15561,10 @@ class MainFrame(wxp.Frame):
              - X_stream, X_frame.
         reorder_rgb: convert BGR to RGB and BGRA to RGBA before piping.
         wait: wait for the process to finish and return its return code.
-        stdout: file object where redirect stdout.  Defaults to None.
+        stdout: file object where redirect stdout.  Defaults to sys.stdout on __debug__, 
+                nowhere otherwise.
         stderr: file object where redirect stderr.  Defaults to stdout.
+        
         """
         
         # Evaluate text
@@ -15569,7 +15575,7 @@ class MainFrame(wxp.Frame):
         else:
             workdir = self.currentScript.workdir if text is None else ''
         if text is None:
-            text = self.currentScript.GetText()
+            text = self.getCleanText(self.currentScript.GetText())
             filename = self.currentScript.filename
         else:
             filename = 'AVS script'
