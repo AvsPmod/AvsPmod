@@ -3869,10 +3869,11 @@ class AvsFunctionExportImportDialog(wx.Dialog):
 
 # Custom slider
 class SliderPlus(wx.Panel):
-    def __init__(self, parent, id, value=0, minValue=0, maxValue=100, size=(-1, 28), bookmarkDict={}):
+    def __init__(self, parent, app, id, value=0, minValue=0, maxValue=100, size=(-1, 28), bookmarkDict={}):
         wx.Panel.__init__(self, parent, id, size=size, style=wx.WANTS_CHARS)
         self.bookmarkDict = bookmarkDict
         self.parent = parent
+        self.app = app
         self.minValue = minValue
         self.maxValue = maxValue
         self.value = max(min(value, self.maxValue), self.minValue)
@@ -3934,6 +3935,7 @@ class SliderPlus(wx.Panel):
         self.brushGrayText = wx.Brush(colorGrayText)
 
     def _OnLeftDown(self, event):
+        self.app.lastshownframe = self.app.paintedframe
         mousepos = event.GetPosition()
         x, y, w, h = self.GetRect()
         #~ pixelpos = int(self.value * (w-2*self.xo) / float(self.maxValue - self.minValue))
@@ -6774,7 +6776,7 @@ class MainFrame(wxp.Frame):
         if primary:
             #~ self.videoSlider = wxp.Slider(panel, wx.ID_ANY, 0, 0, 240-1, style=wx.SL_HORIZONTAL|wx.SL_SELRANGE|wx.SL_AUTOTICKS, onscroll=self.OnSliderChanged)
             #~ self.videoSlider = wxp.Slider(panel, wx.ID_ANY, 0, 0, 240-1, style=wx.SL_HORIZONTAL|wx.SL_SELRANGE, onscroll=self.OnSliderChanged)
-            self.videoSlider = SliderPlus(panel, wx.ID_ANY, 0, 0, 240-1, bookmarkDict=self.bookmarkDict)
+            self.videoSlider = SliderPlus(panel, self, wx.ID_ANY, 0, 0, 240-1, bookmarkDict=self.bookmarkDict)
             self.videoSlider.Bind(wx.EVT_SCROLL_THUMBTRACK, self.OnSliderChanged)
             self.videoSlider.Bind(wx.EVT_SCROLL_ENDSCROLL, self.OnSliderReleased)
             self.videoSlider.Bind(wx.EVT_RIGHT_UP, self.OnSliderRightUp)
@@ -6786,7 +6788,7 @@ class MainFrame(wxp.Frame):
             #~ self.videoSlider = wxp.Slider(panel, wx.ID_ANY, 0, 0, 240-1, style=wx.SL_HORIZONTAL|wx.SL_SELRANGE|wx.SL_AUTOTICKS, onscroll=self.OnSliderChanged)
             #~ self.videoSlider2 = wxp.Slider(panel, wx.ID_ANY, 0, 0, 240-1, style=wx.SL_HORIZONTAL|wx.SL_SELRANGE, onscroll=self.OnSliderChanged)
             #~ self.videoSlider.Bind(wx.EVT_SCROLL, self.OnSliderChanged)
-            self.videoSlider2 = SliderPlus(panel, wx.ID_ANY, 0, 0, 240-1, bookmarkDict=self.bookmarkDict)
+            self.videoSlider2 = SliderPlus(panel, self, wx.ID_ANY, 0, 0, 240-1, bookmarkDict=self.bookmarkDict)
             self.videoSlider2.Bind(wx.EVT_SCROLL_THUMBTRACK, self.OnSliderChanged)
             self.videoSlider2.Bind(wx.EVT_SCROLL_ENDSCROLL, self.OnSliderReleased)
             self.videoSlider2.Bind(wx.EVT_RIGHT_UP, self.OnSliderRightUp)
@@ -8725,7 +8727,6 @@ class MainFrame(wxp.Frame):
             self.frameTextCtrl2.Replace(0, -1, str(frame))
         self.SetVideoStatusText()
         if self.options['dragupdate']:
-            self.lastshownframe = self.paintedframe
             if not self.separatevideowindow:
                 self.ShowVideoFrame(frame)
             else:
@@ -8739,7 +8740,6 @@ class MainFrame(wxp.Frame):
     def OnSliderReleased(self, event):
         videoSlider = event.GetEventObject()
         frame = videoSlider.GetValue()
-        self.lastshownframe = self.paintedframe
         #~ if self.FindFocus() != videoSlider:
             #~ return
         if not self.separatevideowindow:
