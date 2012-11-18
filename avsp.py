@@ -8928,7 +8928,7 @@ class MainFrame(wxp.Frame):
                         script.lastSplitSliderPos = self.oldLastSplitSliderPos
                     #~ elif self.oldSliderWindowShown != script.sliderWindowShown:
                         #~ script.sliderWindowShown = self.oldSliderWindowShown
-                if script.AVI.Framecount == self.videoSlider.GetMax()+1:
+                if script.AVI.Framecount == self.videoSlider.GetMax()+1 and self.options['enableframepertab']:
                     script.lastFramenum = None
             if self.zoomwindowfit:
                 script.lastSplitVideoPos = self.oldLastSplitVideoPos
@@ -12271,7 +12271,7 @@ class MainFrame(wxp.Frame):
             if self.separatevideowindow:
                 self.videoSlider2.SetRange(0, script.AVI.Framecount-1)
         # Get the desired AVI frame to display
-        if framenum is None and self.options['enableframepertab']:
+        if framenum is None:
             framenum = script.lastFramenum
         try:
             # assume framenum is an integer
