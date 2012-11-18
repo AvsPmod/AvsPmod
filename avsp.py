@@ -81,9 +81,9 @@ import wx.lib.buttons as wxButtons
 import  wx.lib.colourselect as  colourselect
 import wxp
 
-from icons import AvsP_icon, next_icon, play_icon, skip_icon, spin_icon,\
-                  ok_icon, smile_icon, question_icon, rectangle_icon,\
-                  dragdrop_cursor
+from icons import AvsP_icon, next_icon, play_icon, pause_icon, external_icon, \
+                  skip_icon, spin_icon, ok_icon, smile_icon, question_icon, \
+                  rectangle_icon, dragdrop_cursor
 
 
 # Custom styled text control for avisynth language
@@ -4640,6 +4640,9 @@ class MainFrame(wxp.Frame):
         self.oldSliderWindowShown = None
         self.oldBoolSliders = None
         self.xo = self.yo = 5
+        self.play_speed_factor = 1.0
+        self.play_drop = True
+        self.playing_video = False
         self.getPixelInfo = False
         self.sliderOpenString = '[<'
         self.sliderCloseString = '>]'
@@ -6323,6 +6326,19 @@ class MainFrame(wxp.Frame):
                     ),
                 ),
                 (''),
+                (_('&Play video'),
+                    (
+                    (_('Play/pause video'), 'Ctrl+R', self.OnMenuVideoPlay, _('Play/pause video')),
+                    (''),
+                    (_('Increment speed'), 'Shift+Numpad +', self.OnMenuVideoPlayIncrement, _('Double the current playback speed')),
+                    (_('Decrement speed'), 'Shift+Numpad -', self.OnMenuVideoPlayDecrement, _('Half the current playback speed')),
+                    (_('Normal speed'), 'Shift+Numpad /', self.OnMenuVideoPlayNormal, _('Set the playback speed to the script frame rate')),
+                    (_('Maximum speed'), 'Shift+Numpad *', self.OnMenuVideoPlayMax, _('Play the video as fast as possible without dropping frames')),
+                    (''),
+                    (_('Drop frames'), 'Shift+Numpad .', self.OnMenuVideoPlayDropFrames, _('Maintain correct video speed by skipping frames'), wx.ITEM_CHECK, True),
+                    ),
+                ),
+                (''),
                 (_('Crop editor...'), '', self.OnMenuVideoCropEditor, _('Show the crop editor dialog')),
                 (_('&Trim selection editor'),
                     (
@@ -6418,13 +6434,15 @@ class MainFrame(wxp.Frame):
         )
 
     def buttonInfo(self):
-        bmpPlay = wx.BitmapFromImage(play_icon.getImage().Scale(16,16))
+        self.bmpPlay = wx.BitmapFromImage(play_icon.getImage().Scale(16,16))
+        self.bmpPause = wx.BitmapFromImage(pause_icon.getImage().Scale(16,16))
+        bmpExternal = wx.BitmapFromImage(external_icon.getImage().Scale(16,16))
         self.bmpRightTriangle = spin_icon.GetBitmap() #wx.BitmapFromImage(play_icon.getImage().Scale(10,10))
         self.bmpLeftTriangle = self.bmpRightTriangle.ConvertToImage().Mirror().ConvertToBitmap()
         bmpRight = wx.BitmapFromImage(next_icon.getImage().Scale(16,16))
         bmpLeft = bmpRight.ConvertToImage().Mirror().ConvertToBitmap()
-        self.bmpVidUp = bmpPlay.ConvertToImage().Rotate90(False).ConvertToBitmap()
-        self.bmpVidDown = bmpPlay.ConvertToImage().Rotate90().ConvertToBitmap()
+        self.bmpVidUp = self.bmpPlay.ConvertToImage().Rotate90(False).ConvertToBitmap()
+        self.bmpVidDown = self.bmpPlay.ConvertToImage().Rotate90().ConvertToBitmap()
         bmpSkipRight = wx.BitmapFromImage(skip_icon.getImage().Scale(16,16))
         bmpSkipLeft = bmpSkipRight.ConvertToImage().Mirror().ConvertToBitmap()
 
@@ -6434,7 +6452,8 @@ class MainFrame(wxp.Frame):
             (bmpLeft, self.OnMenuVideoPrevFrame, _('Previous frame')),
             (bmpRight, self.OnMenuVideoNextFrame, _('Next frame')),
             (bmpSkipRight, self.OnMenuVideoGotoNextBookmark,_('Next bookmark')),
-            (bmpPlay, self.OnMenuVideoExternalPlayer, _('Run the script with an external program')),
+            (self.bmpPlay, self.OnMenuVideoPlay, _('Play/pause video')),
+            (bmpExternal, self.OnMenuVideoExternalPlayer, _('Run the script with an external program')),
         )
 
     def createToolsMenu(self, shortcutList, oldShortcuts):
@@ -6754,6 +6773,11 @@ class MainFrame(wxp.Frame):
                 else:
                     self.toggleButton2 = button
                     self.toggleButton2.SetBitmapLabel(self.bmpVidDown)
+            elif handler == self.OnMenuVideoPlay:
+                if primary:
+                    self.play_button = button
+                else:
+                    self.play_button2 = button
             sizer.Add(button, 0, wx.ALIGN_CENTER_VERTICAL)#, wx.EXPAND)#, wx.ALIGN_BOTTOM)#, wx.ALL, 1)
             videoControlWidgets.append(button)
         # Create the frame textbox
@@ -7496,11 +7520,16 @@ class MainFrame(wxp.Frame):
         self.AddFrameBookmark(framenum, bmtype=2, toggle=False)
 
     def OnMenuVideoGotoFrameNumber(self, event):
+        if self.playing_video:
+            self.PlayPauseVideo()
+            self.playing_video = ''
         #~ bmenu = self.GetMenuBar().GetMenu(2).FindItemByPosition(1).GetSubMenu()
         #~ framenum = int(bmenu.GetLabel(event.GetId()))
         menuItem = self.GetMenuBar().FindItemById(event.GetId())
         framenum = int(menuItem.GetLabel().split()[0])
         self.ShowVideoFrame(framenum)
+        if self.playing_video == '':
+            self.PlayPauseVideo()
 
     def OnMenuVideoBookmarkMoveTitle(self, event):
         if type(event) is int:
@@ -7651,9 +7680,14 @@ class MainFrame(wxp.Frame):
         dlg.Destroy()
 
     def OnMenuVideoGotoLastScrolled(self, event):
+        if self.playing_video:
+            self.PlayPauseVideo()
+            self.playing_video = ''
         curPos = self.videoSlider.GetValue()
         self.ShowVideoFrame(self.lastshownframe)
         self.lastshownframe = curPos
+        if self.playing_video == '':
+            self.PlayPauseVideo()
 
     def OnMenuVideoGotoNextBookmark(self, event):
         self.GotoNextBookmark()
@@ -7705,9 +7739,16 @@ class MainFrame(wxp.Frame):
         self.ShowVideoOffset(+1, units='min')
 
     def OnMenuVideoFirstFrame(self, event):
+        if self.playing_video:
+            self.PlayPauseVideo()
+            self.playing_video = ''
         self.ShowVideoFrame(0)
+        if self.playing_video == '':
+            self.PlayPauseVideo()
 
     def OnMenuVideoLastFrame(self, event):
+        if self.playing_video:
+            self.PlayPauseVideo()
         self.ShowVideoFrame(-1)
 
     def OnMenuVideoPrevCustomUnit(self, event):
@@ -7719,9 +7760,6 @@ class MainFrame(wxp.Frame):
         offset = +self.options['customjump']
         units = self.options['customjumpunits']
         self.ShowVideoOffset(offset, units=units)
-
-    def OnMenuVideoPlay(self, event):
-        self.RunExternalPlayer()
 
     def OnMenuVideoSaveImage(self, event):
         self.SaveCurrentImage()
@@ -7977,6 +8015,8 @@ class MainFrame(wxp.Frame):
 
     def OnMenuVideoToggle(self, event):
         if self.previewWindowVisible:
+            if self.playing_video:
+                self.PlayPauseVideo()
             self.HidePreviewWindow()
             self.SetStatusWidths([-1, 0])
         else:
@@ -8019,6 +8059,42 @@ class MainFrame(wxp.Frame):
                     return False
         progress.Destroy()
         return True
+    
+    def OnMenuVideoPlay(self, event):
+        self.PlayPauseVideo()
+    
+    def OnMenuVideoPlayDecrement(self, event):
+        if self.play_speed_factor == 'max':
+            self.play_speed_factor = 0.5
+        else:
+            self.play_speed_factor /= 2
+        if self.playing_video:
+            self.PlayPauseVideo()
+            self.PlayPauseVideo()
+    
+    def OnMenuVideoPlayIncrement(self, event):
+        if self.play_speed_factor == 'max':
+            self.play_speed_factor = 2
+        else:
+            self.play_speed_factor *= 2
+        if self.playing_video:
+            self.PlayPauseVideo()
+            self.PlayPauseVideo()
+    
+    def OnMenuVideoPlayNormal(self, event):
+        self.play_speed_factor = 1.0
+        if self.playing_video:
+            self.PlayPauseVideo()
+            self.PlayPauseVideo()
+    
+    def OnMenuVideoPlayMax(self, event):
+        self.play_speed_factor = 'max'
+        if self.playing_video:
+            self.PlayPauseVideo()
+            self.PlayPauseVideo()
+    
+    def OnMenuVideoPlayDropFrames(self, event):
+        self.play_drop = not self.play_drop
     
     def OnMenuVideoExternalPlayer(self, event):
         self.RunExternalPlayer()
@@ -8714,6 +8790,9 @@ class MainFrame(wxp.Frame):
         menu.Destroy()
 
     def OnSliderChanged(self, event):
+        if self.playing_video:
+            self.PlayPauseVideo()
+            self.playing_video = ''
         videoSlider = event.GetEventObject()
         frame = videoSlider.GetValue()
         if (frame, 0) in self.GetBookmarkFrameList():
@@ -8751,6 +8830,8 @@ class MainFrame(wxp.Frame):
             else:
                 self.ShowVideoFrame(frame)
         self.videoWindow.SetFocus()
+        if self.playing_video == '':
+            self.PlayPauseVideo()
 
     def OnSliderRightUp(self, event):
         slider = event.GetEventObject()
@@ -8898,6 +8979,8 @@ class MainFrame(wxp.Frame):
         if self.trimDialog.IsShown():
             wx.MessageBox(_('Cannot switch tabs while trim editor is open!'), _('Error'), style=wx.OK|wx.ICON_ERROR)
             event.Veto()
+        if self.playing_video:
+            self.PlayPauseVideo()
         if self.FindFocus() == self.videoWindow:
             self.boolVideoWindowFocused = True
         else:
@@ -12513,6 +12596,9 @@ class MainFrame(wxp.Frame):
         button.Refresh()
 
     def ShowVideoOffset(self, offset=0, units='frames', focus=True):
+        if self.playing_video:
+            self.PlayPauseVideo()
+            self.playing_video = ''
         script = self.currentScript
         if script.AVI is None:
             self.UpdateScriptAVI()
@@ -12527,8 +12613,13 @@ class MainFrame(wxp.Frame):
             offsetFrames = offset * int(round(script.AVI.Framerate * 60 * 60))
         framenum = offsetFrames + self.videoSlider.GetValue()
         self.ShowVideoFrame(framenum, wrap=False, script=script, focus=focus)
+        if self.playing_video == '':
+            self.PlayPauseVideo()
 
     def GotoNextBookmark(self, reverse=False):
+        if self.playing_video:
+            self.PlayPauseVideo()
+            self.playing_video = ''
         current_frame = self.GetFrameNumber()
         bookmarkValues = [value for value, btype in self.GetBookmarkFrameList()]# if btype==0]
         bookmarkValues.sort()
@@ -12565,6 +12656,8 @@ class MainFrame(wxp.Frame):
             #~ diffs = [abs(current_frame-b) for b in bookmarkValues]
             #~ new_frame = bookmarkValues[diffs.index(min(diffs))]
         self.ShowVideoFrame(new_frame)
+        if self.playing_video == '':
+            self.PlayPauseVideo()
 
     def UpdateScriptAVI(self, script=None, forceRefresh=False, keep_env=None, prompt=True):
         if not script:
@@ -12606,6 +12699,9 @@ class MainFrame(wxp.Frame):
             if not script.previewtxt:
                 script.Colourise(0, script.GetTextLength())
             if self.ScriptChanged(script) or forceRefresh:
+                if self.playing_video:
+                    self.PlayPauseVideo()
+                    self.playing_video = ''
                 scripttxt = script.GetText()
                 # Replace any user-inserted sliders (defined with self.regexp)
                 #~ script.SetFocus()
@@ -12677,6 +12773,8 @@ class MainFrame(wxp.Frame):
                 if self.cropDialog.IsShown():
                     self.PaintCropWarnings()
                 boolNewAVI = True
+                if self.playing_video == '':
+                    self.PlayPauseVideo()
             if script == self.currentScript:
                 self.refreshAVI = False
         return boolNewAVI
@@ -12984,7 +13082,173 @@ class MainFrame(wxp.Frame):
             else:
                     labelCtrl.SetForegroundColour(wx.NullColour)
             labelCtrl.Refresh()
-
+    
+    def PlayPauseVideo(self, debug_stats=False):
+        """Play/pause the preview clip"""
+        if self.playing_video:
+            if os.name == 'nt':
+                self.timeKillEvent(self.play_timer_id)
+                #self.timeEndPeriod(self.play_timer_resolution) # not needed
+            else:
+                self.play_timer.Stop()
+                #signal.setitimer(signal.ITIMER_REAL, 0) # see below
+                #signal.signal(signal.SIGALRM, self.previous_signal_handler)
+            self.playing_video = False
+            self.play_button.SetBitmapLabel(self.bmpPlay)
+            self.play_button.Refresh()
+            if self.separatevideowindow:
+                self.play_button2.SetBitmapLabel(self.bmpPlay)
+                self.play_button2.Refresh()
+        elif self.ShowVideoFrame() and not self.currentScript.AVI.IsErrorClip():
+            script = self.currentScript
+            if self.currentframenum == script.AVI.Framecount - 1:
+                return
+            self.playing_video = True
+            self.play_button.SetBitmapLabel(self.bmpPause)
+            self.play_button.Refresh()
+            if self.separatevideowindow:
+                self.play_button2.SetBitmapLabel(self.bmpPause)
+                self.play_button2.Refresh()
+            if self.play_speed_factor == 'max':
+                interval = 1.0 # use a timer anyway to avoid GUI refreshing issues
+            else:
+                interval =  1000 / (script.AVI.Framerate * self.play_speed_factor)
+            
+            if os.name == 'nt': # default Windows resolution is ~10 ms
+                
+                def playback_timer(id, reserved, data, reserved1, reserved2):
+                    """"Callback for a Windows Multimedia timer"""
+                    if not self.playing_video:
+                        return
+                    if debug_stats:
+                        current_time = time.time()
+                        print (current_time - self.previous_time) * 1000
+                        self.previous_time = current_time
+                    if self.play_drop and self.play_speed_factor != 'max':
+                        frame = self.play_initial_frame
+                        increment = int(round(1000 * (time.time() - self.play_initial_time) / interval))
+                        if debug_stats:
+                            print 'dropped:', increment - self.increment - 1
+                            self.increment = increment
+                    else:
+                        frame = self.currentframenum
+                        increment = 1
+                    self.ShowVideoFrame(frame + increment)
+                    if self.currentframenum == script.AVI.Framecount - 1:
+                        self.PlayPauseVideo()
+                
+                def WindowsTimer(interval, callback, data=0, periodic=True):
+                    """High precision timer (1 ms) using Windows Multimedia"""
+                    
+                    self.timeGetDevCaps = ctypes.windll.winmm.timeGetDevCaps
+                    self.timeBeginPeriod = ctypes.windll.winmm.timeBeginPeriod
+                    self.timeEndPeriod = ctypes.windll.winmm.timeEndPeriod
+                    self.timeSetEvent = ctypes.windll.winmm.timeSetEvent
+                    self.timeKillEvent = ctypes.windll.winmm.timeKillEvent
+                    
+                    callback_prototype = ctypes.WINFUNCTYPE(None, ctypes.c_uint, 
+                        ctypes.c_uint, ctypes.c_ulong, ctypes.c_ulong, ctypes.c_ulong)
+                    self.timeSetEvent.argtypes = [ctypes.c_uint, ctypes.c_uint, 
+                        callback_prototype, ctypes.c_ulong, ctypes.c_uint]
+                    
+                    class TIMECAPS(ctypes.Structure):
+                        _fields_ = [("wPeriodMin", ctypes.c_uint), 
+                                    ("wPeriodMax", ctypes.c_uint)]
+                    
+                    caps = TIMECAPS()
+                    self.timeGetDevCaps(ctypes.byref(caps), ctypes.sizeof(caps))
+                    self.play_timer_resolution = max(1, caps.wPeriodMin)
+                    #self.timeBeginPeriod(self.play_timer_resolution) # not needed, set in the timer
+                    
+                    interval = int(round(interval))
+                    self.callback_c = callback_prototype(callback)
+                    self.play_initial_frame = self.currentframenum
+                    self.play_initial_time = time.time()
+                    if debug_stats:
+                        self.increment = 0
+                        self.previous_time = self.play_initial_time
+                    self.play_timer_id = self.timeSetEvent(interval, 
+                        self.play_timer_resolution, self.callback_c, data, periodic)
+                
+                WindowsTimer(interval, playback_timer)
+            
+            else: # wx.Timer on *nix.  There's some pending events issues
+                # TODO: fix/replace wx.Timer
+                
+                # signal module causes segmentation fault on high fps
+                # similar issues using librt with ctypes
+                '''
+                global signal
+                import signal
+                
+                def playback_timer(signum, frame):
+                    """"SIGALRM handler"""
+                    if not self.playing_video:
+                        return
+                    if debug_stats:
+                        current_time = time.time()
+                        print (current_time - self.previous_time) * 1000
+                        self.previous_time = current_time
+                    if self.play_drop and self.play_speed_factor != 'max':
+                        frame = self.play_initial_frame
+                        increment = int(round((time.time() - self.play_initial_time) / interval))
+                        if debug_stats:
+                            print 'dropped:', increment - self.increment - 1
+                            self.increment = increment
+                    else:
+                        frame = self.currentframenum
+                        increment = 1
+                    self.ShowVideoFrame(frame + increment)
+                    if self.currentframenum == script.AVI.Framecount - 1:
+                        self.PlayPauseVideo()
+                
+                interval /= 1000
+                self.previous_signal_handler = signal.signal(signal.SIGALRM, playback_timer)
+                self.play_initial_frame = self.currentframenum
+                self.play_initial_time = time.time()
+                if debug_stats:
+                    self.increment = 0
+                    self.previous_time = self.play_initial_time
+                signal.setitimer(signal.ITIMER_REAL, interval, interval)
+                
+                return
+                '''
+                
+                class RunVideoTimer(wx.Timer):
+                    def __init__(self, parent):
+                        wx.Timer.__init__(self)
+                        self.parent = parent
+                        self.play_initial_frame = self.parent.currentframenum
+                        self.play_initial_time = time.time()
+                        if debug_stats:
+                            self.increment = 0
+                            self.previous_time = self.play_initial_time
+                    def Notify(self):
+                        if not self.parent.playing_video:
+                            self.parent.PlayPauseVideo()
+                            return
+                        if debug_stats:
+                            current_time = time.time()
+                            print (current_time - self.previous_time) * 1000
+                            self.previous_time = current_time
+                        if self.parent.play_drop and self.parent.play_speed_factor != 'max':
+                            frame = self.play_initial_frame
+                            increment = int(round(1000 * (time.time() - self.play_initial_time) / self.GetInterval()))
+                            if debug_stats:
+                                print 'dropped:', increment - self.increment - 1
+                                self.increment = increment
+                        else:
+                            frame = self.parent.currentframenum
+                            increment = 1
+                        self.parent.ShowVideoFrame(frame + increment)
+                        if self.parent.currentframenum == script.AVI.Framecount - 1:
+                            self.parent.PlayPauseVideo()
+                        #else:
+                        #    wx.Yield()
+                
+                self.play_timer = RunVideoTimer(self)
+                self.play_timer.Start(interval)
+    
     def RunExternalPlayer(self, path=None, script=None, args=None, prompt=True):
         if script is None:
             script = self.currentScript

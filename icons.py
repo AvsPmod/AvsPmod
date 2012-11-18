@@ -47,6 +47,26 @@ play_icon = PyEmbeddedImage(
     "4RSAET4CMMPvyDfhAAYgBzzIPiRzQVyedwAAAABJRU5ErkJggg==")
 
 #----------------------------------------------------------------------
+pause_icon = PyEmbeddedImage(
+    "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAABHNCSVQICAgIfAhkiAAAAAlw"
+    "SFlzAAAN1wAADdcBQiibeAAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoA"
+    "AACCSURBVFiF7dexCYAwEIXh/8TaMRzAMZxGHM4xrMUJrF3g2YYQSLpYvMAVCY/LB2kuIYme"
+    "a+h6uwF/AIwtoYiYgSU5eiUdWWYFpuTolHRXm0uqFrABSuoqZK4ss7X07v4EBhhggAEGGGCA"
+    "AQY0DaXAATzJ/i1kdrKhtKVx+GtmQG/AB4GqXmFNBqwqAAAAAElFTkSuQmCC")
+
+#----------------------------------------------------------------------
+external_icon = PyEmbeddedImage(
+    "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAABHNCSVQICAgIfAhkiAAAAAlw"
+    "SFlzAAAN1wAADdcBQiibeAAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoA"
+    "AAFiSURBVFiF7Za9SgNBFIXPmZn8WEgsrC21V7DwDUyTJoWVb2AbLO1EfA/tRFAQSxGLWEkK"
+    "KwtrESxEUZLZY5EsjovGEJMdkD1w2d2ZO3u+3QtzhwAMAAfADu5tMBZGNRNzAOYBHEh6xZgy"
+    "4y6clAqAAuD/AZCslGxpj+RI757GH6CklqU9JVmLAZBq3dFdk1yKBQBBi5a27ejqUQAGqoE4"
+    "sbTbsQAAwJDcddYdkpyJAdCXsGForkgupEMEsIzPDhiGHUTaKcsAKsF1Fv2OeAbgLbApG5p2"
+    "1ptg+PhAsdlV95IANKkPHCZDk4XoStqKvRPSAVhB/iV4pNjsqXfhANzgbyeiTngiIlnNmH2R"
+    "oE6ipCHpHsi/GR0lStZS8zwBJGnHyzclvYQTLgfzZwibXv74u8lpA9x5+Yak258SplmCcy+/"
+    "Osx8WgAiue/l65KefkueeAkkvQNojZofeycsAAqA+AAf/cVxOJ6qaHcAAAAASUVORK5CYII=")
+
+#----------------------------------------------------------------------
 next_icon = PyEmbeddedImage(
     "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAABHNCSVQICAgIfAhkiAAAAHZJ"
     "REFUWIXt10sKACEMA9BU739k0RsM/aQoTLrtIg9sC5qNiZs1rqYLIIAAHsCE7Uq/DOhGuJ+g"
