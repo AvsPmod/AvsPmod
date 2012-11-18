@@ -4241,15 +4241,19 @@ class SliderPlus(wx.Panel):
         self._PaintSlider(dc)
         return True
 
-    def SetRange(self, minValue, maxValue):
+    def SetRange(self, minValue, maxValue, adjust_handle=False):
         if minValue >= maxValue:
             if minValue == 0 and (maxValue == -1 or maxValue ==0):
                 maxValue = 1
             else:
                 print>>sys.stderr, _('Error: minValue must be less than maxValue')
                 return
+        if adjust_handle:
+            pos = float(self.value - self.minValue) / (self.maxValue - self.minValue)
         self.minValue = minValue
         self.maxValue = maxValue
+        if adjust_handle:
+            self.SetValue(int(round(pos * (self.maxValue - self.minValue))))
         self.selections = self._createSelections()
         if self.IsDoubleBuffered():
             dc = wx.ClientDC(self)
@@ -8794,6 +8798,15 @@ class MainFrame(wxp.Frame):
             self.PlayPauseVideo()
             self.playing_video = ''
         videoSlider = event.GetEventObject()
+        if self.options['dragupdate']:
+            if not self.separatevideowindow:
+                self.ShowVideoFrame('adjust_handle')
+            else:
+                if event is not None and event.GetEventObject() in self.videoControlWidgets and self.previewWindowVisible:
+                    self.ShowVideoFrame('adjust_handle', focus=False)
+                    self.currentScript.SetFocus()
+                else:
+                    self.ShowVideoFrame('adjust_handle')
         frame = videoSlider.GetValue()
         if (frame, 0) in self.GetBookmarkFrameList():
             color = wx.RED
@@ -8805,30 +8818,20 @@ class MainFrame(wxp.Frame):
             self.frameTextCtrl2.SetForegroundColour(color)
             self.frameTextCtrl2.Replace(0, -1, str(frame))
         self.SetVideoStatusText()
-        if self.options['dragupdate']:
-            if not self.separatevideowindow:
-                self.ShowVideoFrame(frame)
-            else:
-                if event is not None and event.GetEventObject() in self.videoControlWidgets and self.previewWindowVisible:
-                    self.ShowVideoFrame(frame, focus=False)
-                    self.currentScript.SetFocus()
-                else:
-                    self.ShowVideoFrame(frame)
         #~ self.videoWindow.SetFocus()
 
     def OnSliderReleased(self, event):
         videoSlider = event.GetEventObject()
-        frame = videoSlider.GetValue()
         #~ if self.FindFocus() != videoSlider:
             #~ return
         if not self.separatevideowindow:
-            self.ShowVideoFrame(frame)
+            self.ShowVideoFrame('adjust_handle')
         else:
             if event is not None and event.GetEventObject() in self.videoControlWidgets and self.previewWindowVisible:
-                self.ShowVideoFrame(frame, focus=False)
+                self.ShowVideoFrame('adjust_handle', focus=False)
                 self.currentScript.SetFocus()
             else:
-                self.ShowVideoFrame(frame)
+                self.ShowVideoFrame('adjust_handle')
         self.videoWindow.SetFocus()
         if self.playing_video == '':
             self.PlayPauseVideo()
@@ -12265,17 +12268,18 @@ class MainFrame(wxp.Frame):
                 #~ labels.append(label)
             #~ except ValueError:
                 #~ pass
+        adjust_handle = framenum == 'adjust_handle'
         # Reset the video frame slider range if necessary
         if self.videoSlider.GetMax() != script.AVI.Framecount-1:
-            self.videoSlider.SetRange(0, script.AVI.Framecount-1)
+            self.videoSlider.SetRange(0, script.AVI.Framecount-1, adjust_handle=adjust_handle)
             if self.separatevideowindow:
-                self.videoSlider2.SetRange(0, script.AVI.Framecount-1)
+                self.videoSlider2.SetRange(0, script.AVI.Framecount-1, adjust_handle=adjust_handle)
         # Get the desired AVI frame to display
         if framenum is None:
             framenum = script.lastFramenum
         try:
             # assume framenum is an integer
-            if framenum is None:
+            if framenum is None or adjust_handle:
                 framenum = self.videoSlider.GetValue()
             framenum += 0
         except TypeError:
