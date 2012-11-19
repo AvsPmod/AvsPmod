@@ -4688,7 +4688,7 @@ class MainFrame(wxp.Frame):
             self.videoStatusBarInfo = _('Frame') + ' %F / %FC  -  (%T)  %BM      %POS  %HEX \\T\\T %Z %Wx%H (%AR)  -  %FR ' + _('fps') + '  -  %CS'
         else:
             self.videoStatusBarInfo = self.options['videostatusbarinfo']
-        self.videoStatusBarInfoParsed, self.showVideoPixelInfo, self.showVideoPixelAvisynth = self.ParseVideoStatusBarInfo(self.videoStatusBarInfo)
+        self.videoStatusBarInfoParsed, self.showVideoPixelInfo = self.ParseVideoStatusBarInfo(self.videoStatusBarInfo)
         self.foldAllSliders = True
         self.reuse_environment = False
         self.matrix = ['auto', 'tv']
@@ -8053,11 +8053,12 @@ class MainFrame(wxp.Frame):
                                      style=wx.PD_CAN_ABORT|wx.PD_ELAPSED_TIME|wx.PD_REMAINING_TIME)
         frame_count = script.AVI.Framecount
         last_frame = frame_count - 1
-        start = time.time()
+        previous = time.time()
         for i in range(frame_count):
             script.AVI.clip.GetFrame(i)
-            if time.time() - start > 0.1:
-                start = time.time()
+            now = time.time()
+            if now - previous > 0.1:
+                previous = now
                 if not progress.Update(i*100/frame_count, 'Frame %s/%s' % (i, last_frame))[0]:
                     progress.Destroy()
                     return False
@@ -8918,7 +8919,7 @@ class MainFrame(wxp.Frame):
             if self.UpdateScriptAVI(script, forceRefresh=forceRefresh, prompt=True) is None:
                 self.HidePreviewWindow()
                 return False
-            if (script.AVI.WidthActual, script.AVI.HeightActual) == self.oldVideoSize:
+            if (script.AVI.Width, script.AVI.Height) == self.oldVideoSize:
                 script.lastSplitVideoPos = self.oldLastSplitVideoPos
                 boolSliders = bool(script.sliderTexts or script.sliderProperties or script.toggleTags or script.autoSliderInfo)
                 #~ if boolSliders and self.oldBoolSliders:
@@ -9000,7 +9001,7 @@ class MainFrame(wxp.Frame):
                 self.oldLastSplitSliderPos = oldScript.lastSplitSliderPos
                 self.oldSliderWindowShown = oldScript.sliderWindowShown
                 self.oldBoolSliders = bool(oldScript.sliderTexts or oldScript.sliderProperties or oldScript.toggleTags or oldScript.autoSliderInfo)
-                self.oldVideoSize = (oldScript.AVI.WidthActual, oldScript.AVI.HeightActual)
+                self.oldVideoSize = (oldScript.AVI.Width, oldScript.AVI.Height)
             else:
                 self.oldLastSplitVideoPos = None
                 self.oldLastSplitSliderPos = None
@@ -9730,7 +9731,7 @@ class MainFrame(wxp.Frame):
             text = textCtrl.GetValue().replace('\\t', '\t')
             self.options['videostatusbarinfo'] = text
             self.videoStatusBarInfo = text
-            self.videoStatusBarInfoParsed, self.showVideoPixelInfo, self.showVideoPixelAvisynth = self.ParseVideoStatusBarInfo(self.videoStatusBarInfo)
+            self.videoStatusBarInfoParsed, self.showVideoPixelInfo = self.ParseVideoStatusBarInfo(self.videoStatusBarInfo)
         dlg.Destroy()
 
         #~ if self.options['videostatusbarinfo'] == None:
@@ -11842,13 +11843,10 @@ class MainFrame(wxp.Frame):
 
     def ParseVideoStatusBarInfo(self, info):
         showVideoPixelInfo = False
-        showVideoPixelAvisynth = False
         for item in ('%POS', '%HEX', '%RGB', '%YUV', '%CLR'):
             if info.count(item) > 0:
                 showVideoPixelInfo = True
-                if item in ('%YUV', '%CLR'):
-                    showVideoPixelAvisynth = True
-                    break
+                break
         keyList = [
             ('%POS', '%(pixelpos)s'),
             ('%HEX', '%(pixelhex)s'),
@@ -11881,7 +11879,7 @@ class MainFrame(wxp.Frame):
         ]
         for key, item in keyList:
             info = info.replace(key, item)
-        return info, showVideoPixelInfo, showVideoPixelAvisynth
+        return info, showVideoPixelInfo
     
     def GetPixelInfo(self, event, string_=False):
         videoWindow = self.videoWindow
@@ -11921,6 +11919,7 @@ class MainFrame(wxp.Frame):
                 #~ colorstring = 'hex = %s' % hexcolor.upper()
             #~ self.SetVideoStatusText(addon='%s%s, %s' % (' '*5,xystring, colorstring))
             
+            # Get color from display
             rgb = dc.GetPixel(x, y)
             R,G,B = rgb.Get()
             A = 0
@@ -11929,24 +11928,24 @@ class MainFrame(wxp.Frame):
             U = -0.148*R - 0.291*G + 0.439*B + 128
             V = 0.439*R - 0.368*G - 0.071*B + 128
             if 'flipvertical' in self.flip:
-                y = script.AVI.HeightActual - 1 - y
+                y = script.AVI.Height - 1 - y
             if 'fliphorizontal' in self.flip:
-                x = script.AVI.WidthActual - 1 - x
-            if self.showVideoPixelAvisynth:
-                try:
-                    avsYUV = script.AVI.GetPixelYUV(x, y)
-                    if avsYUV != (-1,-1,-1):
-                        Y,U,V = avsYUV
-                    if script.AVI.IsRGB32:
-                        avsRGBA = script.AVI.GetPixelRGBA(x, y)
-                        if avsRGBA != (-1,-1,-1,-1):
-                            R,G,B,A = avsRGBA
-                    else:
-                        avsRGB = script.AVI.GetPixelRGB(x, y)
-                        if avsRGB != (-1,-1,-1):
-                            R,G,B = avsRGB
-                except:
-                    pass
+                x = script.AVI.Width - 1 - x
+            # Get color from AviSynth
+            try:
+                avsYUV = script.AVI.GetPixelYUV(x, y)
+                if avsYUV != (-1,-1,-1):
+                    Y,U,V = avsYUV
+                if script.AVI.IsRGB32:
+                    avsRGBA = script.AVI.GetPixelRGBA(x, y)
+                    if avsRGBA != (-1,-1,-1,-1):
+                        R,G,B,A = avsRGBA
+                else:
+                    avsRGB = script.AVI.GetPixelRGB(x, y)
+                    if avsRGB != (-1,-1,-1):
+                        R,G,B = avsRGB
+            except:
+                pass
             if not string_:
                 return (x, y), hexcolor.upper()[1:], (R, G, B), (R, G, B, A), (Y, U, V)
             xystring = '%s=(%i,%i)' % (_('pos'),x,y)
@@ -11961,9 +11960,9 @@ class MainFrame(wxp.Frame):
             if not 0 <= y < h:
                 y = 0 if y < 0 else h - 1
             if 'flipvertical' in self.flip:
-                y = script.AVI.HeightActual - 1 - y
+                y = script.AVI.Height - 1 - y
             if 'fliphorizontal' in self.flip:
-                x = script.AVI.WidthActual - 1 - x
+                x = script.AVI.Width - 1 - x
             xystring = '%s=(%i,%i)' % (_('pos'),x,y)
             return xystring if string_ else (x, y), None, None, None, None
     
@@ -12743,8 +12742,7 @@ class MainFrame(wxp.Frame):
                     script.AVI = pyavs.AvsClip(
                         self.getCleanText(scripttxt), filename, workdir=workdir, env=env, 
                         fitHeight=fitHeight, fitWidth=fitWidth, oldFramecount=oldFramecount, 
-                        keepRaw=self.showVideoPixelAvisynth, matrix=self.matrix, 
-                        interlaced=self.interlaced, swapuv=self.swapuv)
+                        matrix=self.matrix, interlaced=self.interlaced, swapuv=self.swapuv)
                     wx.EndBusyCursor()
                 if not script.AVI.initialized:
                     if prompt:
@@ -15556,7 +15554,7 @@ class MainFrame(wxp.Frame):
         if self.UpdateScriptAVI(script) is None:
             wx.MessageBox(_('Error loading the script'), _('Error'), style=wx.OK|wx.ICON_ERROR)
             return False
-        return script.AVI.WidthActual
+        return script.AVI.Width
     
     @AsyncCallWrapper
     def MacroGetVideoHeight(self, index=None):
@@ -15574,7 +15572,7 @@ class MainFrame(wxp.Frame):
         if self.UpdateScriptAVI(script) is None:
             wx.MessageBox(_('Error loading the script'), _('Error'), style=wx.OK|wx.ICON_ERROR)
             return False
-        return script.AVI.HeightActual
+        return script.AVI.Height
     
     @AsyncCallWrapper
     def MacroGetVideoFramerate(self, index=None):
@@ -15686,9 +15684,9 @@ class MainFrame(wxp.Frame):
                                 dc.SetPen(wx.Pen(wx.Colour(*((component + 128) % 256 for component in pen_color)), 
                                                  round(pen_width / self.zoomfactor)))
                                 if old_flip_h:
-                                    x = self.currentScript.AVI.WidthActual - 1 - x
+                                    x = self.currentScript.AVI.Width - 1 - x
                                 if old_flip_v:
-                                    y = self.currentScript.AVI.HeightActual - 1 - y
+                                    y = self.currentScript.AVI.Height - 1 - y
                                 x = dc.LogicalToDeviceX(x) - self.xo
                                 y = dc.LogicalToDeviceY(y) - self.yo
                                 p2 = [float(c) / self.zoomfactor for c in self.videoWindow.CalcScrolledPosition(x, y)]
@@ -15714,18 +15712,18 @@ class MainFrame(wxp.Frame):
                         dc.SetPen(wx.Pen(wx.Colour(*((component + 128) % 256 for component in pen_color)), 
                                          round(pen_width / self.zoomfactor)))
                         if old_flip_h:
-                            x = self.currentScript.AVI.WidthActual - 1 - x
+                            x = self.currentScript.AVI.Width - 1 - x
                         if old_flip_v:
-                            y = self.currentScript.AVI.HeightActual - 1 - y
+                            y = self.currentScript.AVI.Height - 1 - y
                         x = dc.LogicalToDeviceX(x) - self.xo
                         y = dc.LogicalToDeviceY(y) - self.yo
                         p2 = [float(c) / self.zoomfactor for c in self.videoWindow.CalcScrolledPosition(x, y)]
                         if lines and len(pixelInfo_list) > 1:
                             x0, y0 = pixelInfo_list[-2][0] if i else pixelInfo_list[-2]
                             if old_flip_h:
-                                x0 = self.currentScript.AVI.WidthActual - 1 - x0
+                                x0 = self.currentScript.AVI.Width - 1 - x0
                             if old_flip_v:
-                                y0 = self.currentScript.AVI.HeightActual - 1 - y0
+                                y0 = self.currentScript.AVI.Height - 1 - y0
                             x0 = dc.LogicalToDeviceX(x0) - self.xo
                             y0 = dc.LogicalToDeviceY(y0) - self.yo
                             p1 = [float(c) / self.zoomfactor for c in self.videoWindow.CalcScrolledPosition(x0, y0)]
@@ -15847,7 +15845,8 @@ class MainFrame(wxp.Frame):
             filename = self.currentScript.filename
         else:
             filename = 'AVS script'
-        clip = pyavs.AvsClip(text, filename, workdir, onlyRaw=True, reorder_rgb=reorder_rgb, interlaced=self.interlaced)   
+        clip = pyavs.AvsClip(text, filename, workdir, display_clip=False, 
+                             reorder_rgb=reorder_rgb, interlaced=self.interlaced)   
         if not clip.initialized or clip.IsErrorClip():
             self.MacroMsgBox('\n\n'.join((_('Error loading the script'), clip.error_message)), 
                              _('Error'))

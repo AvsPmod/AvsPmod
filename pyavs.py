@@ -41,16 +41,15 @@ except NameError:
 class AvsClipBase:
     
     def __init__(self, script, filename='', workdir='', env=None, fitHeight=None, 
-                 fitWidth=None, oldFramecount=240, keepRaw=False, onlyRaw=False, 
-                 reorder_rgb=False, matrix=['auto', 'tv'], interlaced=False, swapuv=False):
+                 fitWidth=None, oldFramecount=240, display_clip=True, reorder_rgb=False, 
+                 matrix=['auto', 'tv'], interlaced=False, swapuv=False):
         # Internal variables
         self.workdir = ''
         self.initialized = False
         self.error_message = None
         self.current_frame = -1
         self.pBits = None
-        self.clipRaw = None
-        self.onlyRaw = onlyRaw
+        self.display_clip = None
         self.ptrY = self.ptrU = self.ptrV = None
         # Avisynth script properties
         self.Width = -1
@@ -177,7 +176,6 @@ class AvsClipBase:
         if self.vi.IsYUV() and not self.vi.IsY8():
             self.WidthSubsampling = self.vi.GetPlaneWidthSubsampling(avisynth.PLANAR_U)
             self.HeightSubsampling = self.vi.GetPlaneHeightSubsampling(avisynth.PLANAR_U)
-        self.WidthActual, self.HeightActual = self.Width, self.Height # not used anymore
         self.FramerateNumerator = self.vi.fps_numerator 
         self.FramerateDenominator = self.vi.fps_denominator
         try:
@@ -216,21 +214,8 @@ class AvsClipBase:
         self.IsFrameBased = not self.IsFieldBased
         self.GetParity = avisynth.avs_get_parity(self.clip,0)#self.vi.image_type
         self.HasAudio = self.vi.HasAudio()
-        if keepRaw or onlyRaw:
-            self.clipRaw = self.clip
-            if onlyRaw and self.IsRGB and reorder_rgb:
-                self.clipRaw = self.BGR2RGB(self.clipRaw)
         
         # Initialize display-related variables
-        if not self.IsRGB and not onlyRaw:
-            if swapuv and self.IsYUV and not self.IsY8:
-                try:
-                    arg = avisynth.AVS_Value(self.clip)
-                    avsfile = self.env.Invoke("swapuv", arg, 0)
-                    arg.Release()
-                    self.clip = avsfile.AsClip(self.env)
-                except avisynth.AvisynthError, err:
-                    return
         if isinstance(matrix, basestring):
             self.matrix = matrix
         else:
@@ -243,39 +228,26 @@ class AvsClipBase:
             matrix[1] = 'Rec' if matrix[1] == 'tv' else 'PC.'
             self.matrix = matrix[1] + matrix[0]
         self.interlaced = interlaced if self.IsYV12 else False
-        if not onlyRaw and not self._ConvertToRGB():
-            return
-        
-        # Add a resize...
-        # Update: Not used anymore, resizing is done nowadays on avsp.LayoutVideoWindows
-        #         Width == WidthActual, Height == HeightActual
-        if 0 and fitHeight is not None and self.Height != 0:
-            fitWidthTemp = int(round(fitHeight *  (self.Width/float(self.Height))))
-            if fitWidth is None:
-                fitWidth = fitWidthTemp
-            elif fitWidthTemp > fitWidth:
-                fitHeight = int(round(fitWidth *  (self.Height/float(self.Width))))
-            else:
-                fitWidth = fitWidthTemp
-            if fitHeight >= 4 and fitWidth >= 4:
-                arg0 = avisynth.AVS_Value(self.clip)
-                arg1 = avisynth.AVS_Value(fitWidth)
-                arg2 = avisynth.AVS_Value(fitHeight)
-                args = avisynth.AVS_Value([arg0, arg1, arg2])
+        if display_clip:
+            self.display_clip = self.clip
+            if swapuv and self.IsYUV and not self.IsY8:
                 try:
-                    avsfile = self.env.Invoke("bicubicresize", args, 0)
-                    arg0.Release()
-                    self.clip = avsfile.AsClip(self.env)
+                    arg = avisynth.AVS_Value(self.display_clip)
+                    avsfile = self.env.Invoke("swapuv", arg, 0)
+                    arg.Release()
+                    self.display_clip = avsfile.AsClip(self.env)
                 except avisynth.AvisynthError, err:
                     return
-                # Set internal width and height variables appropriately
-                self.Width, self.Height = fitWidth, fitHeight
+            if not self._ConvertToRGB():
+                return
+        elif self.IsRGB and reorder_rgb:
+            self.clip = self.BGR2RGB(self.clip)
         return True
     
     def __del__(self):
         if self.initialized:
             self.clip = None
-            self.clipRaw = None
+            self.display_clip = None
             if __debug__:
                 print "Deleting allocated video memory for '{0}'".format(self.name)
     
@@ -292,46 +264,43 @@ class AvsClipBase:
             if frame >= self.Framecount:
                 frame = self.Framecount - 1
             self.current_frame = frame
-            src = self.clip.GetFrame(frame)
-            self.pBits = src.GetReadPtr()
-            # DrawPitch is the pitch of the RGB24 image for drawing.
-            # pitch is the pitch of the actual raw image from clipRaw.
-            self.DrawPitch = src.GetPitch()
-            if self.clipRaw is not None:
-                frame = self.clipRaw.GetFrame(frame)
-                self.pitch = frame.GetPitch()
-                self.pitchUV = frame.GetPitch(avisynth.PLANAR_U)
-                self.ptrY = frame.GetReadPtr(plane=avisynth.PLANAR_Y)
-                if not self.IsY8:
-                    self.ptrU = frame.GetReadPtr(plane=avisynth.PLANAR_U)
-                    self.ptrV = frame.GetReadPtr(plane=avisynth.PLANAR_V)
+            # Display
+            if self.display_clip:
+                src = self.display_clip.GetFrame(frame)
+                self.display_pitch = src.GetPitch()
+                self.pBits = src.GetReadPtr()
+            # Original clip
+            frame = self.clip.GetFrame(frame)
+            self.pitch = frame.GetPitch()
+            self.pitchUV = frame.GetPitch(avisynth.PLANAR_U)
+            self.ptrY = frame.GetReadPtr()
+            if not self.IsY8:
+                self.ptrU = frame.GetReadPtr(plane=avisynth.PLANAR_U)
+                self.ptrV = frame.GetReadPtr(plane=avisynth.PLANAR_V)
             return True
         return False
     
     def GetPixelYUV(self, x, y):
-        if self.clipRaw is not None:
-            if self.IsPlanar:
-                indexY = x + y * self.pitch
-                if self.IsY8:
-                    return (self.ptrY[indexY], -1, -1)
-                x = x >> self.WidthSubsampling
-                y = y >> self.HeightSubsampling
-                indexU = indexV = x + y * (self.pitchUV)
-            elif self.IsYUY2:
-                indexY = (x*2) + y * self.pitch
-                indexU = 4*(x/2) + 1 + y * self.pitch
-                indexV = 4*(x/2) + 3 + y * self.pitch
-            else:
-                return (-1,-1,-1)
-            return (self.ptrY[indexY], self.ptrU[indexU], self.ptrV[indexV])
+        if self.IsPlanar:
+            indexY = x + y * self.pitch
+            if self.IsY8:
+                return (self.ptrY[indexY], -1, -1)
+            x = x >> self.WidthSubsampling
+            y = y >> self.HeightSubsampling
+            indexU = indexV = x + y * self.pitchUV
+        elif self.IsYUY2:
+            indexY = (x*2) + y * self.pitch
+            indexU = 4*(x/2) + 1 + y * self.pitch
+            indexV = 4*(x/2) + 3 + y * self.pitch
         else:
             return (-1,-1,-1)
+        return (self.ptrY[indexY], self.ptrU[indexU], self.ptrV[indexV])
     
     def GetPixelRGB(self, x, y, BGR=True):
-        if self.clipRaw is not None and self.IsRGB:
+        if self.IsRGB:
             bytes = self.vi.BytesFromPixels(1)
             if BGR:
-                indexB = (x * bytes) + (self.HeightActual - 1 - y) * self.pitch
+                indexB = (x * bytes) + (self.Height - 1 - y) * self.pitch
                 indexG = indexB + 1
                 indexR = indexB + 2
             else:
@@ -343,10 +312,10 @@ class AvsClipBase:
             return (-1,-1,-1)
     
     def GetPixelRGBA(self, x, y, BGR=True):
-        if self.clipRaw is not None and self.IsRGB32:
+        if self.IsRGB32:
             bytes = self.vi.BytesFromPixels(1)
             if BGR:
-                indexB = (x * bytes) + (self.HeightActual - 1 - y) * self.pitch
+                indexB = (x * bytes) + (self.Height - 1 - y) * self.pitch
                 indexG = indexB + 1
                 indexR = indexB + 2
                 indexA = indexB + 3
@@ -453,12 +422,12 @@ class AvsClipBase:
     
     def RawFrame(self, frame, y4m_header=False):
         '''Get a buffer of raw video data'''
-        if self.initialized and self.clipRaw is not None:
+        if self.initialized:
             if frame < 0:
                 frame = 0
             if frame >= self.Framecount:
                 frame = self.Framecount - 1
-            frame = self.clipRaw.GetFrame(frame)
+            frame = self.clip.GetFrame(frame)
             total_bytes = self.Width * self.Height * self.vi.BitsPerPixel() >> 3
             if y4m_header is not False:
                 X = ' X' + y4m_header if isinstance(y4m_header, basestring) else ''
@@ -489,16 +458,8 @@ class AvsClipBase:
     def AutocropFrame(self, frame, tol=70):
         '''Return crop values for a specific frame'''
         width, height = self.Width, self.Height
-        if self.clipRaw is not None: # Get pixel color from the original clip
-            self._GetFrame(frame)
-            GetPixelColor = self.GetPixelRGB if self.IsRGB else self.GetPixelYUV
-        else: # Get pixel color from the video preview (slower)
-            bmp = wx.EmptyBitmap(width, height)
-            mdc = wx.MemoryDC()
-            mdc.SelectObject(bmp)
-            self.DrawFrame(frame, mdc)
-            img = bmp.ConvertToImage()
-            GetPixelColor = lambda x, y : (img.GetRed(x, y), img.GetGreen(x, y), img.GetBlue(x, y))
+        self._GetFrame(frame)
+        GetPixelColor = self.GetPixelRGB if self.IsRGB else self.GetPixelYUV
         w, h = width - 1, height - 1
         top_left0, top_left1, top_left2 = GetPixelColor(0, 0)
         bottom_right0, bottom_right1, bottom_right2 = GetPixelColor(w, h)
@@ -713,10 +674,10 @@ if os.name == 'nt':
             if not AvsClipBase.__init__(self, *args, **kwargs):
                 return
             
-            if not self.onlyRaw:
+            if self.display_clip:
                 # Prepare info header for displaying
                 self.bmih = BITMAPINFOHEADER()
-                avisynth.CreateBitmapInfoHeader(self.clip, self.bmih)
+                avisynth.CreateBitmapInfoHeader(self.display_clip, self.bmih)
                 self.pInfo = ctypes.pointer(self.bmih)
                 #~ self.BUF=ctypes.c_ubyte*self.bmih.biSizeImage
                 #~ self.pBits=self.BUF()
@@ -727,21 +688,21 @@ if os.name == 'nt':
         
         def _ConvertToRGB(self):
             if not self.IsRGB:
-                arg = avisynth.AVS_Value(self.clip)
+                arg = avisynth.AVS_Value(self.display_clip)
                 arg1 = avisynth.AVS_Value(self.matrix)
                 arg2 = avisynth.AVS_Value(self.interlaced)
                 args = avisynth.AVS_Value([arg, arg1, arg2])
                 try:
                     avsfile = self.env.Invoke("ConvertToRGB24", args, 0)
                     arg.Release()
-                    self.clip = avsfile.AsClip(self.env)
+                    self.display_clip = avsfile.AsClip(self.env)
                 except avisynth.AvisynthError, err:
                     return False
             return True
         
         def _GetFrame(self, frame):
             if AvsClipBase._GetFrame(self, frame):
-                self.bmih.biWidth = self.DrawPitch * 8 / self.bmih.biBitCount
+                self.bmih.biWidth = self.display_pitch * 8 / self.bmih.biBitCount
                 #~ row_size=src.GetRowSize()
                 #~ height=self.bmih.biHeight
                 #~ dst_pitch=self.bmih.biWidth*self.bmih.biBitCount/8
@@ -788,9 +749,9 @@ else:
         
         def _ConvertToRGB(self):
             # There's issues with RGB32, we convert to RGB24 
-            # Avisynth uses BGR ordering but we need RGB
+            # AviSynth uses BGR ordering but we need RGB
             try:
-                clip = avisynth.AVS_Value(self.clip)
+                clip = avisynth.AVS_Value(self.display_clip)
                 if not self.IsRGB24:
                     arg1 = avisynth.AVS_Value(self.matrix)
                     arg2 = avisynth.AVS_Value(self.interlaced)
@@ -803,7 +764,7 @@ else:
                 r.Release()
                 b.Release()
                 clip.Release()
-                self.clip = avsfile.AsClip(self.env)
+                self.display_clip = avsfile.AsClip(self.env)
                 return True
             except avisynth.AvisynthError, err:
                 return False
@@ -819,14 +780,14 @@ else:
                     w, h = size
                 buf = ctypes.create_string_buffer(h * w * 3)
                 # Use ctypes.memmove to blit the Avisynth VFB line-by-line
-                read_addr = ctypes.addressof(self.pBits.contents) + (h - 1) * self.DrawPitch
+                read_addr = ctypes.addressof(self.pBits.contents) + (h - 1) * self.display_pitch
                 write_addr = ctypes.addressof(buf)
                 P_UBYTE = ctypes.POINTER(ctypes.c_ubyte)
                 for i in range(h):
                     read_ptr = ctypes.cast(read_addr, P_UBYTE)
                     write_ptr = ctypes.cast(write_addr, P_UBYTE)
                     ctypes.memmove(write_ptr, read_ptr, w * 3)
-                    read_addr -= self.DrawPitch
+                    read_addr -= self.display_pitch
                     write_addr += w * 3
                 bmp = wx.BitmapFromBuffer(w, h, buf)
                 dc.DrawBitmap(bmp, 0, 0)
