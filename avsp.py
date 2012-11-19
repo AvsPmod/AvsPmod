@@ -3985,6 +3985,7 @@ class SliderPlus(wx.Panel):
         self.xdelta = None
         if self.HasCapture():
             self.ReleaseMouse()
+            self.adjust_handle = True
             self._SendScrollEndEvent()
             if self.IsDoubleBuffered():
                 dc = wx.ClientDC(self)
@@ -3998,6 +3999,7 @@ class SliderPlus(wx.Panel):
             index = self.HitTestBookmark(mousepos)
             if index is not None:
                 self.SetValue(self.bookmarks[index][0])
+                self.adjust_handle = False
                 self._SendScrollEndEvent()
             #~ # If clicked on a selection button, create the selection bookmark
             #~ bmtype = self.HitTestSelectionButton(mousepos)
@@ -8825,14 +8827,15 @@ class MainFrame(wxp.Frame):
         videoSlider = event.GetEventObject()
         #~ if self.FindFocus() != videoSlider:
             #~ return
+        frame = 'adjust_handle' if videoSlider.adjust_handle else videoSlider.GetValue()
         if not self.separatevideowindow:
-            self.ShowVideoFrame('adjust_handle')
+            self.ShowVideoFrame(frame)
         else:
             if event is not None and event.GetEventObject() in self.videoControlWidgets and self.previewWindowVisible:
-                self.ShowVideoFrame('adjust_handle', focus=False)
+                self.ShowVideoFrame(frame, focus=False)
                 self.currentScript.SetFocus()
             else:
-                self.ShowVideoFrame('adjust_handle')
+                self.ShowVideoFrame(frame)
         self.videoWindow.SetFocus()
         if self.playing_video == '':
             self.PlayPauseVideo()
