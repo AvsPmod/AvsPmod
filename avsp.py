@@ -9965,6 +9965,9 @@ class MainFrame(wxp.Frame):
                 if ID == wx.ID_CANCEL:
                     return
                 break
+        # Stop playback
+        if self.playing_video:
+            self.PlayPauseVideo()
         # Save scripts if necessary
         frame = self.GetFrameNumber()
         previewvisible = self.previewWindowVisible
@@ -12250,7 +12253,11 @@ class MainFrame(wxp.Frame):
 
         self.currentScript.SetFocus()
 
-    def ShowVideoFrame(self, framenum=None, forceRefresh=False, wrap=True, script=None, userScrolling=False, keep_env=None, forceLayout=False, doLayout=True, resize=None, focus=True):
+    def ShowVideoFrame(self, framenum=None, forceRefresh=False, wrap=True, script=None, 
+                       userScrolling=False, keep_env=None, forceLayout=False, doLayout=True, 
+                       resize=None, focus=True, check_playing=False):
+        if check_playing and not self.playing_video:
+            return
         # Exit if disable preview option is turned on
         if self.options['disablepreview']:
             return
@@ -13093,7 +13100,7 @@ class MainFrame(wxp.Frame):
         if self.playing_video:
             if os.name == 'nt':
                 self.timeKillEvent(self.play_timer_id)
-                #self.timeEndPeriod(self.play_timer_resolution) # not needed
+                self.timeEndPeriod(self.play_timer_resolution)
             else:
                 self.play_timer.Stop()
                 #signal.setitimer(signal.ITIMER_REAL, 0) # see below
@@ -13104,7 +13111,7 @@ class MainFrame(wxp.Frame):
             if self.separatevideowindow:
                 self.play_button2.SetBitmapLabel(self.bmpPlay)
                 self.play_button2.Refresh()
-        elif self.ShowVideoFrame() and not self.currentScript.AVI.IsErrorClip():
+        elif self.ShowVideoFrame(focus=False) and not self.currentScript.AVI.IsErrorClip():
             script = self.currentScript
             if self.currentframenum == script.AVI.Framecount - 1:
                 return
@@ -13138,7 +13145,9 @@ class MainFrame(wxp.Frame):
                     else:
                         frame = self.currentframenum
                         increment = 1
-                    self.ShowVideoFrame(frame + increment)
+                    if not AsyncCall(self.ShowVideoFrame, frame + increment, 
+                                     check_playing=True, focus=False).Wait():
+                        return
                     if self.currentframenum == script.AVI.Framecount - 1:
                         self.PlayPauseVideo()
                 
@@ -13163,7 +13172,7 @@ class MainFrame(wxp.Frame):
                     caps = TIMECAPS()
                     self.timeGetDevCaps(ctypes.byref(caps), ctypes.sizeof(caps))
                     self.play_timer_resolution = max(1, caps.wPeriodMin)
-                    #self.timeBeginPeriod(self.play_timer_resolution) # not needed, set in the timer
+                    self.timeBeginPeriod(self.play_timer_resolution)
                     
                     interval = int(round(interval))
                     self.callback_c = callback_prototype(callback)
@@ -13203,7 +13212,9 @@ class MainFrame(wxp.Frame):
                     else:
                         frame = self.currentframenum
                         increment = 1
-                    self.ShowVideoFrame(frame + increment)
+                    if not AsyncCall(self.ShowVideoFrame, frame + increment, 
+                                     check_playing=True, focus=False).Wait():
+                        return
                     if self.currentframenum == script.AVI.Framecount - 1:
                         self.PlayPauseVideo()
                 
@@ -13245,7 +13256,9 @@ class MainFrame(wxp.Frame):
                         else:
                             frame = self.parent.currentframenum
                             increment = 1
-                        self.parent.ShowVideoFrame(frame + increment)
+                        if not self.parent.ShowVideoFrame(frame + increment, 
+                                                          check_playing=True, focus=False):
+                            return
                         if self.parent.currentframenum == script.AVI.Framecount - 1:
                             self.parent.PlayPauseVideo()
                         #else:
