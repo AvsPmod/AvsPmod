@@ -15826,13 +15826,14 @@ class MainFrame(wxp.Frame):
         return True
     
     # Don't use decorator on this one
-    def MacroPipe(self, cmd, text=None, frames=None, y4m=False, reorder_rgb=False, wait=False, stdout=None, stderr=None):
-        r"""Pipe(cmd, text=None, frames=None, y4m=False, reorder_rgb=False, wait=False, stdout=None, stderr=None)
+    def MacroPipe(self, cmd, text=None, frames=None, y4m=False, reorder_rgb=False, wait=False, callback=None, stdout=None, stderr=None):
+        r"""Pipe(cmd, text=None, frames=None, y4m=False, reorder_rgb=False, wait=False, callback=None, stdout=None, stderr=None)
         
         Pipe raw frame data to an external application (video only)
         
         cmd: right side of the pipe (Unicode string).
-        text : script evaluated.  Defaults to the script in the current tab.
+        text : script evaluated.  Defaults to the script in the current tab.  It 
+               can also be a path to an AviSynth script.
         frames: sequence of frames to send.  Defaults to the complete frame range 
                 of the evaluated text.
         y4m: add a yuv4mpeg2 header.  It can be a logical value or optionally a 
@@ -15845,7 +15846,13 @@ class MainFrame(wxp.Frame):
              - sar: 'X:Y' string.
              - X_stream, X_frame.
         reorder_rgb: convert BGR to RGB and BGRA to RGBA before piping.
-        wait: wait for the process to finish and return its return code.
+        wait: wait for the process to finish.  If False, return the Popen object.  
+              If True, return a tuple (Popen object, return code).  The return code 
+              is 1 if the user cancels.
+        callback: user function called before each frame is sent and after all frames 
+                  are piped.  It receives three arguments, number of the current frame 
+                  in the sequence, number of the current frame in the clip and total 
+                  frame count, and must return True to keep piping, False to cancel. 
         stdout: file object where redirect stdout.  Defaults to sys.stdout on __debug__, 
                 nowhere otherwise.
         stderr: file object where redirect stderr.  Defaults to stdout.
@@ -15866,7 +15873,11 @@ class MainFrame(wxp.Frame):
             if os.name == 'nt' and filename.endswith('.vpy'):
                 self.SaveScript(filename)
         else:
-            filename = 'AVS script'
+            if os.path.isfile(text):
+                filename = text
+                text = self.GetTextFromFile(text)[0]
+            else:
+                filename = 'AVS script'
         clip = pyavs.AvsClip(text, filename, workdir, display_clip=False, 
                              reorder_rgb=reorder_rgb, interlaced=self.interlaced)   
         if not clip.initialized or clip.IsErrorClip():
@@ -15875,6 +15886,9 @@ class MainFrame(wxp.Frame):
             return
         if not frames:
             frames = range(clip.Framecount)
+            total_frames = clip.Framecount
+        elif callback:
+            total_frames = len(frames)
         
         # Create pipe
         cmd = cmd.encode(encoding)
@@ -15911,11 +15925,23 @@ class MainFrame(wxp.Frame):
                     cmd.stdin.write(clip.Y4MHeader())
             else:
                 y4m_frame = False
-            for frame in frames:
-                cmd.stdin.write(clip.RawFrame(frame, y4m_frame))
+            for i, frame in enumerate(frames):
+                if not callback or callback(i, frame, total_frames):
+                    cmd.stdin.write(clip.RawFrame(frame, y4m_frame))
+                else:
+                    cmd.terminate()
+                    if wait:
+                        return cmd, 1
+                    return cmd
             cmd.stdin.close()
+            if callback and not callback(total_frames, frame, total_frames):
+                cmd.terminate()
+                if wait:
+                    return cmd, 1
+                return cmd
             if wait:
-                return cmd.wait()
+                return cmd, cmd.wait()
+            return cmd
         except Exception, err:
             try:
                 if cmd.poll() is None:
