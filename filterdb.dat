@@ -1496,6 +1496,11 @@ bool grid,
 bool axis
 )
 
+HBVFWSource(
+string,
+bool "stacked"=False
+)
+
 hqdn3d_hqdn3d(
 clip,
 float "ls"=4.0 (0 to 255),

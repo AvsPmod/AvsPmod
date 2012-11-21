@@ -13,6 +13,7 @@ padding = 0
 # ------------------------------------------------------------------------------
 
 
+import os
 import os.path
 import re
 import wx
@@ -74,6 +75,9 @@ if use_base:
     avsp.Options['basename'] = os.path.basename(filename)
 
 # Eval the script. Return if error
+# vpy hack, remove when VapourSynth is supported
+if os.name == 'nt' and avsp.GetScriptFilename().endswith('.vpy'):
+    avsp.SaveScript()
 AVS = pyavs.AvsClip(avsp.GetText(clean=True), matrix=self.matrix, interlaced=self.interlaced, swapuv=self.swapuv)
 if AVS.IsErrorClip():
     avsp.MsgBox(AVS.error_message, _('Error'))

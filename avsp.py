@@ -1619,9 +1619,9 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                     state = self.STC_AVS_BLOCKCOMMENT
                     line = self.LineFromPosition(pos)
                     self.SetFoldLevel(line, self.GetFoldLevel(line) | stc.STC_FOLDLEVELHEADERFLAG)
-                elif ch == '"':
+                elif ch in ('"', "'"):
                     self.ColourTo(pos-1, state)
-                    if unichr(self.GetCharAt(pos+1)) == '"' and unichr(self.GetCharAt(pos+2)) == '"':
+                    if unichr(self.GetCharAt(pos+1)) in ('"', "'") and unichr(self.GetCharAt(pos+2)) in ('"', "'"):
                         pos += 2
                         state = self.STC_AVS_TRIPLE                        
                     else:
@@ -1711,10 +1711,10 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                     state = self.STC_AVS_DEFAULT
             elif state == self.STC_AVS_STRING:
                 if self.app.options['usestringeol']:
-                    if unichr(self.GetCharAt(pos-1)) == '"' and unichr(self.GetCharAt(pos)) == '"' and unichr(self.GetCharAt(pos+1)) == '"':
+                    if unichr(self.GetCharAt(pos-1)) in ('"', "'") and unichr(self.GetCharAt(pos)) in ('"', "'") and unichr(self.GetCharAt(pos+1)) in ('"', "'"):
                         state = self.STC_AVS_TRIPLE
                         pos += 1
-                    elif ch == '"' or isEOL:
+                    elif ch in ('"', "'") or isEOL:
                         if isEOL:
                             if isEOD:
                                 self.ColourTo(pos - 1, self.STC_AVS_STRINGEOL)                                
@@ -1728,10 +1728,10 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                                 isLoadPlugin = False
                         state = self.STC_AVS_DEFAULT
                 else:
-                    if unichr(self.GetCharAt(pos-1)) == '"' and unichr(self.GetCharAt(pos)) == '"' and unichr(self.GetCharAt(pos+1)) == '"':
+                    if unichr(self.GetCharAt(pos-1)) in ('"', "'") and unichr(self.GetCharAt(pos)) in ('"', "'") and unichr(self.GetCharAt(pos+1)) in ('"', "'"):
                         state = self.STC_AVS_TRIPLE
                         pos += 1
-                    elif ch == '"':
+                    elif ch in ('"', "'"):
                         self.ColourTo(pos, self.STC_AVS_STRING)                        
                         state = self.STC_AVS_DEFAULT
                         if isLoadPlugin:
@@ -1742,7 +1742,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                         state = self.STC_AVS_DEFAULT
                         isLoadPlugin = False
             elif state == self.STC_AVS_TRIPLE:
-                if isEOD or (ch == '"' and unichr(self.GetCharAt(pos-1)) == '"' and unichr(self.GetCharAt(pos-2)) == '"'):
+                if isEOD or (ch in ('"', "'") and unichr(self.GetCharAt(pos-1)) in ('"', "'") and unichr(self.GetCharAt(pos-2)) in ('"', "'")):
                     self.ColourTo(pos, self.STC_AVS_TRIPLE)
                     state = self.STC_AVS_DEFAULT
                     if isLoadPlugin:
@@ -4599,7 +4599,7 @@ class MainFrame(wxp.Frame):
                     textPos = script.PositionFromPoint(point)
                     script.GotoPos(textPos)
                     filenames = self.filedata.GetFilenames()
-                    if len(filenames) == 1 and os.path.splitext(filenames[0])[1].lower() not in ('.avs', '.avsi', '.ses'):
+                    if len(filenames) == 1 and os.path.splitext(filenames[0])[1].lower() not in ('.avs', '.avsi', '.vpy', '.ses'):
                         # Insert the single filename as a source
                         self.app.InsertSource(filenames[0])
                     else:
@@ -7115,7 +7115,7 @@ class MainFrame(wxp.Frame):
                         self.videoWindow.SetFocus()
                 title = self.titleEntry.GetLineText(0)
                 if self.currentScript.filename:
-                    if not title.endswith('.avs') and not title.endswith('.avsi'):
+                    if os.path.splittext(title)[1] not in ('.avs', '.avsi', '.vpy'):
                         title += '.avs'
                     src = self.currentScript.filename
                     dirname = os.path.dirname(src)
@@ -10223,7 +10223,7 @@ class MainFrame(wxp.Frame):
                 if not self.LoadSession(filename):
                     wx.MessageBox(_('Damaged session file'), _('Error'), wx.ICON_ERROR)
                     return
-            elif ext.lower() not in ('.avs', '.avsi'):
+            elif ext.lower() not in ('.avs', '.avsi', '.vpy'):
                 # Treat the file as a source
                 self.InsertSource(filename)
                 if self.previewWindowVisible:
@@ -10484,7 +10484,7 @@ class MainFrame(wxp.Frame):
             if not os.path.isdir(dirname):
                 wx.MessageBox(_('Directory %(dirname)s does not exist!') % locals(), _('Error'), style=wx.OK|wx.ICON_ERROR)
                 return None
-            if ext.lower() not in ('.avs', '.avsi'):
+            if ext.lower() not in ('.avs', '.avsi', '.vpy'):
                 basename = root+'.avs'
             if os.path.splitext(script.filename)[1].lower() == '.avsi':
                 basename = root+'.avsi'
@@ -10634,7 +10634,7 @@ class MainFrame(wxp.Frame):
             return dirname
         if not basename and not only == 'dir':
             basename = page_text
-        if os.path.splitext(basename)[1] not in ('.avs', '.avsi'):
+        if os.path.splitext(basename)[1] not in ('.avs', '.avsi', '.vpy'):
             basename += '.avs'
         if only == 'base':
             return basename
@@ -10659,7 +10659,7 @@ class MainFrame(wxp.Frame):
                     sourceFilterList.add(function_name)
         findpos = -1
         lastpos = script.GetLength()
-        noMediaExtList = ('.dll', '.vdf', 'vdplugin', '.vfp', '.so', '.avs', '.txt', '.log')
+        noMediaExtList = ('.dll', '.vdf', 'vdplugin', '.vfp', '.so', '.avs', '.avsi', '.txt', '.log')
         for match in re.finditer('"(.+?)"', script.GetText()):
             s = match.group(1)
             if os.path.splitext(s)[1].lower() not in noMediaExtList and os.path.isfile(s):
@@ -11080,7 +11080,7 @@ class MainFrame(wxp.Frame):
     def InsertSource(self, filename=''):
         script = self.currentScript
         strsource, filename = self.GetSourceString(filename, return_filename=True)
-        if script.GetText() == '' and filename is not None and os.path.splitext(filename)[1].lower() in ('.avs', '.avsi'):
+        if script.GetText() == '' and filename is not None and os.path.splitext(filename)[1].lower() in ('.avs', '.avsi', '.vpy'):
             self.OpenFile(filename)
         else:
             if strsource != '':
@@ -12747,6 +12747,9 @@ class MainFrame(wxp.Frame):
                     else:
                         workdir = script.workdir
                         used_workdir = False
+                    # vpy hack, remove when VapourSynth is supported
+                    if os.name == 'nt' and filename.endswith('.vpy'):
+                        self.SaveScript(filename)
                     wx.BeginBusyCursor()
                     script.AVI = None
                     script.AVI = pyavs.AvsClip(
@@ -15859,6 +15862,9 @@ class MainFrame(wxp.Frame):
         if text is None:
             text = self.getCleanText(self.currentScript.GetText())
             filename = self.currentScript.filename
+            # vpy hack, remove when VapourSynth is supported
+            if os.name == 'nt' and filename.endswith('.vpy'):
+                self.SaveScript(filename)
         else:
             filename = 'AVS script'
         clip = pyavs.AvsClip(text, filename, workdir, display_clip=False, 
