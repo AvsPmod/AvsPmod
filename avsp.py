@@ -12425,10 +12425,13 @@ class MainFrame(wxp.Frame):
                 # Update pixel info if cursor in preview windows
                 self.IdleCall.append((self.OnMouseMotionVideoWindow, tuple(), {}))
             else:
-                primary = False
-                if self.FindFocus() == self.videoWindow:
-                    primary = True
-                self.SetVideoStatusText(framenum, primary=primary)
+                primary = self.FindFocus() == self.videoWindow
+                addon = ''
+                if self.zoomwindowfit:
+                    pixelInfo = self.GetPixelInfo(event=None, string_=True)
+                    if pixelInfo[1] is not None:
+                        addon = pixelInfo
+                self.SetVideoStatusText(framenum, primary=primary, addon=addon)
         # Store video information (future use)
         self.oldWidth = videoWidth
         self.oldHeight = videoHeight
