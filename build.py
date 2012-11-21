@@ -86,7 +86,7 @@ def main():
     # Compress the files with UPX, if available
     if not os.path.isfile(upx):
         upx = isinpath('upx.exe')
-    if upx:
+    if upx and not __debug__:
         for root, dirs, files in os.walk(programdirname):
             for file in files:
                 if os.path.splitext(file)[1] in ('.exe','.dll','.pyd'):
