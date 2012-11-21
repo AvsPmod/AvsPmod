@@ -557,6 +557,8 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                 self.app.replaceDialog.UpdateText(text, 'find')
     
     def FindNext(self):
+        if self.AutoCompActive():
+            self.AutoCompCancel()
         if self.app.replaceDialog.GetFindText():
             self.app.replaceDialog.OnFindNext()
         elif self.app.replaceDialog.IsShown():
@@ -565,6 +567,8 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
             self.ShowQuickFindDialog()
     
     def FindPrevious(self):
+        if self.AutoCompActive():
+            self.AutoCompCancel()
         if self.app.replaceDialog.GetFindText():
             self.app.replaceDialog.OnFindPrevious()
         elif self.app.replaceDialog.IsShown():
@@ -573,6 +577,8 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
             self.ShowQuickFindDialog()
     
     def ReplaceNext(self):
+        if self.AutoCompActive():
+            self.AutoCompCancel()
         if (self.app.replaceDialog.GetFindText() and 
             self.app.replaceDialog.GetReplaceText()):
                 self.app.replaceDialog.OnReplace()
@@ -1532,6 +1538,9 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
         key = event.GetKeyCode()
         #~ flags = event.GetModifiers()
         if self.AutoCompActive() and key in (wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER, wx.WXK_TAB) and not (event.ControlDown() or event.AltDown() or event.ShiftDown()):
+            if self.GetCurrentPos() != self.GetAnchor():
+                self.AutoCompCancel()
+                return
             self.FinishAutocomplete(key=key)
             #~ if key == wx.WXK_TAB:
                 #~ self.app.tab_processed = True
