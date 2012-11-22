@@ -8833,6 +8833,9 @@ class MainFrame(wxp.Frame):
         #~ self.videoWindow.SetFocus()
 
     def OnSliderReleased(self, event):
+        if self.playing_video:
+            self.PlayPauseVideo()
+            self.playing_video = ''
         videoSlider = event.GetEventObject()
         #~ if self.FindFocus() != videoSlider:
             #~ return
@@ -12419,10 +12422,11 @@ class MainFrame(wxp.Frame):
             script.SetFocus()
             script.EnsureCaretVisible()
         else:
-            if focus:
-                self.videoWindow.SetFocus()
+            if focus or self.playing_video:
+                if focus:
+                    self.videoWindow.SetFocus()
                 #~ self.SetVideoStatusText(framenum)
-                # Update pixel info if cursor in preview windows
+                # Update pixel info if cursor in preview windows or playing
                 self.IdleCall.append((self.OnMouseMotionVideoWindow, tuple(), {}))
             else:
                 primary = self.FindFocus() == self.videoWindow
@@ -13165,6 +13169,8 @@ class MainFrame(wxp.Frame):
                         return
                     if self.currentframenum == script.AVI.Framecount - 1:
                         self.PlayPauseVideo()
+                    else:
+                        wx.Yield()
                 
                 def WindowsTimer(interval, callback, data=0, periodic=True):
                     """High precision timer (1 ms) using Windows Multimedia"""
