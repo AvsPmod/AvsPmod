@@ -1206,7 +1206,8 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                     try:
                         argList.append(namedarg+strTemplate % defaultValue)
                     except (TypeError, ValueError):
-                        defaultValue = re.sub(r'\bclip\b', 'last', str(defaultValue), re.IGNORECASE)
+                        re_clip = re.compile(r'\bclip\b', re.I)
+                        defaultValue = re_clip.sub('last', str(defaultValue))
                         argList.append(namedarg+defaultValue)
                 else:
                     argList.append(namedarg+str(defaultValue))#.lower())
@@ -10952,7 +10953,7 @@ class MainFrame(wxp.Frame):
                 self.options['imagechoice'] = dlg.GetFilterIndex()
                 self.options['imagesavedir'] = os.path.dirname(filename)
                 fmt = os.path.splitext(os.path.basename(filename))[0]
-                fmt = re.sub(title, '%s', fmt, 1, re.I)
+                fmt = re.sub(title, '%s', fmt, 1)
                 fmt = re.sub(r'([0]*?)%d' % self.currentframenum,
                              lambda m: '%%0%dd' % len(m.group(0)) if m.group(1) else '%d',
                              fmt, 1)
