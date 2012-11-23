@@ -9852,7 +9852,7 @@ class MainFrame(wxp.Frame):
         dlg.Destroy()
 
     def OnSliderLabelSettings(self, event):
-        self.ShowOptions(startPageIndex=5)
+        self.ShowOptions(startPageIndex=4)
 
     def OnSliderLabelModifySliderProperties(self, event):
         ctrl = self.lastContextMenuWin
