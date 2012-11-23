@@ -14498,8 +14498,9 @@ class MainFrame(wxp.Frame):
         argText, posA, posB = self.GetArgTextAndPos(control)
         if argText is None:
             return
-        keep_env = not self.ScriptChanged(script)
         # Create the new arg text
+        if refreshvideo:
+            keep_env = not self.ScriptChanged(script)
         script.SetTargetStart(posA)
         script.SetTargetEnd(posB)
         script.ReplaceTarget(newValue)
