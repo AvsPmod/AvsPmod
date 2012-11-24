@@ -6708,6 +6708,7 @@ class MainFrame(wxp.Frame):
         scriptWindow.userHidSliders = False
         scriptWindow.lastFramenum = 0
         scriptWindow.sliderWindowShown = not self.options['keepsliderwindowhidden']
+        scriptWindow.autocrop_values = None
         try:
             #scriptWindow.contextMenu = self.GetMenuBar().GetMenu(1)
             scriptWindow.contextMenu = self.menuBackups[0] if self.menuBackups else self.GetMenuBar().GetMenu(1)
@@ -9481,38 +9482,40 @@ class MainFrame(wxp.Frame):
     
     def Autocrop(self, button):
         '''Run crop editor's auto-crop option'''
-        # Get crop values for a number of frames
-        samples = self.options['autocrop_samples']
-        tol = 70
-        avs_clip = self.currentScript.AVI
-        frames = avs_clip.Framecount
-        samples = min(samples, frames)
-        if samples <= 2:
-            frames = range(samples)
-        else:
-            def float_range(start=0, end=10, step=1):
-                '''Range with float step'''
-                while start < end:
-                    yield int(round(start))
-                    start += step
-            frames = float_range(frames/10, 9*frames/10 - 1, 8.0*frames/(10*samples))
-        crop_values = []
-        for i, frame in enumerate(frames):
-            button.SetLabel(_('Cancel') + ' ({0}/{1})'.format(i+1, samples))
-            crop_values.append(avs_clip.AutocropFrame(frame, tol))
-            wx.Yield()
-            if not button.running:
-                button.SetLabel(_('Auto-crop'))
-                return
-        
-        # Get and apply final crop values
-        final_crop_values = []
-        for seq in zip(*crop_values):
-            final_crop_values.append(self.GetAutocropValue(seq))
-        self.cropDialog.ctrls['left'].SetValue(final_crop_values[0])
-        self.cropDialog.ctrls['top'].SetValue(final_crop_values[1])
-        self.cropDialog.ctrls['-right'].SetValue(final_crop_values[2])
-        self.cropDialog.ctrls['-bottom'].SetValue(final_crop_values[3])
+        script = self.currentScript
+        if script.autocrop_values is None:
+            # Get crop values for a number of frames
+            samples = self.options['autocrop_samples']
+            tol = 70
+            clip = script.AVI
+            frames = clip.Framecount
+            samples = min(samples, frames)
+            if samples <= 2:
+                frames = range(samples)
+            else:
+                def float_range(start=0, end=10, step=1):
+                    '''Range with float step'''
+                    while start < end:
+                        yield int(round(start))
+                        start += step
+                frames = float_range(frames/10, 9*frames/10 - 1, 8.0*frames/(10*samples))
+            crop_values = []
+            for i, frame in enumerate(frames):
+                button.SetLabel(_('Cancel') + ' ({0}/{1})'.format(i+1, samples))
+                crop_values.append(clip.AutocropFrame(frame, tol))
+                wx.Yield()
+                if not button.running:
+                    button.SetLabel(_('Auto-crop'))
+                    return
+            
+            # Get and apply final crop values
+            script.autocrop_values = []
+            for seq in zip(*crop_values):
+                script.autocrop_values.append(self.GetAutocropValue(seq))
+        self.cropDialog.ctrls['left'].SetValue(script.autocrop_values[0])
+        self.cropDialog.ctrls['top'].SetValue(script.autocrop_values[1])
+        self.cropDialog.ctrls['-right'].SetValue(script.autocrop_values[2])
+        self.cropDialog.ctrls['-bottom'].SetValue(script.autocrop_values[3])
         self.lastcrop = None
         self.SetVideoStatusText()
         self.OnCropDialogSpinTextChange()
@@ -12802,6 +12805,7 @@ class MainFrame(wxp.Frame):
                 self.UpdateScriptTagProperties(script, scripttxt)
                 self.GetAutoSliderInfo(script, scripttxt)
                 script.previewtxt = self.ScriptChanged(script, return_styledtext=True)[1]
+                script.autocrop_values = None
                 if self.cropDialog.IsShown():
                     self.PaintCropWarnings()
                 boolNewAVI = True
