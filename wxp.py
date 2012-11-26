@@ -1426,7 +1426,7 @@ class OptionsDialog(wx.Dialog):
                 elif flag == OPT_ELEM_DIR_URL and entry.lstrip().startswith('http://'):
                     newValue = entry
                 else:
-                    label = '\n\n{0}{1}'.format(ctrl.Label.rstrip(':') + ': ' if ctrl.Label else '', entry)
+                    label = u'\n\n{0}{1}'.format(ctrl.Label.rstrip(':') + ': ' if ctrl.Label else '', entry)
                     self.ShowWarning(ctrl, _('Invalid directory!') + label, tabIndex)
                     return False
             elif flag in (OPT_ELEM_FILE, OPT_ELEM_FILE_OPEN, OPT_ELEM_FILE_SAVE, OPT_ELEM_FILE_URL):
@@ -1435,7 +1435,7 @@ class OptionsDialog(wx.Dialog):
                    flag == OPT_ELEM_FILE_URL and entry.lstrip().startswith('http://')):
                     newValue = entry
                 else:
-                    label = '\n\n{0}{1}'.format(ctrl.Label.rstrip(':') + ': ' if ctrl.Label else '', entry)
+                    label = u'\n\n{0}{1}'.format(ctrl.Label.rstrip(':') + ': ' if ctrl.Label else '', entry)
                     self.ShowWarning(ctrl, _('Invalid filename!') + label, tabIndex)
                     return False
             elif flag == OPT_ELEM_COLOR:
