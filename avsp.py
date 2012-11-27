@@ -9261,7 +9261,7 @@ class MainFrame(wxp.Frame):
         else:
             x0, y0 = self.videoWindow.GetViewStart()
             scrolls_by_pixel = self.zoomfactor / float(10) * event.GetWheelRotation() / event.GetWheelDelta()
-            horizontal = event.ControlDown()
+            horizontal = event.ShiftDown()
             if wx.version() >= '2.9':
                 horizontal = horizontal or event.GetWheelAxis() == wx.MOUSE_WHEEL_HORIZONTAL
             if horizontal:
