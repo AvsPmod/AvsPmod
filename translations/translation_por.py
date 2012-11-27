@@ -12,18 +12,14 @@
 # format.  If required, you can change the coding on the first line of this 
 # document to a coding appropriate for your translated language. DO NOT 
 # touch line breaks (\n) and any words inside formatted strings (ie, any 
-# portions of the text which look like %(...)s, %(...)i, etc.)
+# portions of the text which look like {...}, %(...)s, %(...)i, etc.)
 
 # Português(Br) translation authors:
 #   Veiga v1.2.0 - v2.0.1
 
-version = "2.3.1"
+version = "2.4.0"
 
 messages = {
-    "Find" : u"Localizar",
-    "Replace" : u"Substiuir por",
-    "Cannot find \"%(text)s\"" : u"", # New in v2.3.0
-    "Replaced %(count)i times" : u"Substituições",
     "AviSynth fonts and colors" : u"Avisynth (Fontes & Cores)",
     "Background" : u"Fundo",
     "Font" : u"Fonte",
@@ -142,26 +138,41 @@ messages = {
     "Tagged Image File" : u"", # New in v2.3.0
     "ASCII Text Array" : u"", # New in v2.3.0
     "Windows Icon" : u"", # New in v2.3.0
+    "Windows Cursor" : u"", # New in v2.4.0
     "fps" : u"fps",
     "Frame" : u"Quadro",
     "A crash detected at the last running!" : u"", # New in v2.2.1
     "&Zoom" : u"", # New in v2.2.1
-    "Damaged {}. Using default settings." : u"", # New in v2.3.1
+    "Damaged {0}. Using default settings." : u"", # New in v2.4.0
     "%s translation file updated with new messages to translate" : u"", # New in v2.3.0
     "Translation updated" : u"", # New in v2.3.0
     "%s translation file updated.  No new messages to translate." : u"", # New in v2.3.0
     "%s language couldn't be loaded" : u"", # New in v2.3.0
+    "Alternatively, specify now its directory." : u"", # New in v2.4.0
+    "Select the {0} directory" : u"", # New in v2.4.0
+    "Make sure you have AviSynth installed and that there are no unstable plugins or avsi files in the AviSynth plugins directory." : u"Certifique-se de que você tem o AviSynth instalado, e não tem nenhum arquivo (plugin ou avsi) instável no diretório de plugins do AviSynth ",
+    "Error loading AviSynth!" : u"Erro carregando AviSynth!",
     "Paths" : u"", # New in v2.2.1
-    "AvsP help directory:" : u"Diretório do Help (AvsP)",
-    "Location of the AvsP help directory" : u"Local do help (caminho, pasta) do AvsP",
-    "Avisynth directory:" : u"Diretório Avisynth",
-    "Location of the avisynth installation directory" : u"Local do diretório de instalação do Avisynth",
-    "Avisynth help file/url:" : u"Avisynth, Arquivo Ajuda / URL",
-    "Location of the avisynth help file or url" : u"Local do Arquivo Ajuda Avisynth / URL",
+    "Available variables: %programdir%, %avisynthdir%, %pluginsdir%" : u"", # New in v2.4.0
+    "Choose a different version than the installed" : u"", # New in v2.4.0
+    "Use a custom AviSynth directory" : u"", # New in v2.4.0
+    "Alternative location of avisynth.dll/avxsynth.so" : u"", # New in v2.4.0
+    "Custom AviSynth directory:" : u"", # New in v2.4.0
+    "Leave blank to use the default directory. Changing it needs admin rights on Windows" : u"", # New in v2.4.0
+    "Plugins autoload directory:" : u"", # New in v2.4.0
+    "Override the current working directory" : u"", # New in v2.4.0
+    "Use a custom working directory" : u"", # New in v2.4.0
+    "For all scripts" : u"", # New in v2.4.0
+    "Use the custom directory also for scripts saved to file, instead of its parent" : u"", # New in v2.4.0
+    "Specify an alternative working directory" : u"", # New in v2.4.0
+    "Working directory:" : u"", # New in v2.4.0
     "External player:" : u"Player externo",
     "Location of external program for script playback" : u"Local do programa (Player externo de script)",
+    "Executable files" : u"", # New in v2.3.0
     "Additional arguments when running the external player" : u"Argumentos adicionais p/ qdo usar o player externo",
     "External player extra args:" : u"Arqumentos extras p/ player externo",
+    "Avisynth help file/url:" : u"Avisynth, Arquivo Ajuda / URL",
+    "Location of the avisynth help file or url" : u"Local do Arquivo Ajuda Avisynth / URL",
     "Documentation search paths:" : u"Local da documenção para pesquisa",
     "Specify which directories to search for docs when you click on a filter calltip" : u"Indique os diretorios a serem pesquisados qdo clicar em ajuda(calltip) de um filtro",
     "Documentation search url:" : u"URL para pesquisa de documentação:",
@@ -274,6 +285,9 @@ messages = {
     "Prompt to save scripts on program exit" : u"Alertar p/ salvar scripts qdo sair do programa",
     "Save *.avs scripts with AvsPmod markings" : u"", # New in v2.2.1
     "Save AvsPmod-specific markings (user sliders, toggle tags, etc) as a commented section in the *.avs file" : u"", # New in v2.2.1
+    "Start dialogs on the last used directory" : u"", # New in v2.4.0
+    "If unchecked, the script's directory is used" : u"", # New in v2.4.0
+    "Start save image dialogs on the last used directory" : u"", # New in v2.4.0
     "Misc" : u"Miscelânias",
     "Choose the language used for the interface" : u"", # New in v2.3.0
     "Language" : u"", # New in v2.3.0
@@ -380,6 +394,8 @@ messages = {
     "New tab" : u"Nova ficha",
     "Open an existing script" : u"Abir um script existente",
     "Open..." : u"Abrir...",
+    "Reopen the last closed tab" : u"", # New in v2.4.0
+    "Undo close tab" : u"", # New in v2.4.0
     "Close tab" : u"Fechar ficha",
     "Close the current tab" : u"Fecha a ficha em uso",
     "Close all tabs" : u"Fechar todas as fichas",
@@ -420,12 +436,16 @@ messages = {
     "Cut the selected text" : u"Cortar texto selecionado",
     "Copy the selected text" : u"Copiar texto selecionado",
     "Paste the selected text" : u"Colar o texto selecionado",
-    "Find..." : u"Localizar...",
     "Open a find text dialog box" : u"Abre uma caixa de pesquisa de texto",
-    "Find next" : u"Localizar a próxima",
+    "Find..." : u"Localizar...",
     "Find the next instance of given text" : u"Pesquisa a próxima ocorrência do texto informado",
+    "Find next" : u"Localizar a próxima",
+    "Find the previous instance of given text" : u"", # New in v2.4.0
+    "Find previous" : u"", # New in v2.4.0
     "Open a replace text dialog box" : u"Abre uma caixa de texto a ser substituido",
     "Replace..." : u"Substituir...",
+    "Replace the next instance of given text" : u"", # New in v2.4.0
+    "Replace next" : u"", # New in v2.4.0
     "Select All" : u"Selecionar tudo",
     "Select all the text" : u"Seleciona todo o texto",
     "&Insert" : u"", # New in v2.2.1
@@ -433,7 +453,7 @@ messages = {
     "Insert source..." : u"Inserir Arq. fonte...",
     "Get a filename from a dialog box to insert into the text" : u"Pega um nome de arquivo de uma caixa de dialogo p/ inserir no texto",
     "Insert filename..." : u"Inserir nome de arquivo",
-    "Choose a plugin dll to insert into the text" : u"Escolha um nome de plugin dll p/ inserir no texto",
+    "Choose a plugin file to insert into the text" : u"", # New in v2.4.0
     "Insert plugin..." : u"Inserir plugin... ",
     "Insert a user-scripted slider into the text" : u"Insere no texto, o script do slider da função...",
     "Insert user slider..." : u"Inserir slider de função ...",
@@ -518,6 +538,18 @@ messages = {
     "Last scrolled frame" : u"Ultimo quadro mostrado",
     "Enter a video frame or time to jump to" : u"Entre com o nº do quadro ou o tempo p/ ir para:",
     "Go to frame..." : u"Ir para o quadro...",
+    "&Play video" : u"", # New in v2.4.0
+    "Play/pause video" : u"", # New in v2.4.0
+    "Double the current playback speed" : u"", # New in v2.4.0
+    "Increment speed" : u"", # New in v2.4.0
+    "Decrement speed" : u"", # New in v2.4.0
+    "Half the current playback speed" : u"", # New in v2.4.0
+    "Normal speed" : u"", # New in v2.4.0
+    "Set the playback speed to the script frame rate" : u"", # New in v2.4.0
+    "Maximum speed" : u"", # New in v2.4.0
+    "Play the video as fast as possible without dropping frames" : u"", # New in v2.4.0
+    "Drop frames" : u"", # New in v2.4.0
+    "Maintain correct video speed by skipping frames" : u"", # New in v2.4.0
     "Crop editor..." : u"Editor de apara(crop)",
     "Show the crop editor dialog" : u"Mostra o editor de apara (crop)",
     "&Trim selection editor" : u"", # New in v2.2.1
@@ -549,6 +581,8 @@ messages = {
     "Use full range" : u"", # New in v2.3.0
     "For YV12 only, assume it is progressive (default)" : u"", # New in v2.2.1
     "For YV12 only, assume it is interlaced" : u"", # New in v2.2.1
+    "Create the new AviSynth clip on the same environment. Useful for tweaking parameters" : u"", # New in v2.4.0
+    "Keep variables on refreshing" : u"", # New in v2.4.0
     "Save image as..." : u"Salvar imagem como...",
     "Save the current frame as a bitmap" : u"Salvar quadro atual como bitmap",
     "Force the script to reload and refresh the video frame" : u"Força recarregar o script e atualizar o quadro de video",
@@ -575,7 +609,7 @@ messages = {
     "Disable video preview" : u"Desabilitar janela de video",
     "If checked, the video preview will not be shown under any circumstances" : u"Nunca mostrar janela de video",
     "Associate .avs files with AvsP" : u"Associar arquivos .avs com AvsP",
-    "Configure this computer to open .avs files with AvsP when double-clicked" : u"Configura (clique-duplo)p/ abrir arquivos .avs no AvsP ",
+    "Configure this computer to open .avs files with AvsP when double-clicked. Run again to disassociate" : u"", # New in v2.4.0
     "AviSynth function definition..." : u"Configurar ajuda de  função...",
     "Edit the various AviSynth script fonts and colors" : u"Escolha fonte e côr p/ os vários scripts Avisynth",
     "Fonts and colors..." : u"Fontes e Cores",
@@ -622,6 +656,8 @@ messages = {
     "Reposition to" : u"", # New in v2.2.1
     "Crop editor" : u"Editor crop",
     "You can drag the crop regions with the left mouse button when this dialog is visible, cropping the edge closest to the initial mouse click." : u"Aqui, você pode definir valores de apara (crop) observando o resultado na imagem, ou enquanto este editor estiver aberto, (clicando direto na imagem se preferir)",
+    "Auto-crop" : u"", # New in v2.4.0
+    "Samples" : u"", # New in v2.4.0
     "At script end" : u"No fim do script",
     "At script cursor" : u"Na posição do cursor",
     "Copy to clipboard" : u"Copiar para area de transferência",
@@ -654,7 +690,6 @@ messages = {
     "Frame No." : u"", # New in v2.2.1
     "Time **" : u"", # New in v2.2.1
     "Left-click on a selected item or double-click to edit.\n\n*  RED - a historic title, not a real bookmark.\n** Time may be unavailable or incorrect before preview refreshed." : u"", # New in v2.3.0
-    "Cannot use crop editor unless zoom set to 100% and non-flipped!" : u"", # New in v2.2.1
     "Error loading the script" : u"Erro durante carregamento do script",
     "Starting analysis pass..." : u"", # New in v2.3.0
     "Frame size:" : u"Tamanho do quadro",
@@ -671,7 +706,6 @@ messages = {
     "bits" : u"bits",
     "samples" : u"amostras",
     "Could not find the macros folder!" : u"", # New in v2.2.1
-    "Could not find %(readme)s!" : u"Impossivel encontrar %(readme)s!",
     "Failed to import the selected tool" : u"Falha ao importar a ferramenta selecionada",
     "You must restart for changes to take effect!" : u"Você precisa reiniciar para que as alterções tenham efeito",
     "Basic" : u"Básico",
@@ -720,12 +754,16 @@ messages = {
     "(If you want relative paths instead of the full filename, use [***].)" : u"", # New in v2.2.1
     "Associating .avs files will write to the windows registry." : u"Arquivos .avs associados serão incluidos no registro do Windows.",
     "Do you wish to continue?" : u"Deseja continuar?",
+    "Associate avs files for all users?" : u"", # New in v2.4.0
+    "Disassociate avs files for all users?" : u"", # New in v2.4.0
+    " Admin rights are needed." : u"", # New in v2.4.0
     "Above keys are built-in editing shortcuts. If item is checked,\nit will not be overrided by a menu shortcut in script window." : u"", # New in v2.3.0
     "* This shortcut is active only when video window has focus.\n~ This shortcut is active only when script window has focus." : u"", # New in v2.3.0
     "Could not find the Avisynth plugins folder!" : u"", # New in v2.2.1
+    "Could not find %(readme)s!" : u"Impossivel encontrar %(readme)s!",
     "AvsPmod version %(version)s " : u"", # New in v2.2.1
-    "An AviSynth script editor" : u"Um editor de script para AviSynth",
     "AvsP Website" : u"AvsP Website",
+    "AvsPmod repository" : u"", # New in v2.4.0
     "Active thread on Doom9's forum" : u"", # New in v2.2.1
     "This program is freeware under the GPL license." : u"Este programa sob licença GPL é livre",
     "Input a frame number or time (hr:min:sec) and hit Enter. Right-click to retrieve from history." : u"", # New in v2.2.1
@@ -767,6 +805,7 @@ messages = {
     "Pixel yuv color (cursor based)" : u"Cor yuv do pixel (pos. do cursor)",
     "Pixel color (auto-detect colorspace)" : u"Cor do pixel (detecção automática do sistema de cor)",
     "Program zoom" : u"Zoom atual",
+    "Bookmark title" : u"", # New in v2.4.0
     "Note: The \"\\t\\t\" or \"\\T\\T\" is used to separate the left and right portions of the status bar\n         message." : u"", # New in v2.3.0
     "A macro is still running. Close anyway?" : u"", # New in v2.3.0
     "Save changes before closing?" : u"Salvar alterações antes de fechar?",
@@ -789,6 +828,7 @@ messages = {
     "AviSynth plugins" : u"", # New in v2.3.0
     "VirtualDub plugins" : u"", # New in v2.3.0
     "VFAPI plugins" : u"", # New in v2.3.0
+    "AvxSynth plugins" : u"", # New in v2.4.0
     "Insert a plugin" : u"Inserir um plugin",
     "No bookmarks defined!" : u"Não existe ponto marcado definido",
     "There must be more than one unique bookmark to use this feature!" : u"É preciso ter mais de um unico ponto marcado para usar esta possibilidade",
@@ -816,10 +856,7 @@ messages = {
     "Invalid filter customization file!" : u"Arquivo de configuração de filtro inválido",
     "Save filter customization file" : u"Salvar arquivo de configuração de filtro",
     "Invalid argument!" : u"Agumento inválido!",
-    "Error loading AviSynth!" : u"Erro carregando AviSynth!",
-    "Make sure you have AviSynth installed and that there are no unstable plugins or avsi files in the AviSynth plugins directory." : u"Certifique-se de que você tem o AviSynth instalado, e não tem nenhum arquivo (plugin ou avsi) instável no diretório de plugins do AviSynth ",
     "Save changes before previewing?" : u"Salvar as alterações antes da pré-visulização",
-    "Executable files" : u"", # New in v2.3.0
     "Select an external player" : u"Selecione um Player externo",
     "A program must be specified to use this feature!" : u"Para usar esta caracteristica, é preciso indicar um programa",
     "General settings..." : u"Configurações gerais...",
@@ -843,6 +880,8 @@ messages = {
     "Toggle \"%(label)s\" section" : u"Ativar/Desat. secção: \"%(label)s\" ",
     "Above plugin names contain undesirable symbols.\nRename them to only use alphanumeric or underscores,\nor make sure to use them in short name style only." : u"", # New in v2.3.0
     "Don't show me this again" : u"", # New in v2.2.1
+    "Changing the plugins autoload directory writes to the Windows registry." : u"", # New in v2.4.0
+    "You're changing the plugins autoload directory.\nDo you wish to change it for all applications? This will\nrequire writing to {0}" : u"", # New in v2.4.0
     "Save as" : u"Salvar como",
     "Select a directory" : u"Selecionar um diretório",
     "Enter information" : u"Entrar informação",
@@ -850,12 +889,28 @@ messages = {
     "A get pixel info operation has already started" : u"", # New in v2.3.0
     "Error in the macro:" : u"Erro na macro:",
     "Couldn't find %(macrofilename)s" : u"Não foi possivel encontrar %(macrofilename)s",
+    "An AviSynth script editor" : u"Um editor de script para AviSynth",
+    "Invalid string: " : u"", # New in v2.4.0
     "Failed to open the AVI file" : u"Falha ao abrir o arquivo AVI",
     "Failed to open the AVI frame" : u"Falha ao abrir o quadro AVI",
     "Failed to retrieve AVI frame" : u"Falha ao reabrir o quadro AVI",
     "Ctrl" : u"Ctrl",
     "Alt" : u"Alt",
     "Shift" : u"Shift",
+    "Error Window" : u"", # New in v2.4.0
+    "Quick find" : u"", # New in v2.4.0
+    "Find/replace text" : u"", # New in v2.4.0
+    "Search for" : u"", # New in v2.4.0
+    "Replace with" : u"", # New in v2.4.0
+    "Replace all" : u"", # New in v2.4.0
+    "Only on word start" : u"", # New in v2.4.0
+    "Only whole words" : u"", # New in v2.4.0
+    "Only in selection" : u"", # New in v2.4.0
+    "Case sensitive" : u"", # New in v2.4.0
+    "Use regular expressions" : u"", # New in v2.4.0
+    "Don't wrap-around" : u"", # New in v2.4.0
+    "Cannot find \"%(text)s\"" : u"", # New in v2.3.0
+    "Replaced %(count)i times" : u"Substituições",
     "Program Settings" : u"Configurações do programa",
     "Browse" : u"Mostre",
     "* Requires program restart for full effect" : u"* Necessario reiniciar o programa p/ ter efeito",
@@ -906,8 +961,8 @@ messages = {
     "The current Avisynth script contains errors." : u"O script AviSynth atual contém erros",
 
     #--- Tool: encoder_gui.py ---#
-    "Save to MP4..." : u"", # New in v2.2.1
-    "Encode the current script using x264" : u"", # New in v2.2.1
+    "Script encoder (CLI)" : u"", # New in v2.4.0
+    "Use an external command line encoder to save the current script" : u"", # New in v2.4.0
     "Encode video" : u"Codificar video",
     "System settings" : u"Configurações do sistema",
     "Input file:" : u"Arquivo de entrada:",
@@ -925,10 +980,8 @@ messages = {
     "Please enter the exe paths in the following dialog." : u"Favor incluir o caminho do seu (encoder) exe no diálogo seguite",
     "Exe pathnames" : u"Caminho exe",
     "Open an AviSynth script" : u"Abrir um script Avisynth",
-    "AviSynth script (*.avs)|*.avs" : u"Script AviSynth (*.avs)|*.avs",
     "Save the video as" : u"Salvar o arquivo como",
     "Select a program" : u"Selecionar um programa",
-    "Program (*.exe)|*.exe" : u"Programa (*.exe)|*.exe",
     "Unreplaced items remain in the command line:" : u"Itens não substituidos na linha de comando",
     "Unknown exe paths!" : u"Caminho exe desconhecido",
     "General" : u"Geral",
@@ -965,7 +1018,7 @@ messages = {
     "%(h)i hr and %(m)i min" : u"%(h)i hr and %(m)i min",
 
     #--- Tool: avs2avi_gui.py ---#
-    "Save to AVI..." : u"", # New in v2.2.1
+    "Script encoder (VFW)" : u"", # New in v2.4.0
     "Use avs2avi to save the current script as an avi" : u"", # New in v2.2.1
     "Please select the path to avs2avi.exe" : u"Favor indicar o caminho p/ avs2avi.exe",
     "Error: avs2avi is required to save an avi!" : u"Erro: é necessário avs2avi para salvar um avi!",
@@ -979,6 +1032,7 @@ messages = {
     "# of passes:" : u"nº de passes",
     "Priority:" : u"Prioridade",
     "Error: Unknown button" : u"Erro: comando desconhecido",
+    "AviSynth script (*.avs)|*.avs" : u"Script AviSynth (*.avs)|*.avs",
     "Save the avi as" : u"Salvar avi como",
     "Avi file (*.avi)|*.avi" : u"Arquivo Avi (*.avi)|*.avi",
     "Input file does not exist!" : u"Arquivo fonte não encontrado!",
@@ -1006,7 +1060,6 @@ messages = {
     "Import bookmarks from file" : u"", # New in v2.3.1
     "Preview from current point" : u"", # New in v2.3.0
     "Random Clip Order" : u"", # New in v2.3.0
-    "Save bookmarks to images" : u"", # New in v2.3.0
     "Save Image Sequence" : u"", # New in v2.3.0
     "Shift Bookmarks by frames" : u"", # New in v2.3.0
     "Example (Resize)" : u"", # New in v2.3.0
@@ -1033,6 +1086,7 @@ messages = {
     "Number of intervals" : u"", # New in v2.3.0
 
     #--- Macro: Bookmarks to Chapter ---#
+    "Save chapter file as..." : u"", # New in v2.4.0
     "Text files" : u"", # New in v2.3.0
 
     #--- Macro: ConditionalReader file from bookmarks ---#
@@ -1064,6 +1118,7 @@ messages = {
     "TFM log files" : u"", # New in v2.3.1
     "XviD log files" : u"", # New in v2.3.1
     "QP files" : u"", # New in v2.3.1
+    "Timecode format v1 files" : u"", # New in v2.4.0
     "Bookmarks from TFM file" : u"", # New in v2.3.1
     "Not combed or out of order frames" : u"", # New in v2.3.1
     "Combed" : u"", # New in v2.3.1
@@ -1079,16 +1134,24 @@ messages = {
     #--- Macro: Preview from current point ---#
     "Failed to run the external player!\n\nOpen the macro file in the \"Macros\" subdirectory\nwith a text editor and edit the executable\ndirectory appropriately!" : u"", # New in v2.3.0
 
-    #--- Macro: Save bookmarks to images ---#
-    "Select the output directory and basename" : u"", # New in v2.3.0
-    "JPEG Quality (0-100):" : u"", # New in v2.3.0
-    "JPEG Quality" : u"", # New in v2.3.0
+    #--- Macro: Save Image Sequence ---#
+    "Bookmarks" : u"", # New in v2.4.0
+    "Save image sequence" : u"", # New in v2.4.0
+    "Select frames" : u"", # New in v2.4.0
+    "Show saving progress" : u"", # New in v2.4.0
+    "Output format" : u"", # New in v2.4.0
+    "Quality (JPEG only)" : u"", # New in v2.4.0
+    "Output directory and basename. The padded frame number is added as suffix" : u"", # New in v2.4.0
+    "Use always this basename" : u"", # New in v2.4.0
+    "Use always this directory" : u"", # New in v2.4.0
+    "Range between bookmarks" : u"", # New in v2.4.0
+    "Trim editor selections" : u"", # New in v2.4.0
+    "All frames" : u"", # New in v2.4.0
+    "Select an output directory and basename for the new images files" : u"", # New in v2.4.0
+    "There is not Trim editor selections" : u"", # New in v2.4.0
+    "Saving images..." : u"", # New in v2.3.0
     "%d image files created." : u"", # New in v2.3.0
     "Information" : u"Informação",
-    "Please save the current script first!" : u"", # New in v2.3.0
-
-    #--- Macro: Save Image Sequence ---#
-    "Saving images..." : u"", # New in v2.3.0
 
     #--- Macro: Shift Bookmarks by frames ---#
     "Introduce the number of frames:" : u"", # New in v2.3.0
@@ -1128,13 +1191,14 @@ messages = {
     "Initial best score: %.3f, Current best score: %.3f" : u"", # New in v2.3.0
     "Best score: %.2f" : u"", # New in v2.3.0
     "Must configure avs2avi directory to use this macro!" : u"", # New in v2.3.0
+    "Not user sliders on the current Avisynth script!" : u"", # New in v2.4.0
+    "Enter optimization info    (%i bits, %i possibilities)" : u"", # New in v2.3.0
     "SSIM log filename:" : u"", # New in v2.3.0
     "max generations:" : u"", # New in v2.3.0
     "population size:" : u"", # New in v2.3.0
     "crossover probability:" : u"", # New in v2.3.0
     "mutation probability:" : u"", # New in v2.3.0
     "selection pressure:" : u"", # New in v2.3.0
-    "Enter optimization info    (%i bits, %i possibilities)" : u"", # New in v2.3.0
     "Begin optimization..." : u"", # New in v2.3.0
     "Finished optimization." : u"", # New in v2.3.0
 

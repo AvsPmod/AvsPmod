@@ -5056,7 +5056,7 @@ class MainFrame(wxp.Frame):
             'refreshpreview': True,
             'promptwhenpreview': False,
             'separatevideowindow': False,
-            'previewontopofmain': False,
+            'previewontopofmain': True,
             #~ 'showvideopixelinfo': True,
             #~ 'pixelcolorformat': 'hex',
             'videostatusbarinfo': None,

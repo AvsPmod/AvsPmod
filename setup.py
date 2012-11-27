@@ -108,7 +108,7 @@ data_files = [
             'AvsP.ico',
             'icons.py',
             'global_vars.py',
-            'build_instructions.txt',
+            'build_instructions_windows.txt',
         ]),
     ]
 

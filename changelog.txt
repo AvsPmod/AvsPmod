@@ -2,10 +2,14 @@ CHANGELOG
 =========
 
 
-Version 2.X.X [2012-??-??]
+Version 2.4.0 [2012-11-27]
 --------------------------
 
 - Add AvxSynth support. AvsPmod runs now natively on *nix
+- Add script playback (video only)
+- Add 'keep variables on refreshing' menu option, useful for dealing with heavy scripts
+- Detect correctly AviSynth 2.6.0 new color spaces
+- Add temporary support for VapourSynth AVIFile scripts (.vpy)
 - Add option to specify directly the location of avisynth.dll/libavxsynth.so
 - Add option to change the autoload plugins directory
 - Add option to choose an alternative working directory
@@ -14,11 +18,10 @@ Version 2.X.X [2012-??-??]
   - file menu -> undo close tab
   - middle click on empty tab bar space
   - Ctrl+Shift+N default hotkey
-- Add 'keep variables on refreshing' option, useful for dealing with heavy scripts
+- New find and replace dialogs with added features
 - Add auto-crop option to the crop editor
 - The crop editor can be used now with the video preview zoomed or flipped
-- Add new variable to video status bar - bookmark title (%BM)
-- New find and replace dialogs with added features
+- Add a new variable to the video status bar - bookmark title (%BM)
 - Improve avs and avsi files association option:
   - on Windows, prompt to associate files for all users or only the current one and ask for permissions for the former
   - on *nix, this choice is made by starting AvsPmod as root to associate for all users. The application is also registered on the desktop environment's menu.
@@ -27,14 +30,20 @@ Version 2.X.X [2012-??-??]
   - add two new settings to the options dialog, 'save/load' tab
   - better basename choice on save image dialog and fix last saved image's name still being used when changing tabs
   - add 'default' parameter to several macro functions
-- Detect correctly AviSynth 2.60 new color spaces
-- Fix opening and saving scripts with Unicode encodings
+- The mouse wheel can be used now to scroll through tabs
+- Ctrl + mouse wheel can be used to zoom the video preview
+- If 'enable scroll wheel through similar tabs' is off the mouse wheel can be used to scroll vertically the video preview, or horizontally with Shift pressed.
+- The CLI script encoder now checks PATH and the tools subdirectory before asking for the path to the executable
+- Fix opening and saving Unicode scripts
 - Fix decoding of command line arguments
-- Fix ScriptFile, ScriptName and ScriptDir functions not returning the right value [AviSynth 2.60]
-- Fix 'Stop' button of the avs2avi GUI tool
+- Fix ScriptFile, ScriptName and ScriptDir functions not returning the right value [AviSynth 2.6.0]
+- Fix 'share timeline' option being always in effect
+- Fix 'last scrolled frame' menu option for 'update video while dragging' on
 - Fix tabs without filename still being closed when canceling a save dialog
-- Add new macro function Pipe, for sending frame data to external applications
+- Fix stop button of the avs2avi GUI tool
+- Add new macro function Pipe, for sending video frame data to external applications
 - Add 'propose' and 'only' parameters to the GetScriptFilename macro function
+- Add 'clean' parameter to the GetText macro function
 - Improvements on the 'Import bookmarks from file' macro:
   - add timecode format v1 parsing
   - add support for list of frames on TFM log u/b section and optimize its parsing
