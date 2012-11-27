@@ -9207,6 +9207,22 @@ class MainFrame(wxp.Frame):
             event.Skip()
 
     def OnMouseWheelVideoWindow(self, event):
+        # Zoom preview
+        if event.ControlDown():
+            rotation = event.GetWheelRotation()
+            if self.mouse_wheel_rotation * rotation < 0:
+                self.mouse_wheel_rotation = rotation
+            else:
+                self.mouse_wheel_rotation += rotation
+            if not abs(self.mouse_wheel_rotation) >= event.GetWheelDelta():
+                return
+            self.mouse_wheel_rotation = 0
+            if rotation > 0:
+                self.MacroExecuteMenuCommand('Video -> Zoom -> Zoom in')
+            else:
+                self.MacroExecuteMenuCommand('Video -> Zoom -> Zoom out')
+            return
+        
         # Scroll similar tabs
         if self.options['enabletabscrolling']:
             rotation = event.GetWheelRotation()
