@@ -37,6 +37,7 @@ default_insert_path = True
 
 
 # Run in thread
+import sys
 import os.path
 
 # Get the bookmarks
@@ -114,6 +115,7 @@ else:
                 value = value_default
             text.append(u'{0} {1} {2} {3}\n'.format(
                         prefix, bmlist[i-1][0], bm[0], value))
+text = [line.encode(sys.getfilesystemencoding()) for line in text]
 with open(filename, 'w') as file:
     file.writelines(text)
 if insert_path:
