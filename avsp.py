@@ -12691,7 +12691,12 @@ class MainFrame(wxp.Frame):
             self.PlayPauseVideo()
             self.playing_video = ''
         current_frame = self.GetFrameNumber()
-        bookmarkValues = [value for value, btype in self.GetBookmarkFrameList()]# if btype==0]
+        clip = self.currentScript.AVI
+        if clip is not None:
+            bookmarkValues = [value for value, btype in self.GetBookmarkFrameList() 
+                              if value < clip.Framecount]# if btype==0]
+        else:
+            bookmarkValues = [value for value, btype in self.GetBookmarkFrameList()]# if btype==0]
         bookmarkValues.sort()
         if len(bookmarkValues) == 0:
             return
