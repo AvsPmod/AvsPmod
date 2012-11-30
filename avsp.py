@@ -15925,7 +15925,8 @@ class MainFrame(wxp.Frame):
         
         Pipe raw frame data to an external application (video only)
         
-        cmd: right side of the pipe (Unicode string).
+        cmd: right side of the pipe (Unicode string). Accepts several variables: 
+             {height}, {width}, {fps}, {frame_count}.
         text : script evaluated.  Defaults to the script in the current tab.  It 
                can also be a path to an AviSynth script.
         frames: sequence of frames to send.  Defaults to the complete frame range 
@@ -15985,6 +15986,8 @@ class MainFrame(wxp.Frame):
             total_frames = len(frames)
         
         # Create pipe
+        cmd = cmd.format(height=clip.Height, width=clip.Width, fps=clip.Framerate, 
+                         frame_count=clip.Framecount)
         cmd = cmd.encode(encoding)
         cmd = shlex.split(cmd)
         if stdout is None:
