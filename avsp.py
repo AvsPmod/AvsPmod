@@ -4933,6 +4933,7 @@ class MainFrame(wxp.Frame):
                 'wav': 'WAVSource(***)',
                 'd2v': 'MPEG2Source(***, cpu=0)',
                 'dga': 'AVCSource(***)',
+                'dgi': 'DGSource(***)',
                 'mpg': 'DirectShowSource(***)',
                 'mp4': 'DirectShowSource(***)',
                 'mkv': 'DirectShowSource(***)',
@@ -4946,8 +4947,6 @@ class MainFrame(wxp.Frame):
             templateDict = {
                 'avi': 'FFVideoSource(***)',
                 'wav': 'FFAudioSource(***)',
-                'd2v': 'FFVideoSource(***)',
-                'dga': 'FFVideoSource(***)',
                 'mpg': 'FFVideoSource(***)',
                 'mp4': 'FFVideoSource(***)',
                 'mkv': 'FFVideoSource(***)',
