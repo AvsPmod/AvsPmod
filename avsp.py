@@ -6238,6 +6238,7 @@ class MainFrame(wxp.Frame):
                 (_('Rename tab'), '', self.OnMenuFileRenameTab, _('Rename the current tab. If script file is existing, also rename it')),
                 (_('Save script'), 'Ctrl+S', self.OnMenuFileSaveScript, _('Save the current script')),
                 (_('Save script as...'), 'Ctrl+Shift+S', self.OnMenuFileSaveScriptAs, _('Choose where to save the current script')),
+                (_('Reload script'), '', self.OnMenuFileReloadScript, _('Reopen the current script file if it has changed')),
                 (_('&Print script'),
                     (
                     (_('Page setup'), '', self.OnMenuFilePageSetup, _('Configure page for printing')),
@@ -6634,6 +6635,7 @@ class MainFrame(wxp.Frame):
             (''),
             (_('Save'), '', self.OnMenuFileSaveScript),
             (_('Save as...'), '', self.OnMenuFileSaveScriptAs),
+            (_('Reload'), '', self.OnMenuFileReloadScript),
             (''),
             (_('Select all'), '', self.OnMenuEditSelectAll),
             (''),
@@ -7094,7 +7096,18 @@ class MainFrame(wxp.Frame):
 
     def OnMenuFileSaveScriptAs(self, event):
         self.SaveScript()
-        
+    
+    def OnMenuFileReloadScript(self, event):
+        script = self.currentScript
+        if os.path.isfile(script.filename):
+            txt, script.encoding = self.GetMarkedScriptFromFile(script.filename)
+            if txt != script.GetText():
+                pos = script.GetCurrentPos()
+                script.SetText(txt)
+                script.EmptyUndoBuffer()
+                script.SetSavePoint()
+                script.GotoPos(pos)
+    
     def OnMenuFileRenameTab(self, index, pos=None):
         if not self.scriptNotebook.dblClicked\
         and not self.titleEntry\
