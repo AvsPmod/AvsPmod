@@ -4044,6 +4044,7 @@ class SliderPlus(wx.Panel):
             if abs(self.mouse_wheel_rotation) >= event.GetWheelDelta():
                 delta = -1 if self.mouse_wheel_rotation > 0 else 1 
                 if self.app.options['invertscrolling']: delta = -delta
+                self.mouse_wheel_rotation = 0
                 oldvalue = self.value
                 self.SetValue(self.value + delta)
                 if self.value != oldvalue:
