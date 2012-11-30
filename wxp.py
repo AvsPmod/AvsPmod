@@ -602,6 +602,7 @@ class Notebook(wx.Notebook):
     """wx.Notebook, changing selected tab on mouse scroll"""
     
     def __init__(self, *args, **kwargs):
+        self.invert_mouse_wheel_rotation = kwargs.pop('invert_scroll', False)
         wx.Notebook.__init__(self, *args, **kwargs)
         self.mouse_wheel_rotation = 0
         self.Bind(wx.EVT_MOUSEWHEEL, self.OnMouseWheelNotebook)
@@ -614,7 +615,8 @@ class Notebook(wx.Notebook):
         else:
             self.mouse_wheel_rotation += rotation
         if abs(self.mouse_wheel_rotation) >= event.GetWheelDelta():
-            inc = 1 if self.mouse_wheel_rotation > 0 else -1 
+            inc = -1 if self.mouse_wheel_rotation > 0 else 1 
+            if self.invert_mouse_wheel_rotation: inc = -inc
             self.SelectTab(inc=inc)
             self.mouse_wheel_rotation = 0
     
@@ -979,7 +981,8 @@ class FindReplaceDialog(wx.Dialog):
         self.Hide()
 
 class OptionsDialog(wx.Dialog):
-    def __init__(self, parent, dlgInfo, options, title=None, startPageIndex=0, starText=True):
+    def __init__(self, parent, dlgInfo, options, title=None, startPageIndex=0, 
+                starText=True, invert_scroll=False):
         '''Init the OptionsDialog window
         
         Create a wx.Notebook from the tabs specified in 'dlgInfo' and the 
@@ -1002,7 +1005,8 @@ class OptionsDialog(wx.Dialog):
         self.starList = []
         notebook = len(dlgInfo) > 1
         if notebook:
-            nb = self.nb = Notebook(self, wx.ID_ANY, style=wx.NO_BORDER)
+            nb = self.nb = Notebook(self, wx.ID_ANY, style=wx.NO_BORDER, 
+                                    invert_scroll=invert_scroll)
         for tabInfo in dlgInfo:
             if notebook:
                 tabPanel = wx.Panel(nb, wx.ID_ANY)

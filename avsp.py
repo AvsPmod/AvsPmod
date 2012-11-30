@@ -1906,7 +1906,8 @@ class AvsStyleDialog(wx.Dialog):
         # Create the font buttons
         self.controls = {}
         self.controls2 = {}
-        self.notebook = wxp.Notebook(self, wx.ID_ANY, style=wx.NO_BORDER)
+        self.notebook = wxp.Notebook(self, wx.ID_ANY, style=wx.NO_BORDER, 
+                                     invert_scroll=self.GetParent().options['invertscrolling'])
         def OnNotebookPageChanged(event):
             event.GetEventObject().GetCurrentPage().SetFocus()
             event.Skip()
@@ -2742,7 +2743,8 @@ class AvsFunctionDialog(wx.Dialog):
             self.AddNewFunction(functionName)
 
     def CreateWindowElements(self):
-        self.notebook = wxp.Notebook(self, wx.ID_ANY, style=wx.NO_BORDER)
+        self.notebook = wxp.Notebook(self, wx.ID_ANY, style=wx.NO_BORDER, 
+                                     invert_scroll=self.GetParent().options['invertscrolling'])
         pageInfo = (
             (_('Core filters'), 0),
             (_('Plugins'), 2),
@@ -3891,6 +3893,7 @@ class SliderPlus(wx.Panel):
         self.maxValue = maxValue
         self.value = max(min(value, self.maxValue), self.minValue)
         self.bookmarks = []
+        self.mouse_wheel_rotation = 0
         # Internal display variables
         self.isclicked = False
         self.xdelta = None
@@ -4032,15 +4035,19 @@ class SliderPlus(wx.Panel):
 
     def _OnMouseWheel(self, event):
         #~ if event.LeftIsDown():
-        if self.HasCapture():
-            if event.GetWheelRotation() > 0:
-                delta = -1
+        if not self.HasCapture():
+            rotation = event.GetWheelRotation()
+            if self.mouse_wheel_rotation * rotation < 0:
+                self.mouse_wheel_rotation = rotation
             else:
-                delta = 1
-            oldvalue = self.value
-            self.SetValue(self.value+delta)
-            if self.value != oldvalue:
-                self._SendScrollEvent()
+                self.mouse_wheel_rotation += rotation
+            if abs(self.mouse_wheel_rotation) >= event.GetWheelDelta():
+                delta = -1 if self.mouse_wheel_rotation > 0 else 1 
+                if self.app.options['invertscrolling']: delta = -delta
+                oldvalue = self.value
+                self.SetValue(self.value + delta)
+                if self.value != oldvalue:
+                    self._SendScrollEvent()
 
     def _OnKeyDown(self, event):
         if self.HasCapture():
@@ -5100,6 +5107,7 @@ class MainFrame(wxp.Frame):
             'usetabimages': True,
             'multilinetab': False,
             'fixedwidthtab': False,
+            'invertscrolling': False,
             'dllnamewarning': True,
             # TOGGLE OPTIONS
             'alwaysontop': False,
@@ -5756,6 +5764,7 @@ class MainFrame(wxp.Frame):
                 ((_('Show tabs in multiline style'), wxp.OPT_ELEM_CHECK, 'multilinetab', _('There can be several rows of tabs'), dict() ), ),
                 ((_('Show tabs in fixed width'), wxp.OPT_ELEM_CHECK, 'fixedwidthtab', _('All tabs will have same width'), dict() ), ),
                 ((_('Enable scroll wheel through similar tabs'), wxp.OPT_ELEM_CHECK, 'enabletabscrolling', _('Mouse scroll wheel cycles through tabs with similar videos'), dict() ), ),
+                ((_('Invert scroll wheel direction'), wxp.OPT_ELEM_CHECK, 'invertscrolling', _('Scroll the mouse wheel up for changing tabs to the right'), dict() ), ),
                 ((_('Only allow a single instance of AvsPmod')+' *', wxp.OPT_ELEM_CHECK, 'singleinstance', _('Only allow a single instance of AvsPmod'), dict() ), ),
                 ((_('Show warning for bad plugin naming at startup'), wxp.OPT_ELEM_CHECK, 'dllnamewarning', _('Show warning at startup if there are dlls with bad naming in default plugin folder'), dict() ), ),
                 ((_('Max number of recent filenames'), wxp.OPT_ELEM_SPIN, 'nrecentfiles', _('This number determines how many filenames to store in the recent files menu'), dict(min_val=0) ), ),
@@ -9133,7 +9142,8 @@ class MainFrame(wxp.Frame):
         else:
             self.mouse_wheel_rotation += rotation
         if abs(self.mouse_wheel_rotation) >= event.GetWheelDelta():
-            inc = 1 if self.mouse_wheel_rotation > 0 else -1 
+            inc = -1 if self.mouse_wheel_rotation > 0 else 1 
+            if self.options['invertscrolling']: inc = -inc
             self.SelectTab(inc=inc)
             self.mouse_wheel_rotation = 0
     
@@ -9254,10 +9264,11 @@ class MainFrame(wxp.Frame):
             if not abs(self.mouse_wheel_rotation) >= event.GetWheelDelta():
                 return
             self.mouse_wheel_rotation = 0
+            if self.options['invertscrolling']: rotation = -rotation
             if rotation > 0:
-                delta = 1
-            else:
                 delta = -1
+            else:
+                delta = 1
             # Create list of indices to loop through
             index = self.scriptNotebook.GetSelection()
             r = range(self.scriptNotebook.GetPageCount())
@@ -14773,7 +14784,8 @@ class MainFrame(wxp.Frame):
     def ShowOptions(self, startPageIndex=0):
         '''Show the program settings dialog, save them, apply them if necessary and save to file'''
         dlg = wxp.OptionsDialog(self, self.optionsDlgInfo, self.options, 
-                                startPageIndex=startPageIndex)
+                                startPageIndex=startPageIndex, 
+                                invert_scroll=self.options['invertscrolling'])
         ID = dlg.ShowModal()
         # Set the data
         if ID == wx.ID_OK:
@@ -15519,7 +15531,8 @@ class MainFrame(wxp.Frame):
             optionsDlgInfo[0].append(rowOptions)
         
         # Open the dialog box and get the values
-        dlg = wxp.OptionsDialog(self, optionsDlgInfo, options, title, starText=False)
+        dlg = wxp.OptionsDialog(self, optionsDlgInfo, options, title, starText=False, 
+                                invert_scroll=self.options['invertscrolling'])
         ID = dlg.ShowModal()
         values = []
         if ID == wx.ID_OK:
