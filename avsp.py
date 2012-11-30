@@ -7883,87 +7883,88 @@ class MainFrame(wxp.Frame):
     def OnMenuVideoTrimEditorSetEndpoint(self, event):
         self.SetSelectionEndPoint(2)
 
-    def OnMenuVideoZoom(self, event, menuItem=None, show=True):
-        if True:#wx.VERSION > (2, 8):
-            vidmenus = [self.videoWindow.contextMenu, self.GetMenuBar().GetMenu(2)]
-            if menuItem is None:
-                id = event.GetId()
-                for vidmenu in vidmenus:
+    def OnMenuVideoZoom(self, event=None, menuItem=None, zoomfactor=None, show=True, scroll=None):
+        if zoomfactor is None:
+            if True:#wx.VERSION > (2, 8):
+                vidmenus = [self.videoWindow.contextMenu, self.GetMenuBar().GetMenu(2)]
+                if menuItem is None:
+                    id = event.GetId()
+                    for vidmenu in vidmenus:
+                        menu = vidmenu.FindItemById(vidmenu.FindItem(_('&Zoom'))).GetSubMenu()
+                        menuItem = menu.FindItemById(id)
+                        if menuItem:
+                            menuItem.Check()
+                            label = menuItem.GetLabel()
+                            zoomvalue = self.zoomLabelDict[label]
+                        else:
+                            updateMenu = menu
+                    id = updateMenu.FindItem(label)
+                    menuItem = updateMenu.FindItemById(id)
+                    if menuItem is None:
+                        print>>sys.stderr, _('Error'), 'OnMenuVideoZoom(): cannot find menu item by id'
+                        return
+                    menuItem.Check()
+                else:
+                    menuItem.Check()
+                    label = menuItem.GetLabel()
+                    zoomvalue = self.zoomLabelDict[label]
+                    for vidmenu in vidmenus:
+                        menu = vidmenu.FindItemById(vidmenu.FindItem(_('&Zoom'))).GetSubMenu()
+                        if menu != menuItem.GetMenu():
+                            id = menu.FindItem(label)
+                            menuItem = menu.FindItemById(id)
+                            if menuItem is None:
+                                print>>sys.stderr, _('Error'), 'OnMenuVideoZoom(): cannot find menu item by id'
+                                return
+                            menuItem.Check()
+                            break
+            else:
+                if menuItem is None:
+                    id = event.GetId()
+                    vidmenu = self.videoWindow.contextMenu
                     menu = vidmenu.FindItemById(vidmenu.FindItem(_('&Zoom'))).GetSubMenu()
                     menuItem = menu.FindItemById(id)
-                    if menuItem:
-                        menuItem.Check()
-                        label = menuItem.GetLabel()
-                        zoomvalue = self.zoomLabelDict[label]
-                    else:
-                        updateMenu = menu
-                id = updateMenu.FindItem(label)
-                menuItem = updateMenu.FindItemById(id)
                 if menuItem is None:
                     print>>sys.stderr, _('Error'), 'OnMenuVideoZoom(): cannot find menu item by id'
                     return
                 menuItem.Check()
-            else:
-                menuItem.Check()
-                label = menuItem.GetLabel()
-                zoomvalue = self.zoomLabelDict[label]
-                for vidmenu in vidmenus:
-                    menu = vidmenu.FindItemById(vidmenu.FindItem(_('&Zoom'))).GetSubMenu()
-                    if menu != menuItem.GetMenu():
-                        id = menu.FindItem(label)
-                        menuItem = menu.FindItemById(id)
-                        if menuItem is None:
-                            print>>sys.stderr, _('Error'), 'OnMenuVideoZoom(): cannot find menu item by id'
-                            return
-                        menuItem.Check()
-                        break
-        else:
-            if menuItem is None:
-                id = event.GetId()
-                vidmenu = self.videoWindow.contextMenu
-                menu = vidmenu.FindItemById(vidmenu.FindItem(_('&Zoom'))).GetSubMenu()
-                menuItem = menu.FindItemById(id)
-            if menuItem is None:
-                print>>sys.stderr, _('Error'), 'OnMenuVideoZoom(): cannot find menu item by id'
-                return
-            menuItem.Check()
-            zoomvalue = self.zoomLabelDict[menuItem.GetLabel()]
-        if zoomvalue == 'fill':
-            self.zoomwindow = True
-            self.zoomwindowfit = False
-            self.zoomwindowfill = True
-            zoomfactor = 1
-        elif zoomvalue == 'fit':
-            self.zoomwindow = True
-            self.zoomwindowfit = True
-            self.zoomwindowfill = False
-            zoomfactor = 1
-        else:
-            try:
-                zoompercent = int(zoomvalue) #int(label.strip(' %'))
-            except ValueError:
-                zoompercent = 100
-            if zoompercent >= 100:
-                zoomfactor = zoompercent / 100
-            else:
-                if zoompercent == 50:
-                    zoomfactor = 0.5
-                elif zoompercent == 25:
-                    zoomfactor = 0.25
-                else:
-                    return
-            if self.zoomwindow:
-                self.zoomwindow = False
+                zoomvalue = self.zoomLabelDict[menuItem.GetLabel()]
+            if zoomvalue == 'fill':
+                self.zoomwindow = True
                 self.zoomwindowfit = False
+                self.zoomwindowfill = True
+                zoomfactor = 1
+            elif zoomvalue == 'fit':
+                self.zoomwindow = True
+                self.zoomwindowfit = True
                 self.zoomwindowfill = False
-                #~ for index in xrange(self.scriptNotebook.GetPageCount()):
-                    #~ script = self.scriptNotebook.GetPage(index)
-                    #~ script.AVI = None
-                self.currentScript.lastSplitVideoPos = None
+                zoomfactor = 1
+            else:
+                try:
+                    zoompercent = int(zoomvalue) #int(label.strip(' %'))
+                except ValueError:
+                    zoompercent = 100
+                if zoompercent >= 100:
+                    zoomfactor = zoompercent / 100
+                else:
+                    if zoompercent == 50:
+                        zoomfactor = 0.5
+                    elif zoompercent == 25:
+                        zoomfactor = 0.25
+                    else:
+                        return
+                if self.zoomwindow:
+                    self.zoomwindow = False
+                    self.zoomwindowfit = False
+                    self.zoomwindowfill = False
+                    #~ for index in xrange(self.scriptNotebook.GetPageCount()):
+                        #~ script = self.scriptNotebook.GetPage(index)
+                        #~ script.AVI = None
+                    self.currentScript.lastSplitVideoPos = None
         #~ self.ZoomPreviewWindow(zoomfactor, show=show)
         self.zoomfactor = zoomfactor
         if show:
-            self.ShowVideoFrame()
+            self.ShowVideoFrame(scroll=scroll)
 
     def OnMenuVideoFlip(self, event):
         id = event.GetId()
@@ -9252,18 +9253,23 @@ class MainFrame(wxp.Frame):
     def OnMouseWheelVideoWindow(self, event):
         # Zoom preview
         if event.ControlDown():
+            # New zoom factor
             rotation = event.GetWheelRotation()
-            if self.mouse_wheel_rotation * rotation < 0:
-                self.mouse_wheel_rotation = rotation
-            else:
-                self.mouse_wheel_rotation += rotation
-            if not abs(self.mouse_wheel_rotation) >= event.GetWheelDelta():
-                return
-            self.mouse_wheel_rotation = 0
+            factor = 1 + 0.25 * abs(rotation) / event.GetWheelDelta()
+            old_zoomfactor = self.zoomfactor
             if rotation > 0:
-                self.MacroExecuteMenuCommand('Video -> Zoom -> Zoom in')
+                self.zoomfactor *= factor
             else:
-                self.MacroExecuteMenuCommand('Video -> Zoom -> Zoom out')
+                self.zoomfactor /= factor
+            
+            # Calculate scroll
+            xrel, yrel = self.videoWindow.ScreenToClient(wx.GetMousePosition())
+            xpos, ypos = self.videoWindow.CalcUnscrolledPosition(xrel, yrel)
+            xpos = (xpos - self.xo) * self.zoomfactor / old_zoomfactor + self.xo
+            ypos = (ypos - self.yo) * self.zoomfactor / old_zoomfactor + self.yo
+            scroll = xpos - xrel, ypos - yrel
+            
+            self.OnMenuVideoZoom(zoomfactor=self.zoomfactor, scroll=scroll)
             return
         
         # Scroll similar tabs
@@ -12331,7 +12337,7 @@ class MainFrame(wxp.Frame):
 
     def ShowVideoFrame(self, framenum=None, forceRefresh=False, wrap=True, script=None, 
                        userScrolling=False, keep_env=None, forceLayout=False, doLayout=True, 
-                       resize=None, focus=True, adjust_handle=False, check_playing=False):
+                       resize=None, scroll=None, focus=True, adjust_handle=False, check_playing=False):
         if check_playing and not self.playing_video:
             return
         # Exit if disable preview option is turned on
@@ -12452,6 +12458,8 @@ class MainFrame(wxp.Frame):
             # Paint the frame
             dc = wx.ClientDC(self.videoWindow)
             self.PaintAVIFrame(dc, script, self.currentframenum)
+        if scroll is not None:
+            self.videoWindow.Scroll(*scroll)
         # Update various elements
         self.videoSlider.SetValue(framenum)
         if (framenum, 0) in self.GetBookmarkFrameList():
