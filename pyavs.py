@@ -120,8 +120,8 @@ class AvsClipBase:
             if os.path.isdir(workdir):
                 self.env.SetWorkingDir(workdir)
                 self.workdir = workdir
-            self.file = avisynth.AVS_Value(filename)
-            self.name = avisynth.AVS_Value(scriptbasename)
+            self.file = avisynth.AVS_Value(scriptbasename)
+            self.name = avisynth.AVS_Value(filename)
             self.dir = avisynth.AVS_Value(scriptdirname)
             self.env.SetGlobalVar("$ScriptFile$", self.file)
             self.env.SetGlobalVar("$ScriptName$", self.name)
