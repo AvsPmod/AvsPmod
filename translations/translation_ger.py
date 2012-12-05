@@ -16,7 +16,7 @@
 
 # Übersetzt von Henrik . AvsP 2.0.1  Danke für die Hilfe, besonders LigH ,doxville,Brother John, Selur und Rippraff !
 
-version = "2.4.0"
+version = "2.4.1"
 
 messages = {
     "AviSynth fonts and colors" : u"Avisynthschriftarten und Farben",
@@ -138,8 +138,8 @@ messages = {
     "ASCII Text Array" : u"", # New in v2.3.0
     "Windows Icon" : u"", # New in v2.3.0
     "Windows Cursor" : u"", # New in v2.4.0
-    "fps" : u"fps (Bilder pro Sekunde)",
     "Frame" : u"Einzelbild",
+    "fps" : u"fps (Bilder pro Sekunde)",
     "A crash detected at the last running!" : u"", # New in v2.2.1
     "&Zoom" : u"", # New in v2.2.1
     "Damaged {0}. Using default settings." : u"", # New in v2.4.0
@@ -290,6 +290,8 @@ messages = {
     "Misc" : u"Sonstiges",
     "Choose the language used for the interface" : u"", # New in v2.3.0
     "Language" : u"", # New in v2.3.0
+    "Double the size of the buttons on the video control bar" : u"", # New in v2.4.1
+    "Use large size video controls" : u"", # New in v2.4.1
     "Show keyboard images in the script tabs when video has focus" : u"Zeigen der Tastaturabbildungen (keyboard images)in den Script-Tabs, wenn Video fokusiert",
     "Use keyboard images in tabs" : u"Verwenden von Tastaturabbildungen (keyboard images) bei Tabulatoren",
     "Show tabs in multiline style" : u"", # New in v2.2.1
@@ -298,6 +300,8 @@ messages = {
     "Show tabs in fixed width" : u"", # New in v2.2.1
     "Enable scroll wheel through similar tabs" : u"", # New in v2.2.1
     "Mouse scroll wheel cycles through tabs with similar videos" : u"", # New in v2.0.1
+    "Invert scroll wheel direction" : u"", # New in v2.4.1
+    "Scroll the mouse wheel up for changing tabs to the right" : u"", # New in v2.4.1
     "Only allow a single instance of AvsPmod" : u"", # New in v2.2.1
     "Show warning at startup if there are dlls with bad naming in default plugin folder" : u"", # New in v2.2.1
     "Show warning for bad plugin naming at startup" : u"", # New in v2.2.1
@@ -404,6 +408,8 @@ messages = {
     "Save the current script" : u"Speichere aktuelles Script",
     "Choose where to save the current script" : u"Speicherverzeichnis des aktuellen Scripts",
     "Save script as..." : u"Speichere Script als...",
+    "Reload script" : u"", # New in v2.4.1
+    "Reopen the current script file if it has changed" : u"", # New in v2.4.1
     "&Print script" : u"", # New in v2.3.1
     "Configure page for printing" : u"", # New in v2.3.1
     "Page setup" : u"", # New in v2.3.1
@@ -633,6 +639,8 @@ messages = {
     "Open the avisynth help html" : u"Öffne Avisynth-HTML-Hilfe",
     "Open Avisynth plugins folder" : u"", # New in v2.2.1
     "Open the avisynth plugins folder, or the last folder from which a plugin was loaded" : u"", # New in v2.3.1
+    "Changelog" : u"", # New in v2.4.1
+    "Open the changelog file" : u"", # New in v2.4.1
     "About this program" : u"Über dieses Programm",
     "About AvsPmod" : u"", # New in v2.2.1
     "Previous frame" : u"Vorheriges Einzelbild",
@@ -651,6 +659,7 @@ messages = {
     "Rename" : u"", # New in v2.2.1
     "Save" : u"Speichern",
     "Save as..." : u"Speichere als...",
+    "Reload" : u"", # New in v2.4.1
     "Copy to new tab" : u"Zu einem neuen Tab kopieren",
     "Reposition to" : u"", # New in v2.2.1
     "Crop editor" : u"Cropeditor",
@@ -760,6 +769,7 @@ messages = {
     "* This shortcut is active only when video window has focus.\n~ This shortcut is active only when script window has focus." : u"", # New in v2.3.0
     "Could not find the Avisynth plugins folder!" : u"", # New in v2.2.1
     "Could not find %(readme)s!" : u"Kann nicht finden %(readme)s!",
+    "Could not find %(changelog)s!" : u"", # New in v2.4.1
     "AvsPmod version %(version)s " : u"", # New in v2.2.1
     "AvsP Website" : u"AvsP Webseite",
     "AvsPmod repository" : u"", # New in v2.4.0

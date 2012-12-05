@@ -18,7 +18,7 @@
 #   zemog v2.0.1
 #   Overdrive80 v2.2.0
 
-version = "2.4.0"
+version = "2.4.1"
 
 messages = {
     "AviSynth fonts and colors" : u"Fuentes y colores script AviSynth",
@@ -140,8 +140,8 @@ messages = {
     "ASCII Text Array" : u"", # New in v2.3.0
     "Windows Icon" : u"", # New in v2.3.0
     "Windows Cursor" : u"", # New in v2.4.0
-    "fps" : u"FPS",
     "Frame" : u"Fotograma",
+    "fps" : u"FPS",
     "A crash detected at the last running!" : u"¡Un fallo detectado en la última ejecución",
     "&Zoom" : u"&Zoom",
     "Damaged {0}. Using default settings." : u"", # New in v2.4.0
@@ -292,6 +292,8 @@ messages = {
     "Misc" : u"Miscelánea",
     "Choose the language used for the interface" : u"", # New in v2.3.0
     "Language" : u"", # New in v2.3.0
+    "Double the size of the buttons on the video control bar" : u"", # New in v2.4.1
+    "Use large size video controls" : u"", # New in v2.4.1
     "Show keyboard images in the script tabs when video has focus" : u"Mostrar las teclas de acceso rápido en las pestañas cuando se focalice el vídeo",
     "Use keyboard images in tabs" : u"Mostrar teclas acceso rápido en las pestañas",
     "Show tabs in multiline style" : u"Mostrar tabulaciones en múltiples estilos",
@@ -300,6 +302,8 @@ messages = {
     "Show tabs in fixed width" : u"Mostrar pestañas con ancho fijo",
     "Enable scroll wheel through similar tabs" : u"Activar la rueda de desplazamiento a través de pestañas similares",
     "Mouse scroll wheel cycles through tabs with similar videos" : u"Habilitar la rueda del ratón para moverse a través de las pestañas que contengan videos similares",
+    "Invert scroll wheel direction" : u"", # New in v2.4.1
+    "Scroll the mouse wheel up for changing tabs to the right" : u"", # New in v2.4.1
     "Only allow a single instance of AvsPmod" : u"Permitir una única instancia de AvsPmod",
     "Show warning at startup if there are dlls with bad naming in default plugin folder" : u"Mostrar advertencia al inicio si hay dlls con un mal nombre en la carpeta de plugins",
     "Show warning for bad plugin naming at startup" : u"Mostrar advertencia al inicio, por un mal nombre de un plugin",
@@ -406,6 +410,8 @@ messages = {
     "Save the current script" : u"Guardar el scrip activo",
     "Choose where to save the current script" : u"Elegir donde y con que nombre guardar el scrip activo",
     "Save script as..." : u"Guardar script como...",
+    "Reload script" : u"", # New in v2.4.1
+    "Reopen the current script file if it has changed" : u"", # New in v2.4.1
     "&Print script" : u"", # New in v2.3.1
     "Configure page for printing" : u"", # New in v2.3.1
     "Page setup" : u"", # New in v2.3.1
@@ -635,6 +641,8 @@ messages = {
     "Open the avisynth help html" : u"Abrir archivo .html de ayuda para AviSynth",
     "Open Avisynth plugins folder" : u"Abrir carpeta de plugins de Avisynth",
     "Open the avisynth plugins folder, or the last folder from which a plugin was loaded" : u"", # New in v2.3.1
+    "Changelog" : u"", # New in v2.4.1
+    "Open the changelog file" : u"", # New in v2.4.1
     "About this program" : u"Acerca de este programa",
     "About AvsPmod" : u"Sobre AvsPmod",
     "Previous frame" : u"Fotograma anterior",
@@ -653,6 +661,7 @@ messages = {
     "Rename" : u"Renombrar",
     "Save" : u"Guardar",
     "Save as..." : u"Guardar como...",
+    "Reload" : u"", # New in v2.4.1
     "Copy to new tab" : u"Copiar en una nueva pestaña",
     "Reposition to" : u"Reposicionar a",
     "Crop editor" : u"Recortar",
@@ -762,6 +771,7 @@ messages = {
     "* This shortcut is active only when video window has focus.\n~ This shortcut is active only when script window has focus." : u"", # New in v2.3.0
     "Could not find the Avisynth plugins folder!" : u"¡No se ha podido encontrar la carpeta de plugins de Avisynth!",
     "Could not find %(readme)s!" : u"¡No se pudo encontrar %(readme)s!",
+    "Could not find %(changelog)s!" : u"", # New in v2.4.1
     "AvsPmod version %(version)s " : u"Versión de AvsPmod  %(version)s ",
     "AvsP Website" : u"AvsP Website",
     "AvsPmod repository" : u"", # New in v2.4.0

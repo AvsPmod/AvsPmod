@@ -28,7 +28,7 @@
 # Russian interface file for AvsP editor by qwerpoi, http://www.avisynth.org/qwerpoi
 # Translated by Fizick 19.09.2006-11.03.2007 for AvsP v1.3.7, http://avisynth.org.ru/avsp
 
-version = "2.4.0"
+version = "2.4.1"
 
 messages = {
     "AviSynth fonts and colors" : u"", 
@@ -150,8 +150,8 @@ messages = {
     "ASCII Text Array" : u"", # New in v2.3.0
     "Windows Icon" : u"", # New in v2.3.0
     "Windows Cursor" : u"", # New in v2.4.0
-    "fps" : u"кадр/с",
     "Frame" : u"Кадр",
+    "fps" : u"кадр/с",
     "A crash detected at the last running!" : u"", # New in v2.2.1
     "&Zoom" : u"", # New in v2.2.1
     "Damaged {0}. Using default settings." : u"", # New in v2.4.0
@@ -302,6 +302,8 @@ messages = {
     "Misc" : u"Разное", 
     "Choose the language used for the interface" : u"", # New in v2.3.0
     "Language" : u"", # New in v2.3.0
+    "Double the size of the buttons on the video control bar" : u"", # New in v2.4.1
+    "Use large size video controls" : u"", # New in v2.4.1
     "Show keyboard images in the script tabs when video has focus" : u"", # New in v2.2.1
     "Use keyboard images in tabs" : u"", # New in v2.2.1
     "Show tabs in multiline style" : u"", # New in v2.2.1
@@ -310,6 +312,8 @@ messages = {
     "Show tabs in fixed width" : u"", # New in v2.2.1
     "Enable scroll wheel through similar tabs" : u"", # New in v2.2.1
     "Mouse scroll wheel cycles through tabs with similar videos" : u"", # New in v2.2.1
+    "Invert scroll wheel direction" : u"", # New in v2.4.1
+    "Scroll the mouse wheel up for changing tabs to the right" : u"", # New in v2.4.1
     "Only allow a single instance of AvsPmod" : u"", # New in v2.2.1
     "Show warning at startup if there are dlls with bad naming in default plugin folder" : u"", # New in v2.2.1
     "Show warning for bad plugin naming at startup" : u"", # New in v2.2.1
@@ -416,6 +420,8 @@ messages = {
     "Save the current script" : u"Сохранить текущий скрипт",
     "Choose where to save the current script" : u"Выбрать где сохранить текущий скрипт",
     "Save script as..." : u"Сохранить скрипт как...",
+    "Reload script" : u"", # New in v2.4.1
+    "Reopen the current script file if it has changed" : u"", # New in v2.4.1
     "&Print script" : u"", # New in v2.3.1
     "Configure page for printing" : u"", # New in v2.3.1
     "Page setup" : u"", # New in v2.3.1
@@ -645,6 +651,8 @@ messages = {
     "Open the avisynth help html" : u"Открыть html файл справки AviSynth",
     "Open Avisynth plugins folder" : u"", # New in v2.2.1
     "Open the avisynth plugins folder, or the last folder from which a plugin was loaded" : u"", # New in v2.3.1
+    "Changelog" : u"", # New in v2.4.1
+    "Open the changelog file" : u"", # New in v2.4.1
     "About this program" : u"Об этой программе",
     "About AvsPmod" : u"", # New in v2.2.1
     "Previous frame" : u"Предыдущий кадр",
@@ -663,6 +671,7 @@ messages = {
     "Rename" : u"", # New in v2.2.1
     "Save" : u"Сохранить",
     "Save as..." : u"Сохранить как...",
+    "Reload" : u"", # New in v2.4.1
     "Copy to new tab" : u"", # New in v2.2.1
     "Reposition to" : u"", # New in v2.2.1
     "Crop editor" : u"Редактор обрезки",
@@ -772,6 +781,7 @@ messages = {
     "* This shortcut is active only when video window has focus.\n~ This shortcut is active only when script window has focus." : u"", # New in v2.3.0
     "Could not find the Avisynth plugins folder!" : u"", # New in v2.2.1
     "Could not find %(readme)s!" : u"Не могу найти %(readme)s!",
+    "Could not find %(changelog)s!" : u"", # New in v2.4.1
     "AvsPmod version %(version)s " : u"", # New in v2.2.1
     "AvsP Website" : u"AvsP WWW-сайт",
     "AvsPmod repository" : u"", # New in v2.4.0

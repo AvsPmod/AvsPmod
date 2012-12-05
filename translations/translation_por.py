@@ -17,7 +17,7 @@
 # Português(Br) translation authors:
 #   Veiga v1.2.0 - v2.0.1
 
-version = "2.4.0"
+version = "2.4.1"
 
 messages = {
     "AviSynth fonts and colors" : u"Avisynth (Fontes & Cores)",
@@ -139,8 +139,8 @@ messages = {
     "ASCII Text Array" : u"", # New in v2.3.0
     "Windows Icon" : u"", # New in v2.3.0
     "Windows Cursor" : u"", # New in v2.4.0
-    "fps" : u"fps",
     "Frame" : u"Quadro",
+    "fps" : u"fps",
     "A crash detected at the last running!" : u"", # New in v2.2.1
     "&Zoom" : u"", # New in v2.2.1
     "Damaged {0}. Using default settings." : u"", # New in v2.4.0
@@ -291,6 +291,8 @@ messages = {
     "Misc" : u"Miscelânias",
     "Choose the language used for the interface" : u"", # New in v2.3.0
     "Language" : u"", # New in v2.3.0
+    "Double the size of the buttons on the video control bar" : u"", # New in v2.4.1
+    "Use large size video controls" : u"", # New in v2.4.1
     "Show keyboard images in the script tabs when video has focus" : u"Mostra nas fichas, o numero correspondente do teclado qdo o video estiver focado",
     "Use keyboard images in tabs" : u"Mostra o número correspondente do teclado nas fichas",
     "Show tabs in multiline style" : u"", # New in v2.2.1
@@ -299,6 +301,8 @@ messages = {
     "Show tabs in fixed width" : u"", # New in v2.2.1
     "Enable scroll wheel through similar tabs" : u"", # New in v2.2.1
     "Mouse scroll wheel cycles through tabs with similar videos" : u"A roda do mouse irá navegar pelas fichas com videos similares",
+    "Invert scroll wheel direction" : u"", # New in v2.4.1
+    "Scroll the mouse wheel up for changing tabs to the right" : u"", # New in v2.4.1
     "Only allow a single instance of AvsPmod" : u"", # New in v2.2.1
     "Show warning at startup if there are dlls with bad naming in default plugin folder" : u"", # New in v2.2.1
     "Show warning for bad plugin naming at startup" : u"", # New in v2.2.1
@@ -405,6 +409,8 @@ messages = {
     "Save the current script" : u"Salva o script em uso",
     "Choose where to save the current script" : u"Escolha onde salvar o script em uso",
     "Save script as..." : u"Salvar script como",
+    "Reload script" : u"", # New in v2.4.1
+    "Reopen the current script file if it has changed" : u"", # New in v2.4.1
     "&Print script" : u"", # New in v2.3.1
     "Configure page for printing" : u"", # New in v2.3.1
     "Page setup" : u"", # New in v2.3.1
@@ -634,6 +640,8 @@ messages = {
     "Open the avisynth help html" : u"Abre ajuda html do avisynth",
     "Open Avisynth plugins folder" : u"", # New in v2.2.1
     "Open the avisynth plugins folder, or the last folder from which a plugin was loaded" : u"", # New in v2.3.1
+    "Changelog" : u"", # New in v2.4.1
+    "Open the changelog file" : u"", # New in v2.4.1
     "About this program" : u"Sôbre este programa",
     "About AvsPmod" : u"", # New in v2.2.1
     "Previous frame" : u"Quadro anterior",
@@ -652,6 +660,7 @@ messages = {
     "Rename" : u"", # New in v2.2.1
     "Save" : u"Salvar",
     "Save as..." : u"Salvar como...",
+    "Reload" : u"", # New in v2.4.1
     "Copy to new tab" : u"Copiar p/ nova tabulação",
     "Reposition to" : u"", # New in v2.2.1
     "Crop editor" : u"Editor crop",
@@ -761,6 +770,7 @@ messages = {
     "* This shortcut is active only when video window has focus.\n~ This shortcut is active only when script window has focus." : u"", # New in v2.3.0
     "Could not find the Avisynth plugins folder!" : u"", # New in v2.2.1
     "Could not find %(readme)s!" : u"Impossivel encontrar %(readme)s!",
+    "Could not find %(changelog)s!" : u"", # New in v2.4.1
     "AvsPmod version %(version)s " : u"", # New in v2.2.1
     "AvsP Website" : u"AvsP Website",
     "AvsPmod repository" : u"", # New in v2.4.0

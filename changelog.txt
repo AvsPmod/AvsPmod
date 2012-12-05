@@ -2,6 +2,20 @@ CHANGELOG
 =========
 
 
+Version 2.4.1 [2012-12-05]
+--------------------------
+
+- Add 'reload script' menu option
+- Add 'use large size video controls' setting
+- Add 'invert scroll wheel direction' setting
+- Improve video zooming on Ctrl + mouse wheel
+- Fix the 'navigate' menu options needing to be pressed two times when using a separate window for the video preview
+- Fix the dragging of the handle of the separate window preview's slider
+- Fix ScriptFile and ScriptName being swapped
+- Accept several clip properties on the Pipe macro function's command line
+- Other minor fixes
+
+
 Version 2.4.0 [2012-11-27]
 --------------------------
 

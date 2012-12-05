@@ -17,7 +17,7 @@
 # Japanese translation authors:
 #   niiyan v2.0.2
 
-version = "2.4.0"
+version = "2.4.1"
 
 messages = {
     "AviSynth fonts and colors" : u"フォントと色の設定",
@@ -139,8 +139,8 @@ messages = {
     "ASCII Text Array" : u"", # New in v2.3.0
     "Windows Icon" : u"", # New in v2.3.0
     "Windows Cursor" : u"", # New in v2.4.0
-    "fps" : u"",
     "Frame" : u"フレーム",
+    "fps" : u"",
     "A crash detected at the last running!" : u"", # New in v2.2.0
     "&Zoom" : u"", # New in v2.2.0
     "Damaged {0}. Using default settings." : u"", # New in v2.4.0
@@ -291,6 +291,8 @@ messages = {
     "Misc" : u"その他",
     "Choose the language used for the interface" : u"", # New in v2.3.0
     "Language" : u"", # New in v2.3.0
+    "Double the size of the buttons on the video control bar" : u"", # New in v2.4.1
+    "Use large size video controls" : u"", # New in v2.4.1
     "Show keyboard images in the script tabs when video has focus" : u"ビデオにフォーカスがある時にスクリプトタブにキーボード画像を表示する",
     "Use keyboard images in tabs" : u"タブ内にキーボード画像を使用",
     "Show tabs in multiline style" : u"", # New in v2.2.0
@@ -299,6 +301,8 @@ messages = {
     "Show tabs in fixed width" : u"", # New in v2.2.0
     "Enable scroll wheel through similar tabs" : u"", # New in v2.2.0
     "Mouse scroll wheel cycles through tabs with similar videos" : u"マウスのスクロールホイールで類似したビデオのタブを切り替え表示する",
+    "Invert scroll wheel direction" : u"", # New in v2.4.1
+    "Scroll the mouse wheel up for changing tabs to the right" : u"", # New in v2.4.1
     "Only allow a single instance of AvsPmod" : u"", # New in v2.2.0
     "Show warning at startup if there are dlls with bad naming in default plugin folder" : u"", # New in v2.2.0
     "Show warning for bad plugin naming at startup" : u"", # New in v2.2.0
@@ -405,6 +409,8 @@ messages = {
     "Save the current script" : u"現在のスクリプトを保存",
     "Choose where to save the current script" : u"現在のスクリプトを保存する場所を選択",
     "Save script as..." : u"名前を付けて保存",
+    "Reload script" : u"", # New in v2.4.1
+    "Reopen the current script file if it has changed" : u"", # New in v2.4.1
     "&Print script" : u"", # New in v2.3.1
     "Configure page for printing" : u"", # New in v2.3.1
     "Page setup" : u"", # New in v2.3.1
@@ -634,6 +640,8 @@ messages = {
     "Open the avisynth help html" : u"AviSynthのヘルプを開く",
     "Open Avisynth plugins folder" : u"", # New in v2.2.0
     "Open the avisynth plugins folder, or the last folder from which a plugin was loaded" : u"", # New in v2.3.1
+    "Changelog" : u"", # New in v2.4.1
+    "Open the changelog file" : u"", # New in v2.4.1
     "About this program" : u"このプログラムについて",
     "About AvsPmod" : u"", # New in v2.2.0
     "Previous frame" : u"前のフレーム",
@@ -652,6 +660,7 @@ messages = {
     "Rename" : u"", # New in v2.2.0
     "Save" : u"保存",
     "Save as..." : u"名前を付けて保存",
+    "Reload" : u"", # New in v2.4.1
     "Copy to new tab" : u"新しいタブにコピー",
     "Reposition to" : u"", # New in v2.2.0
     "Crop editor" : u"Cropエディタ",
@@ -761,6 +770,7 @@ messages = {
     "* This shortcut is active only when video window has focus.\n~ This shortcut is active only when script window has focus." : u"", # New in v2.3.0
     "Could not find the Avisynth plugins folder!" : u"", # New in v2.2.0
     "Could not find %(readme)s!" : u"%(readme)sを見つけることができませんでした！",
+    "Could not find %(changelog)s!" : u"", # New in v2.4.1
     "AvsPmod version %(version)s " : u"", # New in v2.2.0
     "AvsP Website" : u"AvsPウェブサイト",
     "AvsPmod repository" : u"", # New in v2.4.0
