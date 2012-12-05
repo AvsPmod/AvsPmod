@@ -15810,6 +15810,7 @@ class MainFrame(wxp.Frame):
             old_flip_h = 'fliphorizontal' in self.flip
             old_flip_v = 'flipvertical' in self.flip
             dc = wx.ClientDC(self.videoWindow)
+            dc.SetLogicalFunction(wx.INVERT) # TODO: delete old pen color code
             dc.SetDeviceOrigin(self.xo, self.yo)
             dc.SetUserScale(self.zoomfactor, self.zoomfactor)
             pen_width = 1.0 if lines else 3.0
