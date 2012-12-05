@@ -6800,6 +6800,7 @@ class MainFrame(wxp.Frame):
         videoWindow.Bind(wx.EVT_CONTEXT_MENU, self.OnContextMenu)
         videoWindow.Bind(wx.EVT_SET_FOCUS, self.OnFocusVideoWindow)
         videoWindow.Bind(wx.EVT_PAINT, self.OnPaintVideoWindow)
+        videoWindow.Bind(wx.EVT_ERASE_BACKGROUND, self.OnEraseBackground)
         videoWindow.Bind(wx.EVT_KEY_DOWN, self.OnKeyDownVideoWindow)
         videoWindow.Bind(wx.EVT_MOUSEWHEEL, self.OnMouseWheelVideoWindow)
         videoWindow.Bind(wx.EVT_MIDDLE_DOWN, self.OnMiddleDownVideoWindow)
@@ -9992,6 +9993,30 @@ class MainFrame(wxp.Frame):
             script = self.currentScript
             self.PaintAVIFrame(dc, script, self.currentframenum, isPaintEvent=True)
     
+    def OnEraseBackground(self, event):
+        dc = event.GetDC()
+        if dc is not None:
+            script = self.currentScript
+            if script.AVI is not None:
+                zoom = self.zoomfactor
+                w = script.AVI.Width * zoom
+                h = script.AVI.Height * zoom
+                w_dc, h_dc = dc.GetSize()
+                dc.SetClippingRegion(0, 0, w_dc, self.yo)
+                dc.Clear()
+                dc.DestroyClippingRegion()
+                dc.SetClippingRegion(0, 0, self.xo, h_dc)
+                dc.Clear()
+                dc.DestroyClippingRegion()
+                dc.SetClippingRegion(w, 0, w_dc - w, h_dc)
+                dc.Clear()
+                dc.DestroyClippingRegion()
+                dc.SetClippingRegion(0, h, w_dc, h_dc - h)
+                dc.Clear()
+                dc.DestroyClippingRegion()
+            else:
+                dc.Clear()
+    
     def OnZoomInOut(self, event):
         id = event.GetId()
         vidmenus = [self.videoWindow.contextMenu, self.GetMenuBar().GetMenu(2)]
@@ -12453,6 +12478,8 @@ class MainFrame(wxp.Frame):
         oldVideoSize = (self.oldWidth, self.oldHeight)
         newVideoSize = (videoWidth, videoHeight)        
         self.bmpVideo = None
+        if scroll is not None:
+            self.Freeze()
         if newSize != oldSize or newVideoSize != oldVideoSize or not self.previewWindowVisible:
             self.videoWindow.Refresh()
             self.previewWindowVisible = True
@@ -12463,6 +12490,7 @@ class MainFrame(wxp.Frame):
             self.PaintAVIFrame(dc, script, self.currentframenum)
         if scroll is not None:
             self.videoWindow.Scroll(*scroll)
+            self.Thaw()
         # Update various elements
         self.videoSlider.SetValue(framenum)
         if (framenum, 0) in self.GetBookmarkFrameList():
