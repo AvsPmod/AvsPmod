@@ -6478,6 +6478,7 @@ class MainFrame(wxp.Frame):
                 (_('Avisynth help'), 'F1', self.OnMenuHelpAvisynth, _('Open the avisynth help html')),
                 (_('Open Avisynth plugins folder'), '', self.OnMenuHelpAvisynthPlugins, _('Open the avisynth plugins folder, or the last folder from which a plugin was loaded')),
                 (''),
+                (_('Changelog'), '', self.OnMenuHelpChangelog, _('Open the changelog file')),
                 (_('About AvsPmod'), '', self.OnMenuHelpAbout, _('About this program')),
             ),
         )
@@ -8662,6 +8663,13 @@ class MainFrame(wxp.Frame):
         else:
             wx.MessageBox(_('Could not find %(readme)s!') % locals(), _('Error'), style=wx.OK|wx.ICON_ERROR)
 
+    def OnMenuHelpChangelog(self, event):
+        changelog = os.path.join(self.programdir, 'changelog.txt')
+        if os.path.isfile(changelog):
+            startfile(changelog)
+        else:
+            wx.MessageBox(_('Could not find %(changelog)s!') % locals(), _('Error'), style=wx.OK|wx.ICON_ERROR)
+    
     def OnMenuHelpAbout(self, event):
         version = self.version
         dlg = wx.Dialog(self, wx.ID_ANY, _('About AvsPmod'), size=(220,180))
