@@ -5096,7 +5096,7 @@ class MainFrame(wxp.Frame):
             'autosliderexclusions': '',
             # MISC OPTIONS
             'lang': 'eng',
-            'bigui': False, 
+            'largeui': False, 
             'startupsession': True,
             'alwaysloadstartupsession': False,
             'closeneversaved': False,
@@ -5758,7 +5758,7 @@ class MainFrame(wxp.Frame):
             ),
             (_('Misc'),
                 ((_('Language')+' *', wxp.OPT_ELEM_LIST, 'lang', _('Choose the language used for the interface'), dict(choices=self.getTranslations()) ), ),
-                ((_('Use large size video controls')+' *', wxp.OPT_ELEM_CHECK, 'bigui', _('Double the size of the buttons on the video control bar'), dict() ), ),
+                ((_('Use large size video controls')+' *', wxp.OPT_ELEM_CHECK, 'largeui', _('Double the size of the buttons on the video control bar'), dict() ), ),
                 #~((_('Load bookmarks on startup'), wxp.OPT_ELEM_CHECK, 'loadstartupbookmarks', _('Load video bookmarks from the previous session on program startup'), dict() ), ),
                 #~ ((_('Show full pathname in program title'), wxp.OPT_ELEM_CHECK, 'showfullname', _('Show the full pathname of the current script in the program title'), dict() ), ),
                 #~ ((_('Use custom AviSynth lexer'), wxp.OPT_ELEM_CHECK, 'usecustomlexer', _('Use the custom AviSynth syntax highlighting lexer (may be slower)'), dict() ), ),
@@ -5850,14 +5850,24 @@ class MainFrame(wxp.Frame):
         self.videoPane = wx.Panel(parent, wx.ID_ANY)
         self.videoSplitter = wx.SplitterWindow(self.videoPane, wx.ID_ANY, style=wx.SP_3DSASH|wx.SP_NOBORDER|wx.SP_LIVE_UPDATE)
 
-        w = 10
-        h = 50
-        bmpMask = wx.EmptyBitmap(w, h)
-        mdc = wx.MemoryDC()
-        mdc.SelectObject(bmpMask)
-        mdc.DrawPolygon([(8,0), (2,6), (8,12)])
-        mdc.DrawPolygon([(8,18), (2,24), (8,30)])
-        mdc.DrawPolygon([(8,36), (2,42), (8,48)])
+        if self.options['largeui']:
+            w = 16
+            h = 72
+            bmpMask = wx.EmptyBitmap(w, h)
+            mdc = wx.MemoryDC()
+            mdc.SelectObject(bmpMask)
+            mdc.DrawPolygon([(14,0), (2,9), (14,18)])
+            mdc.DrawPolygon([(14,26), (2,35), (14,44)])
+            mdc.DrawPolygon([(14,52), (2,61), (14,70)])
+        else:
+            w = 10
+            h = 50
+            bmpMask = wx.EmptyBitmap(w, h)
+            mdc = wx.MemoryDC()
+            mdc.SelectObject(bmpMask)
+            mdc.DrawPolygon([(8,0), (2,6), (8,12)])
+            mdc.DrawPolygon([(8,18), (2,24), (8,30)])
+            mdc.DrawPolygon([(8,36), (2,42), (8,48)])
         mdc = None
         bmpShow = wx.EmptyBitmap(w, h)
         #~ mdc = wx.MemoryDC()
@@ -6478,7 +6488,7 @@ class MainFrame(wxp.Frame):
         bmpExternal = external_icon.getImage()
         bmpRight = next_icon.getImage()
         bmpSkipRight = skip_icon.getImage()
-        if not self.options['bigui']:
+        if not self.options['largeui']:
             bmpPlay = bmpPlay.Scale(16,16)
             bmpPause = bmpPause.Scale(16,16)
             bmpExternal = bmpExternal.Scale(16,16)
@@ -6812,10 +6822,10 @@ class MainFrame(wxp.Frame):
 
     def createVideoControls(self, parent, primary=True):
         if wx.VERSION < (2, 9):
-            height = 40 if self.options['bigui'] else 24
+            height = 40 if self.options['largeui'] else 24
             panel = wx.Panel(parent, style=wx.BORDER_NONE, size=(-1, height))
         else:
-            height = 46 if self.options['bigui'] else 30
+            height = 46 if self.options['largeui'] else 30
             panel = wx.Panel(parent, size=(-1, height))
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         videoControlWidgets = []
@@ -6842,7 +6852,7 @@ class MainFrame(wxp.Frame):
         frameTextCtrl.Bind(wx.EVT_SET_FOCUS, self.OnButtonTextSetFocus)        
         frameTextCtrl.Bind(wx.EVT_CONTEXT_MENU, self.OnButtonTextContextMenu)
         frameTextCtrl.Replace(0, -1, str(0))
-        sizer.Add(frameTextCtrl, 0, wx.ALIGN_CENTRE_VERTICAL|wx.LEFT, 12 if self.options['bigui'] else 4)
+        sizer.Add(frameTextCtrl, 0, wx.ALIGN_CENTRE_VERTICAL|wx.LEFT, 12 if self.options['largeui'] else 4)
         videoControlWidgets.append(frameTextCtrl)
         if primary:
             self.frameTextCtrl = frameTextCtrl
@@ -6852,7 +6862,7 @@ class MainFrame(wxp.Frame):
         if primary:
             #~ self.videoSlider = wxp.Slider(panel, wx.ID_ANY, 0, 0, 240-1, style=wx.SL_HORIZONTAL|wx.SL_SELRANGE|wx.SL_AUTOTICKS, onscroll=self.OnSliderChanged)
             #~ self.videoSlider = wxp.Slider(panel, wx.ID_ANY, 0, 0, 240-1, style=wx.SL_HORIZONTAL|wx.SL_SELRANGE, onscroll=self.OnSliderChanged)
-            self.videoSlider = SliderPlus(panel, self, wx.ID_ANY, 0, 0, 240-1, big=self.options['bigui'], bookmarkDict=self.bookmarkDict)
+            self.videoSlider = SliderPlus(panel, self, wx.ID_ANY, 0, 0, 240-1, big=self.options['largeui'], bookmarkDict=self.bookmarkDict)
             self.videoSlider.Bind(wx.EVT_SCROLL_THUMBTRACK, self.OnSliderChanged)
             self.videoSlider.Bind(wx.EVT_SCROLL_ENDSCROLL, self.OnSliderReleased)
             self.videoSlider.Bind(wx.EVT_RIGHT_UP, self.OnSliderRightUp)
@@ -6864,7 +6874,7 @@ class MainFrame(wxp.Frame):
             #~ self.videoSlider = wxp.Slider(panel, wx.ID_ANY, 0, 0, 240-1, style=wx.SL_HORIZONTAL|wx.SL_SELRANGE|wx.SL_AUTOTICKS, onscroll=self.OnSliderChanged)
             #~ self.videoSlider2 = wxp.Slider(panel, wx.ID_ANY, 0, 0, 240-1, style=wx.SL_HORIZONTAL|wx.SL_SELRANGE, onscroll=self.OnSliderChanged)
             #~ self.videoSlider.Bind(wx.EVT_SCROLL, self.OnSliderChanged)
-            self.videoSlider2 = SliderPlus(panel, self, wx.ID_ANY, 0, 0, 240-1, big=self.options['bigui'], bookmarkDict=self.bookmarkDict)
+            self.videoSlider2 = SliderPlus(panel, self, wx.ID_ANY, 0, 0, 240-1, big=self.options['largeui'], bookmarkDict=self.bookmarkDict)
             self.videoSlider2.Bind(wx.EVT_SCROLL_THUMBTRACK, self.OnSliderChanged)
             self.videoSlider2.Bind(wx.EVT_SCROLL_ENDSCROLL, self.OnSliderReleased)
             self.videoSlider2.Bind(wx.EVT_RIGHT_UP, self.OnSliderRightUp)
