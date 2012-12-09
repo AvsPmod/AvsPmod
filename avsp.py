@@ -13481,7 +13481,7 @@ class MainFrame(wxp.Frame):
         items = mo.group().lstrip(self.sliderOpenString).rstrip(self.sliderCloseString).split(',')
         if len(items) == 4:
             return items[3].strip()
-        elif len(items) == 1:
+        elif len(items) == 1 and 'separator' in items[0]:
             return ''
         else:
             return mo.group()
