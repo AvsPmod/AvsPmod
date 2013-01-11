@@ -8123,16 +8123,22 @@ class MainFrame(wxp.Frame):
         progress = wx.ProgressDialog(message=_('Starting analysis pass...'), title=_('Run analysis pass'), 
                                      style=wx.PD_CAN_ABORT|wx.PD_ELAPSED_TIME|wx.PD_REMAINING_TIME)
         frame_count = script.AVI.Framecount
-        last_frame = frame_count - 1
-        previous = time.time()
-        for i in range(frame_count):
-            script.AVI.clip.GetFrame(i)
+        initial_time = previous_time = time.time()
+        previous_frame = -1
+        for frame in range(frame_count):
+            script.AVI.clip.GetFrame(frame)
             now = time.time()
-            if now - previous > 0.1:
-                previous = now
-                if not progress.Update(i*100/frame_count, 'Frame %s/%s' % (i, last_frame))[0]:
+            delta = now - previous_time
+            if delta > 0.1:
+                fps = (frame - previous_frame) / delta
+                previous_time = now
+                previous_frame = frame
+                if not progress.Update(frame * 100/ frame_count, 
+                                       _('Frame %s/%s (%#.4g fps)') % (frame, frame_count, fps))[0]:
                     progress.Destroy()
                     return False
+        average_fps = frame_count / (time.time() - initial_time)
+        progress.Update(100, _('Finished (%#.4g fps average)') % average_fps)
         progress.Destroy()
         return True
     
