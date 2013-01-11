@@ -6437,6 +6437,7 @@ class MainFrame(wxp.Frame):
                 (_('Keep variables on refreshing'), '', self.OnMenuVideoReuseEnvironment, _('Create the new AviSynth clip on the same environment. Useful for tweaking parameters'), wx.ITEM_CHECK, False),
                 (''),
                 (_('Save image as...'), '', self.OnMenuVideoSaveImage, _('Save the current frame as a bitmap')),
+                (_('Copy image to clipboard'), '', self.OnMenuVideoCopyImageClipboard, _('Copy the current frame to the clipboard as a bitmap')),
                 (''),
                 (_('Refresh preview'), 'F5', self.OnMenuVideoRefresh, _('Force the script to reload and refresh the video frame')),
                 (_('Show/Hide the preview'), 'Shift+F5', self.OnMenuVideoToggle, _('Toggle the video preview')),
@@ -7837,7 +7838,29 @@ class MainFrame(wxp.Frame):
 
     def OnMenuVideoSaveImage(self, event):
         self.SaveCurrentImage()
-
+    
+    def OnMenuVideoCopyImageClipboard(self, event):
+        script = self.currentScript
+        if script is None or script.AVI is None:
+            wx.MessageBox(_('No image to save'), _('Error'), 
+                          style=wx.OK|wx.ICON_ERROR)
+            return False
+        w = script.AVI.Width
+        h = script.AVI.Height
+        bmp = wx.EmptyBitmap(w, h)
+        mdc = wx.MemoryDC()
+        mdc.SelectObject(bmp)
+        script.AVI.DrawFrame(self.currentframenum, mdc)
+        bmp_data = wx.BitmapDataObject(bmp)
+        if wx.TheClipboard.Open():
+            wx.TheClipboard.SetData(bmp_data)
+            wx.TheClipboard.Close()
+        else:
+            wx.MessageBox(_("Couldn't open clipboard"), _('Error'), 
+                          style=wx.OK|wx.ICON_ERROR)
+            return False
+        return True
+    
     def OnMenuVideoCropEditor(self, event):
         script = self.currentScript
         dlg = self.cropDialog
