@@ -1,7 +1,7 @@
 # AvsP - an AviSynth editor
 # 
 # Copyright 2007 Peter Jang <http://www.avisynth.org/qwerpoi>
-#           2010-2012 the AvsPmod authors <https://github.com/avspmod/avspmod>
+#           2010-2013 the AvsPmod authors <https://github.com/avspmod/avspmod>
 #
 # Printing support based on stcprint.py from Peppy/Editra (wxWidgets license)
 # Copyright 2007 Cody Precord <staff@editra.org>
@@ -11068,7 +11068,7 @@ class MainFrame(wxp.Frame):
                 self.options['imagechoice'] = dlg.GetFilterIndex()
                 self.options['imagesavedir'] = os.path.dirname(filename)
                 fmt = os.path.splitext(os.path.basename(filename))[0]
-                fmt = re.sub(title, '%s', fmt, 1)
+                fmt = re.sub(re.escape(title), '%s', fmt, 1)
                 fmt = re.sub(r'([0]*?)%d' % self.currentframenum,
                              lambda m: '%%0%dd' % len(m.group(0)) if m.group(1) else '%d',
                              fmt, 1)
