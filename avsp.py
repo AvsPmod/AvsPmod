@@ -5640,7 +5640,7 @@ class MainFrame(wxp.Frame):
                             argList.append(typeValue)
                         if namedargname:
                             try:
-                                argList[namedargindex] += ' '+''.join(namedargname)
+                                argList[namedargindex] += ' "{0}"'.format(''.join(namedargname))
                             except IndexError:
                                 print>>sys.stderr, (
                                     'Error parsing %s plugin parameters: '
