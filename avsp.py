@@ -2713,6 +2713,7 @@ class AvsFunctionDialog(wx.Dialog):
             _('Add or override AviSynth functions in the database'),
             size=(500, 300), style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER
         )
+        self.parent = parent
         self.filterDict = filterDict.copy()
         self.overrideDict = overrideDict.copy()
         self.presetDict = presetDict.copy()
@@ -2736,6 +2737,17 @@ class AvsFunctionDialog(wx.Dialog):
                     label = listbox.GetString(i)
                     if label.split()[0].lower() == lowername:
                         self.notebook.SetSelection(index)
+                        listbox.SetSelection(i)
+                        self.EditFunctionInfo()
+                        return
+            # functionName may be a shortname
+            if lowername in self.parent.avsfilterdict:
+                panel = self.notebook.GetPage(1) # Plugins tab
+                listbox = panel.listbox
+                for i in xrange(listbox.GetCount()):
+                    label = listbox.GetString(i)
+                    if label.split()[0].lower().endswith(lowername):
+                        self.notebook.SetSelection(1)
                         listbox.SetSelection(i)
                         self.EditFunctionInfo()
                         return
