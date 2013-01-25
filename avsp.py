@@ -10057,24 +10057,39 @@ class MainFrame(wxp.Frame):
         if dc is not None:
             script = self.currentScript
             if script.AVI is not None:
-                zoom = self.zoomfactor
-                w = script.AVI.Width * zoom
-                h = script.AVI.Height * zoom
+                try: # using a custom handler for EVT_ERASE_BACKGROUND causes the 
+                     # background to lose the theme's color on Windows
+                    dc.SetBackground(wx.Brush(self.videoWindow.GetBackgroundColour()))
+                except: pass
                 w_dc, h_dc = dc.GetSize()
-                dc.SetClippingRegion(0, 0, w_dc, self.yo)
-                dc.Clear()
-                dc.DestroyClippingRegion()
-                dc.SetClippingRegion(0, 0, self.xo, h_dc)
-                dc.Clear()
-                dc.DestroyClippingRegion()
-                dc.SetClippingRegion(w, 0, w_dc - w, h_dc)
-                dc.Clear()
-                dc.DestroyClippingRegion()
-                dc.SetClippingRegion(0, h, w_dc, h_dc - h)
-                dc.Clear()
-                dc.DestroyClippingRegion()
-            else:
-                dc.Clear()
+                w_scrolled, h_scrolled = self.videoWindow.GetVirtualSize()
+                x0, y0 = self.videoWindow.GetViewStart()
+                if y0 < self.yo:
+                    dc.SetClippingRegion(0, 0, w_dc, self.yo - y0)
+                    dc.Clear()
+                    dc.DestroyClippingRegion()
+                if x0 < self.xo:
+                    dc.SetClippingRegion(0, 0, self.xo - x0, h_dc)
+                    dc.Clear()
+                    dc.DestroyClippingRegion()
+                if h_dc == h_scrolled:
+                    bottom = h_dc - int(script.AVI.Height * self.zoomfactor) - self.yo
+                else:
+                    bottom = h_dc - (h_scrolled - y0) + 2
+                if bottom > 0:
+                    dc.SetClippingRegion(0, h_dc - bottom, w_dc, bottom)
+                    dc.Clear()
+                    dc.DestroyClippingRegion()
+                if w_dc == w_scrolled:
+                    right = w_dc - int(script.AVI.Width * self.zoomfactor) - self.xo
+                else:
+                    right = w_dc - (w_scrolled - x0) + 2
+                if right > 0:
+                    dc.SetClippingRegion(w_dc - right, 0, right, h_dc)
+                    dc.Clear()
+                    dc.DestroyClippingRegion()
+                return
+        event.Skip()
     
     def OnZoomInOut(self, event):
         id = event.GetId()
