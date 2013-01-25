@@ -11704,13 +11704,23 @@ class MainFrame(wxp.Frame):
                 for slider in sliderList:
                     if bmtype != bmtype2:
                         slider.SetBookmark(value, bmtype, refresh=refreshProgram)
+                        color = wx.RED
                     else:
                         self.DeleteFrameBookmark(value, bmtype, refreshProgram=refreshProgram)
                         #~ self.DeleteFrameBookmark(value, bmtype)
+                        color = wx.BLACK
             except ValueError:
                 # Bookmark does not already exists
                 for slider in sliderList:
                     slider.SetBookmark(value, bmtype, refresh=refreshProgram)
+                    color = wx.RED
+            value = str(value)
+            if value == self.frameTextCtrl.GetLineText(0):
+                self.frameTextCtrl.SetForegroundColour(color)
+                self.frameTextCtrl.Refresh()
+            if self.separatevideowindow and value == self.frameTextCtrl2.GetLineText(0):
+                self.frameTextCtrl2.SetForegroundColour(color)
+                self.frameTextCtrl2.Refresh()
         if refreshProgram:
             self.UpdateBookmarkMenu()
             if refreshVideo and self.trimDialog.IsShown():
