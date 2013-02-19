@@ -460,6 +460,21 @@ class PClip:
         self.Release()
         self.p=val.Copy().p
     def GetFrame(self,n): return avs_get_frame(self,n)
+    def GetParity(self, n):
+        """ return field parity if field_based, else parity of first field in frame"""
+        return avs_get_parity(self, n)
+    def GetAudio(self, n):
+        src = self.GetFrame(n)
+        vi = self.GetVideoInfo()
+        if vi.HasAudio():
+            start = vi.AudioSamplesFromFrames(n)
+            count = vi.AudioSamplesFromFrames(1)
+            buffer_size = count * vi.SampleType() * vi.AudioChannels()
+            buffer = ctypes.create_string_buffer(buffer_size)
+            return avs_get_audio(self, ctypes.addressof(buffer), max(0, start), 
+                                 count) # start and count are in samples
+    def SetCacheHints(self, cachehints, frame_range): 
+        return avs_set_cache_hints(self, cachehints, frame_range)
     def GetError(self): return avs_clip_get_error(self)
     def GetVideoInfo(self):return avs_get_video_info(self)
     def GetVersion(self): return avs_get_version(self)
