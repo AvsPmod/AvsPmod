@@ -54,6 +54,7 @@ import StringIO
 import textwrap
 import ctypes
 import tempfile
+import glob
 if os.name == 'nt':
     import _winreg
 from hashlib import md5
@@ -3154,60 +3155,10 @@ class AvsFunctionDialog(wx.Dialog):
             if ID != wx.ID_OK or not listbox.IsChecked(i):
                 del filterInfo[i]
         dlg.Destroy()
-        
+    
     def ParseAvisynthScript(self, filename):
-        pattern = r'function\s+(\w+)\s*\((.*?)\)\s*\{(.+?)\}'
-        default = r'default\s*\(\s*%s\s*,\s*(.+?)\s*\)'
-        filterInfo, text = [], []
-        script_text = self.GetParent().GetTextFromFile(filename)[0]
-        for line in script_text.splitlines():
-            line = line.strip().strip('\\')
-            if not line.startswith('#'):
-                text.append(line)
-        text = ' '.join(text)
-        matches = re.findall(pattern, text, re.I|re.S)
-        for filtername, args, body in matches:
-            text = ['(\n']
-            varnameDict = {}
-            if args.strip():
-                for arg in args.split(','):
-                    arg = arg.split()
-                    if len(arg) == 2:
-                        vartype, varname = arg
-                    elif len(arg) == 1:
-                        sep = arg[0].find('"') 
-                        vartype = arg[0][:sep]
-                        varname = arg[0][sep:]
-                    else:
-                        return None
-                    text.append(vartype)
-                    if varname[0] == '"':
-                        text += [' ', varname]
-                        varname = varname[1:-1]
-                        pat = default % varname
-                        ret = re.search(pat, body, re.I|re.S)
-                        if ret:
-                            value = ret.group(1)
-                            if vartype not in ['int', 'float'] or value.isdigit():
-                                text += ['=', value]
-                                varnameDict[varname] = value
-                            else:
-                                for name in varnameDict:
-                                    value = value.replace(name, varnameDict[name])
-                                try:
-                                    value = str(eval(value))
-                                    text += ['=', value]
-                                    varnameDict[varname] = value
-                                except:
-                                    print _('Error'), 'ParseAvisynthScript() try eval(%s)' % value                                  
-                    text.append(',\n')
-            if text[-1] == ',\n':
-                text[-1] = '\n'
-            text.append(')')
-            filterargs = ''.join(text)
-            filterInfo.append((filename, filtername, filterargs, 3))
-        return filterInfo
-        
+        return self.GetParent().ParseAvisynthScript(filename)
+    
     def ParseCustomizations(self, filename):
         f = open(filename)
         text = '\n'.join([line.strip() for line in f.readlines()])
@@ -5087,6 +5038,7 @@ class MainFrame(wxp.Frame):
             'autocompletevariables': True,
             'autocompleteicons': True,
             'calltipsoverautocomplete': False,
+            'parseavsi': True,
             # VIDEO OPTIONS
             'dragupdate': True,
             'focusonrefresh': True,
@@ -5317,6 +5269,21 @@ class MainFrame(wxp.Frame):
     
     def defineFilterInfo(self):
         self.optionsFilters = self.getFilterInfoFromAvisynth()
+        
+        if self.options['parseavsi']:
+            pluginsdir = self.ExpandVars(self.options['pluginsdir'])
+            filenames = glob.iglob(os.path.join(pluginsdir, '*.avsi'))
+            filterInfo = []
+            for filename in filenames:
+                try:
+                    info = self.ParseAvisynthScript(filename, quiet=True)
+                except:
+                    info = None
+                if info:
+                    filterInfo += info
+            for filename, filtername, filterargs, ftype in filterInfo:
+                self.optionsFilters[filtername.lower()] = (filtername, filterargs, ftype)
+        
         self.installedfilternames = set(self.optionsFilters) #set([key.lower() for key in self.optionsFilters.keys()])
         if __debug__:
             self.ExportFilterData(self.optionsFilters, os.path.join(self.programdir, 'tempfilterout.txt'), True)
@@ -5681,6 +5648,60 @@ class MainFrame(wxp.Frame):
         env.Release()
         return functionDict
 
+    def ParseAvisynthScript(self, filename, quiet=False):
+        pattern = r'function\s+(\w+)\s*\((.*?)\)\s*\{(.+?)\}'
+        default = r'default\s*\(\s*%s\s*,\s*(.+?)\s*\)'
+        filterInfo, text = [], []
+        script_text = self.GetTextFromFile(filename)[0]
+        for line in script_text.splitlines():
+            line = line.strip().strip('\\')
+            if not line.startswith('#'):
+                text.append(line)
+        text = ' '.join(text)
+        matches = re.findall(pattern, text, re.I|re.S)
+        for filtername, args, body in matches:
+            text = ['(\n']
+            varnameDict = {}
+            if args.strip():
+                for arg in args.split(','):
+                    arg = arg.split()
+                    if len(arg) == 2:
+                        vartype, varname = arg
+                    elif len(arg) == 1:
+                        sep = arg[0].find('"') 
+                        vartype = arg[0][:sep]
+                        varname = arg[0][sep:]
+                    else:
+                        return None
+                    text += [vartype, ' ', varname]
+                    varname = varname.strip('"')
+                    pat = default % varname
+                    ret = re.search(pat, body, re.I|re.S)
+                    if ret:
+                        value = ret.group(1)
+                        if (vartype in ['string', 'val'] or value.isdigit() or 
+                            value.lower() in ['true', 'false']):
+                            text += ['=', value]
+                            varnameDict[varname] = value
+                        else:
+                            for name in varnameDict:
+                                value = value.replace(name, varnameDict[name])
+                            try:
+                                value = str(eval(value))
+                            except Exception, err:
+                                if not quiet:
+                                    print _('Error'), 'ParseAvisynthScript() try eval(%s)' % value
+                            else:
+                                text += ['=', value]
+                                varnameDict[varname] = value
+                    text.append(',\n')
+            if text[-1] == ',\n':
+                text[-1] = '\n'
+            text.append(')')
+            filterargs = ''.join(text)
+            filterInfo.append((filename, filtername, filterargs, 3))
+        return filterInfo
+    
     def wrapFilterCalltip(self, txt, maxchars=80):
         if txt.count('\n') > 0:
             return txt
@@ -5733,6 +5754,7 @@ class MainFrame(wxp.Frame):
                 ((_('Line margin width'), wxp.OPT_ELEM_SPIN, 'numlinechars', _('Initial space to reserve for the line margin in terms of number of digits. Set it to 0 to disable showing line numbers'), dict(min_val=0) ), ),
             ),
             (_('Autocomplete'),
+                ((_('Include autoloaded script functions')+' *', wxp.OPT_ELEM_CHECK, 'parseavsi', _('Parse the avsi files on the plugins folder on start and add its functions to the database'), dict() ), ),
                 ((_('Show autocomplete with variables'), wxp.OPT_ELEM_CHECK, 'autocompletevariables', _('Add user defined variables into autocomplete list'), dict() ), ),
                 ((_('Show autocomplete on single matched lowercase variable'), wxp.OPT_ELEM_CHECK, 'autocompletesingle', _('When typing a lowercase variable name, show autocomplete if there is only one item matched in keyword list'), dict(ident=20) ), ),
                 ((_('Show autocomplete with icons'), wxp.OPT_ELEM_CHECK, 'autocompleteicons', _("Add icons into autocomplete list. Using different type to indicate how well a filter's presets is defined"), dict() ), ),
