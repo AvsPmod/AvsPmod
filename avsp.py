@@ -5629,9 +5629,8 @@ class MainFrame(wxp.Frame):
             t.Release()
             if functionType == 0:
                 if name.islower():
-                    if argstring == '(clip)':
+                    if argstring.startswith('(clip'):
                         functionType = 1
-                        argstring = ''
                     else:
                         functionType = 4
                 elif argstring == '(clip)':
@@ -5640,7 +5639,6 @@ class MainFrame(wxp.Frame):
                     boolGetXXX = len(name) > 3 and name.startswith('Get') and name[3].isupper()
                     if boolIsXXX or boolHasXXX or boolGetXXX:
                         functionType = 1
-                        argstring = '()'
             key = name.lower()
             functionDict[key] = (name, argstring, functionType)
             if functionType == 2:
