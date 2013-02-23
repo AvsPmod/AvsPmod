@@ -4140,10 +4140,18 @@ class SliderPlus(wx.Panel):
         else:
             dc.SetBrush(self.brushGrayText)
         wT = self.wT
+        drawnBookmarks = dict()
         for value, bmtype in self.bookmarks.items():
             if value > self.maxValue or value < self.minValue:
                 continue
             pixelpos = int(value * wB / float(self.maxValue - self.minValue)) + self.xo
+            try:
+                if drawnBookmarks[pixelpos] == bmtype:
+                    continue
+            except KeyError:
+                pass
+            drawnBookmarks[pixelpos] = bmtype
+
             p1 = wx.Point(pixelpos, h-wT/2)
             if bmtype == 0:
                 if value in self.bookmarkDict:                    
