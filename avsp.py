@@ -43,6 +43,7 @@ import string
 import codecs
 import re
 import functools
+import bisect
 import random, math, copy
 import subprocess, shlex
 import socket
@@ -12846,37 +12847,17 @@ class MainFrame(wxp.Frame):
         bookmarkValues.sort()
         if len(bookmarkValues) == 0:
             return
-            
-        try:
-            index = bookmarkValues.index(current_frame)
-            if reverse:
-                index -= 1
+
+        if reverse:
+            idx = bisect.bisect_left(bookmarkValues, current_frame) or len(bookmarkValues)
+            new_frame = bookmarkValues[idx-1]
+        else:
+            idx = bisect.bisect_right(bookmarkValues, current_frame)
+            if idx == len(bookmarkValues):
+                new_frame = bookmarkValues[0]
             else:
-                index += 1
-                if index > len(bookmarkValues) - 1:
-                    index = 0
-            new_frame = bookmarkValues[index]
-        except ValueError:
-            # current_frame is not bookmarked, find the nearest appropriate frame
-            if not reverse:
-                new_frame = None
-                for b in bookmarkValues:
-                    if b > current_frame:
-                        new_frame = b
-                        break
-                if new_frame is None:
-                    new_frame = bookmarkValues[0]
-            else:
-                new_frame = None
-                bookmarkValues.reverse()
-                for b in bookmarkValues:
-                    if b < current_frame:
-                        new_frame = b
-                        break
-                if new_frame is None:
-                    new_frame = bookmarkValues[0]
-            #~ diffs = [abs(current_frame-b) for b in bookmarkValues]
-            #~ new_frame = bookmarkValues[diffs.index(min(diffs))]
+                new_frame = bookmarkValues[idx]
+
         self.ShowVideoFrame(new_frame)
         if self.playing_video == '':
             self.PlayPauseVideo()
