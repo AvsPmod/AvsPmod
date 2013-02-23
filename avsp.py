@@ -58,7 +58,7 @@ if os.name == 'nt':
     import _winreg
 from hashlib import md5
 import __builtin__
-from collections import Iterable, Sequence, MutableSequence, defaultdict, OrderedDict
+from collections import Iterable, Sequence, MutableSequence, defaultdict
 
 if hasattr(sys,'frozen'):
     programdir = os.path.dirname(sys.executable)
@@ -3905,7 +3905,7 @@ class SliderPlus(wx.Panel):
         self.minValue = minValue
         self.maxValue = maxValue
         self.value = max(min(value, self.maxValue), self.minValue)
-        self.bookmarks = OrderedDict()
+        self.bookmarks = {}
         self.mouse_wheel_rotation = 0
         # Internal display variables
         self.isclicked = False
