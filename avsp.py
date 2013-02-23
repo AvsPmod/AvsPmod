@@ -4356,8 +4356,11 @@ class SliderPlus(wx.Panel):
             self._PaintSlider(dc)
         return True
 
-    def GetBookmarks(self):
-        return dict(self.bookmarks)
+    def GetBookmarks(self, copy=False):
+        if not copy:
+            return self.bookmarks
+        else:
+            return dict(self.bookmarks)
 
     def GetSelections(self):
         if self.selections:
@@ -11631,8 +11634,8 @@ class MainFrame(wxp.Frame):
                 script.GotoPos(pos)
                 script.ReplaceSelection('.%s' % txt)
 
-    def GetBookmarkFrameList(self):
-        return self.videoSlider.GetBookmarks()
+    def GetBookmarkFrameList(self, copy=False):
+        return self.videoSlider.GetBookmarks(copy)
 
     def SetBookmarkFrameList(self, bookmarks):
         self.DeleteAllFrameBookmarks()
@@ -12843,6 +12846,7 @@ class MainFrame(wxp.Frame):
         bookmarkValues.sort()
         if len(bookmarkValues) == 0:
             return
+            
         try:
             index = bookmarkValues.index(current_frame)
             if reverse:
