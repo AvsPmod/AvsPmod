@@ -4306,13 +4306,11 @@ class SliderPlus(wx.Panel):
         # Type=0: bookmark, Type=1: selection start, Type=2: selection end
         if bmtype not in (0,1,2):
             return False
-
         try:
             if self.bookmarks[value] == bmtype:
                 return False
         except:
             pass
-
         self.bookmarks[value] = bmtype
 
         if refresh:
@@ -4327,8 +4325,6 @@ class SliderPlus(wx.Panel):
             dc.Clear()
             self._PaintSlider(dc)
         return True
-        # else:
-        #     return False
 
     def RemoveBookmark(self, value, bmtype=0, refresh=True):
         try:
@@ -4361,7 +4357,7 @@ class SliderPlus(wx.Panel):
         return True
 
     def GetBookmarks(self):
-        return list(self.bookmarks.items())
+        return dict(self.bookmarks)
 
     def GetSelections(self):
         if self.selections:
@@ -7621,7 +7617,7 @@ class MainFrame(wxp.Frame):
             curr = event
         else:
             curr = self.GetFrameNumber()
-        bookmarkList = [bookmark for bookmark, bmtype in self.GetBookmarkFrameList() if bmtype == 0]
+        bookmarkList = [bookmark for bookmark, bmtype in self.GetBookmarkFrameList().items() if bmtype == 0]
         diffList = [(abs(curr - i), i) for i in self.bookmarkDict if self.bookmarkDict[i]]
         if not diffList:
             return
@@ -7638,19 +7634,19 @@ class MainFrame(wxp.Frame):
         self.DeleteFrameBookmark(bookmark)
             
     def OnMenuVideoBookmarkRestoreHistory(self, event):
-        bookmarkList = [bookmark for bookmark, bmtype in self.GetBookmarkFrameList() if bmtype == 0]
+        bookmarkList = [bookmark for bookmark, bmtype in self.GetBookmarkFrameList().items() if bmtype == 0]
         for bookmark in self.bookmarkDict.keys():
             if bookmark not in bookmarkList and self.bookmarkDict[bookmark]:
                 self.OnMenuVideoBookmarkMoveTitle(bookmark)
 
     def OnMenuVideoBookmarkClearHistory(self, event):
-        bookmarkList = [bookmark for bookmark, bmtype in self.GetBookmarkFrameList() if bmtype == 0]
+        bookmarkList = [bookmark for bookmark, bmtype in self.GetBookmarkFrameList().items() if bmtype == 0]
         for bookmark in self.bookmarkDict.keys():
             if bookmark not in bookmarkList or not self.bookmarkDict[bookmark]:
                 del self.bookmarkDict[bookmark]
                 
     def OnMenuVideoBookmarkAutoTitle(self, event):
-        bookmarkList = [bookmark for bookmark, bmtype in self.GetBookmarkFrameList() if bmtype == 0]
+        bookmarkList = [bookmark for bookmark, bmtype in self.GetBookmarkFrameList().items() if bmtype == 0]
         bookmarkList.sort()
         for i in range(len(bookmarkList)):
             if bookmarkList[i] not in self.bookmarkDict:
@@ -7665,7 +7661,7 @@ class MainFrame(wxp.Frame):
         bookmarkInfo = []
         historyList = []
         titleList = []
-        bookmarkList = [bookmark for bookmark, bmtype in self.GetBookmarkFrameList() if bmtype == 0]
+        bookmarkList = [bookmark for bookmark, bmtype in self.GetBookmarkFrameList().items() if bmtype == 0]
         for bookmark in self.bookmarkDict:
             if bookmark in bookmarkList:
                 titleList.append(bookmark)
@@ -8805,7 +8801,8 @@ class MainFrame(wxp.Frame):
         win = self.FindFocus()
         if  win != frameTextCtrl:
             frame = self.videoSlider.GetValue()
-            if (frame, 0) in self.GetBookmarkFrameList():
+            bms = self.GetBookmarkFrameList()
+            if frame in bms and bms[frame] == 0:
                 color = wx.RED
             else:
                 color = wx.BLACK
@@ -8926,7 +8923,8 @@ class MainFrame(wxp.Frame):
                     self.currentScript.SetFocus()
                 else:
                     self.ShowVideoFrame(frame, adjust_handle=True)
-        if (frame, 0) in self.GetBookmarkFrameList():
+        bms = self.GetBookmarkFrameList()
+        if frame in bms and bms[frame] == 0:
             color = wx.RED
         else:
             color = wx.BLACK
@@ -9007,7 +9005,7 @@ class MainFrame(wxp.Frame):
         bmtype = slider.HitTestSelectionButton(mousepos)
         if bmtype is not None:
             value = self.GetFrameNumber()
-            bookmarks = self.GetBookmarkFrameList()
+            # bookmarks = list(self.GetBookmarkFrameList().items())
             self.AddFrameBookmark(value, bmtype)
             #~ if bookmarks.count((value, bmtype)) == 0:
                 #~ self.AddFrameBookmark(value, bmtype)
@@ -9729,8 +9727,7 @@ class MainFrame(wxp.Frame):
 
     def OnTrimDialogCancel(self, event):
         # Convert selection bookmarks to regular bookmarks
-        bookmarks = self.GetBookmarkFrameList()
-        for value, bmtype in bookmarks:
+        for value, bmtype in self.GetBookmarkFrameList().items():
             if bmtype != 0:
                 if False:
                     self.AddFrameBookmark(value, bmtype=0, toggle=False)
@@ -11040,7 +11037,7 @@ class MainFrame(wxp.Frame):
                 session['previewWindowVisible'] = previewvisible
             session['scripts'] = scripts
             session['lastclosed'] = self.lastClosed
-            session['bookmarks'] = self.GetBookmarkFrameList()
+            session['bookmarks'] = list(self.GetBookmarkFrameList().items())
             session['bookmarkDict'] = self.bookmarkDict
             # Save info to filename
             f = open(filename, mode='wb')
@@ -11423,7 +11420,7 @@ class MainFrame(wxp.Frame):
         if insertMode in (0,1):
             self.refreshAVI = True
             # Kill all bookmarks (rebuild non-selection bookmarks...)
-            bookmarks = [value for value, bmtype in self.GetBookmarkFrameList() if bmtype ==0]
+            bookmarks = [value for value, bmtype in self.GetBookmarkFrameList().items() if bmtype ==0]
             newbookmarks = bookmarks[:]
             self.DeleteAllFrameBookmarks(refreshVideo=False)
             gapframes = 0
@@ -11505,7 +11502,7 @@ class MainFrame(wxp.Frame):
     def _x_InsertBookmarkTrims(self):
         script = self.currentScript
         # Get the bookmarks
-        bookmarks = self.GetBookmarkFrameList()
+        bookmarks = list(self.GetBookmarkFrameList().items())
         nBookmarks = len(bookmarks)
         if nBookmarks <= 0:
             wx.MessageBox(_('No bookmarks defined!'), _('Error'), style=wx.OK|wx.ICON_ERROR)
@@ -11635,8 +11632,7 @@ class MainFrame(wxp.Frame):
                 script.ReplaceSelection('.%s' % txt)
 
     def GetBookmarkFrameList(self):
-        bookmarks = self.videoSlider.GetBookmarks()
-        return bookmarks
+        return self.videoSlider.GetBookmarks()
 
     def SetBookmarkFrameList(self, bookmarks):
         self.DeleteAllFrameBookmarks()
@@ -11675,9 +11671,9 @@ class MainFrame(wxp.Frame):
                 sliderList.append(self.videoSlider2)
             for slider in sliderList:
                 #~ bmList = self.GetBookmarkFrameList()
-                bmList = slider.GetBookmarks()
-                lastindex = len(bmList) - 1
-                for i, (value, bmType) in enumerate(bmList):
+                bookmarks = slider.GetBookmarks()
+                lastindex = len(bookmarks) - 1
+                for i, (value, bmType) in enumerate(bookmarks.items()):
                     if bmtype == bmType:
                         if i < lastindex:
                             slider.RemoveBookmark(value, bmtype, refresh=False)
@@ -11697,8 +11693,7 @@ class MainFrame(wxp.Frame):
             # Check if bookmark already exists
             bookmarks = self.GetBookmarkFrameList()
             try:
-                index = [x for x, y in bookmarks].index(value)
-                value, bmtype2 = bookmarks[index]
+                bmtype2 = bookmarks[value]
                 for slider in sliderList:
                     if bmtype != bmtype2:
                         slider.SetBookmark(value, bmtype, refresh=refreshProgram)
@@ -11707,7 +11702,7 @@ class MainFrame(wxp.Frame):
                         self.DeleteFrameBookmark(value, bmtype, refreshProgram=refreshProgram)
                         #~ self.DeleteFrameBookmark(value, bmtype)
                         color = wx.BLACK
-            except ValueError:
+            except KeyError:
                 # Bookmark does not already exists
                 for slider in sliderList:
                     slider.SetBookmark(value, bmtype, refresh=refreshProgram)
@@ -11736,7 +11731,7 @@ class MainFrame(wxp.Frame):
         for i in xrange(self.menuBookmark.GetMenuItemCount()-4):
             self.menuBookmark.DestroyItem(self.menuBookmark.FindItemByPosition(0))
         pos = 0
-        bookmarkList = self.GetBookmarkFrameList()
+        bookmarkList = list(self.GetBookmarkFrameList().items())
         if len(bookmarkList) > 1000: return
         #~for key in self.bookmarkDict.keys():
             #~if (key, 0) not in bookmarkList:
@@ -12575,7 +12570,8 @@ class MainFrame(wxp.Frame):
             self.Thaw()
         # Update various elements
         self.videoSlider.SetValue(framenum)
-        if (framenum, 0) in self.GetBookmarkFrameList():
+        bms = self.GetBookmarkFrameList()
+        if framenum in bms and bms[framenum] == 0:
             color = wx.RED
         else:
             color = wx.BLACK
@@ -12840,10 +12836,10 @@ class MainFrame(wxp.Frame):
         current_frame = self.GetFrameNumber()
         clip = self.currentScript.AVI
         if clip is not None:
-            bookmarkValues = [value for value, btype in self.GetBookmarkFrameList() 
-                              if value < clip.Framecount]# if btype==0]
+            bookmarkValues = [value for value in self.GetBookmarkFrameList().keys() 
+                              if value < clip.Framecount]
         else:
-            bookmarkValues = [value for value, btype in self.GetBookmarkFrameList()]# if btype==0]
+            bookmarkValues = [value for value in self.GetBookmarkFrameList().keys()]
         bookmarkValues.sort()
         if len(bookmarkValues) == 0:
             return
@@ -16178,7 +16174,7 @@ class MainFrame(wxp.Frame):
         returns a list of tuple (frame, title).
         
         '''
-        bookmarkList = [value for value, bmtype in self.GetBookmarkFrameList() if bmtype == 0]
+        bookmarkList = [value for value, bmtype in self.GetBookmarkFrameList().items() if bmtype == 0]
         if title:
             for i in range(len(bookmarkList)):
                 title = self.bookmarkDict.get(bookmarkList[i], '')
