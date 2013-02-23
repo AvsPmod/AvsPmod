@@ -839,10 +839,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
             self.GotoPos(pos+1)
 
     def UpdateCalltip(self, force=False):
-        charBefore = None
         caretPos = self.GetCurrentPos()
-        if caretPos > 0:
-            charBefore = self.GetCharAt(caretPos - 1)
         # Cancel under certain conditions
         boolHasFocus = (self.app.FindFocus() == self)
         boolIsComment = (self.GetStyleAt(caretPos - 1) in self.commentStyle)
@@ -991,13 +988,21 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
     def GetOpenParenthesesPos(self, pos):
         boolInside = False
         nclose = 1
+        stylesToSkip = (self.STC_AVS_STRING, self.STC_AVS_TRIPLE, self.STC_AVS_USERSLIDER)
         while pos >= 0:
             c = unichr(self.GetCharAt(pos))
-            if self.GetStyleAt(pos) not in (self.STC_AVS_STRING, self.STC_AVS_TRIPLE, self.STC_AVS_USERSLIDER):
+            if self.GetStyleAt(pos) not in stylesToSkip:
                 if c == ')':
                     nclose += 1
                 if c == '(':
                     nclose -= 1
+                if c == '\n':
+                    current = self.GetLine(self.LineFromPosition(pos)).strip()
+                    next = self.GetLine(self.LineFromPosition(pos+1)).strip()
+                    if not current.endswith('\\') and not next.startswith('\\'):
+                        # this is a not a multiline statement
+                        # either an error or we weren't inside a function call to begin with
+                        return None
             if nclose == 0:
                 if self.GetStyleAt(pos) in self.commentStyle:
                     return None
