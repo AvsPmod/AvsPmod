@@ -3564,6 +3564,7 @@ class AvsFilterAutoSliderInfo(wx.Dialog):
         argWindow.SetScrollRate(10, 10)
         argSizer = wx.GridBagSizer(hgap=0, vgap=10)
         row = 0
+        growable = False
         self.argctrls = []
         for argInfo in self.mainFrame.currentScript.GetFilterCalltipArgInfo(calltip=filterInfo):
             totalInfo, cArgType, cArgName, boolRepeatArg, boolOptionalArg, cArgInfo = argInfo
@@ -3660,6 +3661,8 @@ class AvsFilterAutoSliderInfo(wx.Dialog):
                     hsizer.Add(vsizer, 1, wx.EXPAND|wx.RIGHT,5)
 
                     argSizer.Add(hsizer, (row,1), wx.DefaultSpan, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 0)
+                    if not growable:
+                        argSizer.AddGrowableCol(1)
 
                 row += 1
                 self.argctrls.append((argtype, argname, argLabel, boolRepeatArg, boolOptionalArg))
@@ -3685,9 +3688,10 @@ class AvsFilterAutoSliderInfo(wx.Dialog):
         self.SetSizer(sizer)
         sizer.Layout()
         argWindow.FitInside()
-        w = max(argSizer.GetMinSize()[0]+50, 300)
-        h = 500
-        self.SetSize((w,h))
+        w, h = argSizer.GetMinSize()
+        w = max(w + 10, 400)
+        h = min(h + 100, 700)
+        self.SetSize(self.ClientToWindowSize((w,h)))
 
     def OnButtonOK(self, event):
         strList = []
