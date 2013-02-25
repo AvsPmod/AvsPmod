@@ -251,7 +251,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
         self.Colourise(0, self.GetTextLength())
         
 
-    def defineFilterDict(self):
+    def defineFilterDict(self): # not used anymore, filter info is stored in MainFrame.filterdbfilename
         return {
             'AddBorders': ('(clip, int left, int top, int right, int bottom, int color)', 0),
             'Amplify': ('(clip, float amount1 [, ...])', 0),
@@ -3183,7 +3183,7 @@ class AvsFunctionDialog(wx.Dialog):
         text = '\n'.join([line.strip() for line in f.readlines()])
         f.close()
         filterInfo = []
-        for section in text.split('\n['):
+        for section in text.split('\n\n['):
             title, data = section.split(']\n',1)
             title = title.strip('[]').lower()
             if title == 'clipproperties':
@@ -3200,11 +3200,16 @@ class AvsFunctionDialog(wx.Dialog):
                     filterInfo.append((filename, filtername, filterargs, 1))
             elif title == 'scriptfunctions':
                 for item in data.split('\n'):
+                    if not item.strip():
+                        continue
                     splitstring = item.split('(', 1)
                     if len(splitstring) == 2:
                         filtername = splitstring[0].strip()
                         filterargs = '('+splitstring[1].strip(' ')
-                        filterInfo.append((filename, filtername, filterargs, 4))
+                    else:
+                        filtername = item
+                        filterargs = ''
+                    filterInfo.append((filename, filtername, filterargs, 4))
             elif title == 'corefilters':
                 for s in data.split('\n\n'):
                     splitstring = s.split('(', 1)
@@ -5324,7 +5329,7 @@ class MainFrame(wxp.Frame):
             try:
                 with open(self.filterdbfilename, mode='r') as f:
                     text = '\n'.join([line.strip() for line in f.readlines()])
-                for section in text.split('\n['):
+                for section in text.split('\n\n['): # TODO: merge AvsFunctionDialog.ParseCustomizations and this
                     title, data = section.split(']\n',1)
                     title = title.strip('[]').lower()
                     if title == 'keywords':
@@ -5347,11 +5352,16 @@ class MainFrame(wxp.Frame):
                             self.optionsFilters[filtername.lower()] = (filtername, filterargs, 1)
                     elif title == 'scriptfunctions':
                         for item in data.split('\n'):
+                            if not item.strip():
+                                continue
                             splitstring = item.split('(', 1)
                             if len(splitstring) == 2:
                                 filtername = splitstring[0].strip()
                                 filterargs = '('+splitstring[1].strip(' ')
-                                self.optionsFilters[filtername.lower()] = (filtername, filterargs, 4)
+                            else:
+                                filtername = item
+                                filterargs = ''
+                            self.optionsFilters[filtername.lower()] = (filtername, filterargs, 4)
                     elif title == 'corefilters':
                         for s in data.split('\n\n'):
                             splitstring = s.split('(', 1)
@@ -5707,7 +5717,7 @@ class MainFrame(wxp.Frame):
                                 value = value.replace(name, varnameDict[name])
                             try:
                                 value = str(eval(value))
-                            except Exception, err:
+                            except:
                                 if not quiet:
                                     print _('Error'), 'ParseAvisynthScript() try eval(%s)' % value
                             else:
