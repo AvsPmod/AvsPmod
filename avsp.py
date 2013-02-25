@@ -904,7 +904,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
             splitargs = args.split('\n\n', 1)
             tempList = []
             for iTemp, tempInfo in enumerate(self.GetFilterCalltipArgInfo(calltip=splitargs[0])):
-                cArgTotal, cArgType, cArgName, boolMulti, cArgInfo = tempInfo
+                cArgTotal, cArgType, cArgName, boolMulti, boolOptional, cArgInfo = tempInfo
                 s = '%s %s' % (cArgType, cArgName)
                 if iTemp == iArgPos and cArgInfo and not boolOutOfOrder:
                     s += '=%s' % cArgInfo
@@ -1054,7 +1054,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
         multiType = None
         multiIndex = None
         for index, calltipInfo in enumerate(filterCalltipArgInfo):
-            cArgTotal, cArgType, cArgName, cBoolMulti, cArgInfo = calltipInfo
+            cArgTotal, cArgType, cArgName, cBoolMulti, boolOptional, cArgInfo = calltipInfo
             if cBoolMulti:
                 multiType = cArgType
                 multiIndex = index
@@ -1151,20 +1151,34 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
         self.cursorFilterScriptArgIndex = currentIndex
         return argInfo
 
-    def GetFilterCalltipArgInfo(self, word=None, calltip=None):
+    def GetFilterCalltipArgInfo(self, word=None, calltip=None, ignore_opt_args=False):
         if calltip is None:
             # Get the user slider info from the filter's calltip
             calltip = self.app.avsfilterdict[word.lower()][0].split('\n\n')[0]
-        # Get rid of any commas in square brackets
-        calltip = re.sub(r'\[.*\]', '[...]', calltip)
-        # Split the arguments by commas
+        
+        # Delete open and close parentheses
         if calltip.startswith('(') and calltip.endswith(')'):
             calltip = calltip[1:-1]
         elif calltip.startswith('('):
             calltip = calltip[1:]
         elif calltip.endswith(')'):
             calltip = calltip[:-1]
-        #~ return [s.strip() for s in calltip.split(',')]
+        
+        # Delete/mark optional arguments
+        new_calltip = []
+        for arg in calltip.split(','):
+            arg = arg.strip()
+            if arg.startswith('[') and arg.endswith(']'):
+                if not ignore_opt_args:
+                    new_calltip.append(arg[1:-1] + 'OPT')
+            else:
+                new_calltip.append(arg)
+        calltip = ', '.join(new_calltip)
+        
+        # Get rid of any commas in square brackets
+        calltip = re.sub(r'\[.*\]', '[...]', calltip)
+        
+        # Split the arguments by commas
         argInfo = []
         for item in calltip.split(','):
             item = item.strip()
@@ -1175,6 +1189,11 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                 item = item.replace('[...]', '')
             else:
                 boolMulti = False
+            if item.endswith('OPT'):
+                boolOptional = True
+                item = item[:-3]
+            else:
+                boolOptional = False
             try:
                 argtype, nameAndInfo = [s.strip() for s in item.split(' ', 1)]
                 try:
@@ -1182,13 +1201,13 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                 except ValueError:
                     name = nameAndInfo
                     info = u''
-                argInfo.append((item, argtype.lower(), name, boolMulti, info))
+                argInfo.append((item, argtype.lower(), name, boolMulti, boolOptional, info))
             except ValueError:
                 if item.lower() in ('clip', 'int', 'float', 'bool', 'string'):
-                    argInfo.append((item, item.lower(), u'', boolMulti, u''))
+                    argInfo.append((item, item.lower(), u'', boolMulti, boolOptional, u''))
                 else:
                     # Assume it's a clip
-                    argInfo.append((item, u'clip', item, boolMulti, u''))
+                    argInfo.append((item, u'clip', item, boolMulti, boolOptional, u''))
         return argInfo
 
     def CreateDefaultPreset(self, filtername, calltip=None):
@@ -1197,8 +1216,8 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
         if calltip == '':
             return filtername
         argList = []
-        for i, info in enumerate(self.GetFilterCalltipArgInfo(filtername, calltip)):
-            totalInfo, cArgType, cArgName, boolRepeatArg, cArgInfo = info
+        for i, info in enumerate(self.GetFilterCalltipArgInfo(filtername, calltip, ignore_opt_args=True)):
+            totalInfo, cArgType, cArgName, boolRepeatArg, boolOptionalArg, cArgInfo = info
             argtype, argname, guitype, defaultValue, other = self.app.ParseCalltipArgInfo(totalInfo)
             namedarg = ''
             if cArgName.startswith('"') and cArgName.endswith('"'):
@@ -3542,11 +3561,11 @@ class AvsFilterAutoSliderInfo(wx.Dialog):
         row = 0
         self.argctrls = []
         for argInfo in self.mainFrame.currentScript.GetFilterCalltipArgInfo(calltip=filterInfo):
-            totalInfo, cArgType, cArgName, boolRepeatArg, cArgInfo = argInfo
+            totalInfo, cArgType, cArgName, boolRepeatArg, boolOptionalArg, cArgInfo = argInfo
             argtype, argname, guitype, defaultValue, other = self.mainFrame.ParseCalltipArgInfo(totalInfo)
             #~ if guitype is None or argname is None or argtype not in ('int', 'float', 'bool', 'string'):
             if argname is None or argtype not in ('int', 'float', 'bool', 'string'):
-                self.argctrls.append((argtype, argname, None, boolRepeatArg))
+                self.argctrls.append((argtype, argname, None, boolRepeatArg, boolOptionalArg))
             else:
                 argLabel = wx.StaticText(argWindow, wx.ID_ANY, '%(argtype)s %(argname)s' % locals())
                 argLabel.controls = []
@@ -3638,7 +3657,7 @@ class AvsFilterAutoSliderInfo(wx.Dialog):
                     argSizer.Add(hsizer, (row,1), wx.DefaultSpan, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 0)
 
                 row += 1
-                self.argctrls.append((argtype, argname, argLabel, boolRepeatArg))
+                self.argctrls.append((argtype, argname, argLabel, boolRepeatArg, boolOptionalArg))
         argWindow.SetSizer(argSizer)
         # Standard buttons
         okay  = wx.Button(self, wx.ID_OK, _('OK'))
@@ -3667,7 +3686,7 @@ class AvsFilterAutoSliderInfo(wx.Dialog):
 
     def OnButtonOK(self, event):
         strList = []
-        for argtype, argname, argLabel, boolRepeatArg in self.argctrls:
+        for argtype, argname, argLabel, boolRepeatArg, boolOptionalArg in self.argctrls:
             if argtype is None and argname is None:
                 continue
             strBase = '%(argtype)s %(argname)s' % locals()
@@ -3722,6 +3741,8 @@ class AvsFilterAutoSliderInfo(wx.Dialog):
                 strRepeatArg = ''
                 if boolRepeatArg:
                     strRepeatArg = ' [, ...]'
+                if boolOptionalArg:
+                    strInfoNew = '[{0}]'.format(strInfoNew)
                 strList.append(strInfoNew+strRepeatArg)
         self.newFilterInfo = '(\n%s\n)' % ',\n'.join(strList)
         event.Skip()
