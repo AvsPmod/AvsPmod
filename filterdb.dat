@@ -8,93 +8,180 @@ return global function last true false try catch
 clip int float string bool val
 
 [CLIPPROPERTIES]
-audiobits
-audiochannels
-audiolength
-audiolengthf
-audiorate
-framecount
-framerate
-frameratedenominator
-frameratenumerator
-height
-width
-GetLeftChannel()
-GetRightChannel()
-HasAudio()
-HasVideo()
-IsAudioFloat()
-IsAudioInt()
-IsFieldBased()
-IsFrameBased()
-IsInterleaved()
-IsPlanar()
-IsRGB()
-IsRGB24()
-IsRGB32()
-IsYUV()
-IsYUY2()
-IsYV24()
-IsYV16()
-IsYV12()
-IsYV411()
-IsY8()
+AudioBits(clip)
+AudioChannels(clip)
+AudioDuration(clip)
+AudioLength(clip)
+AudioLengthF(clip)
+AudioLengthHi(clip, int modulo=1000000000)
+AudioLengthLo(clip, int divisor=1000000000)
+AudioLengthS(clip)
+AudioRate(clip)
+FrameCount(clip)
+FrameRate(clip)
+FrameRateDenominator(clip)
+FrameRateNumerator(clip)
+GetParity(clip, int frame=0)
+HasAudio(clip)
+HasVideo(clip)
+Height(clip)
+IsAudioFloat(clip)
+IsAudioInt(clip)
+IsFieldBased(clip)
+IsFrameBased(clip)
+IsInterleaved(clip)
+IsPlanar(clip)
+IsRGB(clip)
+IsRGB24(clip)
+IsRGB32(clip)
+IsY8(clip)
+IsYUV(clip)
+IsYUY2(clip)
+IsYV12(clip)
+IsYV16(clip)
+IsYV24(clip)
+IsYV411(clip)
+PixelType(clip)
+Width(clip)
 
 [SCRIPTFUNCTIONS]
-abs(float)
-ceil(float)
-chr(int)
-cos(float)
-exp(float)
-findstr(string, string)
-float(float)
-floor(float)
-frac(float)
-hexvalue(string)
-int(float)
-lcase(string)
-leftstr(string, int)
-log(float)
-midstr(string, int, int length)
-muldiv(int, int, int)
-nop()
-pi()
-pow(float, float)
-rand(int max, bool scale, bool seed)
-revstr(string)
-rightstr(string, int)
-round(float)
-sign(float)
-sin(float)
-sqrt(float)
-strlen(string)
-ucase(string)
-value(string)
-Apply(string function_name, val args [, ...])
-Assert(string error_message)
+Abs(float)
+Acos(float)
+Apply(string function_name, val arg1 [, ...])
+Asin(float)
+Assert(condition, [string error_message])
+Atan(float)
+Atan2(float, float)
+AverageLuma(clip)
+AverageChromaU(clip)
+AverageChromaV(clip)
+BitAnd(int, int)
+BitChange(int, int)
+BitChg(int, int)
+BitClear(int, int)
+BitClr(int, int)
+BitLShift(int, int)
+BitLShiftA(int, int)
+BitLShiftL(int, int)
+BitLShiftS(int, int)
+BitLShiftU(int, int)
+BitLRotate(int, int)
+BitNot(int)
+BitOr(int, int)
+BitRoL(int, int)
+BitRoR(int, int)
+BitRRotate(int, int)
+BitRShiftA(int, int)
+BitRShiftL(int, int)
+BitRShiftS(int, int)
+BitRShiftU(int, int)
+BitSaL(int, int)
+BitSaR(int, int)
+BitSet(int, int)
+BitShL(int, int)
+BitShR(int, int)
+BitTest(int, int)
+BitTst(int, int)
+BitXor(int, int)
+Ceil(float)
+Chr(int)
+ContinuedDenominator(float, [int], [int "limit"])
+ContinuedNumerator(float, [int], [int "limit"])
+Cos(float)
+Cosh(float)
+ChromaUDifference(clip1, clip2)
+ChromaVDifference(clip1, clip2)
 Default(val x, val d)
 Defined(val)
-Eval(string statement, string "name")
+Eval(string expression, [string "name"])
 Exist(string filename)
+Exp(float)
+FillStr(int, string str=" ")
+FindStr(string, string)
+Float(float)
+Floor(float)
+Fmod(float, float)
+Frac(float)
+GetMTMode(bool "threads"=False)
+Hex(int)
+HexValue(string)
 Import(string filename [, ...])
+Int(float)
 IsBool(val)
 IsClip(val)
 IsFloat(val)
 IsInt(val)
 IsString(val)
+LCase(string)
+LeftStr(string, int)
 Load_Stdcall_Plugin(string filename)
 LoadCPlugin(string filename)
 LoadPlugin(string filename [, ...])
 LoadVFAPIPlugin(string filename, string filtername)
 LoadVirtualdubPlugin(string filename, string filtername, int preroll)
+Log(float)
+Log10(float)
+LumaDifference(clip1, clip2)
+Max(float, float [, ...])
+Min(float, float [, ...])
+MidStr(string, int, [int length])
+MulDiv(int, int, int)
+NOP()
+Ord(string)
+Pi()
+Pow(float base, float power)
+Rand(int "max"=32768, bool "scale"=False, bool "seed"=False)
+RGBDifference(clip1, clip2)
+RGBDifferenceFromPrevious(clip)
+RGBDifferenceToNext(clip)
+RevStr(string)
+RightStr(string, int)
+Round(float)
+ScriptDir()
+ScriptFile()
+ScriptName()
 Select(int index, val item0 [, ...])
 SetMemoryMax(int mb)
+SetMTMode(int "mode"=2 (1 to 6), [int "threads"=0])
+SetPlanarLegacyAlignment(clip, bool mode)
 SetWorkingDir(string dirname)
-Spline(float x, float x1, float y1, float x2, float y2, [, ...], bool "cubic")
-String(val x, string "format")
+Sign(float)
+Sin(float)
+Sinh(float)
+Spline(float x, float x1, float y1, float x2, float y2, [, ...], bool "cubic"=True)
+Sqrt(float)
+StrCmp(string, string)
+StrCmpi(string, string)
+String(val x, [string "format"])
+StrLen(string)
+Tan(float)
+Tanh(float)
+Tau()
 Time(string format)
+UCase(string)
+UDifferenceFromPrevious(clip)
+UDifferenceToNext(clip)
+UPlaneMax(clip, float "threshold"=0)
+UPlaneMin(clip, float "threshold"=0)
+UPlaneMedian(clip)
+UPlaneMinMaxDifference(clip, float "threshold"=0)
+Undefined()
+Value(string)
+VDifferenceFromPrevious(clip)
+VDifferenceToNext(clip)
 VersionNumber()
 VersionString()
+VPlaneMax(clip, float "threshold"=0)
+VPlaneMin(clip, float "threshold"=0)
+VPlaneMedian(clip)
+VPlaneMinMaxDifference(clip, float "threshold"=0)
+YDifferenceFromPrevious(clip)
+YDifferenceToNext(clip)
+YPlaneMax(clip, float "threshold"=0)
+YPlaneMin(clip, float "threshold"=0)
+YPlaneMedian(clip)
+YPlaneMinMaxDifference(clip, float "threshold"=0)
+
 
 [COREFILTERS]
 AddBorders(
@@ -138,9 +225,22 @@ string filtername,
 val args [, ...]
 )
 
+AssumeBFF(
+clip
+)
+
+AssumeFieldBased(
+clip
+)
+
+AssumeFrameBased(
+clip
+)
+
 AssumeFPS(
 clip,
-string preset= ("ntsc_film"/ "ntsc_video"/ "ntsc_double"/ "ntsc_quad"/ "ntsc_round_film"/ "ntsc_round_video"/ "ntsc_round_double"/ "ntsc_round_quad"/ "film"/ "pal_film"/ "pal_video"/ "pal_double"/ "pal_quad"),
+string fps= ("ntsc_film"/ "ntsc_video"/ "ntsc_double"/ "ntsc_quad"/ "ntsc_round_film"/ "ntsc_round_video"/ "ntsc_round_double"/ "ntsc_round_quad"/ "film"/ "pal_film"/ "pal_video"/ "pal_double"/ "pal_quad"),
+[int "denominator"],
 bool "sync_audio"=false
 )
 
@@ -151,9 +251,13 @@ int samplerate
 
 AssumeScaledFPS(
 clip,
-int "multiplier",
-int "divisor",
+int "multiplier"=1,
+int "divisor"=1,
 bool "sync_audio"=false
+)
+
+AssumeTFF(
+clip
 )
 
 AudioDub(
@@ -166,44 +270,61 @@ clip video_clip,
 clip audio_clip
 )
 
+AudioTrim(
+clip,
+float start_time,
+float end_time
+)
+
 AVIFileSource(
-string filename= (*.avi) [, ...],
+string filename= (*.avi/*.wav/*.avs/*.vpy/*.vdr) [, ...],
 bool "audio"=true,
-string "pixel_type"="YV12" ("YV12"/ "YUY2"/ "RGB32"/ "RGB24"),
-string "fourCC"= ("3IV1"/ "3IV2"/ "8BPS"/ "AASC")
+[string "pixel_type"="FULL" ("YV24"/ "YV16"/ "YV12"/ "YV411"/ "YUY2"/ "RGB32"/ "RGB24"/ "Y8"/ "AUTO"/ "FULL")],
+[string "fourCC"="" ("DSVD"/ "2YUY"/ "21VY"/ "024I"/ "YERG"/ "008Y"/ "42VY"/ "61VY"/ "B14Y"/ "34PM"/ "3VID"/ "4VID"/ "14PA"/ "3IV1"/ "3IV2"/ "8BPS"/ "AASC")]
 )
 
 AVISource(
-string filename= (*.avi) [, ...],
+string filename= (*.avi/*.wav/*.avs/*.vpy/*.vdr) [, ...],
 bool "audio"=true,
-string "pixel_type"="YV12" ("YV12"/ "YUY2"/ "RGB32"/ "RGB24"),
-string "fourCC"= ("3IV1"/ "3IV2"/ "8BPS"/ "AASC")
+[string "pixel_type"="FULL" ("YV24"/ "YV16"/ "YV12"/ "YV411"/ "YUY2"/ "RGB32"/ "RGB24"/ "Y8"/ "AUTO"/ "FULL")],
+[string "fourCC"="" ("DSVD"/ "2YUY"/ "21VY"/ "024I"/ "YERG"/ "008Y"/ "42VY"/ "61VY"/ "B14Y"/ "34PM"/ "3VID"/ "4VID"/ "14PA"/ "3IV1"/ "3IV2"/ "8BPS"/ "AASC")]
 )
 
 BicubicResize(
 clip,
 int target_width,
 int target_height,
-float "b"=0.33 (-10.00 to 10.00),
-float "c"=0.33 (-10.00 to 10.00),
-float "src_left",
-float "src_top",
-float "src_width",
-float "src_height"
+float "b"=0.3333 (-10.00 to 10.00),
+float "c"=0.3333 (-10.00 to 10.00),
+float "src_left"=0,
+float "src_top"=0,
+float "src_width"=0,
+float "src_height"=0
 )
 
 BilinearResize(
 clip,
 int target_width,
 int target_height,
-float "src_left",
-float "src_top",
-float "src_width",
-float "src_height"
+float "src_left"=0,
+float "src_top"=0,
+float "src_width"=0,
+float "src_height"=0
+)
+
+BlackmanResize(
+clip,
+int target_width,
+int target_height,
+float "src_left"=0,
+float "src_top"=0,
+float "src_width"=0,
+float "src_height"=0,
+int "taps"=4 (1 to 100)
 )
 
 Blackness(
-clip clip,
+clip "clip",
 int "length"=240,
 int "width"=640,
 int "height"=480,
@@ -211,13 +332,16 @@ string "pixel_type"="RGB32" ("RGB24"/ "RGB32"/ "YUY2"/ "YV12"),
 float "fps"=24,
 int "fps_denominator"=1,
 int "audio_rate"=44100,
-bool "stereo"=False,
-bool "sixteen_bit"=True,
-int "color"=$000000
+[bool "stereo"=False],
+[bool "sixteen_bit"=True],
+int "channels"=1,
+string "sample_type"="16bit" ("8bit"/ "16bit"/ "24bit"/ "32bit"/ "float"),
+int "color"=$000000,
+[int "color_yuv"],
 )
 
 BlankClip(
-clip clip,
+clip "clip",
 int "length"=240,
 int "width"=640,
 int "height"=480,
@@ -225,49 +349,57 @@ string "pixel_type"="RGB32" ("RGB24"/ "RGB32"/ "YUY2"/ "YV12"),
 float "fps"=24,
 int "fps_denominator"=1,
 int "audio_rate"=44100,
-bool "stereo"=False,
-bool "sixteen_bit"=True,
-int "color"=$000000
+[bool "stereo"=False],
+[bool "sixteen_bit"=True],
+int "channels"=1,
+string "sample_type"="16bit" ("8bit"/ "16bit"/ "24bit"/ "32bit"/ "float"),
+int "color"=$000000,
+[int "color_yuv"],
 )
 
 Blur(
 clip,
-float amount=0.00 (0.00 to 1.58)
+float amount=0.00 (0.00 to 1.58),
+[float amountV=0.00 (0.00 to 1.58)],
+bool "MMX"=True
 )
 
 Bob(
 clip,
-float "b"=0.33 (-10.00 to 10.00),
-float "c"=0.33 (-10.00 to 10.00),
-float "height"
+float "b"=0.3333 (-10.00 to 10.00),
+float "c"=0.3333 (-10.00 to 10.00),
+]float "height"]
+)
+
+Cache(
+clip
 )
 
 ChangeFPS(
 clip,
-string preset= ("ntsc_film"/ "ntsc_video"/ "ntsc_double"/ "ntsc_quad"/ "ntsc_round_film"/ "ntsc_round_video"/ "ntsc_round_double"/ "ntsc_round_quad"/ "film"/ "pal_film"/ "pal_video"/ "pal_double"/ "pal_quad"),
+string fps= ("ntsc_film"/ "ntsc_video"/ "ntsc_double"/ "ntsc_quad"/ "ntsc_round_film"/ "ntsc_round_video"/ "ntsc_round_double"/ "ntsc_round_quad"/ "film"/ "pal_film"/ "pal_video"/ "pal_double"/ "pal_quad"),
+[int "denominator"],
 bool "linear"=true
-)
-
-ChromaUDifference(
-clip a,
-clip b
-)
-
-ChromaVDifference(
-clip a,
-clip b
 )
 
 ColorBars(
 int "width"=640,
 int "height"=480,
-string "pixel_type"="RGB32" ("")
+string "pixel_type"="RGB32" ("YUY2"/ "YV12"/ "YV24"/ "RGB32")
+)
+
+ColorBarsHD(
+int "width"=1288,
+int "height"=720,
+string "pixel_type"="YV24" ("YV24")
 )
 
 ColorKeyMask(
 clip,
-int "color"=$000000,
-int "tolerance"=10 (1 to 100)
+int color=$000000,
+int tolB=10 (1 to 100),
+int tolG=10 (1 to 100),
+int tolR=10 (1 to 100),
 )
 
 ColorYUV(
@@ -286,28 +418,33 @@ float "gamma_v"=0 (-256 to 256),
 float "cont_v"=0 (0 to 1024),
 string "levels"="" (""/ "TV->PC"/ "PC->TV"),
 string "opt"="" (""/ "coring"),
-string "matrix",
+[string "matrix"],
 bool "showyuv"=false,
 bool "analyze"=false,
 bool "autowhite"=false,
-bool "autogain"=false
+bool "autogain"=false,
+[bool "conditional"=false]
 )
 
 Compare(
 clip filtered,
 clip original,
-string "channels"= ("RGB"/ "RGBA"/ "R"/ "G"/ "B"/ "A"/ "YUV"/ "Y"/ "UV"),
-string "logfile"= (*.txt),
+string "channels"= "" ("RGB"/ "RGBA"/ "R"/ "G"/ "B"/ "A"/ "YUV"/ "Y"/ "UV"),
+[string "logfile"= (*.txt)],
 bool "show_graph"=false
+)
+
+ComplementParity(
+clip
 )
 
 ConditionalFilter(
 clip testclip,
 clip source1,
 clip source2,
-string filter,
+string expression1,
 string operator,
-string value,
+string expression1,
 bool "show"
 )
 
@@ -318,46 +455,124 @@ string variablename,
 bool "show"=False
 )
 
+ConditionalSelect(
+clip testclip,
+string expression,
+clip source1 [, ...],
+bool "show"=False
+)
+
+ConvertAudio(
+clip,
+int sample_type,
+int prefered_type
+)
+
+ConvertAudioTo16bit(
+clip
+)
+
+ConvertAudioTo24bit(
+clip
+)
+
+ConvertAudioTo32bit(
+clip
+)
+
+ConvertAudioTo8bit(
+clip
+)
+
+ConvertAudioToFloat(
+clip
+)
+
 ConvertBackToYUY2(
 clip,
-string "matrix"="Rec601" ("Rec601"/ "PC.601"/ "Rec709"/ "PC.709")
+string "matrix"="Rec601" ("Rec601"/ "PC.601"/ "Rec709"/ "PC.709"/ "AVERAGE")
 )
 
 ConvertFPS(
 clip,
-string preset= ("ntsc_film"/ "ntsc_video"/ "ntsc_double"/ "ntsc_quad"/ "ntsc_round_film"/ "ntsc_round_video"/ "ntsc_round_double"/ "ntsc_round_quad"/ "film"/ "pal_film"/ "pal_video"/ "pal_double"/ "pal_quad"),
-int "zone",
-int "vbi"= (1 to 49)
+string new_rate= ("ntsc_film"/ "ntsc_video"/ "ntsc_double"/ "ntsc_quad"/ "ntsc_round_film"/ "ntsc_round_video"/ "ntsc_round_double"/ "ntsc_round_quad"/ "film"/ "pal_film"/ "pal_video"/ "pal_double"/ "pal_quad"),
+[int "denominator"],
+[int "zone"],
+[int "vbi"= (1 to 49)]
+)
+
+ConvertToMono(
+clip
 )
 
 ConvertToRGB(
 clip,
-string "matrix"="Rec601" ("Rec601"/ "PC.601"/ "Rec709"/ "PC.709"),
-bool "interlaced"=false
+string "matrix"="Rec601" ("Rec601"/ "PC.601"/ "Rec709"/ "PC.709"/ "AVERAGE"),
+bool "interlaced"=false,
+[string "ChromaInPlacement"="MPEG2" ("MPEG2"/ "MPEG1"/ "DV")],
+[string "chromaresample"="bicubic" ("point"/ "bilinear"/ "bicubic"/ "lanczos"/ "lanczos4"/ "blackman"/ "spline16"/ "spline36"/ "spline64"/ "gauss"/ "sinc")]
 )
 
 ConvertToRGB24(
 clip,
-string "matrix"="Rec601" ("Rec601"/ "PC.601"/ "Rec709"/ "PC.709"),
-bool "interlaced"=false
+string "matrix"="Rec601" ("Rec601"/ "PC.601"/ "Rec709"/ "PC.709"/ "AVERAGE"),
+bool "interlaced"=false,
+[string "ChromaInPlacement"="MPEG2" ("MPEG2"/ "MPEG1"/ "DV")],
+[string "chromaresample"="bicubic" ("point"/ "bilinear"/ "bicubic"/ "lanczos"/ "lanczos4"/ "blackman"/ "spline16"/ "spline36"/ "spline64"/ "gauss"/ "sinc")]
 )
 
 ConvertToRGB32(
 clip,
-string "matrix"="Rec601" ("Rec601"/ "PC.601"/ "Rec709"/ "PC.709"),
-bool "interlaced"=false
+string "matrix"="Rec601" ("Rec601"/ "PC.601"/ "Rec709"/ "PC.709"/ "AVERAGE"),
+bool "interlaced"=false,
+[string "ChromaInPlacement"="MPEG2" ("MPEG2"/ "MPEG1"/ "DV")],
+[string "chromaresample"="bicubic" ("point"/ "bilinear"/ "bicubic"/ "lanczos"/ "lanczos4"/ "blackman"/ "spline16"/ "spline36"/ "spline64"/ "gauss"/ "sinc")]
+)
+
+ConvertToY8(
+clip,
+string "matrix"="Rec601" ("Rec601"/ "PC.601"/ "Rec709"/ "PC.709"/ "AVERAGE")
 )
 
 ConvertToYUY2(
 clip,
-string "matrix"="Rec601" ("Rec601"/ "PC.601"/ "Rec709"/ "PC.709"),
-bool "interlaced"=false
+string "matrix"="Rec601" ("Rec601"/ "PC.601"/ "Rec709"/ "PC.709"/ "AVERAGE"),
+bool "interlaced"=false,
+[string "ChromaInPlacement"="MPEG2" ("MPEG2"/ "MPEG1"/ "DV")],
+[string "chromaresample"="bicubic" ("point"/ "bilinear"/ "bicubic"/ "lanczos"/ "lanczos4"/ "blackman"/ "spline16"/ "spline36"/ "spline64"/ "gauss"/ "sinc")]
 )
 
 ConvertToYV12(
 clip,
-string "matrix"="Rec601" ("Rec601"/ "PC.601"/ "Rec709"/ "PC.709"),
-bool "interlaced"=false
+string "matrix"="Rec601" ("Rec601"/ "PC.601"/ "Rec709"/ "PC.709"/ "AVERAGE"),
+bool "interlaced"=false,
+[string "ChromaInPlacement"="MPEG2" ("MPEG2"/ "MPEG1"/ "DV")],
+[string "chromaresample"="bicubic" ("point"/ "bilinear"/ "bicubic"/ "lanczos"/ "lanczos4"/ "blackman"/ "spline16"/ "spline36"/ "spline64"/ "gauss"/ "sinc")],
+[string "ChromaOutPlacement"="MPEG2" ("MPEG2"/ "MPEG1"/ "DV")]
+)
+
+ConvertToYV16(
+clip,
+string "matrix"="Rec601" ("Rec601"/ "PC.601"/ "Rec709"/ "PC.709"/ "AVERAGE"),
+bool "interlaced"=false,
+[string "ChromaInPlacement"="MPEG2" ("MPEG2"/ "MPEG1"/ "DV")],
+[string "chromaresample"="bicubic" ("point"/ "bilinear"/ "bicubic"/ "lanczos"/ "lanczos4"/ "blackman"/ "spline16"/ "spline36"/ "spline64"/ "gauss"/ "sinc")]
+)
+
+ConvertToYV24(
+clip,
+string "matrix"="Rec601" ("Rec601"/ "PC.601"/ "Rec709"/ "PC.709"/ "AVERAGE"),
+bool "interlaced"=false,
+[string "ChromaInPlacement"="MPEG2" ("MPEG2"/ "MPEG1"/ "DV")],
+[string "chromaresample"="bicubic" ("point"/ "bilinear"/ "bicubic"/ "lanczos"/ "lanczos4"/ "blackman"/ "spline16"/ "spline36"/ "spline64"/ "gauss"/ "sinc")]
+)
+
+ConvertToYV411(
+clip,
+string "matrix"="Rec601" ("Rec601"/ "PC.601"/ "Rec709"/ "PC.709"/ "AVERAGE"),
+bool "interlaced"=false,
+[string "ChromaInPlacement"="MPEG2" ("MPEG2"/ "MPEG1"/ "DV")],
+[string "chromaresample"="bicubic" ("point"/ "bilinear"/ "bicubic"/ "lanczos"/ "lanczos4"/ "blackman"/ "spline16"/ "spline36"/ "spline64"/ "gauss"/ "sinc")]
 )
 
 Crop(
@@ -376,30 +591,44 @@ int count=0
 
 DelayAudio(
 clip,
-float seconds=0
+float seconds
 )
 
 DeleteFrame(
 clip,
-int frame
+int frame [, ...]
 )
 
 Dissolve(
 clip a,
 clip b [, ...],
 int overlap,
-float "fps"
+float "fps"=24.0
+)
+
+DoubleWeave(
+clip
 )
 
 DuplicateFrame(
 clip,
-int frame
+int frame [, ...]
+)
+
+Echo(
+clip,
+clip [, ...]
+)
+
+EnsureVBRMP3Sync(
+clip
 )
 
 FadeIn(
 clip,
 int frames,
-int "color"=$000000
+int "color"=$000000,
+float "fps"=24.0
 )
 
 FadeIn0(
@@ -412,13 +641,15 @@ float "fps"=24.0
 FadeIn2(
 clip,
 int frames,
-int "color"=$000000
+int "color"=$000000,
+float "fps"=24.0
 )
 
 FadeIO(
 clip,
 int frames,
-int "color"=$000000
+int "color"=$000000,
+float "fps"=24.0
 )
 
 FadeIO0(
@@ -431,13 +662,15 @@ float "fps"=24.0
 FadeIO2(
 clip,
 int frames,
-int "color"=$000000
+int "color"=$000000,
+float "fps"=24.0
 )
 
 FadeOut(
 clip,
 int frames,
-int "color"=$000000
+int "color"=$000000,
+float "fps"=24.0
 )
 
 FadeOut0(
@@ -450,13 +683,26 @@ float "fps"=24.0
 FadeOut2(
 clip,
 int frames,
-int "color"=$000000
+int "color"=$000000,
+float "fps"=24.0
+)
+
+FixBrokenChromaUpsampling(
+clip
 )
 
 FixLuminance(
 clip,
 int intercept,
 float slope
+)
+
+FlipHorizontal(
+clip
+)
+
+FlipVertical(
+clip
 )
 
 FrameEvaluate(
@@ -477,10 +723,10 @@ GaussResize(
 clip,
 int target_width,
 int target_height,
-float "src_left",
-float "src_top",
-float "src_width",
-float "src_height",
+float "src_left"=0,
+float "src_top"=0,
+float "src_width"=0,
+float "src_height"=0,
 float "p"=30.0 (1 to 100)
 )
 
@@ -502,9 +748,17 @@ clip,
 int channel [, ...]
 )
 
-GetParity(
+GetLeftChannel(
+clip
+)
+
+GetRightChannel(
+clip
+)
+
+Grayscale(
 clip,
-int "n"
+string "matrix"="Rec601" ("Rec601"/ "Rec709"/ "Average")
 )
 
 Greyscale(
@@ -514,32 +768,52 @@ string "matrix"="Rec601" ("Rec601"/ "Rec709"/ "Average")
 
 Histogram(
 clip,
-string "mode"="classic" ("classic"/ "levels"/ "color"/ "luma"/ "stereo"/ "stereooverlay"/ "audiolevels")
+string mode="classic" ("classic"/ "levels"/ "color"/ "color2"/ "luma"/ "stereo"/ "stereoY8"/ "stereooverlay"/ "audiolevels"),
+[float factor=100.0 (0.0 to 100.0)]
+)
+
+HorizontalReduceBy2(
+clip
 )
 
 ImageReader(
 string path= (*.bmp/*.jpg/*.gif/*.png),
 int "start"=0,
 int "end"=1000,
-int "fps"=24,
-bool "use_DevIL"=true
+float "fps"=24,
+bool "use_DevIL"=False,
+bool "info"=False,
+string "pixel_type"="RGB24" ("Y8"/ "RGB24"/ "RGB32")
 )
 
 ImageSource(
 string path= (*.bmp/*.jpg/*.gif/*.png),
 int "start"=0,
 int "end"=1000,
-int "fps"=24,
-bool "use_DevIL"=true
+float "fps"=24,
+bool "use_DevIL"=False,
+bool "info"=False,
+string "pixel_type"="RGB24" ("Y8"/ "RGB24"/ "RGB32")
+)
+
+ImageSourceAnim(
+string file= (*.gif/*.ppm/*.tiff/*.psd),
+[float "fps"=24],
+bool "info"=False,
+string "pixel_type"="RGB32" ("Y8"/ "RGB24"/ "RGB32")
 )
 
 ImageWriter(
 clip,
-string "path"=(*.dds/*.ebmp/*.jpg/*.jpe/*.jpeg/*.pal/*.pcx/*.png/*.pbm/*.pgm/*.ppm/*.raw/*.sgi/*.bw/*.rgb/*.rgba/*.tga/*.tif/*.tiff),
-int "begin",
-int "end",
-string "type"="ebmp" ("dds"/ "ebmp"/ "jpg"/ "jpe"/ "jpeg"/ "pal"/ "pcx"/ "png"/ "pbm"/ "pgm"/ "ppm"/ "raw"/ "sgi"/ "bw"/ "rgb"/ "rgba"/ "tga"/ "tif"/ "tiff"),
+string file="C:\",
+int "start"=0,
+int "end"=0,
+string "type"="ebmp" ("ebmp"/ "bmp"/ "dds"/ "ebmp"/ "jpg"/ "pal"/ "pcx"/ "png"/ "pbm"/ "pgm"/ "ppm"/ "raw"/ "sgi"/ "bw"/ "rgb"/ "rgba"/ "tga"/ "tif"),
 bool "info"=false
+)
+
+Info(
+clip
 )
 
 Interleave(
@@ -547,39 +821,51 @@ clip a,
 clip b [, ...]
 )
 
+InternalCache(
+clip
+)
+
 Invert(
 clip,
-string "channels"= ("RGB"/ "RGBA"/ "R"/ "G"/ "B"/ "A"/ "YUV"/ "Y"/ "UV"),
+[string "channels"= ("RGB"/ "RGBA"/ "R"/ "G"/ "B"/ "A"/ "YUV"/ "Y"/ "UV")],
+)
+
+KillAudio(
+clip
+)
+
+KillVideo(
+clip
 )
 
 Lanczos4Resize(
 clip,
 int target_width,
 int target_height,
-float "src_left",
-float "src_top",
-float "src_width",
-float "src_height"
+float "src_left"=0,
+float "src_top"=0,
+float "src_width"=0,
+float "src_height"=0
 )
 
 LanczosResize(
 clip,
 int target_width,
 int target_height,
-float "src_left",
-float "src_top",
-float "src_width",
-float "src_height",
-int "taps"=3 (0 to 10)
+float "src_left"=0,
+float "src_top"=0,
+float "src_width"=0,
+float "src_height"=0,
+int "taps"=3 (1 to 10)
 )
 
 Layer(
-clip,
-layer_clip,
+clip base_clip,
+clip overlay_clip,
 string "op"="add" ("add"/ "subtract"/ "lighten"/ "darken"/ "fast"/ "mul"),
-int "level"=256 (0 to 256),
-int "x",
-int "y",
+int "level"=257 (0 to 257),
+int "x"=0,
+int "y"=0,
 int "threshold"=0 (0 to 255),
 bool "use_chroma"=true
 )
@@ -600,7 +886,8 @@ float gamma=1.000 (0.001 to 10.000),
 int input_high=255 (0 to 255),
 int output_low=0 (0 to 255),
 int output_high=255 (0 to 255),
-bool "coring"=true
+bool "coring"=true,
+[bool "dither"=false]
 )
 
 Limiter(
@@ -609,24 +896,28 @@ int "min_luma"=16 (0 to 255),
 int "max_luma"=235 (0 to 255),
 int "min_chroma"=16 (0 to 255),
 int "max_chroma"=240 (0 to 255),
-string "show"= ("luma"/ "luma_grey"/ "chroma"/ "chroma_grey")
+[string "show"= ("luma"/ "luma_grey"/ "chroma"/ "chroma_grey")]
 )
 
 Loop(
 clip,
-int "times",
-int "start",
-int "end"
-)
-
-LumaDifference(
-clip a,
-clip b
+int "times"=-1,
+int "start"=0,
+[int "end"]
 )
 
 Mask(
 clip,
 clip mask_clip
+)
+
+MaskHS(
+clip,
+float "startHue"=0 (0 to 360),
+float "endHue"=360 (0 to 360),
+float "maxSat"=150 (0 to 150),
+float "minSat"=0 (0 to 150),
+bool "coring"=True
 )
 
 Merge(
@@ -650,13 +941,13 @@ clip b [, ...]
 MergeChroma(
 clip a,
 clip b,
-float "weight"=1.00 (0 to 1)
+float "chromaweight"=1.00 (0 to 1)
 )
 
 MergeLuma(
 clip a,
 clip b,
-float "weight"=1.00 (0 to 1)
+float "lumaweight"=1.00 (0 to 1)
 )
 
 MergeRGB(
@@ -668,8 +959,8 @@ string "pixel_type"="RGB32" ("RGB24"/ "RGB32")
 
 MessageClip(
 string message,
-int "width",
-int "height",
+int "width"=-1,
+int "height"=-1,
 bool "shrink"=false,
 int "text_color"=$FFFFFF,
 int "halo_color"=$000000,
@@ -677,8 +968,8 @@ int "bg_color"=$000000
 )
 
 MixAudio(
-clip a,
-clip b,
+clip clip1,
+clip clip2,
 float "clip1_factor"=0.5 (0.0 to 1.0),
 float "clip2_factor"=0.5 (0.0 to 1.0)
 )
@@ -700,9 +991,10 @@ string "copy"
 )
 
 OpenDMLSource(
-string filename [, ...],
+string filename= (*.avi) [, ...],
 bool "audio"=true,
-string "pixel_type"="YV12" ("YV12"/ "YUY2"/ "RGB32"/ "RGB24")
+[string "pixel_type"="FULL" ("YV24"/ "YV16"/ "YV12"/ "YV411"/ "YUY2"/ "RGB32"/ "RGB24"/ "Y8"/ "AUTO"/ "FULL")],
+[string "fourCC"="" ("DSVD"/ "2YUY"/ "21VY"/ "024I"/ "YERG"/ "008Y"/ "42VY"/ "61VY"/ "B14Y"/ "34PM"/ "3VID"/ "4VID"/ "14PA"/ "3IV1"/ "3IV2"/ "8BPS"/ "AASC")]
 )
 
 Overlay(
@@ -710,11 +1002,11 @@ clip,
 clip overlay,
 int "x"=0,
 int "y"=0,
-clip "mask",
+[clip "mask"],
 float "opacity"=1.0 (0.0 to 1.0),
 string "mode"="blend" ("blend"/ "add"/ "subtract"/ "multiply"/ "chroma"/ "luma"/ "lighten"/ "darken"/ "softlight"/ "hardlight"/ "difference"/ "exclusion"),
 bool "greymask"=true,
-string "output"= ("YUY2"/ "YV12"/ "RGB32"/ "RGB24"),
+[string "output"= ("YV24"/ "YUY2"/ "YV12"/ "Y8"/ "RGB32"/ "RGB24")],
 bool "ignore_conditional"=false,
 bool "pc_range"=false
 )
@@ -728,10 +1020,16 @@ PointResize(
 clip,
 int target_width,
 int target_height,
-float "src_left",
-float "src_top",
-float "src_width",
-float "src_height"
+float "src_left"=0,
+float "src_top"=0,
+float "src_width"=0,
+float "src_height"=0
+)
+
+Preroll(
+clip,
+int "video",
+float "audio"
 )
 
 Pulldown(
@@ -740,10 +1038,22 @@ int a,
 int b
 )
 
+ReduceBy2(
+clip
+)
+
 ResampleAudio(
 clip,
-int new_sample_rate,
-int "new_rate_denominator"
+int new_rate_numerator = 48000,
+int new_rate_denominator =1,
+)
+
+ResetMask(
+clip
+)
+
+Reverse(
+clip
 )
 
 RGBAdjust(
@@ -760,12 +1070,8 @@ float "rg"=1.00 (0.01 to 10.00),
 float "gg"=1.00 (0.01 to 10.00),
 float "bg"=1.00 (0.01 to 10.00),
 float "ag"=1.00 (0.01 to 10.00),
-bool "analyze"=false
-)
-
-RGBDifference(
-clip a,
-clip b
+bool "analyze"=false,
+[bool "dither"=false]
 )
 
 ScriptClip(
@@ -776,27 +1082,35 @@ bool "after_frame"=false
 )
 
 SegmentedAVISource(
-string base_filename= (*.avi) [, ...],
+string filename= (*.avi/*.wav/*.avs/*.vpy/*.vdr) [, ...],
 bool "audio"=true,
-string "pixel_type"="YV12" ("YV12"/ "YUY2"/ "RGB32"/ "RGB24")
+[string "pixel_type"="FULL" ("YV24"/ "YV16"/ "YV12"/ "YV411"/ "YUY2"/ "RGB32"/ "RGB24"/ "Y8"/ "AUTO"/ "FULL")],
 )
 
 SegmentedDirectShowSource(
-string filename= (*.*),
-float "fps",
+string filename= (*.*) [, ...],
+[float "fps"],
 bool "seek"=true,
 bool "audio"=true,
 bool "video"=true,
 bool "convertfps"=false,
 bool "seekzero"=false,
-int "timeout"=60000 (1000 to 600000 by 1000),
-string "pixel_type"="AUTO" ("YV12"/ "YUY2"/ "ARGB"/ "RGB32"/ "RGB24"/ "YUV"/ "RGB"/ "AUTO")
+int "timeout"=60000 (1000 to 300000 by 1000),
+[string "pixel_type"="AUTO" ("YV12"/ "YUY2"/ "AYUV"/ "Y41P"/ "Y411"/ "RGB32"/ "RGB24"/ "YUV"/ "RGB"/ "AUTO")]
+)
+
+SelectEven(
+clip
 )
 
 SelectEvery(
 clip,
 int step_size,
-int offset 1 [, ...]
+int offset1=0 [, ...]
+)
+
+SelectOdd(
+clip
 )
 
 SelectRangeEvery(
@@ -807,24 +1121,35 @@ int "offset"=0,
 bool "audio"=true
 )
 
-SetPlanarLegacyAlignment(
+SeparateColumns(
 clip,
-bool mode
+int interval
+)
+
+SeparateFields(
+clip,
+)
+
+SeparateRows(
+clip,
+int interval
 )
 
 Sharpen(
 clip,
-float amount=0 (0.00 to 1.00)
+float amount=0.00 (0.00 to 1.00),
+[float amountV=0.00 (0.00 to 1.00)],
+bool "MMX"=True
 )
 
 ShowAlpha(
 clip,
-string "pixel_type"= ("RGB24"/ "RGB32"/ "YUY2"/ "YV12")
+string "pixel_type"="RGB32" ("RGB24"/ "RGB32"/ "YUY2"/ "YV12")
 )
 
 ShowBlue(
 clip,
-string "pixel_type"= ("RGB24"/ "RGB32"/ "YUY2"/ "YV12")
+string "pixel_type"="RGB32" ("RGB24"/ "RGB32"/ "YUY2"/ "YV12")
 )
 
 ShowFiveVersions(
@@ -838,36 +1163,69 @@ clip e
 ShowFrameNumber(
 clip,
 bool "scroll"=false,
-int "offset",
-int "x",
-int "y",
+int "offset"=0,
+[int "x"=8],
+[int "y"=0],
 string "font"="Arial" ("Arial"/ "Comic Sans MS"/ "Courier New"/ "Lucida Console"/ "Tahoma"/ "Times New Roman"/ "Verdana"),
-int "size"=18 (8 to 48),
+int "size"=24 (8 to 48),
 int "text_color"=$FFFF00,
-int "halo_color"=$000000
+int "halo_color"=$000000,
+float "font_width"=0,
+float "font_angle"=0.0
 )
 
 ShowGreen(
 clip,
-string "pixel_type"= ("RGB24"/ "RGB32"/ "YUY2"/ "YV12")
+string "pixel_type"="RGB32" ("RGB24"/ "RGB32"/ "YUY2"/ "YV12")
 )
 
 ShowRed(
 clip,
-string "pixel_type"= ("RGB24"/ "RGB32"/ "YUY2"/ "YV12")
+string "pixel_type"="RGB32" ("RGB24"/ "RGB32"/ "YUY2"/ "YV12")
 )
 
 ShowSMPTE(
 clip,
-float "fps",
-string "offset",
-int "offset_f",
-int "x",
-int "y",
+[float "fps"=24.0],
+string "offset"="00:00:00:00",
+[int "offset_f"=0],
+[int "x"],
+[int "y"],
 string "font"="Arial" ("Arial"/ "Comic Sans MS"/ "Courier New"/ "Lucida Console"/ "Tahoma"/ "Times New Roman"/ "Verdana"),
-int "size"=18 (8 to 48),
+int "size"=24 (8 to 48),
 int "text_color"=$FFFF00,
-int "halo_color"=$000000
+int "halo_color"=$000000,
+float "font_width"=0,
+float "font_angle"=0.0
+)
+
+ShowTime(
+clip,
+int "offset_f"=0,
+[int "x"],
+[int "y"],
+string "font"="Arial" ("Arial"/ "Comic Sans MS"/ "Courier New"/ "Lucida Console"/ "Tahoma"/ "Times New Roman"/ "Verdana"),
+int "size"=24 (8 to 48),
+int "text_color"=$FFFF00,
+int "halo_color"=$000000,
+float "font_width"=0,
+float "font_angle"=0.0
+)
+
+SincResize(
+clip,
+int target_width,
+int target_height,
+float "src_left"=0,
+float "src_top"=0,
+float "src_width"=0,
+float "src_height"=0,
+int "taps"=4 (1 to 20)
+)
+
+SkewRows(
+clip,
+int skew
 )
 
 SpatialSoften(
@@ -881,26 +1239,36 @@ Spline16Resize(
 clip,
 int target_width,
 int target_height,
-float "src_left",
-float "src_top",
-float "src_width",
-float "src_height"
+float "src_left"=0,
+float "src_top"=0,
+float "src_width"=0,
+float "src_height"=0
 )
 
 Spline36Resize(
 clip,
 int target_width,
 int target_height,
-float "src_left",
-float "src_top",
-float "src_width",
-float "src_height"
+float "src_left"=0,
+float "src_top"=0,
+float "src_width"=0,
+float "src_height"=0
+)
+
+Spline64Resize(
+clip,
+int target_width,
+int target_height,
+float "src_left"=0,
+float "src_top"=0,
+float "src_width"=0,
+float "src_height"=0
 )
 
 SSRC(
 clip,
 int samplerate=48000,
-bool "fast"=false
+bool "fast"=True
 )
 
 StackHorizontal(
@@ -925,8 +1293,11 @@ int "size"=18 (8 to 48),
 int "text_color"=$FFFF00,
 int "halo_color"=$000000,
 int "align"=7 (1 to 9),
-int "spc"=0 (0 to 10),
-int "lsp"=0 (0 to 1)
+int "spc"=0 (-10 to 10),
+[int "lsp"],
+float "font_width"=0,
+float "font_angle"=0.0,
+bool "interlaced"=False
 )
 
 Subtract(
@@ -936,7 +1307,16 @@ clip b
 
 SuperEQ(
 clip,
-string filename
+float filename_or_band1,
+[float band2 [...]]
+)
+
+SwapFields(
+clip
+)
+
+SwapUV(
+clip
 )
 
 TemporalSoften(
@@ -965,24 +1345,43 @@ float "length"=10.0,
 float "frequency"=440,
 int "samplerate"=48000,
 int "channels"=2,
-string "type"="sine" ("silence"/ "sine"/ "noise"/ "square"/ "triangle"/ "sawtooth")
+string "type"="sine" ("silence"/ "sine"/ "noise"/ "square"/ "triangle"/ "sawtooth"),
+float "level"=1.0
 )
 
 Trim(
 clip,
 int first_frame,
 int last_frame,
-bool "pad_audio"=true
+[bool pad=true]
+)
+
+Turn180(
+clip
+)
+
+TurnLeft(
+clip
+)
+
+TurnRight(
+clip
 )
 
 Tweak(
-clip clip,
+clip,
 float "hue"=0.0 (-180.0 to 180.0),
 float "sat"=1.0 (0.0 to 10.0),
 float "bright"=0 (-255 to 255),
 float "cont"=1.0 (0.0 to 10.0),
-bool "coring"=true,
-bool "sse"=false
+bool "coring"=True,
+bool "sse"=False,
+float "startHue"=0 (0 to 360),
+float "endHue"=360 (0 to 360),
+float "maxSat"=150 (0 to 150),
+float "minSat"=0 (0 to 150),
+float "interp"=16 (0 to 32),
+[bool "dither"=False]
 )
 
 UnalignedSplice(
@@ -990,38 +1389,45 @@ clip a,
 clip b [, ...]
 )
 
-UPlaneMax(
-clip,
-float "threshold"
+UToY(
+clip
 )
 
-UPlaneMin(
-clip,
-float "threshold"
+UToY8(
+clip
 )
 
-UPlaneMinMaxDifference(
-clip,
-float "threshold"
+Version(
 )
 
-VPlaneMax(
-clip,
-float "threshold"
+VerticalReduceBy2(
+clip
 )
 
-VPlaneMin(
-clip,
-float "threshold"
+VToY(
+clip
 )
 
-VPlaneMinMaxDifference(
-clip,
-float "threshold"
+VToY8(
+clip
 )
 
 WAVSource(
 string filename="" (*.wav) [, ...]
+)
+
+Weave(
+clip
+)
+
+WeaveColumns(
+clip,
+int period
+)
+
+WeaveRows(
+clip,
+int period
 )
 
 WriteFile(
@@ -1054,51 +1460,36 @@ string expression1 [, ...],
 bool "append"=false
 )
 
-YPlaneMax(
-clip,
-float "threshold"
-)
-
-YPlaneMin(
-clip,
-float "threshold"
-)
-
-YPlaneMinMaxDifference(
-clip,
-float "threshold"
-)
-
 YToUV(
 clip u,
 clip v,
-clip "y"
+[clip "y"]
 )
 
 [PLUGINS]
 
 AGC_HDRAGC(
 clip clip,
-float max_gain=6.3 (0.00 to 8.00), 
-float min_gain=1.0, 
+float max_gain=6.3 (0.00 to 8.00),
+float min_gain=1.0,
 float coef_gain=0.5 (0.00 to 0.5),
 float max_gain=6.3 (0.00 to 8.00),
 float min_sat=1.19 (0.00 to 2.00),
 float coef_sat=0.9 (0.0 to 2.0)
 int avg_window=16 (0 to 120),
-int response=100, 
-int debug=0, 
+int response=100,
+int debug=0,
 int mode=2 (0 to 2),
 int protect=2 (0 to 2),
 int passes=1 (1 to 9),
-int shift=0, 
-bool shadows=true, 
-int shift_u= -31 (-100 to 100),  
+int shift=0,
+bool shadows=true,
+int shift_u= -31 (-100 to 100),
 int shift_v=0 (-100 to 100),
-float corrector=1.31 (0.50 to 1.50), 
+float corrector=1.31 (0.50 to 1.50),
 float reducer=2.0 (0.0 to 2.0),
 int avg_lum=2000 (128 to 2000),
-float black_clip=0.0, 
+float black_clip=0.0,
 int freezer=-1
 )
 
@@ -1322,16 +1713,16 @@ bool "iCC"
 
 DirectShowSource_DirectShowSource(
 string filename= (*.*) [, ...],
-float "fps",
+[float "fps"],
 bool "seek"=true,
 bool "audio"=true,
 bool "video"=true,
 bool "convertfps"=false,
 bool "seekzero"=false,
 int "timeout"=60000 (1000 to 300000 by 1000),
-string "pixel_type"="AUTO" ("YV12"/ "YUY2"/ "RGB32"/ "RGB24"/ "YUV"/ "RGB"/ "AUTO"),
-int "framecount",
-string "logfile",
+[string "pixel_type"="AUTO" ("YV12"/ "YUY2"/ "AYUV"/ "Y41P"/ "Y411"/ "RGB32"/ "RGB24"/ "YUV"/ "RGB"/ "AUTO")],
+[int "framecount"],
+[string "logfile"],
 int "logmask"=35 (1 to 512)
 )
 
@@ -1496,7 +1887,7 @@ bool grid,
 bool axis
 )
 
-HBVFWSource(
+HBVFWSource_HBVFWSource(
 string,
 bool "stacked"=False
 )
@@ -1598,6 +1989,57 @@ int "height"=0,
 SangNom_SangNom(
 int "order"=1 (0 to 2),
 int "aa"=48 (0 to 255)
+)
+
+SoundOut_SoundOut(
+clip,
+[string "output"="" ("WAV"/ "AC3"/ "MP2"/ "MP3"/ "OGG"/ "FLAC"/ "MAC"/ "WV"/ "CMD")],
+[string "filename"],
+[bool "showprogress"=True],
+[bool "autoclose"=False],
+[bool "silentblock"=True],
+[bool "addvideo"=True],
+[int "abrrate"=128],
+[bool "accuratealloc"=True],
+[int "acmod"= (0 to 7)],
+[bool "autoCloseWindow"=False],
+[bool "bandwidthfilter"=False],
+[int "bitrate"=192],
+[bool "blockswitch"=False],
+[bool "cbr"=False],
+[int "cbrrate"],
+[int "compressionlevel"],
+[bool "copyright"=False],
+[bool "crc"=False],
+[bool "dab"=False],
+[bool "dchighpass"=False],
+[int "dialognormalization"=31 (0 to 31)],
+[bool "dolbysurround"=False],
+[int "drc"=5 (0 to 5)],
+[int "emphasis"=0 (0 to 3)],
+[string "executable"="aften.exe"],
+[int "format"],
+[bool "iscbr"=True],
+[bool "islfe"],
+[bool "lfelowpass"=False],
+[int "mode"=2 (0 to 2)],
+[bool "nofilename"=False],
+[bool "original"=False],
+[string "overwriteFile"= ("Yes"/ "No"/ "Ask")],
+[bool "padding"],
+[bool "peakchunck"=False],
+[string "postfilename"=""],
+[string "prefilename"="-b 384 -"],
+[int "psymodel"=3 (-1 to 4)],
+[bool "quick"=False],
+[bool "showoutput"=True],
+[int "stereomode"=-1 (-1 to 4)],
+[int "type"],
+[bool "vbr"=False],
+[int "vbrbitrate"=128],
+[int "vbrpreset"=1001 (1001 to 1007)],
+[float "vbrquality"],
+[int "wait"=5]
 )
 
 SSIQ_SSIQ(

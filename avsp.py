@@ -4946,9 +4946,9 @@ class MainFrame(wxp.Frame):
                 'mkv': 'DirectShowSource(***)',
                 'wmv': 'DirectShowSource(***)',
                 'avs': 'Import(***)',
-                'bmp': 'ImageReader(***)',
-                'jpg': 'ImageReader(***)',
-                'png': 'ImageReader(***)',
+                'bmp': 'ImageSource(***)',
+                'jpg': 'ImageSource(***)',
+                'png': 'ImageSource(***)',
             }
         else:
             templateDict = {
