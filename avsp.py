@@ -2733,7 +2733,10 @@ class UserSliderDialog(wx.Dialog):
 
 # Dialog for AviSynth filter information
 class AvsFunctionDialog(wx.Dialog):
-    def __init__(self, parent, filterDict, overrideDict, presetDict, removedSet, autcompletetypeFlags, installedFilternames, functionName=None, CreateDefaultPreset=None, ExportFilterData=None):
+    def __init__(self, parent, filterDict, overrideDict, presetDict, removedSet, 
+                       autcompletetypeFlags, installed_plugins_filternames, 
+                       installed_avsi_filternames, functionName=None, 
+                       CreateDefaultPreset=None, ExportFilterData=None):
         wx.Dialog.__init__(
             self, parent, wx.ID_ANY,
             _('Add or override AviSynth functions in the database'),
@@ -2745,7 +2748,8 @@ class AvsFunctionDialog(wx.Dialog):
         self.presetDict = presetDict.copy()
         self.removedSet = removedSet
         self.autcompletetypeFlags = autcompletetypeFlags
-        self.installedFilternames = installedFilternames
+        self.installed_plugins_filternames = installed_plugins_filternames
+        self.installed_avsi_filternames = installed_avsi_filternames
         self.CreateDefaultPreset = CreateDefaultPreset
         self.ExportFilterData = ExportFilterData
         self.CreateWindowElements()
@@ -2857,7 +2861,7 @@ class AvsFunctionDialog(wx.Dialog):
                 #~ self.buttonclearlongnames = wx.Button(panel, wx.ID_ANY, _('Clear long names'))
                 #~ panel.Bind(wx.EVT_BUTTON, lambda event: self.ClearLongNames(), self.buttonclearlongnames)
                 #~ buttonSizer.Add(self.buttonclearlongnames, 0, wx.EXPAND|wx.BOTTOM, 5)
-            if index == 2:
+            if index in (2, 3):
                 buttonselectinstalled = wx.Button(panel, wx.ID_ANY, _('Select installed'))
                 panel.Bind(wx.EVT_BUTTON, lambda event: self.SelectInstalledFilters(), buttonselectinstalled)
                 buttonSizer.Add(buttonselectinstalled, 0, wx.EXPAND|wx.BOTTOM, 5)
@@ -3064,11 +3068,17 @@ class AvsFunctionDialog(wx.Dialog):
                 listbox.Check(i, False)
 
     def SelectInstalledFilters(self):
+        index = self.notebook.GetSelection()
+        if index == 1:
+            filters = self.installed_plugins_filternames
+        elif index == 2:
+            filters = self.installed_avsi_filternames
+        else: return
         listbox = self.notebook.GetCurrentPage().listbox
         for i in xrange(listbox.GetCount()):
-            boolCheck = (listbox.GetString(i).split()[0].lower() in self.installedFilternames)
+            boolCheck = (listbox.GetString(i).split()[0].lower() in filters)
             listbox.Check(i, boolCheck)
-            
+    
     def ImportFromFiles(self):
         filenames, filterInfo, unrecognized = [], [], []
         title = _('Open Customization files, Avisynth scripts or Avsp options files')
@@ -5303,23 +5313,27 @@ class MainFrame(wxp.Frame):
     def defineFilterInfo(self):
         self.optionsFilters = self.getFilterInfoFromAvisynth()
         
-        if self.options['parseavsi']:
-            pluginsdir = self.ExpandVars(self.options['pluginsdir'])
-            filenames = glob.iglob(os.path.join(pluginsdir, '*.avsi'))
-            filterInfo = []
-            for filename in filenames:
-                try:
-                    info = self.ParseAvisynthScript(filename, quiet=True)
-                except:
-                    info = None
-                if info:
-                    filterInfo += info
-            for filename, filtername, filterargs, ftype in filterInfo:
-                self.optionsFilters[filtername.lower()] = (filtername, filterargs, ftype)
+        self.installed_avsi_filternames = set()
+        parse_avsi = self.options['parseavsi']
+        pluginsdir = self.ExpandVars(self.options['pluginsdir'])
+        filenames = glob.iglob(os.path.join(pluginsdir, '*.avsi'))
+        filterInfo = []
+        for filename in filenames:
+            try:
+                info = self.ParseAvisynthScript(filename, quiet=True)
+            except:
+                info = None
+            if info:
+                filterInfo += info
+        for filename, filtername, filterargs, ftype in filterInfo:
+            filtername_lower = filtername.lower()
+            if parse_avsi:
+                self.optionsFilters[filtername_lower] = (filtername, filterargs, ftype)
+            self.installed_avsi_filternames.add(filtername_lower)
         
-        self.installedfilternames = set(self.optionsFilters) #set([key.lower() for key in self.optionsFilters.keys()])
         if __debug__:
             self.ExportFilterData(self.optionsFilters, os.path.join(self.programdir, 'tempfilterout.txt'), True)
+        
         self.avskeywords = [
             'return', 'global', 'function', 'last',
             'true', 'false', 'try', 'catch',
@@ -5573,16 +5587,14 @@ class MainFrame(wxp.Frame):
                                 env.Invoke('VersionNumber'),
                                 env.Invoke('Version').AsClip(env).GetVersion())
         intfunc = avisynth.avs_get_var(env,"$InternalFunctions$")
-        intfuncList = [(name, 0) for name in intfunc.d.s.split()]
+        funclist = [(name, 0) for name in intfunc.d.s.split()]
         intfunc.Release()
-        if self.options['autoloadedplugins']:
-            extfunc = avisynth.avs_get_var(env,"$PluginFunctions$")
-        else:
-            extfunc = None
-        if extfunc and extfunc.d.s is not None:
+        extfunc = avisynth.avs_get_var(env,"$PluginFunctions$")
+        if extfunc.d.s is not None:
             s = extfunc.d.s + ' '
             extfunc.Release()
             extfuncList = []
+            self.installed_plugins_filternames = set()
             dllnameList = []
             start = 0
             end = len(s)            
@@ -5609,14 +5621,14 @@ class MainFrame(wxp.Frame):
                             break
                 pos += len(shortname)
                 extfuncList.append((s[start:pos-1], 2))
+                self.installed_plugins_filternames.add(s[start:pos-1].lower())
                 if dllname.count('_'):
                     self.dllnameunderscored.add(dllname.lower())
                 start = pos
-            funclist = intfuncList + extfuncList
+            if self.options['autoloadedplugins']:
+                funclist += extfuncList
             if dllnameList and self.options['dllnamewarning']:
                 self.IdleCall.append((self.ShowWarningOnBadNaming, (dllnameList, ), {}))
-        else:
-            funclist = intfuncList
         typeDict = {
             'c': 'clip',
             'i': 'int',
@@ -12295,7 +12307,8 @@ class MainFrame(wxp.Frame):
             self.options['filterpresets'],
             self.options['filterremoved'],
             self.options['autcompletetypeflags'],
-            self.installedfilternames,
+            self.installed_plugins_filternames,
+            self.installed_avsi_filternames,
             functionName=functionName,
             CreateDefaultPreset=self.currentScript.CreateDefaultPreset,
             ExportFilterData=self.ExportFilterData,
