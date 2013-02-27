@@ -5068,6 +5068,9 @@ class MainFrame(wxp.Frame):
             'autocompletevariables': True,
             'autocompleteicons': True,
             'calltipsoverautocomplete': False,
+            'fdb_plugins': True,
+            'fdb_userscriptfunctions': True,
+            'autoloadedplugins': True,
             'parseavsi': True,
             # VIDEO OPTIONS
             'dragupdate': True,
@@ -5374,6 +5377,8 @@ class MainFrame(wxp.Frame):
                                 filterargs = '('+splitstring[1].strip(' ')
                                 self.optionsFilters[filtername.lower()] = (filtername, filterargs, 0)
                     elif title == 'plugins':
+                        if not self.options['fdb_plugins']:
+                            continue
                         for s in data.split('\n\n'):
                             splitstring = s.split('(', 1)
                             if len(splitstring) == 2:
@@ -5390,6 +5395,8 @@ class MainFrame(wxp.Frame):
                                 if key in self.options['filterdb']:
                                     del self.options['filterdb'][key]
                     elif title == 'userfunctions':
+                        if not self.options['fdb_userscriptfunctions']:
+                            continue
                         for s in data.split('\n\n'):
                             splitstring = s.split('(', 1)
                             if len(splitstring) == 2:
@@ -5568,8 +5575,11 @@ class MainFrame(wxp.Frame):
         intfunc = avisynth.avs_get_var(env,"$InternalFunctions$")
         intfuncList = [(name, 0) for name in intfunc.d.s.split()]
         intfunc.Release()
-        extfunc = avisynth.avs_get_var(env,"$PluginFunctions$")
-        if extfunc.d.s is not None:
+        if self.options['autoloadedplugins']:
+            extfunc = avisynth.avs_get_var(env,"$PluginFunctions$")
+        else:
+            extfunc = None
+        if extfunc and extfunc.d.s is not None:
             s = extfunc.d.s + ' '
             extfunc.Release()
             extfuncList = []
@@ -5787,7 +5797,12 @@ class MainFrame(wxp.Frame):
                 ((_('Line margin width'), wxp.OPT_ELEM_SPIN, 'numlinechars', _('Initial space to reserve for the line margin in terms of number of digits. Set it to 0 to disable showing line numbers'), dict(min_val=0) ), ),
             ),
             (_('Autocomplete'),
-                ((_('Include autoloaded script functions')+' *', wxp.OPT_ELEM_CHECK, 'parseavsi', _('Parse the avsi files on the plugins folder on start and add its functions to the database'), dict() ), ),
+                ((_('AviSynth user function database'), wxp.OPT_ELEM_SEP, '', _('Select what functions beside internal and user-defined will be included in the database'), dict(adjust_width=True) ), ),
+                ((_('Autoloaded plugin functions')+' *', wxp.OPT_ELEM_CHECK, 'autoloadedplugins', _('Include the functions on autoloaded plugins in the database'), dict() ),
+                 (_('Autoloaded script functions')+' *', wxp.OPT_ELEM_CHECK, 'parseavsi', _('Include the functions on autoloaded avsi files in the database'), dict() ), ),
+                ((_('Plugin functions from database')+' *', wxp.OPT_ELEM_CHECK, 'fdb_plugins', _("Include plugin functions from the program's database"), dict() ),
+                 (_('Script functions from database')+' *', wxp.OPT_ELEM_CHECK, 'fdb_userscriptfunctions', _("Include user script functions from the program's database"), dict() ), ),
+                ((_('Autocomplete'), wxp.OPT_ELEM_SEP, '', '', dict(adjust_width=True) ), ),
                 ((_('Show autocomplete with variables'), wxp.OPT_ELEM_CHECK, 'autocompletevariables', _('Add user defined variables into autocomplete list'), dict() ), ),
                 ((_('Show autocomplete on single matched lowercase variable'), wxp.OPT_ELEM_CHECK, 'autocompletesingle', _('When typing a lowercase variable name, show autocomplete if there is only one item matched in keyword list'), dict(ident=20) ), ),
                 ((_('Show autocomplete with icons'), wxp.OPT_ELEM_CHECK, 'autocompleteicons', _("Add icons into autocomplete list. Using different type to indicate how well a filter's presets is defined"), dict() ), ),
