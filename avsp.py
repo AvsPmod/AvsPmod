@@ -15578,11 +15578,12 @@ class MainFrame(wxp.Frame):
         
         - 'sep': separator formed by a text string and a horizontal line.
           'default' values: 1-tuple with an optional fixed line length (by default 
-              it extends through all the dialog's width).  Note that an invisible 
-              separator can be created by setting 'message' to '' and 'default' to 
-              0.  To include the 'default' parameter but don't give a fixed length 
-              (e.g. there's more entries following that one) set the tuple to None 
-              or any not-convertible-to-int value, like ''.
+              it extends through all the dialog's width).  Set it to -1 to auto-adjust 
+              to the text length.  Note that an invisible separator can be created by 
+              setting 'message' to '' and 'default' to 0 or -1.  To include the 'default' 
+              parameter but don't give a fixed length (e.g. there's more entries 
+              following that one) set the tuple to None or any not-convertible-to-int 
+              value, like ''.
         
         A not recognized type string, including '', defaults to 'text' type.
         
@@ -15699,7 +15700,11 @@ class MainFrame(wxp.Frame):
                     except:
                         misc = dict()
                     else:
-                        misc = dict(width=sep_width, expand=False)
+                        misc = dict(expand=False)
+                        if sep_width == -1:
+                            misc['adjust_width'] = True
+                        else:
+                            misc['width'] = sep_width
                     colOptions = [eachMessage, flag, 'mgte_sep', '', misc]
                 
                 else:

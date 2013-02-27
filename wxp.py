@@ -1038,12 +1038,20 @@ class OptionsDialog(wx.Dialog):
                     
                     elif flag == OPT_ELEM_SEP:
                         # horizontal separator formed by a text line and a horizontal line
-                        # misc: {width, expand}
+                        # misc: {width, adjust_width, expand}
                         width = misc['width'] if 'width' in misc else -1
-                        expand = (wx.EXPAND if misc['expand'] else 0) if 'expand' in misc else wx.EXPAND
+                        adjust_width = misc['adjust_width'] if 'adjust_width' in misc else False
+                        if width != -1 or adjust_width:
+                            expand = 0
+                        else:
+                            expand = (wx.EXPAND if misc['expand'] else 0) if 'expand' in misc else wx.EXPAND
                         itemSizer = wx.BoxSizer(wx.VERTICAL)
                         if label:
                             staticText = wx.StaticText(tabPanel, wx.ID_ANY, label)
+                            if tip:
+                                staticText.SetToolTipString(tip)
+                            if adjust_width:
+                                width = staticText.GetTextExtent(label)[0] + 4
                             itemSizer.Add(staticText, 0, wx.EXPAND|wx.ALL, 2)
                         else:
                             itemSizer.AddSpacer((-1, 3))
