@@ -3574,7 +3574,6 @@ class AvsFilterAutoSliderInfo(wx.Dialog):
         argWindow.SetScrollRate(10, 10)
         argSizer = wx.GridBagSizer(hgap=0, vgap=10)
         row = 0
-        growable = False
         self.argctrls = []
         for argInfo in self.mainFrame.currentScript.GetFilterCalltipArgInfo(calltip=filterInfo):
             totalInfo, cArgType, cArgName, boolRepeatArg, boolOptionalArg, cArgInfo = argInfo
@@ -3671,7 +3670,7 @@ class AvsFilterAutoSliderInfo(wx.Dialog):
                     hsizer.Add(vsizer, 1, wx.EXPAND|wx.RIGHT,5)
 
                     argSizer.Add(hsizer, (row,1), wx.DefaultSpan, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 0)
-                    if not growable:
+                    if not argSizer.IsColGrowable(1):
                         argSizer.AddGrowableCol(1)
 
                 row += 1
