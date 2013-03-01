@@ -55,6 +55,7 @@ import textwrap
 import ctypes
 import tempfile
 import glob
+import urllib2
 if os.name == 'nt':
     import _winreg
 from hashlib import md5
@@ -2881,8 +2882,14 @@ class AvsFunctionDialog(wx.Dialog):
             panel.autocompletecheckbox = autocompletecheckbox
             panel.functiontype = index
         # Buttons
-        button0 = wx.Button(self, wx.ID_ANY, _('Import from files'))
-        self.Bind(wx.EVT_BUTTON, lambda event: self.ImportFromFiles(), button0)
+        button0 = wx.Button(self, wx.ID_ANY, _('Import'))
+        menu0 = wx.Menu()
+        menuItem = menu0.Append(wx.ID_ANY, _('Import from files'))
+        self.Bind(wx.EVT_MENU, lambda event: self.ImportFromFiles(), menuItem)
+        menuItem = menu0.Append(wx.ID_ANY, _('Import from wiki'))
+        self.Bind(wx.EVT_MENU, lambda event: self.ImportFromFiles(wiki=True), menuItem)
+        self.Bind(wx.EVT_BUTTON, lambda event: button0.PopupMenu(
+                    menu0, (1, button0.GetSizeTuple()[1])), button0)
         button1 = wx.Button(self, wx.ID_ANY, _('Export customizations'))
         self.Bind(wx.EVT_BUTTON, lambda event: self.ExportCustomizations(), button1)
         button2 = wx.Button(self, wx.ID_ANY, _('Clear customizations'))
@@ -3079,31 +3086,40 @@ class AvsFunctionDialog(wx.Dialog):
             boolCheck = (listbox.GetString(i).split()[0].lower() in filters)
             listbox.Check(i, boolCheck)
     
-    def ImportFromFiles(self):
+    def ImportFromFiles(self, wiki=False):
         filenames, filterInfo, unrecognized = [], [], []
-        title = _('Open Customization files, Avisynth scripts or Avsp options files')
-        initial_dir = self.GetParent().ExpandVars(self.GetParent().options['pluginsdir'])
-        filefilter = (_('All supported') + '|*.txt;*.avsi;*.avs;*.dat|' + _('Customization file') + ' (*.txt)|*.txt|' + 
-                      _('AviSynth script') + ' (*.avs, *.avsi)|*.avs;*.avsi|' + _('AvsP data') + ' (*.dat)|*.dat|' + 
-                      _('All files') + ' (*.*)|*.*')
-        dlg = wx.FileDialog(self, title, initial_dir, '', filefilter, 
-                            wx.OPEN|wx.MULTIPLE|wx.FILE_MUST_EXIST)
-        ID = dlg.ShowModal()
-        if ID == wx.ID_OK:
-            filenames = dlg.GetPaths()            
-        dlg.Destroy()
-        if not filenames:
-            return
-            
+        if wiki:
+            filenames = (self.GetParent().filterdbremote_plugins, 
+                         self.GetParent().filterdbremote_scripts)
+        else:
+            title = _('Open Customization files, Avisynth scripts or Avsp options files')
+            initial_dir = self.GetParent().ExpandVars(self.GetParent().options['pluginsdir'])
+            filefilter = (_('All supported') + '|*.txt;*.md;*.avsi;*.avs;*.dat|' + 
+                          _('Customization file') + ' (*.txt, *.md)|*.txt;*.md|' + 
+                          _('AviSynth script') + ' (*.avs, *.avsi)|*.avs;*.avsi|' + 
+                          _('AvsP data') + ' (*.dat)|*.dat|' + 
+                          _('All files') + ' (*.*)|*.*')
+            dlg = wx.FileDialog(self, title, initial_dir, '', filefilter, 
+                                wx.OPEN|wx.MULTIPLE|wx.FILE_MUST_EXIST)
+            ID = dlg.ShowModal()
+            if ID == wx.ID_OK:
+                filenames = dlg.GetPaths()            
+            dlg.Destroy()
+            if not filenames:
+                return
+        
         for filename in filenames:
             ext = os.path.splitext(filename)[1]
             try:
                 if ext in ['.avs', '.avsi']:
                     info = self.ParseAvisynthScript(filename)
-                elif ext == '.txt':
+                elif ext in ['.txt', '.md']:
                     info = self.ParseCustomizations(filename)
                 elif ext == '.dat':
-                    f = open(filename, 'rb')
+                    if filename.startswith('http'):
+                        f = urllib2.urlopen(filename)
+                    else:
+                        f = open(filename, 'rb')
                     data = cPickle.load(f)
                     f.close()
                     info = []
@@ -3111,6 +3127,10 @@ class AvsFunctionDialog(wx.Dialog):
                         info.append((filename, filtername, filterargs, ftype))
                 else:
                     info = None
+            except (urllib2.URLError, urllib2.HTTPError), err:
+                wx.MessageBox(u'\n\n'.join((os.path.basename(filename), unicode(err))), 
+                              _('Error'), style=wx.OK|wx.ICON_ERROR)
+                continue
             except:
                 info = None
             if not info:
@@ -3129,7 +3149,8 @@ class AvsFunctionDialog(wx.Dialog):
         filterInfo.sort()
         for filename, filtername, filterargs, ftype in filterInfo:
             choices.append(os.path.basename(filename) + ' -> ' + filtername)
-        dlg = wx.Dialog(self, wx.ID_ANY, _('Select import functions'), style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+        dlg = wx.Dialog(self, wx.ID_ANY, _('Select the functions to import'), 
+                        style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
         listbox = wx.CheckListBox(dlg, wx.ID_ANY, choices=choices)
         for i in range(len(choices)):
             filename, filtername = choices[i].lower().split(' -> ')
@@ -3189,9 +3210,14 @@ class AvsFunctionDialog(wx.Dialog):
         return self.GetParent().ParseAvisynthScript(filename)
     
     def ParseCustomizations(self, filename):
-        f = open(filename)
+        if filename.startswith('http'):
+            f = urllib2.urlopen(filename)
+        else:
+            f = open(filename)
         text = '\n'.join([line.strip() for line in f.readlines()])
         f.close()
+        if filename.endswith('.md'):
+            text = text.split('```text\n', 1)[1].rsplit('```', 1)[0]
         filterInfo = []
         for section in text.split('\n\n['):
             title, data = section.split(']\n',1)
@@ -4455,6 +4481,8 @@ class MainFrame(wxp.Frame):
         # Get persistent options
         self.optionsfilename = os.path.join(self.programdir, 'options.dat')
         self.filterdbfilename = os.path.join(self.programdir, 'filterdb.dat')
+        self.filterdbremote_plugins = r'https://raw.github.com/wiki/AvsPmod/AvsPmod/Plugin-functions.md'
+        self.filterdbremote_scripts = r'https://raw.github.com/wiki/AvsPmod/AvsPmod/Script-functions.md'
         self.lastSessionFilename = os.path.join(self.programdir, '_last_session_.ses')
         self.macrosfilename = os.path.join(self.programdir, 'macros', 'macros.dat')
         self.loaderror = []
