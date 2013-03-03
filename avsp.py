@@ -1358,18 +1358,33 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
             if os.path.isdir(path):
                 docsearchpaths.append(path)
         extensions = ['.htm', '.html', '.txt', '.lnk']
-        for dir in docsearchpaths:
-            filenames = []
-            for filename in os.listdir(dir):
-                base, ext = os.path.splitext(filename)
-                if ext in extensions:
-                    if re.findall(r'(\b|[_\W]|readme)%s(\b|[_\W]|readme)' % name, base, re.IGNORECASE):
-                        filenames.append((extensions.index(ext), filename))
-            if filenames:
-                filenames.sort()
-                filename = os.path.join(dir, filenames[0][1])
-                startfile(filename)
-                return True
+        
+        def get_names(name):
+            yield name
+            name_lower = name.lower()
+            for plugin in self.app.installed_plugins:
+                plugin_lower = plugin.lower()
+                long_name = '_'.join((plugin_lower, name_lower))
+                if long_name in self.app.avsfilterdict:
+                    yield plugin
+                partition = name_lower.partition(plugin_lower + '_')
+                if not partition[0] and partition[2] in self.app.avsfilterdict:
+                    yield name[-len(partition[2]):]
+                    yield plugin
+        
+        for find_name in get_names(name):
+            for dir in docsearchpaths:
+                filenames = []
+                for filename in os.listdir(dir):
+                    base, ext = os.path.splitext(filename)
+                    if ext in extensions:
+                        if re.findall(r'(\b|[_\W]|readme)%s(\b|[_\W]|readme)' % find_name, base, re.IGNORECASE):
+                            filenames.append((extensions.index(ext), filename))
+                if filenames:
+                    filenames.sort()
+                    filename = os.path.join(dir, filenames[0][1])
+                    startfile(filename)
+                    return True
         url = self.app.options['docsearchurl'].replace('%filtername%', name.replace('_', '+'))
         startfile(url)
         return False
@@ -5597,6 +5612,8 @@ class MainFrame(wxp.Frame):
 
     def getFilterInfoFromAvisynth(self):
         self.avisynthVersion = (None,) * 3
+        self.installed_plugins = set()
+        self.installed_plugins_filternames = set()
         self.dllnameunderscored = set()
         try:
             env = avisynth.avs_create_script_environment(3)
@@ -5624,8 +5641,7 @@ class MainFrame(wxp.Frame):
             s = extfunc.d.s + ' '
             extfunc.Release()
             extfuncList = []
-            self.installed_plugins_filternames = set()
-            dllnameList = []
+            baddllnameList = []
             start = 0
             end = len(s)            
             while start < end:
@@ -5640,14 +5656,15 @@ class MainFrame(wxp.Frame):
                     print>>sys.stderr, 'Error parsing plugin string at position %d:\n%s' % (start, s)
                     break
                 dllname = s[start:pos]
-                if dllname in dllnameList:
+                self.installed_plugins.add(dllname)
+                if dllname in baddllnameList:
                     pass
                 elif not dllname[0].isalpha() and dllname[0] != '_':
-                    dllnameList.append(dllname)
+                    baddllnameList.append(dllname)
                 else:
                     for char in dllname:
                         if not char.isalnum() and char != '_':
-                            dllnameList.append(dllname)
+                            baddllnameList.append(dllname)
                             break
                 pos += len(shortname)
                 extfuncList.append((s[start:pos-1], 2))
@@ -5657,8 +5674,8 @@ class MainFrame(wxp.Frame):
                 start = pos
             if self.options['autoloadedplugins']:
                 funclist += extfuncList
-            if dllnameList and self.options['dllnamewarning']:
-                self.IdleCall.append((self.ShowWarningOnBadNaming, (dllnameList, ), {}))
+            if baddllnameList and self.options['dllnamewarning']:
+                self.IdleCall.append((self.ShowWarningOnBadNaming, (baddllnameList, ), {}))
         typeDict = {
             'c': 'clip',
             'i': 'int',
@@ -14996,12 +15013,12 @@ class MainFrame(wxp.Frame):
                     self.scriptNotebook.SetSize((w, h-1))
                     self.scriptNotebook.SetSize((w, h))
 
-    def ShowWarningOnBadNaming(self, dllnameList):
+    def ShowWarningOnBadNaming(self, baddllnameList):
         wx.Bell()
         dlg = wx.Dialog(self, wx.ID_ANY, _('Warning'))
         bmp = wx.StaticBitmap(dlg, wx.ID_ANY, wx.ArtProvider.GetBitmap(wx.ART_WARNING))
-        dllnameList.append('\n')
-        message = wx.StaticText(dlg, wx.ID_ANY, '.{0}\n'.format('dll' if os.name == 'nt' else 'so').join(dllnameList) +\
+        baddllnameList.append('\n')
+        message = wx.StaticText(dlg, wx.ID_ANY, '.{0}\n'.format('dll' if os.name == 'nt' else 'so').join(baddllnameList) +\
                                                 _('Above plugin names contain undesirable symbols.\n'
                                                   'Rename them to only use alphanumeric or underscores,\n'
                                                   'or make sure to use them in short name style only.'))
