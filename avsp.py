@@ -4297,7 +4297,7 @@ class SliderPlus(wx.Panel):
     def GetValue(self):
         return self.value
 
-    def GetMax(self):
+    def GetMin(self):
         return self.minValue
 
     def GetMax(self):
@@ -4371,7 +4371,7 @@ class SliderPlus(wx.Panel):
                 dc.Clear()
                 self._PaintSlider(dc)
             return True
-        except ValueError:
+        except KeyError:
             return False
 
     def RemoveAllBookmarks(self):
@@ -7316,7 +7316,7 @@ class MainFrame(wxp.Frame):
                         self.videoWindow.SetFocus()
                 title = self.titleEntry.GetLineText(0)
                 if self.currentScript.filename:
-                    if os.path.splittext(title)[1] not in ('.avs', '.avsi', '.vpy'):
+                    if os.path.splitext(title)[1] not in ('.avs', '.avsi', '.vpy'):
                         title += '.avs'
                     src = self.currentScript.filename
                     dirname = os.path.dirname(src)
