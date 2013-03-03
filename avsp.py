@@ -3137,7 +3137,7 @@ class AvsFunctionDialog(wx.Dialog):
                 unrecognized.append(filename)
             else:
                 filterInfo += info
-        if filterInfo and not self.checkBox.IsChecked():
+        if filterInfo and (wiki or not self.checkBox.IsChecked()):
             self.SelectImportFilters(filterInfo)
         for filename, filtername, filterargs, ftype in filterInfo:
             self.EditFunctionInfo(filtername, filterargs, ftype)
@@ -3146,7 +3146,8 @@ class AvsFunctionDialog(wx.Dialog):
     
     def SelectImportFilters(self, filterInfo):
         choices = []
-        filterInfo.sort()
+        filterInfo.sort(key=lambda fi:
+                    [i.lower() if isinstance(i, basestring) else i for i in fi])
         for filename, filtername, filterargs, ftype in filterInfo:
             choices.append(os.path.basename(filename) + ' -> ' + filtername)
         dlg = wx.Dialog(self, wx.ID_ANY, _('Select the functions to import'), 
@@ -3726,21 +3727,23 @@ class AvsFilterAutoSliderInfo(wx.Dialog):
         w, h = argSizer.GetMinSize()
         w = max(w + 10, 400)
         h = min(h + 100, 700)
-        self.SetSize(self.ClientToWindowSize((w,h)))
-
+        self.SetSize(self.ClientToWindowSize((w, h)))
+        if argWindow.HasScrollbar(wx.HORIZONTAL):
+            scrollbar_w = wx.SystemSettings_GetMetric(wx.SYS_VSCROLL_X)
+            self.SetSize(self.ClientToWindowSize((w + scrollbar_w, -1)))
+    
     def OnButtonOK(self, event):
         strList = []
         for argtype, argname, argLabel, boolRepeatArg, boolOptionalArg in self.argctrls:
             if argtype is None and argname is None:
                 continue
             strBase = '%(argtype)s %(argname)s' % locals()
+            strInfoNew = strBase
             if argLabel is None:
                 if argname is None:
-                    strList.append(argtype)
-                else:
-                    strList.append(strBase)
+                    strInfoNew = argtype
             else:
-                strInfoNew = strBase
+                
                 strDef = argLabel.controls[0].GetValue().strip()
                 #~ strList.append('%(strBase)s=%(strDefaultValue)s' % locals())
                 if argtype in ('int', 'float'):
@@ -3782,12 +3785,12 @@ class AvsFilterAutoSliderInfo(wx.Dialog):
                         if strDef:
                             strDef = '"%s"' % strDef.strip('"')
                         strInfoNew = '%(strBase)s=%(strDef)s (%(strValuesNew)s)' % locals()
-                strRepeatArg = ''
-                if boolRepeatArg:
-                    strRepeatArg = ' [, ...]'
-                if boolOptionalArg:
-                    strInfoNew = '[{0}]'.format(strInfoNew)
-                strList.append(strInfoNew+strRepeatArg)
+            strRepeatArg = ''
+            if boolRepeatArg:
+                strRepeatArg = ' [, ...]'
+            if boolOptionalArg:
+                strInfoNew = '[{0}]'.format(strInfoNew)
+            strList.append(strInfoNew+strRepeatArg)
         self.newFilterInfo = '(\n%s\n)' % ',\n'.join(strList)
         event.Skip()
 
