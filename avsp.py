@@ -6499,6 +6499,7 @@ class MainFrame(wxp.Frame):
                     (
                     (_('Autocomplete'), 'Ctrl+Space', self.OnMenuEditAutocomplete, _('Show list of filternames matching the partial text at the cursor')),
                     (_('Autocomplete all'), 'Alt+Space', self.OnMenuEditAutocompleteAll, _("Disregard user's setting, show full list of filternames matching the partial text at the cursor")),
+                    (_('Autocomplete parameter'), 'Ctrl+Alt+Space', self.OnMenuEditAutocompleteParameter, _("If the first characters typed match a parameter name, complete it")),
                     (_('Show calltip'), 'Ctrl+Shift+Space', self.OnMenuEditShowCalltip, _('Show the calltip for the filter (only works if cursor within the arguments)')),
                     (_('Show function definition'), 'Ctrl+Shift+D', self.OnMenuEditShowFunctionDefinition, _('Show the AviSynth function definition dialog for the filter')),
                     (_('Filter help file'), 'Shift+F1', self.OnMenuEditFilterHelp, _("Run the help file for the filter (only works if cursor within the arguments or name is highlighted)")),
@@ -7702,7 +7703,34 @@ class MainFrame(wxp.Frame):
             self.currentScript.CmdKeyExecute(wx.stc.STC_CMD_CANCEL)
         else:
             self.currentScript.ShowAutocomplete(all=True)
-        
+    
+    def OnMenuEditAutocompleteParameter(self, event):
+        script = self.currentScript
+        pos = script.GetCurrentPos()
+        arg_start_pos = script.WordStartPosition(pos, 1)
+        chrs = script.GetTextRange(arg_start_pos, pos).lower()
+        if not chrs:
+            return
+        openpos = script.GetOpenParenthesesPos(pos - 1)
+        if openpos is None:
+            return
+        wordstartpos = script.WordStartPosition(openpos, 1)
+        if openpos == wordstartpos:
+            wordstartpos = script.WordStartPosition(script.WordStartPosition(openpos, 0), 1)
+        if wordstartpos != -1:
+            function_name = script.GetTextRange(wordstartpos, openpos)
+            args_script = [arg[0].lower() for arg in script.GetFilterScriptArgInfo(openpos)]
+            for arg_name in (arg[2].strip('"') for arg in script.GetFilterCalltipArgInfo(function_name) 
+                             if arg[2].startswith('"') and arg[2].endswith('"')):
+                arg_name_lower = arg_name.lower()
+                if arg_name_lower.startswith(chrs) and arg_name_lower not in args_script:
+                    default = arg[-1].split()
+                    script.SetTargetStart(arg_start_pos)
+                    script.SetTargetEnd(pos)
+                    script.ReplaceTarget(arg_name + '=')
+                    script.GotoPos(pos + len(arg_name) + 1 - len(chrs))
+                    break
+    
     def OnMenuEditShowCalltip(self, event):
         if self.currentScript.CallTipActive():
             self.currentScript.CmdKeyExecute(wx.stc.STC_CMD_CANCEL)
