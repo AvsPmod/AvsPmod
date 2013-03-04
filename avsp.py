@@ -3167,42 +3167,69 @@ class AvsFunctionDialog(wx.Dialog):
             choices.append(os.path.basename(filename) + ' -> ' + filtername)
         dlg = wx.Dialog(self, wx.ID_ANY, _('Select the functions to import'), 
                         style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
-        listbox = wx.CheckListBox(dlg, wx.ID_ANY, choices=choices)
+        listbox = wx.CheckListBox(dlg, wx.ID_ANY, choices=choices, style=wx.LB_EXTENDED)
+        customized, not_customized = [], []
         for i in range(len(choices)):
             filename, filtername = choices[i].lower().split(' -> ')
             if filtername in self.overrideDict:
                 listbox.SetItemForegroundColour(i, wx.RED)
-            elif filename.find(filtername) != -1:
-                listbox.Check(i)    
+                customized.append(i)
+            else:
+                not_customized.append(i)
+                if filename.find(filtername) != -1:
+                    listbox.Check(i)    
+        idSelectionAll = wx.NewId()
         idAll = wx.NewId()
-        idNone = wx.NewId()
         idFileAll = wx.NewId()
+        idNotCustomizedAll = wx.NewId()
+        idSelectionNone = wx.NewId()
+        idNone = wx.NewId()
         idFileNone = wx.NewId()
+        idCustomizedNone = wx.NewId()
+        
         def OnContextMenuItem(event):
             id = event.GetId()
-            value = True if id in [idAll, idFileAll] else False
-            if id in [idAll, idNone]:
-                for i in range(len(choices)):
-                    listbox.Check(i, value)
-            else:
-                pos = listbox.GetSelection()
-                if pos != wx.NOT_FOUND:
-                    filename = filterInfo[pos][0]
-                    for i in range(len(choices)):
-                        if filename == filterInfo[i][0]:
-                            listbox.Check(i, value)
+            value = id in (idSelectionAll, idAll, idFileAll, idNotCustomizedAll)
+            if id in [idSelectionAll, idSelectionNone]:
+                listbox_range = listbox.GetSelections()
+            elif id in [idAll, idNone]:
+                listbox_range = range(len(filterInfo))
+            elif id in [idFileAll, idFileNone]:
+                pos = listbox.GetSelections()
+                if not pos:
+                    return
+                filename = filterInfo[pos[0]][0]
+                listbox_range = (i for i in range(len(filterInfo)) 
+                                 if filename == filterInfo[i][0])
+            elif id == idNotCustomizedAll:
+                listbox_range = not_customized
+            elif id == idCustomizedNone:
+                listbox_range = customized
+            for i in listbox_range:
+                listbox.Check(i, value)
+
         def OnContextMenu(event):
+            listbox.Bind(wx.EVT_MENU, OnContextMenuItem, id=idSelectionAll)
             listbox.Bind(wx.EVT_MENU, OnContextMenuItem, id=idAll)
-            listbox.Bind(wx.EVT_MENU, OnContextMenuItem, id=idNone)
             listbox.Bind(wx.EVT_MENU, OnContextMenuItem, id=idFileAll)
+            listbox.Bind(wx.EVT_MENU, OnContextMenuItem, id=idNotCustomizedAll)
+            listbox.Bind(wx.EVT_MENU, OnContextMenuItem, id=idSelectionNone)
+            listbox.Bind(wx.EVT_MENU, OnContextMenuItem, id=idNone)
             listbox.Bind(wx.EVT_MENU, OnContextMenuItem, id=idFileNone)
+            listbox.Bind(wx.EVT_MENU, OnContextMenuItem, id=idCustomizedNone)
             menu = wx.Menu()
-            menu.Append(idAll, _('select all'))
-            menu.Append(idNone, _('select none'))
-            menu.Append(idFileAll, _('select all (file only)'))
-            menu.Append(idFileNone, _('select none (file only)'))
+            menu.Append(idSelectionAll, _('Check selected'))
+            menu.Append(idAll, _('Check all'))
+            menu.Append(idFileAll, _('Check all in this file'))
+            menu.Append(idNotCustomizedAll, _('Check all not customized'))
+            menu.AppendSeparator()
+            menu.Append(idSelectionNone, _('Uncheck selected'))
+            menu.Append(idNone, _('Uncheck all'))
+            menu.Append(idFileNone, _('Uncheck all in this file'))
+            menu.Append(idCustomizedNone, _('Uncheck all customized'))
             listbox.PopupMenu(menu)
             menu.Destroy()
+        
         listbox.Bind(wx.EVT_CONTEXT_MENU, OnContextMenu)
         message = wx.StaticText(dlg, wx.ID_ANY, _('Red - a customized function already exists.'))
         okay  = wx.Button(dlg, wx.ID_OK, _('OK'))
