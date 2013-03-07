@@ -10157,6 +10157,11 @@ class MainFrame(wxp.Frame):
         ctrl = self.lastContextMenuWin
         name = ctrl.GetLabel().lstrip(' -+').split()[0]
         lowername = name.lower()
+        if lowername not in self.optionsFilters:
+            for name in self.avsfilterdict:
+                if name.endswith('_' + lowername):
+                    lowername = name
+                    break
         #~ calltip = self.currentScript.FilterNameArgs[name.lower()]
         calltip = self.avsfilterdict[lowername][0]
         dlg = AvsFilterAutoSliderInfo(self, self, name, calltip)
