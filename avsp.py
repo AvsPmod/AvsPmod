@@ -14718,11 +14718,11 @@ class MainFrame(wxp.Frame):
         parent = script.sliderWindow
         sizer = script.sliderSizerNew
         # Create window elements
-        choices2 = choices[:]
+        choices2 = [s.strip('"') for s in choices]
         try:
             #~ index = choices.index(defaultValue)
-            index = [s.strip('"').lower() for s in choices].index(defaultValue.strip('"').lower())
-            choices2[index] = choices[index] + ' *'
+            index = [s.lower() for s in choices2].index(defaultValue.strip('"').lower())
+            choices2[index] = choices2[index] + ' *'
         except ValueError:
             pass
         #~ labelTxtCtrl = wx.StaticText(parent, wx.ID_ANY, argname)
