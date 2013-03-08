@@ -7845,10 +7845,11 @@ class MainFrame(wxp.Frame):
             if bookmark not in bookmarkList and self.bookmarkDict[bookmark]:
                 self.OnMenuVideoBookmarkMoveTitle(bookmark)
 
-    def OnMenuVideoBookmarkClearHistory(self, event):
+    def OnMenuVideoBookmarkClearHistory(self, event=None, start=0, end=None):
         bookmarkList = [bookmark for bookmark, bmtype in self.GetBookmarkFrameList().items() if bmtype == 0]
         for bookmark in self.bookmarkDict.keys():
-            if bookmark not in bookmarkList or not self.bookmarkDict[bookmark]:
+            if ((bookmark not in bookmarkList or not self.bookmarkDict[bookmark]) and 
+                bookmark >= start and (end is None or bookmark <= end)):
                 del self.bookmarkDict[bookmark]
                 
     def OnMenuVideoBookmarkAutoTitle(self, event):
@@ -11873,7 +11874,7 @@ class MainFrame(wxp.Frame):
             if refreshVideo and self.trimDialog.IsShown():
                 self.ShowVideoFrame()
 
-    def DeleteAllFrameBookmarks(self, bmtype=None, refreshVideo=True):
+    def DeleteAllFrameBookmarks(self, bmtype=None, start=0, end=None, refreshVideo=True):
         if bmtype is None:
             self.DeleteFrameBookmark(None, refreshVideo=refreshVideo)
         else:
@@ -11884,12 +11885,22 @@ class MainFrame(wxp.Frame):
                 #~ bmList = self.GetBookmarkFrameList()
                 bookmarks = slider.GetBookmarks()
                 lastindex = len(bookmarks) - 1
-                for i, (value, bmType) in enumerate(bookmarks.items()):
-                    if bmtype == bmType:
-                        if i < lastindex:
-                            slider.RemoveBookmark(value, bmtype, refresh=False)
-                        else:
-                            slider.RemoveBookmark(value, bmtype, refresh=True)
+                bm = [(value, bmType) for (value, bmType) in bookmarks.items() 
+                      if bmtype == bmType and value >= start and (end is None or value <= end)]
+                if not bm:
+                    return
+                toggle_color = False
+                for value, bmType in bm[:-1]:
+                    slider.RemoveBookmark(value, bmtype, refresh=False)
+                    if not toggle_color and self.currentframenum == value:
+                        toggle_color = True
+                slider.RemoveBookmark(bm[-1][0], bmtype, refresh=True)
+            if toggle_color:
+                self.frameTextCtrl.SetForegroundColour(wx.BLACK)
+                self.frameTextCtrl.Refresh()
+                if self.separatevideowindow:
+                    self.frameTextCtrl2.SetForegroundColour(wx.BLACK)
+                    self.frameTextCtrl2.Refresh()
             self.UpdateBookmarkMenu()
 
     def AddFrameBookmark(self, value, bmtype=0, toggle=True, refreshVideo=True, refreshProgram=True):
@@ -16383,13 +16394,11 @@ class MainFrame(wxp.Frame):
     def MacroSetBookmark(self, input):
         r'''SetBookmark(input)
         
-        Sets 'input' as a video frame bookmark.  If 'input' is a list, sets each of 
-        its values as a video frame bookmark.  Each bookmark can be a single integer 
+        Toggle 'input' as a video frame bookmark.  If 'input' is a list, toggle each 
+        of its values as a video frame bookmark.  Each bookmark can be a single integer 
         or a tuple (frame , title).  Returns True if successful, False otherwise.
         
         '''
-        # This function accepting sequences is a bad idea.  The caller should just use 
-        # a 'for' bucle instead.
         bmtype = 0
         try:
             value = int(input)
@@ -16447,6 +16456,19 @@ class MainFrame(wxp.Frame):
                     self.AddFrameBookmark(value, bmtype, refreshProgram=True)
             return True
         return False
+    
+    @AsyncCallWrapper
+    def MacroClearBookmarks(self, start=0, end=None, clear_current=True, clear_historic=False):
+        r'''ClearBookmarks(start=0, end=None, clear_current=True, clear_historic=False)
+        
+        Clear all video frame bookmarks in the range [start, end], optionally 
+        deleting also historic bookmarks.
+        
+        '''
+        if clear_current:
+            self.DeleteAllFrameBookmarks(bmtype=0, start=start, end=end)
+        if clear_historic:
+            self.OnMenuVideoBookmarkClearHistory(start=start, end=end)
     
     @AsyncCallWrapper
     def MacroGetSliderSelections(self):
@@ -16658,6 +16680,8 @@ class MainFrame(wxp.Frame):
             self.__doc__ += parent.FormatDocstring(self.GetBookmarkList)
             self.SetBookmark = parent.MacroSetBookmark
             self.__doc__ += parent.FormatDocstring(self.SetBookmark)
+            self.ClearBookmarks = parent.MacroClearBookmarks
+            self.__doc__ += parent.FormatDocstring(self.ClearBookmarks)
             self.GetSelectionList = parent.MacroGetSliderSelections
             self.__doc__ += parent.FormatDocstring(self.GetSelectionList)
             # Miscellaneous
