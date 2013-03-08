@@ -3824,14 +3824,16 @@ class AvsFilterAutoSliderInfo(wx.Dialog):
                     strValues = argLabel.controls[1].GetValue().strip()
                     if strDef or strValues:
                         if not strValues:
-                            msg =  _('Must enter a value list!')
+                            strValuesNew = ''
+                            #~ msg =  _('Must enter a value list!')
                             #~ self.ShowWarning(argLabel.controls[1], '%s %s: %s' % (argtype, argname,msg))
                             #~ return
                             pass
-                        strValuesNew = '/ '.join(['"%s"' % s.strip(' "') for s in strValues.split(',')])
+                        else:
+                            strValuesNew = ' (%s)' % '/ '.join(['"%s"' % s.strip(' "') for s in strValues.split(',')])
                         if strDef:
                             strDef = '"%s"' % strDef.strip('"')
-                        strInfoNew = '%(strBase)s=%(strDef)s (%(strValuesNew)s)' % locals()
+                        strInfoNew = '%(strBase)s=%(strDef)s%(strValuesNew)s' % locals()
             strRepeatArg = ''
             if boolRepeatArg:
                 strRepeatArg = ' [, ...]'
