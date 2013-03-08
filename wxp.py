@@ -980,6 +980,34 @@ class FindReplaceDialog(wx.Dialog):
     def OnClose(self, event):
         self.Hide()
 
+
+class FloatSpin2(FloatSpin):
+    """FloatSpin without some annoyances
+    
+    - Select all on TAB or Ctrl+A
+    - Process RETURN normally
+    
+    wx.TE_NOHIDESEL effect still present though
+    """
+    
+    def __init__(self, *args, **kwargs):
+        FloatSpin.__init__(self, *args, **kwargs)
+        self._validkeycode.append(1) # available on wxPython 2.9 as wx.WXK_CONTROL_A
+    
+    def OnFocus(self, event):
+        FloatSpin.OnFocus(self, event)
+        if self._textctrl:
+           self._textctrl.SelectAll()
+    
+    def OnTextEnter(self, event): # bypass wx.TE_PROCESS_ENTER
+        self.SyncSpinToText() # wx.EVT_TEXT_ENTER action without event.Skip()
+        top_level = self.GetTopLevelParent()
+        default_item = top_level.GetDefaultItem()
+        if default_item is not None:
+            default_event = wx.PyCommandEvent(wx.EVT_BUTTON.typeId, default_item.GetId())
+            wx.PostEvent(top_level, default_event)
+
+
 class OptionsDialog(wx.Dialog):
     def __init__(self, parent, dlgInfo, options, title=None, startPageIndex=0, 
                 starText=True, invert_scroll=False):
@@ -1089,7 +1117,7 @@ class OptionsDialog(wx.Dialog):
                         max_val = misc['max_val'] if 'max_val' in misc else None
                         digits = misc['digits'] if 'digits' in misc else 0
                         increment = misc['increment'] if 'increment' in misc else 1  
-                        ctrl = FloatSpin(tabPanel, wx.ID_ANY, size=(width, -1), 
+                        ctrl = FloatSpin2(tabPanel, wx.ID_ANY, size=(width, -1), 
                                     min_val=min_val, max_val=max_val, 
                                     value=optionsValue, digits=digits, increment=increment)
                         itemSizer = wx.BoxSizer(label_position)
