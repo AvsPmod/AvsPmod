@@ -14775,7 +14775,7 @@ class MainFrame(wxp.Frame):
         #~ labelTxtCtrl = wx.StaticText(parent, wx.ID_ANY, argname)
         extList = [s.strip() for s in extList if not s.strip().startswith('*.*')]
         labelTxtCtrl = self.MakeArgNameStaticText(parent, argname, filterName, script, argIndex)
-        textCtrl = wx.TextCtrl(parent, wx.ID_ANY, value)
+        textCtrl = wx.TextCtrl(parent, wx.ID_ANY, value, style=wx.TE_PROCESS_ENTER)
         browseButton = wx.Button(parent, wx.ID_ANY, '...', size=(20, -1))
         def OnTextChange(event):
             script.oldAutoSliderInfo = None
