@@ -324,11 +324,11 @@ int "taps"=4 (1 to 100)
 )
 
 Blackness(
-clip "clip",
+[clip "clip"],
 int "length"=240,
 int "width"=640,
 int "height"=480,
-string "pixel_type"="RGB32" ("RGB24"/ "RGB32"/ "YUY2"/ "YV12"),
+string "pixel_type"="RGB32" ("RGB32"/ "RGB24"/ "YUY2"/ "YV24"/ "YV16"/ "YV12"/ "YV411"/ "Y8"),
 float "fps"=24,
 int "fps_denominator"=1,
 int "audio_rate"=44100,
@@ -337,15 +337,15 @@ int "audio_rate"=44100,
 int "channels"=1,
 string "sample_type"="16bit" ("8bit"/ "16bit"/ "24bit"/ "32bit"/ "float"),
 int "color"=$000000,
-[int "color_yuv"],
+[int "color_yuv"]
 )
 
 BlankClip(
-clip "clip",
+[clip "clip"],
 int "length"=240,
 int "width"=640,
 int "height"=480,
-string "pixel_type"="RGB32" ("RGB24"/ "RGB32"/ "YUY2"/ "YV12"),
+string "pixel_type"="RGB32" ("RGB32"/ "RGB24"/ "YUY2"/ "YV24"/ "YV16"/ "YV12"/ "YV411"/ "Y8"),
 float "fps"=24,
 int "fps_denominator"=1,
 int "audio_rate"=44100,
@@ -354,7 +354,7 @@ int "audio_rate"=44100,
 int "channels"=1,
 string "sample_type"="16bit" ("8bit"/ "16bit"/ "24bit"/ "32bit"/ "float"),
 int "color"=$000000,
-[int "color_yuv"],
+[int "color_yuv"]
 )
 
 Blur(
@@ -368,7 +368,7 @@ Bob(
 clip,
 float "b"=0.3333 (-10.00 to 10.00),
 float "c"=0.3333 (-10.00 to 10.00),
-]float "height"]
+[float "height"]
 )
 
 Cache(
@@ -399,7 +399,7 @@ clip,
 int color=$000000,
 int tolB=10 (1 to 100),
 int tolG=10 (1 to 100),
-int tolR=10 (1 to 100),
+int tolR=10 (1 to 100)
 )
 
 ColorYUV(
@@ -733,7 +733,7 @@ float "p"=30.0 (1 to 100)
 GeneralConvolution(
 clip,
 int "bias"=0,
-string "matrix"="0 0 0 0 1 0 0 0 0" (""),
+string "matrix"="0 0 0 0 1 0 0 0 0",
 float "divisor"=1.0,
 bool "auto"=True
 )
@@ -805,7 +805,7 @@ string "pixel_type"="RGB32" ("Y8"/ "RGB24"/ "RGB32")
 
 ImageWriter(
 clip,
-string file="C:\",
+string file="C:\" (*.*),
 int "start"=0,
 int "end"=0,
 string "type"="ebmp" ("ebmp"/ "bmp"/ "dds"/ "ebmp"/ "jpg"/ "pal"/ "pcx"/ "png"/ "pbm"/ "pgm"/ "ppm"/ "raw"/ "sgi"/ "bw"/ "rgb"/ "rgba"/ "tga"/ "tif"),
@@ -827,7 +827,7 @@ clip
 
 Invert(
 clip,
-[string "channels"= ("RGB"/ "RGBA"/ "R"/ "G"/ "B"/ "A"/ "YUV"/ "Y"/ "UV")],
+[string "channels"= ("RGB"/ "RGBA"/ "R"/ "G"/ "B"/ "A"/ "YUV"/ "Y"/ "UV")]
 )
 
 KillAudio(
@@ -987,7 +987,7 @@ bool "show"=false
 
 Null(
 clip,
-string "copy"
+string "copy"="none"
 )
 
 OpenDMLSource(
@@ -1029,7 +1029,7 @@ float "src_height"=0
 Preroll(
 clip,
 int "video",
-float "audio"
+float "audio"=0.0
 )
 
 Pulldown(
@@ -1045,7 +1045,7 @@ clip
 ResampleAudio(
 clip,
 int new_rate_numerator = 48000,
-int new_rate_denominator =1,
+int new_rate_denominator =1
 )
 
 ResetMask(
@@ -1084,7 +1084,7 @@ bool "after_frame"=false
 SegmentedAVISource(
 string filename= (*.avi/*.wav/*.avs/*.vpy/*.vdr) [, ...],
 bool "audio"=true,
-[string "pixel_type"="FULL" ("YV24"/ "YV16"/ "YV12"/ "YV411"/ "YUY2"/ "RGB32"/ "RGB24"/ "Y8"/ "AUTO"/ "FULL")],
+[string "pixel_type"="FULL" ("YV24"/ "YV16"/ "YV12"/ "YV411"/ "YUY2"/ "RGB32"/ "RGB24"/ "Y8"/ "AUTO"/ "FULL")]
 )
 
 SegmentedDirectShowSource(
@@ -1127,7 +1127,7 @@ int interval
 )
 
 SeparateFields(
-clip,
+clip
 )
 
 SeparateRows(
@@ -1469,38 +1469,45 @@ clip v,
 [PLUGINS]
 
 AGC_HDRAGC(
-clip clip,
-float max_gain=6.3 (0.00 to 8.00),
-float min_gain=1.0,
-float coef_gain=0.5 (0.00 to 0.5),
-float max_gain=6.3 (0.00 to 8.00),
-float min_sat=1.19 (0.00 to 2.00),
-float coef_sat=0.9 (0.0 to 2.0)
-int avg_window=16 (0 to 120),
-int response=100,
-int debug=0,
-int mode=2 (0 to 2),
-int protect=2 (0 to 2),
-int passes=1 (1 to 9),
-int shift=0,
-bool shadows=true,
-int shift_u= -31 (-100 to 100),
-int shift_v=0 (-100 to 100),
-float corrector=1.31 (0.50 to 1.50),
-float reducer=2.0 (0.0 to 2.0),
-int avg_lum=2000 (128 to 2000),
-float black_clip=0.0,
-int freezer=-1
+clip,
+float "coef_gain"=1.0 (0.00 to 10.00 by 0.50),
+float "max_gain"=3.0 (0.00 to 10.00 by 0.50),
+float "min_gain"=1.0 (0.00 to 5.00 by 0.10),
+float "coef_sat"=1.0 (0.00 to 2.00 by 0.05),
+float "max_sat"=9.0 (0.00 to 10.00 by 0.10),
+float "min_sat"=0.0 (0.00 to 2.00 by 0.10),
+int "avg_lum"=128 (0 to 255),
+int "avg_window"=24 (0 to 120),
+float "corrector"=1.0 (0.30 to 1.00 by 0.01),
+float "reducer"=0.0 (0.0 to 2.0 by 0.1),
+int "response"=100 (0 to 100),
+int "protect"=2 (0 to 2),
+int "mode"=2 (0 to 2),
+int "passes"=4 (1 to 9),
+float "black_clip"=0.0 (0.00 to 1.00 by 0.05),
+int "shift"=0 (-40 to 40),
+int "shift_u"=0 (-50 to 50),
+int "shift_v"=0 (-50 to 50),
+int "freezer"=-1,
+bool "shadows"=true,
+int "debug"=0 (0 to 1)
 )
 
 asharp_aSharp(
+clip,
 float "T"=2.0 (0.0 to 32.0),
 float "D"=4.0 (0.0 to 16.0),
 float "B"=-1.0 (-1.0 to 4.0),
 bool "hqbf"=false
 )
 
+avstp_avstp_set_threads(
+int ignored=0,
+int threads=0
+)
+
 aWarpSharp_aWarpSharp(
+clip,
 float "depth"=16.0 (0.0 to 64.0),
 int "blurlevel"=2 (1 to 4),
 float "thresh"=0.5 (0.0 to 1.0),
@@ -1509,7 +1516,7 @@ int "cm"=2 (0 to 3)
 
 bifrost_Bifrost(
 clip,
-clip "altclip"=NULL,
+[clip "altclip"],
 float "scenelumathresh"=3.0 (0.0 to 255.0),
 int "variation"=5 (0 to 255),
 bool "conservativemask"=false,
@@ -1518,20 +1525,23 @@ bool "interlaced"=false
 
 ColorMatrix_ColorMatrix(
 clip,
-string "mode"="" ("Rec.709->FCC" / "Rec.709->Rec.601" / "Rec.709->SMPTE 240M" / "FCC->Rec.709" / "FCC->Rec.601" / "FCC->SMPTE 240M" / "Rec.601->Rec.709" / "Rec.601->FCC" / "Rec.601->SMPTE 240M" / "SMPTE 240M->Rec.709" / "SMPTE 240M->FCC" / "SMPTE 240M->Rec.601"),
-int "source"=0 (0 to 3),
-int "dest"=2 (0 to 3),
-bool "clamp"=true,
-bool "interlaced"=false,
-bool "hints"=false,
-string "d2v"="" (*.d2v),
-bool "debug"=false,
-int "threads"=1,
+string "mode"="Rec.709->Rec.601" ("Rec.709->FCC"/ "Rec.709->Rec.601"/ "Rec.709->SMPTE 240M"/ "FCC->Rec.709"/ "FCC->Rec.601"/ "FCC->SMPTE 240M"/ "Rec.601->Rec.709"/ "Rec.601->FCC"/ "Rec.601->SMPTE 240M"/ "SMPTE 240M->Rec.709"/ "SMPTE 240M->FCC"/ "SMPTE 240M->Rec.601"),
+[int "source"=0 (0 to 3)],
+[int "dest"=2 (0 to 3)],
+int "clamp"=3 (0 to 3),
+bool "interlaced"=False,
+bool "inputFR"=False,
+bool "outputFR"=False,
+bool "hints"=False,
+string "d2v"="" ("*.d2v"),
+bool "debug"=False,
+int "threads"=1 (0 to 8),
 int "thrdmthd"=0 (0 to 1),
-int "opt"=3
+int "opt"=3 (0 to 3)
 )
 
 Convolution3d_Convolution3d(
+clip,
 int "matrix"=0 (0 to 1),
 int "ythresh"=3 (0 to 10),
 int "cthresh"=4 (0 to 10),
@@ -1569,9 +1579,9 @@ bool "scenechroma"=false
 
 deblock_Deblock(
 clip,
-int quant=25 (0 to 60),
-int aOffset=0 (0 to 50),
-int bOffset=0 (0 to 50)
+int "quant"=25 (0 to 60),
+int "aOffset"=0 (0 to 50),
+int "bOffset"=0 (0 to 50)
 )
 
 Decomb_Decimate(
@@ -1625,7 +1635,7 @@ bool "debug"=false
 )
 
 DeDup_DeDup(
-clip c,
+clip,
 float "threshold"=0.3 (0.0 to 100.0),
 float "threshold2"=0.5 (0.0 to 100.0),
 int "range2"=0 (0 to 255),
@@ -1636,16 +1646,17 @@ int "maxcopies"=12 (1 to 20),
 int "maxdrops"=1 (1 to 20),
 int "decwhich"=2 (0 to 3),
 string "log"="" (*.*),
-string "times"="" (*.*),
-string "timesin"="" (*.*),
-string "ovr"="" (*.*),
-string "debug"="" (*.*)
+[string "times"="" (*.*)],
+[string "timesin"="" (*.*)],
+[string "ovr"="" (*.*)],
+[string "debug"="" (*.*)]
 )
 
 DeDup_DupMC(
-clip c,
-bool "chroma"=true,
-string "log"="" (*.*)
+clip,
+bool "chroma"=True,
+string "log"= ("*.txt"/ "*.log"),
+[int "search"]
 )
 
 Deen_Deen(
@@ -1722,11 +1733,147 @@ bool "seekzero"=false,
 int "timeout"=60000 (1000 to 300000 by 1000),
 [string "pixel_type"="AUTO" ("YV12"/ "YUY2"/ "AYUV"/ "Y41P"/ "Y411"/ "RGB32"/ "RGB24"/ "YUV"/ "RGB"/ "AUTO")],
 [int "framecount"],
-[string "logfile"],
+[string "logfile"= ("*.*")],
 int "logmask"=35 (1 to 512)
 )
 
+dither_Dither_add16(
+clip src1,
+clip src2,
+bool "wrap"=False,
+int "y"=3 (0 to 5),
+int "u"=3 (0 to 5),
+int "v"=3 (0 to 5),
+bool "dif"=False
+)
+
+dither_Dither_bilateral16(
+clip,
+[clip "ref"],
+int "radius"=16 (2 to 64),
+float "thr"=2.5 (0 to 10 by 0.1),
+float "flat"=0.4 (0.0 to 1.0 by 0.05),
+float "wmin"=0.0 (0.0 to 1.0),
+float "subspl"=0 (0 to 100),
+int "y"=3 (0 to 5),
+int "u"=3 (0 to 5),
+int "v"=3 (0 to 5)
+)
+
+dither_Dither_box_filter16(
+clip,
+int "radius"=16 (2 to 91),
+int "y"=3 (0 to 5),
+int "u"=3 (0 to 5),
+int "v"=3 (0 to 5)
+)
+
+dither_Dither_limit_dif16(
+clip filtered,
+clip original,
+[clip "ref"],
+float "thr"=0.25 (0.0 to 2.0 by 0.05),
+float "elast"=3.0 (1.0 to 6.0 by 0.25),
+int "y"=3 (0 to 5),
+int "u"=3 (0 to 5),
+int "v"=3 (0 to 5)
+)
+
+dither_Dither_max_dif16(
+clip src1,
+clip src2,
+clip ref,
+int "y"=3 (0 to 5),
+int "u"=3 (0 to 5),
+int "v"=3 (0 to 5)
+)
+
+dither_Dither_median16(
+clip,
+int "rx"=1,
+int "ry"=1,
+int "rt"=0,
+[int "ql"],
+[int "qh"],
+int "y"=3 (0 to 5),
+int "u"=3 (0 to 5),
+int "v"=3 (0 to 5)
+)
+
+dither_Dither_merge16(
+clip src1,
+clip src2,
+clip mask,
+int "y"=3 (0 to 5),
+int "u"=2 (0 to 5),
+int "v"=2 (0 to 5),
+bool "luma"=False
+)
+
+dither_Dither_out(
+clip,
+bool "bigendian"=False
+)
+
+dither_Dither_removegrain16(
+clip,
+int "mode"=2 (-1 to 20),
+[int "modeU"=2 (-1 to 20)],
+[int "modeV"=2 (-1 to 20)]
+)
+
+dither_Dither_repair16(
+clip,
+clip ref,
+int "mode"=2 (-1 to 14),
+[int "modeU"=2 (-1 to 14)],
+[int "modeV"=2 (-1 to 14)]
+)
+
+dither_Dither_sub16(
+clip src1,
+clip src2,
+bool "wrap"=False,
+int "y"=3 (0 to 5),
+int "u"=3 (0 to 5),
+int "v"=3 (0 to 5),
+bool "dif"=False
+)
+
+dither_DitherPost(
+clip,
+[clip "clsb"],
+int "mode"=0 (-1 to 8),
+[float "ampo"=1 (0 to 10 by 0.1)],
+[float "ampn"=0 (0 to 4 by 0.1)],
+[int "pat"=1 (0 to 2)],
+[bool "dyn"=False],
+[bool "prot"=False],
+[clip "mask"],
+[float "thr"=-1.0 (-1.0 to 0.5 by 0.05)],
+bool "stacked"=True,
+bool "interlaced"=False,
+int "y"=3 (0 to 5),
+int "u"=3 (0 to 5),
+int "v"=3 (0 to 5),
+bool "staticnoise"=False
+)
+
+dither_SmoothGrad(
+clip,
+[clip "clsb"],
+int "radius"=16 (1 to 91 by 1),
+float "thr"=0.25 (0.05 to 1.00 by 0.05),
+bool "stacked"=True,
+[clip "ref"],
+float "elast"=3 (1 to 6 by 0.25),
+int "y"=3 (0 to 5),
+int "u"=3 (0 to 5),
+int "v"=3 (0 to 5)
+)
+
 Dup_Dup(
+clip,
 float "threshold"=3.0 (0.0 to 100.0),
 bool "chroma"=true,
 bool "show"=false,
@@ -1734,10 +1881,11 @@ bool "copy"=true,
 int "maxcopies"=20 (1 to 20),
 bool "blend"=false,
 bool "debug"=false,
-string "log"=""
+string "log"="" ("*.*")
 )
 
 DustV5_FaeryDust(
+clip,
 int "limit"=2 (0 to 12)
 )
 
@@ -1746,14 +1894,17 @@ int "limit"=8 (0 to 12)
 )
 
 DustV5_PixieDust(
+clip,
 int "limit"=5 (0 to 12)
 )
 
 DustV5_SpaceDust(
+clip,
 int "limit"=5 (0 to 12)
 )
 
 eDeen_eDeen(
+clip,
 int "r"=7 (0 to 20),
 int "ty"=14 (0 to 255),
 int "tuv"=21 (0 to 255),
@@ -1787,18 +1938,64 @@ int "temporal_threshold"=7 (-1 to 10),
 int "spatial_threshold"=7 (-1 to 10)
 )
 
-FFMpegSource_FFmpegSource(
-string "source"="",
-int "vtrack"=-1 (-1 to 24),
-int "atrack"=-2 (-2 to 24),
-string "timecodes"="",
-bool "vcache"=true,
-string "vcachefile"="",
-string "acachefile"="",
-int "accompression"=-1 (-1 to 8),
-string "pp"="" ("hdeblock" / "vdeblock" / "hadeblock" / "vadeblock" / "x1hdeblock" / "x1vdeblock" / "dering" / "autolevels" / "linblenddeint" / "linipoldeint" / "cubicipoldeint" / "mediandeint" / "ffmpegdeint" / "lowpass5" / "default" / "fast" / "tmpnoise") ,
-int "ppquality"=6 (0 to 6),
-int "seekmode"=1 (-1 to 3)
+ffms2_FFAudioSource(
+string source= ("*.*"),
+int "track"=-1 (-1 to 10),
+bool "cache"=True,
+string "cachefile"="" ("*.ffindex"),
+int "adjustdelay"=-1 (-3 to 10),
+bool "utf8"=False,
+string "varprefix"=""
+)
+
+ffms2_FFGetLogLevel(
+)
+
+ffms2_FFGetVersion(
+)
+
+ffms2_FFIndex(
+string source= ("*.*"),
+string "cachefile"="" ("*.ffindex"),
+int "indexmask"=-1,
+int "dumpmask"=0,
+string "audiofile"="%sourcefile%.%trackzn%.w64" ("*.*"),
+int "errorhandling"=3 (0 to 3),
+bool "overwrite"=False,
+bool "utf8"=False,
+string "demuxer"="default" ("default"/ "lavf"/ "matroska"/ "haalimpeg"/ "haaliogg")
+)
+
+ffms2_FFSetLogLevel(
+int level=-8
+)
+
+ffms2_FFVideoSource(
+string source= ("*.*"),
+int "track"=-1 (-1 to 10),
+bool "cache"=True,
+string "cachefile"="" ("*.ffindex"),
+int "fpsnum"=-1 (-1 to 60000),
+int "fpsden"=1 (1 to 1001),
+int "threads"=-1,
+string "timecodes"="" ("*.txt"),
+int "seekmode"=1 (-1 to 3 by 1),
+int "rffmode"=0 (0 to 2 by 1),
+int "width"=-1,
+int "height"=-1,
+string "resizer"="BICUBIC" ("FAST_BILINEAR"/ "BILINEAR"/ "BICUBIC"/ "X"/ "POINT"/ "AREA"/ "BICUBLIN"/ "GAUSS"/ "SINC"/ "LANCZOS"/ "SPLINE"),
+string "colorspace"="" ("YV12"/ "YUY2"/ "RGB24"/ "RGB32"),
+bool "utf8"=False,
+string "varprefix"="",
+[bool "enable10bithack"=False]
+)
+
+ffms2_SWScale(
+clip,
+int "width"=-1,
+int "height"=-1,
+string "resizer"="BICUBIC" ("FAST_BILINEAR"/ "BILINEAR"/ "BICUBIC"/ "X"/ "POINT"/ "AREA"/ "BICUBLIN"/ "GAUSS"/ "SINC"/ "LANCZOS"/ "SPLINE"),
+string "colorspace"="" ("YV12"/ "YUY2"/ "RGB24"/ "RGB32")
 )
 
 FFT3DFilter_FFT3DFilter(
@@ -1860,6 +2057,40 @@ int "oh"=bh/2 (2 to bh by 2),
 int "wintype"=0 (0 to 2)
 )
 
+flash3kyuu_deband_f3kdb(
+clip,
+int "range"=15 (0 to 31),
+int "Y"=64 (0 to 255),
+int "Cb"=64 (0 to 255),
+int "Cr"=64 (0 to 255),
+int "grainY"=64 (0 to 255),
+int "grainC"=64 (0 to 255),
+int "sample_mode"=2 (0 to 2),
+[int "seed"],
+bool "blur_first"=True,
+bool "dynamic_grain"=False,
+int "opt"=-1 (-1 to 3),
+bool "mt"=True,
+int "dither_algo"=3 (0 to 3),
+bool "keep_tv_range"=False,
+int "input_mode"=0 (0 to 2),
+int "input_depth"=8 (8 to 16),
+int "output_mode"=0 (0 to 2),
+int "output_depth"=8 (8 to 16),
+[int "random_algo_ref"=1 (0 to 2)],
+[int "random_algo_grain"=1 (0 to 2)],
+[float "random_param_ref"=1.0 (0 to 1 by 0.01)],
+[float "random_param_grain"=1.0 (0 to 1 by 0.01)]
+)
+
+flash3kyuu_deband_f3kdb_dither(
+clip,
+int "mode"=1 (0 to 1),
+bool "stacked"=True,
+int "input_depth"=16 (9 to 16),
+bool "keep_tv_range"=False
+)
+
 framenumber_FrameNumber(
 clip,
 int offset=0,
@@ -1875,20 +2106,20 @@ float "Tuv"=2.0 (0 to 10)
 
 Grid_Grid(
 clip,
-int sf,
-int ef,
-int lineint,
-int bold,
-int vbold,
-int color=$FFFFFF,
-int bcolor,
-int vbcolor,
-bool grid,
-bool axis
+int "sf"=0,
+int "ef"=clip.framecount-1,
+int "lineint"=10,
+int "bold"=5,
+int "vbold"=2,
+int "color"=$FFFFFF,
+[int "bcolor"$FFFFFF],
+[int "vbcolor"$FFFFFF],
+bool "grid"=True,
+bool "axis"=False
 )
 
 HBVFWSource_HBVFWSource(
-string,
+string= (*.avi/*.wav/*.avs/*.vpy/*.vdr),
 bool "stacked"=False
 )
 
@@ -1902,6 +2133,7 @@ int "restart"=lt+1 (0 to 255)
 )
 
 kerneldeint140_KernelDeint(
+clip,
 int "order"= (0 to 1),
 int "threshold"=10 (0 to 255),
 bool "sharp"=False,
@@ -1911,7 +2143,8 @@ bool "debug"=False
 )
 
 LeakKernelDeint_LeakKernelBob(
-int "order"=null (0 to 1),
+clip,
+int "order"= (0 to 1),
 int "threshold"=10 (0 to 255),
 bool "sharp"=false,
 bool "twoway"=false,
@@ -1922,7 +2155,8 @@ int "forceCPU"=0 (0 to 5)
 )
 
 LeakKernelDeint_LeakKernelDeint(
-int "order"=null (0 to 1),
+clip,
+int "order"= (0 to 1),
 int "threshold"=10 (0 to 255),
 bool "sharp"=false,
 bool "twoway"=false,
@@ -1932,7 +2166,135 @@ bool "debug"=false,
 int "forceCPU"=0 (0 to 5)
 )
 
+libautocrop_AutoCrop(
+clip,
+int "mode"=1 (0 to 3),
+int "wMultOf"=4 (1 to 16),
+int "hMultOf"=2 (1 to 16),
+int "leftAdd"=0 (0 to 50),
+int "topAdd"=0 (0 to 50),
+int "rightAdd"=0 (0 to 50),
+int "bottomAdd"=0 (0 to 50),
+int "threshold"=40 (0 to 255),
+int "samples"=5 (1 to 20),
+int "samplestartframe"=0,
+int "sampleendframe"=-1,
+float "aspect"=0 (-1 to 3)
+)
+
+libavxffms2_FFAudioSource(
+string source= ("*.*"),
+int "track"=-1 (-1 to 10),
+bool "cache"=True,
+string "cachefile"="" ("*.ffindex"),
+int "adjustdelay"=-1 (-3 to 10),
+bool "utf8"=False,
+string "varprefix"=""
+)
+
+libavxffms2_FFConvertToRGB24(
+clip,
+[string "matrix"],
+[bool "interlaced"]
+)
+
+libavxffms2_FFConvertToRGB32(
+clip,
+[string "matrix"],
+[bool "interlaced"]
+)
+
+libavxffms2_FFConvertToYUY2(
+clip,
+[string "matrix"],
+[bool "interlaced"]
+)
+
+libavxffms2_FFConvertToYV12(
+clip,
+[string "matrix"],
+[bool "interlaced"]
+)
+
+libavxffms2_FFDeinterlace(
+clip
+)
+
+libavxffms2_FFGetLogLevel(
+)
+
+libavxffms2_FFGetVersion(
+)
+
+libavxffms2_FFIndex(
+string source= ("*.*"),
+string "cachefile"="" ("*.ffindex"),
+int "indexmask"=-1,
+int "dumpmask"=0,
+string "audiofile"="%sourcefile%.%trackzn%.w64" ("*.*"),
+int "errorhandling"=3 (0 to 3),
+bool "overwrite"=False,
+bool "utf8"=False,
+string "demuxer"="default" ("default"/ "lavf"/ "matroska"/ "haalimpeg"/ "haaliogg")
+)
+
+libavxffms2_FFPP(
+clip,
+string "pp"=""
+)
+
+libavxffms2_FFSetLogLevel(
+int level=-8
+)
+
+libavxffms2_FFVideoSource(
+string source= ("*.*"),
+int "track"=-1 (-1 to 10),
+bool "cache"=True,
+string "cachefile"="" ("*.ffindex"),
+int "fpsnum"=-1 (-1 to 60000),
+int "fpsden"=1 (1 to 1001),
+string "pp"="",
+int "threads"=-1,
+string "timecodes"="" ("*.txt"),
+int "seekmode"=1 (-1 to 3),
+int "rffmode"=0 (0 to 2),
+int "width"=0,
+int "height"=0,
+string "resizer"="BICUBIC" ("FAST_BILINEAR"/ "BILINEAR"/ "BICUBIC"/ "X"/ "POINT"/ "AREA"/ "BICUBLIN"/ "GAUSS"/ "SINC"/ "LANCZOS"/ "SPLINE"),
+string "colorspace"="YV12" ("YV12"/ "YUY2"/ "RGB24"/ "RGB32"),
+bool "utf8"=False,
+string "varprefix"=""
+)
+
+libavxffms2_SWScale(
+clip,
+int "width"=0,
+int "height"=0,
+string "resizer"="BICUBIC" ("FAST_BILINEAR"/ "BILINEAR"/ "BICUBIC"/ "X"/ "POINT"/ "AREA"/ "BICUBLIN"/ "GAUSS"/ "SINC"/ "LANCZOS"/ "SPLINE"),
+string "colorspace"="" ("YV12"/ "YUY2"/ "RGB24"/ "RGB32")
+)
+
+libavxframecapture_AvxFrameCapture(
+clip,
+string output_path= ("*.*"),
+int "interval_ms"=10010 (1 to 1000000),
+int "scale"=100 (1 to 100)
+)
+
+libavxsubtitle_AvxSubtitle(
+clip,
+string subtitle_path= ("*.srt"),
+string "font"="Arial",
+int "size"=24 (4 to 64),
+float "stroke_size"=0.75 (0.0 to 5.0),
+int "text_color"=$ff00ff,
+int "stroke_color"=$ffffff,
+string "input_encoding"="UTF-8" ("UTF-8")
+)
+
 nnedi_nnedi(
+clip,
 int "field"=-1 (-2 to 3),
 bool "Y"=true,
 bool "U"=true,
@@ -1940,6 +2302,41 @@ bool "V"=true,
 int "threads"=0,
 int "opt"=0 (0 to 2),
 string "name"="nnedi.dll"
+)
+
+nnedi3_nnedi3(
+clip,
+int "field"=-1 (-2 to 3),
+bool "dh"=False,
+bool "Y"=True,
+bool "U"=True,
+bool "V"=True,
+int "nsize"=6 (0 to 6),
+int "nns"=1 (0 to 4),
+int "qual"=1 (1 to 2),
+int "etype"=0 (0 to 1),
+int "pscrn"=2 (0 to 4),
+int "threads"=0,
+int "opt"=0 (0 to 2),
+int "fapprox"=15 (0 to 15)
+)
+
+nnedi3_nnedi3_rpow2(
+clip,
+int "rfactor"=2 (2 to 1024 by 2),
+int "nsize"=0 (0 to 6),
+int "nns"=3 (0 to 4),
+int "qual"=1 (1 to 2),
+int "etype"=0 (0 to 1),
+int "pscrn"=2 (0 to 4),
+[string "cshift"="spline36resize" ("point"/ "bilinear"/ "bicubic"/ "lanczos"/ "lanczos4"/ "blackman"/ "spline16"/ "spline36"/ "spline64"/ "gauss"/ "sinc")],
+[int "fwidth"],
+[int "fheight"],
+[float "ep0"],
+[float "ep1"],
+int "threads"=0,
+int "opt"=0 (0 to 2),
+int "fapprox"=15 (0 to 15)
 )
 
 MipSmooth_MipSmooth(
@@ -1960,33 +2357,58 @@ string "preset"=("MovieHQ" / "MovieLQ" / "AnimeHQ" / "AnimeLQ" / "VHS" / "Rainbo
 )
 
 MSharpen_MSharpen(
+clip,
 int "threshold"=10 (0 to 255),
 int "strength"=100 (0 to 255),
 bool "mask"=false,
-bool "highq"=true,
+bool "highq"=true
 )
 
 Msmooth_MSmooth(
+clip,
 int "threshold"=15 (0 to 255),
 int "strength"=3 (0 to 25),
 bool "highq"=true,
 bool "chroma"=false,
 bool "mask"=false,
-bool "show"=false,
+bool "show"=false
+)
+
+resamplehq-x86_ResampleHQ(
+clip,
+int "width",
+int "height",
+[string "dstcolorspace"= ("RGB"/ "RGB24"/ "RGB32"/ "YV12"/ "YUY2")],
+string "srcmatriX"="TV.601" ("TV.601"/ "PC.601"/ "TV.709"/ "PC.709"/ "TV.240"/ "PC.240"/ "TV.FCC"/ "PC.FCC"),
+string "dstmatrix"="TV.601" ("TV.601"/ "PC.601"/ "TV.709"/ "PC.709"/ "TV.240"/ "PC.240"/ "TV.FCC"/ "PC.FCC"),
+bool "dither"=False,
+[float "src_left"=0],
+[float "src_top"=0],
+[float "src_width"],
+[float "src_height"],
+string "kernel"="Spline36" ("Bicubic"/ "CatmullRom"/ "MitchellNetravali"/ "SoftCubic"/ "Hermite"/ "Robidoux"/ "Bilinear"/ "Blackman"/ "Lanczos"/ "Sinc"/ "Spline16"/ "Spline36"/ "Spline64"/ "Gaussian"),
+[float "karg1"],
+[float "karg2"],
+[float "kblur_x"],
+[float "kblur_y"],
+string "chroma_kernel"="Bilinear" ("Bicubic"/ "CatmullRom"/ "MitchellNetravali"/ "SoftCubic"/ "Hermite"/ "Robidoux"/ "Bilinear"/ "Blackman"/ "Lanczos"/ "Sinc"/ "Spline16"/ "Spline36"/ "Spline64"/ "Gaussian"),
+[float "chroma_karg1"],
+[float "chroma_karg2"]
 )
 
 Rotate_Rotate(
 clip clip,
 float "angle"=0 (0 to 360),
-int "color"=0,
+int "color"=$000000,
 int "start"=0,
 int "end"=-1,
 float "endangle",
 int "width"=0,
-int "height"=0,
+int "height"=0
 )
 
 SangNom_SangNom(
+clip,
 int "order"=1 (0 to 2),
 int "aa"=48 (0 to 255)
 )
@@ -1994,7 +2416,7 @@ int "aa"=48 (0 to 255)
 SoundOut_SoundOut(
 clip,
 [string "output"="" ("WAV"/ "AC3"/ "MP2"/ "MP3"/ "OGG"/ "FLAC"/ "MAC"/ "WV"/ "CMD")],
-[string "filename"],
+[string "filename"= ("*.*")],
 [bool "showprogress"=True],
 [bool "autoclose"=False],
 [bool "silentblock"=True],
@@ -2043,12 +2465,14 @@ clip,
 )
 
 SSIQ_SSIQ(
+clip,
 int "diameter"=11,
 int "strength"=200 (1 to 300),
 bool "interlaced"=false
 )
 
 TBilateral_TBilateral(
+clip,
 int "diameterL"=5,
 int "diameterC"=5,
 float "sDevL"=1.4 (0.1 to 10.0),
@@ -2060,13 +2484,14 @@ float "csC"=1.0 (0.0 to 10.0),
 bool "d2"=false,
 bool "chroma"=true,
 bool "gui"=false,
-clip "ppclip",
+[clip "ppclip"],
 int "kernS"=2 (0 to 9),
 int "kernI"=2 (0 to 9),
 int "resType"=0 (0 to 3)
 )
 
 TComb_TComb(
+clip,
 int "mode"=2 (0 to 2),
 int "fthreshL"=4 (0 to 255),
 int "fthreshC"=5 (0 to 255),
@@ -2097,14 +2522,14 @@ int "field"=-1 (-1 to 1),
 int "mthreshL"=6 (0 to 255),
 int "mthreshC"=6 (0 to 255),
 int "map"=0 (0 to 4),
-string "ovr"="",
+string "ovr"="" (*.*),
 int "ovrDefault"=0 (0 to 1),
 int "type"=2 (0 to 5),
 bool "debug"=false,
 int "mtnmode"=1 (0 to 3),
 bool "sharp"=true,
 bool "hints"=true,
-clip "clip2"=null,
+[clip "clip2"],
 bool "full"=true,
 int "cthresh"=6 (0 to 255),
 int "blockx"=16 (4 to 2048),
@@ -2116,23 +2541,25 @@ int "link"=2 (0 to 3),
 bool "denoise"=false,
 int "AP"=-1 (0 to 254),
 int "APType"=1 (0 to 2),
-clip "edeint"=null,
-clip "emask"=null,
+[clip "edeint"],
+[clip "emask"],
 float "blim"=-2.0,
 int "metric"=0 (0 to 1),
 int "expand"=0 (0 to 255),
 int "slow"=1 (0 to 2),
-clip "emtn"=null,
+[clip "emtn"],
 bool "tshints"=false,
 int "opt"=4 (0 to 4)
 )
 
 TemporalCleaner_TemporalCleaner(
+clip,
 int "ythresh"=5 (0 to 255),
 int "cthresh"=10 (0 to 255)
 )
 
 TIsophote_TIsophote(
+clip,
 int "iterations"=4 (0 to 100),
 float "tStep"=0.2 (0.0 to 1.0),
 int "type"=2 (0 to 2),
@@ -2203,7 +2630,7 @@ int "opt"=4 (0 to 4)
 
 TIVTC_MergeHints(
 clip,
-clip "hintClip"=NULL,
+[clip "hintClip"],
 bool "debug"=false
 )
 
@@ -2264,7 +2691,7 @@ bool "denoise"=false,
 bool "noblend"=true,
 bool "ssd"=false,
 bool "hint"=true,
-clip "clip2"=null,
+[clip "clip2"],
 int "opt"=4 (0 to 4)
 )
 
@@ -2291,7 +2718,7 @@ int "blocky"=16 (4 to 128 by 4),
 int "y0"=0 (0 to clip.height),
 int "y1"=0 (0 to clip.height),
 int "mthresh"=5 (0 to 10),
-clip "clip2"=NULL,
+[clip "clip2"],
 string "d2v"="" (*.d2v),
 int "ovrDefault"=0 (0 to 2),
 int "flags"=4 (0 to 4),
@@ -2299,13 +2726,14 @@ float "scthresh"=12.0 (0.0 to 100.0),
 bool "ubsco"=true,
 int "micout"=0 (0 to 2),
 int "micmatching"=1 (0 to 3),
-string "trimIn"="",
+string "trimIn"="" (*.*),
 bool "hint"=true,
 int "metric"=0 (0 to 1),
 int "opt"=4 (0 to 4)
 )
 
 TNLMeans_TNLMeans(
+clip,
 int "Ax"=4 (0 to 50),
 int "Ay"=4 (0 to 50),
 int "Az"=0 (0 to 50),
@@ -2317,10 +2745,11 @@ bool "ms"=false,
 int "rm"=4 (0 to 5),
 float "a"=1.0 (0.0 to 1.0),
 float "h"=1.8 (0 to 255.0),
-bool "sse"=true,
+bool "sse"=true
 )
 
 TomsMoComp_TomsMoComp(
+clip,
 int TopFirst=-1 (-1 to 1),
 int SearchEffort=-1 (-1 to 30),
 int VerticalFilter=0 (0 to 1)
@@ -2328,10 +2757,11 @@ int VerticalFilter=0 (0 to 1)
 
 Toon-v1.0_Toon(
 clip,
-float "strength"=1.0 (0.0 to 1.0),
+float "strength"=1.0 (0.0 to 1.0)
 )
 
 TTempSmooth_TTempSmooth(
+clip,
 int "maxr"=3 (1 to 7),
 int "lthresh"=4 (1 to 256),
 int "cthresh"=5 (1 to 256),
@@ -2343,10 +2773,11 @@ bool "fp"=true,
 int "vis_blur"=0 (0 to 3),
 bool "debug"=false,
 bool "interlaced"=false,
-clip "pfclip"=null
+[clip "pfclip"]
 )
 
 TTempSmooth_TTempSmoothF(
+clip,
 int "maxr"=3 (1 to 7),
 int "lthresh"=4 (1 to 256),
 int "cthresh"=5 (1 to 256),
@@ -2356,10 +2787,11 @@ bool "fp"=true,
 int "vis_blur"=0 (0 to 3),
 bool "debug"=false,
 bool "interlaced"=false,
-clip "pfclip"=null
+[clip "pfclip"]
 )
 
 TUnSharp_TUnSharp(
+clip,
 int "strength"=100 (0 to 512),
 int "thresholdL"=2 (0 to 255),
 int "thresholdU"=40 (0 to 255),
@@ -2382,17 +2814,17 @@ int vsharp=0 (-100 to 100)
 
 VagueDenoiser_VagueDenoiser(
 clip,
-float threshold=0 (-1 to 10),
-int method=3 (-1 to 3),
-int nsteps=4 (3 to 6),
-float chromaT=-1 (-1 to 10.0),
-bool debug=false,
-bool interlaced=false,
-int wavelet=1 (1 to 3),
-bool Wiener=false,
-float wratio=0.5 (0 to 1),
-float percent=85 (0 to 100),
-clip auxClip
+float "threshold"=0 (-1 to 10),
+int "method"=3 (-1 to 3),
+int "nsteps"=4 (3 to 6),
+float "chromaT"=-1 (-1 to 10.0),
+bool "debug"=false,
+bool "interlaced"=false,
+int "wavelet"=1 (1 to 3),
+bool "Wiener"=false,
+float "wratio"=0.5 (0 to 1),
+float "percent"=85 (0 to 100),
+clip "auxClip"=clip
 )
 
 vinverse_Vinverse(
@@ -2406,7 +2838,995 @@ int "opt"=2 (0 to 2)
 
 warpsharp_UnsharpMask(
 clip,
-int strength=64 (0 to 64 by 1),
-int radius=3 (0 to 64 by 1),
-int threshold=8 (0 to 64 by 1)
+int "strength"=64 (0 to 64 by 1),
+int "radius"=3 (0 to 64 by 1),
+int "threshold"=8 (0 to 64 by 1)
+)
+
+[USERFUNCTIONS]
+
+AA(
+clip clip,
+bool "edge"=false,
+string "cspace"
+)
+
+AAA(
+clip clp,
+int "Xres",
+int "Yres",
+int "Xshrp"=15,
+int "Yshrp"=15,
+int "US"=1,
+int "DS"=2,
+bool "chroma"=false
+)
+
+AntiAliasing(
+clip orig,
+int "th_luma"=20,
+int "th_croma"=20,
+string "type"="sobel",
+int "aath"=48
+)
+
+ClipComp(
+clip a,
+clip b,
+string "mode"="2x1x1",
+bool "showSubs"=true,
+string "aSub"=1,
+string "bSub"="    2",
+int "swapFreq"=1
+)
+
+Deblock_QED(
+clip,
+int "quant1"=24 (0 to 60),
+int "quant2"=26 (0 to 60),
+int "aOff1"=1 (1 to 50),
+int "bOff1"=2 (1 to 50),
+int "aOff2"=1 (1 to 50),
+int "bOff2"=2 (1 to 50),
+int "uv"=3 (1 to 3)
+)
+
+defreq_DeFreq(
+clip,
+float "fx"=10 (0 to 100),
+float "fy"=-10 (-100 to 100),
+float "dx"=1.5 (0 to 50),
+float "dy"=2.0 (0 to 50),
+float "sharp"=50 (0 to 100),
+[float "fx2"=0 (0 to 100)],
+[float "fy2"=0 (-100 to 100)],
+[float "dx2"=1.5 (0 to 50)],
+[float "dy2"=2.0 (0 to 50)],
+[float "sharp2"=50 (0 to 100)],
+[float "fx3"=0 (0 to 100)],
+[float "fy3"=0 (-100 to 100)],
+[float "dx3"=1.5 (0 to 50)],
+[float "dy3"=2.0 (0 to 50)],
+[float "sharp3"=50 (0 to 100)],
+[float "fx4"=0 (0 to 100)],
+[float "fy4"=0 (-100 to 100)],
+[float "dx4"=1.5 (0 to 50)],
+[float "dy4"=2.0 (0 to 50)],
+[float "sharp4"=50 (0 to 100)],
+float "cutx"=0 (0 to 300),
+float "cuty"=0 (0 to 300),
+int "plane"=0 (0 to 2),
+int "show"=0 (0 to 2),
+bool "info"=False,
+[bool "measure"=True]
+)
+
+DeHalo_Alpha(
+clip,
+float "rx"=2.0 (1.0 to 3.0),
+float "ry"=2.0 (1.0 to 3.0),
+float "darkstr"=1.0 (0.0 to 1.0),
+float "brightstr"=1.0 (0.0 to 1.0),
+float "lowsens"=50 (0 to 100),
+float "highsens"=50 (0 to 100),
+float "ss"=1.5 (1.0 to 3.0)
+)
+
+Dither1Pre(
+clip m,
+string "flt"="dfttest (sigma=64)",
+bool "stacked"=True,
+float "overlap"=0.5 (0 to 0.5 by 0.05),
+bool "tvopt"=False
+)
+
+Dither2Pre(
+clip m,
+string "flt"="dfttest (sigma=256)",
+bool "stacked"=True,
+float "overlap"=0.5 (0 to 0.5 by 0.05),
+bool "tvopt"=False
+)
+
+Dither_add_grain16(
+clip src,
+float "var"=1.0 (0.0 to 10.0 by 0.1),
+float "uvar"=0.0 (0.0 to 10.0 by 0.1),
+float "soft"=1.0 (1.0 to 50 by 1),
+int "maxts"=5 (1 to 10),
+bool "replace"=False,
+bool "lsb_in"=True,
+[int "seed"]
+)
+
+Dither_addborders16(
+clip src,
+int "left"=0,
+int "top"=0,
+int "right"=0,
+int "bottom"=0,
+[int "color"=$000000]
+)
+
+Dither_convert_8_to_16(
+clip src
+)
+
+Dither_convert_rgb_to_yuv(
+clip src,
+[clip "g"],
+[clip "b"],
+[string "matrix"= ("601"/ "709"/ "240"/ "FCC"/ "YCgCo")],
+bool "interlaced"=False,
+bool "tv_range"=True,
+[string "cplace"="MPEG2" ("MPEG1"/ "MPEG2"/ "DV")],
+string "chromak"="bicubic" ("point"/ "box"/ "bilinear"/ "bicubic"/ "lanczos"/ "blackman"/ "blackmanminlobe"/ "spline16"/ "spline36"/ "spline64"/ "spline"/ "gauss"/ "sinc"/ "impulse"),
+[float "fh"=1.0 (0.0 to 10.0)],
+[float "fv"=1.0 (0.0 to 10.0)],
+int "taps"=4 (1 to 128),
+[float "a1"],
+[float "a2"],
+[float "a3"],
+bool "lsb"=True,
+string "output"="YV12" ("YV12"/ "YV16"/ "YV24"/ "YV411"/ "Y8"),
+int "mode"=0 (0 to 8),
+[float "ampo"=1.0 (0.0 to 10.0)],
+[float "ampn"=0.5 (0.0 to 4.0)],
+bool "staticnoise"=False,
+bool "noring"=False
+)
+
+Dither_convert_yuv_to_rgb(
+clip src,
+[string "matrix"= ("601"/ "709"/ "240"/ "FCC"/ "YCgCo")],
+bool "interlaced"=False,
+bool "tv_range"=True,
+[string "cplace"="MPEG2" ("MPEG1"/ "MPEG2"/ "DV")],
+string "chromak"="bicubic" ("point"/ "box"/ "bilinear"/ "bicubic"/ "lanczos"/ "blackman"/ "blackmanminlobe"/ "spline16"/ "spline36"/ "spline64"/ "spline"/ "gauss"/ "sinc"/ "impulse"),
+[float "fh"=1.0 (0.0 to 10.0)],
+[float "fv"=1.0 (0.0 to 10.0)],
+int "taps"=4 (1 to 128),
+[float "a1"],
+[float "a2"],
+[float "a3"],
+bool "lsb_in"=False,
+string "output"="rgb32" ("rgb32"/ "rgb24"/ "rgb48yv12"/ "rgb48y"),
+int "mode"=6 (-1 to 8),
+[float "ampo"=1.0 (0.0 to 10.0)],
+[float "ampn"=0.5 (0.0 to 4.0)],
+bool "staticnoise"=False,
+bool "noring"=False
+)
+
+Dither_convey_rgb48_on_yv12(
+clip r,
+clip g,
+clip b,
+bool "bigendian"=False
+)
+
+Dither_crop16(
+clip src,
+int "left"=0,
+int "top"=0,
+int "width"=0,
+int "height"=0,
+bool "align"=False
+)
+
+Dither_gen_null_lsb(
+clip src
+)
+
+Dither_get_lsb(
+clip src
+)
+
+Dither_get_msb(
+clip src
+)
+
+Dither_lut16(
+clip src,
+string "expr"="x",
+string "yexpr",
+string "uexpr",
+string "vexpr",
+int "y"=3 (0 to 5),
+int "u"=1 (0 to 5),
+int "v"=1 (0 to 5)
+)
+
+Dither_lut8(
+clip src,
+string "expr"="x",
+string "yexpr",
+string "uexpr",
+string "vexpr",
+int "y"=3 (0 to 5),
+int "u"=1 (0 to 5),
+int "v"=1 (0 to 5)
+)
+
+Dither_lutxy8(
+clip src1,
+clip src2,
+string "expr"="x",
+string "yexpr",
+string "uexpr",
+string "vexpr",
+int "y"=3 (0 to 5),
+int "u"=1 (0 to 5),
+int "v"=1 (0 to 5)
+)
+
+Dither_lutxyz8(
+clip src1,
+clip src2,
+clip src3,
+string "expr"="x",
+string "yexpr",
+string "uexpr",
+string "vexpr",
+int "y"=3 (0 to 5),
+int "u"=1 (0 to 5),
+int "v"=1 (0 to 5)
+)
+
+Dither_merge16_8(
+clip src1,
+clip src2,
+clip mask,
+int "y"=3 (0 to 5),
+int "u"=2 (0 to 5),
+int "v"=2 (0 to 5),
+[bool "luma"=False]
+)
+
+Dither_quantize(
+clip src,
+int "bitdepth"=10 (8 to 14),
+bool "reducerange"=False,
+int "mode"=0 (-1 to 8),
+[float "ampo"=1.0 (0.0 to 10.0)],
+[float "ampn"=0.0 (0.0 to 4.0)],
+[int "pat"=1 (0 to 2)],
+[bool "dyn"=False],
+[bool "prot"=False],
+[clip "mask"],
+[float "thr"=-1.00 (-1.00 to 0.50)],
+bool "interlaced"=False,
+int "y"=3 (0 to 5),
+int "u"=3 (0 to 5),
+int "v"=3 (0 to 5),
+bool "staticnoise"=False
+)
+
+Dither_resize16nr(
+clip,
+int width,
+int height,
+float "src_left"=0,
+float "src_top"=0,
+float "src_width"=0,
+float "src_height"=0,
+string "kernel"="spline36" ("point"/ "box"/ "bilinear"/ "bicubic"/ "lanczos"/ "blackman"/ "blackmanminlobe"/ "spline16"/ "spline36"/ "spline64"/ "spline"/ "gauss"/ "sinc"/ "impulse"),
+[float "fh"=1.0 (0.0 to 10.0)],
+[float "fv"=1.0 (0.0 to 10.0)],
+int "taps"=4 (1 to 128),
+[float "a1"],
+[float "a2"],
+[float "a3"],
+[int "kovrspl"=1 (1 to 5)],
+[bool "cnorm"=True],
+[bool "center"=True],
+[string "cplace"="MPEG2" ("MPEG1"/ "MPEG2"/ "DV")],
+int "y"=3 (0 to 5),
+int "u"=3 (0 to 5),
+int "v"=3 (0 to 5),
+[string "kernelh"="" ("point"/ "box"/ "bilinear"/ "bicubic"/ "lanczos"/ "blackman"/ "blackmanminlobe"/ "spline16"/ "spline36"/ "spline64"/ "spline"/ "gauss"/ "sinc"/ "impulse")],
+[string "kernelv"="" ("point"/ "box"/ "bilinear"/ "bicubic"/ "lanczos"/ "blackman"/ "blackmanminlobe"/ "spline16"/ "spline36"/ "spline64"/ "spline"/ "gauss"/ "sinc"/ "impulse")],
+[float "totalh"=0],
+[float "totalv"=0],
+bool "invks"=False,
+[bool "invksh"],
+[bool "invksv"],
+int "invkstaps"=5 (1 to 128),
+bool "noring"=False
+)
+
+Dither_srgb_display(
+clip src,
+int "debug"=0 (0 to 1),
+[int "w"],
+[int "h"],
+bool "lsb_in"=False,
+[string "matrix"= ("601"/ "709"/ "240"/ "FCC"/ "YCgCo")],
+bool "tv_range"=True,
+string "chromak"="bicubic" ("point"/ "box"/ "bilinear"/ "bicubic"/ "lanczos"/ "blackman"/ "blackmanminlobe"/ "spline16"/ "spline36"/ "spline64"/ "spline"/ "gauss"/ "sinc"/ "impulse"),
+string "kernel"="spline36" ("point"/ "box"/ "bilinear"/ "bicubic"/ "lanczos"/ "blackman"/ "blackmanminlobe"/ "spline16"/ "spline36"/ "spline64"/ "spline"/ "gauss"/ "sinc"/ "impulse"),
+int "taps"=4 (1 to 128),
+bool "noring"=True,
+bool "precrop"=False,
+bool "autopar"=True,
+[float "par"],
+[int "parnum"],
+[int "parden"],
+[float "dar"],
+[int "darnum"],
+[int "darden"],
+[float "src_left"=0],
+[float "src_top"=0],
+[float "src_width"=0],
+[float "src_height"=0],
+float "gamma"=2.20 (1.80 to 2.60 by 0.05),
+bool "center"=True,
+bool "lsb"=False,
+string "cplace"="MPEG2" ("MPEG1"/ "MPEG2"/ "DV"),
+int "bkgcolor"=$000000
+)
+
+Dither_y_gamma_to_linear(
+clip src,
+bool "tv_range_in"=True,
+bool "tv_range_out"=True,
+string "curve"="srgb" ("709"/ "601"/ "170"/ "240"/ "srgb"),
+int "u"=3 (0 to 5),
+int "v"=3 (0 to 5),
+float "gcor"=1.00 (0.00 to 2.00 by 0.05)
+)
+
+Dither_y_linear_to_gamma(
+clip src,
+bool "tv_range_in"=True,
+bool "tv_range_out"=True,
+string "curve"="srgb" ("709"/ "601"/ "170"/ "240"/ "srgb"),
+int "u"=3 (0 to 5),
+int "v"=3 (0 to 5),
+float "gcor"=1.00 (0.00 to 2.00 by 0.05)
+)
+
+DitherBuildMask(
+clip cnew,
+[clip "cold"],
+int "edgelvl"=8 (0 to 255),
+int "radius"=2 (1 to 8)
+)
+
+DitherTestPatterns(
+int "size"=192,
+int "mag"=1 (1 to 4),
+int "amp"=1 (1 to 50),
+int "len"=24,
+int "luma"=128 (0 to 255)
+)
+
+EdgeCleaner(
+clip,
+float "strength"=8.0 (0.0 to 20.0),
+bool "rep"=True,
+int "rmode"=17 (1 to 17),
+int "smode"=0 (0 to 17),
+bool "hot"=False,
+bool "fix"=True
+)
+
+EE(
+clip clip,
+int "str"=80,
+string "cspace"
+)
+
+FastLineDarken(
+clip c,
+int "strength"=48,
+int "luma_cap"=191,
+int "threshold"=4,
+int "thinning"=24
+)
+
+FastLineDarkenMOD(
+clip c,
+int "strength"=48,
+int "luma_cap"=191,
+int "threshold"=4,
+int "thinning"=24
+)
+
+FFFormatTime(
+int ms
+)
+
+FFImageSource(
+string source= ("*.*"),
+int "width"=-1,
+int "height"=-1,
+string "resizer"="BICUBIC" ("FAST_BILINEAR"/ "BILINEAR"/ "BICUBIC"/ "X"/ "POINT"/ "AREA"/ "BICUBLIN"/ "GAUSS"/ "SINC"/ "LANCZOS"/ "SPLINE"),
+string "colorspace"="" ("YV12"/ "YUY2"/ "RGB24"/ "RGB32"),
+bool "utf8"=False,
+string "varprefix"=""
+)
+
+FFInfo(
+clip,
+bool "framenum"=True,
+bool "frametype"=True,
+bool "cfrtime"=True,
+bool "vfrtime"=True,
+string "varprefix"=FFVAR_PREFIX
+)
+
+FFmpegSource2(
+string source= ("*.*"),
+int "vtrack"=-1 (-1 to 10),
+int "atrack"=-2 (-3 to 10),
+bool "cache"=True,
+string "cachefile"="" ("*.ffindex"),
+int "fpsnum"=-1 (-1 to 60000),
+int "fpsden"=1 (1 to 1001),
+int "threads"=-1,
+string "timecodes"="" ("*.txt"),
+int "seekmode"=1 (-1 to 3),
+bool "overwrite"=False,
+int "width"=-1,
+int "height"=-1,
+string "resizer"="BICUBIC" ("FAST_BILINEAR"/ "BILINEAR"/ "BICUBIC"/ "X"/ "POINT"/ "AREA"/ "BICUBLIN"/ "GAUSS"/ "SINC"/ "LANCZOS"/ "SPLINE"),
+string "colorspace"="" ("YV12"/ "YUY2"/ "RGB24"/ "RGB32"),
+int "rffmode"=0 (0 to 2),
+int "adjustdelay"=-1,
+bool "utf8"=False,
+string "varprefix"=""
+)
+
+FineSharp(
+clip,
+int "mode"=1 (-3 to 3),
+float "sstr"=2.0 (0.0 to 5.0),
+[float "cstr"= (0.0 to 2.0)],
+float "xstr"=0.19 (0.0 to 0.5),
+[float "lstr"=1.49 (0.0 to 3.0)],
+[float "pstr"=1.272 (1.0 to 2.0)],
+[float "ldmp"= (0.0 to 5.0)]
+)
+
+GradFun2DBmod(
+clip input,
+float "thr"=1.2,
+float "thrC",
+int "mode"=2,
+float "str"=0.8,
+float "strC"=0,
+int "temp"=50,
+int "adapt"=64,
+string "custom",
+bool "mask"=True,
+int "radius"=2,
+int "range"=2,
+bool "show"=False,
+int "screenW"=1280,
+int "screenH"=1024
+)
+
+GradFun3(
+clip,
+float "thr"=0.35 (0.10 to 2.00),
+int "radius"=12 (1 to 128),
+[float "elast"=3.00 (1.00 to 6.00)],
+int "mask"=2 (0 to 10),
+int "mode"=0 (-1 to 8),
+[float "ampo"=1.0 (0.0 to 10.0)],
+[float "ampn"=0.0 (0.0 to 4.0)],
+[int "pat"=1 (0 to 2)],
+[bool "dyn"=False],
+[float "dthr"=-1.00 (-1.00 to 0.50)],
+int "smode"=0 (0 to 3),
+[float "wmin"=1.00 (0.00 to 1.00)],
+[float "thr_det"=2.00 (0.00 to 10.00)],
+[float "thr_edg"],
+int "debug"=0 (0 to 1),
+[int "subspl"=0],
+bool "lsb"=False,
+bool "lsb_in"=False,
+bool "staticnoise"=False,
+[float "thrc"=0.35 (0.10 to 2.00)],
+[float "radiusc"=12 (1 to 128)],
+[float "elastc"=3.00 (1.00 to 6.00)],
+int "y"=3 (0 to 5),
+int "u"=3 (0 to 5),
+int "v"=3 (0 to 5)
+)
+
+GradFunkMirror(
+clip c,
+float "strength"=1.2
+)
+
+HybridFuPP(
+clip input,
+int "width",
+int "height",
+bool "Fast"=true,
+bool "Dering"=false,
+bool "Deblock"=false,
+int "MP_Mode"=2,
+int "EM_Mode"=1,
+int "DB_Q"=25,
+int "DB_Off_a"=0,
+int "DB_Off_b"=0,
+int "M_Thr"=7,
+int "M_SCD"=260,
+int "E_Thr"=10,
+int "D_Thr"=32,
+int "B_Thr"=0,
+int "Resizer"=4,
+int "S_Str"=5,
+int "T_Str"=3,
+int "S_Radius"=1,
+float "S_Dist"=0.1,
+int "C_Str"=8,
+int "M_Str"=7,
+bool "E_Auto_Str"=false,
+int "E_Str_X"=0,
+int "E_Str_Y"=0,
+int "E_Str_B"=0,
+int "E_Str_N"=0,
+int "LP_Str"=30,
+int "DR_Str"=30,
+int "DR_Radius"=1,
+string "show"="",
+string "N1",
+string "N2",
+string "M",
+string "E1",
+string "E2",
+string "LP",
+string "DR",
+string "Preset"="high",
+bool "Skin"=false,
+int "Enh_Str"=0,
+bool "ARAdjust"=false,
+int "Skin_Type"=0,
+bool "DS_Enh"=false,
+int "DS_Enh_Thr"=50,
+bool "DB_M_Only"=false
+)
+
+InterFrame(
+clip Input,
+string "Preset"="Medium" ("Medium"/ "Fast"/ "Faster"),
+string "Tuning"="Film" ("Film"/ "Animation"/ "Smooth"/ "Weak"),
+int "NewNum"=0 (0 to 60000),
+int "NewDen"=0 (0 to 1001),
+bool "GPU"=False,
+string "InputType"="2D" ("2D"/ "SBS"/ "OU"/ "HSBS"/ "HOU"),
+int "OverrideAlgo"=0 (0 to 23),
+int "OverrideArea"=0 (0 to 200),
+int "Cores"=1 (1 to 16)
+)
+
+LRemoveDust(
+clip input,
+int _mode,
+int "limit"=4
+)
+
+LRemoveDustSSE3(
+clip input,
+int _mode,
+int "limit"=4
+)
+
+LimitedSharpen(
+clip,
+float "ss_x"=1.5 (1.0 to 2.0),
+float "ss_y"=1.5 (1.0 to 2.0,
+int "dest_x"=clip.width,
+int "dest_y"=clip.height,
+int "Smode"=3 (1 to 3),
+int "strength"=100 (0 to 255),
+int "radius"=2 (1 to 10),
+int "Lmode"=1 (1 to 2),
+bool "wide"=false,
+int "overshoot"=1 (0 to 128),
+bool "soft"=false,
+int "edgemode"=0 (0 to 2),
+bool "special"=false,
+int "exborder"=0 (0 to 4)
+)
+
+LimitedSharpenFaster(
+clip,
+float "ss_x"=1.5 (1.0 to 2.0),
+float "ss_y"=1.5 (1.0 to 2.0,
+int "dest_x"=clip.width,
+int "dest_y"=clip.height,
+int "Smode"=3 (1 to 4),
+int "strength"=100 (0 to 255),
+int "radius"=2 (1 to 10),
+int "Lmode"=1 (1 to 2),
+bool "wide"=false,
+int "overshoot"=1 (0 to 128),
+bool "soft"=false,
+int "edgemode"=0 (0 to 2),
+bool "special"=false,
+int "exborder"=0 (0 to 4)
+)
+
+LSFmod(
+clip input,
+string "defaults"="fast" ("old"/ "slow"/ "fast"),
+int "strength"=100 (0 to 300),
+[int "Smode"=3 (1 to 5)],
+[int "Smethod"=2 (1 to 3)],
+int "kernel"=11 (11 to 20),
+string "preblur"="OFF" ("OFF"/ "ON"),
+bool "secure"=True,
+int "Szrp"=16 (1 to 255),
+int "Spwr"=4 (1 to 10),
+int "SdmpLo"=4 (0 to 255),
+int "SdmpHi"=48 (0 to 255),
+[int "Lmode"=4 (-25 to 4)],
+int "overshoot"=1 (0 to 255),
+int "undershoot"=1 (0 to 255),
+int "overshoot2"=2 (0 to 255),
+int "undershoot2"=2 (0 to 255),
+[int "soft"=0 (-2 to 100)],
+bool "soothe"=True,
+int "keep"=20 (0 to 100),
+int "edgemode"=0 (-1 to 2),
+[bool "edgemaskHQ"=False],
+[float "ss_x"=1.25 (1.00 to 4.00)],
+[float "ss_y"=1.25 (1.00 to 4.00)],
+[int "dest_x"],
+[int "dest_y"],
+[clip "source"],
+bool "show"=False,
+int "screenW"=1280 (640 to 1600 by 4),
+int "screenH"=1024 (480 to 1200 by 4)
+)
+
+MvBob(
+clip Input,
+int "BlkSize"=8,
+int "Pel"=2,
+int "CorrectTh"=8,
+int "Threshold"=6,
+int "Type"=3 (0 to 4),
+int "Length"=1 (0 to 3)
+)
+
+MCBob(
+clip clp,
+float "EdiPre"=1.0 (0.0 to 1.0),
+int "EdiPost"=1 (0 to 2),
+int "blocksize"=16,
+int "MEdepth"=2,
+float "sharpness",
+int "mtnmode"=0 (0 to 2),
+float "mtnth1"=0.2,
+float "mtnth2"=0.4,
+float "errth1"=0.4,
+float "errth2"=0.6,
+float "MEspatNR"=0.0,
+float "MEtempNR"=0.0
+)
+
+MCRemoveDust(
+clip input,
+int _smooth,
+bool _grey
+)
+
+MCTemporalDenoise(
+clip i,
+int "radius"=2,
+int "sigma"=4,
+bool "twopass"=false,
+bool "useTTmpSm"=false,
+int "limit"=-1,
+int "limit2"=-1,
+int "post"=0,
+bool "chroma"=false,
+bool "interlaced"=false,
+bool "sharp"=true,
+bool "adapt"=true,
+int "strength"=100,
+int "SHmode"=3,
+int "SHmethod"=3,
+int "Slimit"=0,
+int "Sovershoot"=0,
+bool "Tlimit"=true,
+int "Tovershoot"=2,
+bool "protect"=false,
+int "cutoff"=64,
+int "threshold"=16,
+int "maxdiff"=4,
+bool "AA"=false,
+bool "useEEDI2"=true,
+float "reduc"=0.5,
+int "maxd"=24,
+int "AAthr"=32,
+int "method"=1,
+bool "deblock"=false,
+bool "useQED"=true,
+int "quant1"=20,
+int "quant2"=40,
+bool "edgeclean"=false,
+int "ECrad"=2,
+int "ECthr"=32,
+string "ECmode"="RemoveGrain(2,0)",
+bool "stabilize"=false,
+int "maxr"=1,
+int "TTstr"=1,bool "enhance"=true,
+float "GFthr"=1.2,
+float "AGstr"=0.8,
+int "bias"=64,
+int "temp"=50,
+int "bwbh",
+int "owoh",
+int "blksize",
+int "overlap",
+bool "GPU"=false,
+bool "fixband"=true,
+int "bt"=3,
+int "ncpu"=1,
+int "precision"=2,
+int "thSAD"=300,
+int "thSAD2"=300,
+int "thSCD1"=300,
+int "thSCD2"=100,
+bool "truemotion"=false,
+bool "MVglobal"=true,
+int "pel"=2,
+int "pelsearch"=2,
+int "search"=2,
+int "searchparam"=2,
+int "MVsharp"=2,
+int "DCT"=0,
+[clip "p"],
+string "settings"="low" ("very low","low","medium","high","very high"),
+bool "show"=false,
+int "screenW"=1280,
+int "screenH"=1024
+)
+
+QTGMC(
+clip Input,
+string "Preset"="Slower" ("Placebo"/ "Very Slow"/ "Slower"/ "Slow"/ "Medium"/ "Fast"/ "Faster"/ "Very Fast"/ "Super Fast"/ "Ultra Fast"/ "Draft"),
+[int "TR0"=2 (0 to 2)],
+[int "TR1"=2 (0 to 2)],
+[int "TR2"=1 (0 to 3)],
+[int "Rep0"=4 (0 to 4)],
+[int "Rep1"=0 (0 to 4)],
+[int "Rep2"=4 (0 to 4)],
+[string "EdiMode"="NNEDI3" ("NNEDI3"/ "NNEDI2"/ "NNEDI"/ "EEDI3+NNEDI3"/ "EEDI3"/ "EEDI2"/ "Yadif"/ "TDeint"/ "RepYadif"/ "Bob")],
+[bool "RepChroma"=True],
+[int "NNSize"=1 (0 to 6)],
+[int "NNeurons"=1 (0 to 4)],
+[int "EdiQual"=1 (1 to 3)],
+[int "EdiMaxD"=8 (1 to 12)],
+[string "ChromaEdi"="NNEDI3" ("NNEDI3"/ "Yadif"/ "Bob")],
+[int "EdiThreads"=0],
+[clip "EdiExt"],
+float "Sharpness"=1.0 (0.0 to 4.0),
+[int "SMode"=2 (0 to 2)],
+[int "SLMode"=2 (0 to 4)],
+[int "SLRad"=1 (0 to 3)],
+[int "SOvs"=0 (0 to 255)],
+[float "SVThin"=0.0 (0 to 10)],
+[int "Sbb"=1 (0 to 3)],
+[int "SrchClipPP"=3 (0 to 3)],
+[int "SubPel"=2 (1 to 4)],
+[int "SubPelInterp"=2 (0 to 2)],
+[int "BlockSize"=16 (4 to 32)],
+[int "Overlap"=8 (0 to 16)],
+[int "Search"=4 (0 to 5)],
+[int "SearchParam"=2 (0 to 2)],
+[int "PelSearch"=2 (0 to 2)],
+[bool "ChromaMotion"=True],
+[bool "TrueMotion"=False],
+[int "Lambda"=4000 (250 to 16000)],
+[int "LSAD"=400 (0 to 2000)],
+[int "PNew"=25 (0 to 100)],
+[int "PLevel"=0 (0 to 2)],
+[bool "GlobalMotion"=True],
+[int "DCT"=0 (0 to 10)],
+[int "ThSAD1"=640 (0 to 2000)],
+[int "ThSAD2"=256 (0 to 2000)],
+[int "ThSCD1"=180 (0 to 1000)],
+[int "ThSCD2"=98 (0 to 1000)],
+[int "SourceMatch"=0 (0 to 3)],
+[string "MatchPreset"="Fast" ("Placebo"/ "Very Slow"/ "Slower"/ "Slow"/ "Medium"/ "Fast"/ "Faster"/ "Very Fast"/ "Super Fast"/ "Ultra Fast")],
+[string "MatchEdi"="NNEDI3" ("NNEDI3"/ "NNEDI2"/ "NNEDI"/ "EEDI3+NNEDI3"/ "EEDI3"/ "EEDI2"/ "Yadif"/ "TDeint"/ "RepYadif"/ "Bob")],
+[string "MatchPreset2"="Medium" ("Placebo"/ "Very Slow"/ "Slower"/ "Slow"/ "Medium"/ "Fast"/ "Faster"/ "Very Fast"/ "Super Fast"/ "Ultra Fast")],
+[string "MatchEdi2"="NNEDI3" ("NNEDI3"/ "NNEDI2"/ "NNEDI"/ "EEDI3+NNEDI3"/ "EEDI3"/ "EEDI2"/ "Yadif"/ "TDeint"/ "RepYadif"/ "Bob")],
+[int "MatchTR2"=1 (0 to 2)],
+[float "MatchEnhance"=0.50 (0.00 to 1.00)],
+[int "Lossless"=0 (0 to 2)],
+[int "NoiseProcess"=0 (0 to 2)],
+[float "EZDenoise"=1.0 (0.0 to 5.0)],
+[float "EZKeepGrain"=1.0 (0.0 to 5.0)],
+[string "NoisePreset"="Fast" ("Slower"/ "Slow"/ "Medium"/ "Fast"/ "and "Faster")],
+[string "Denoiser"="dfttest" ("dfttest"/ "fft3dfilter")],
+[int "DftThreads"=0],
+[bool "DenoiseMC"=True],
+[int "NoiseTR"=2 (0 to 2)],
+[float "Sigma"=2.0 (0.0 to 8.0)],
+[bool "ChromaNoise"=False],
+[bool "ShowNoise"=False],
+[float "GrainRestore"=0.0 (0.0 to 2.0)],
+[float "NoiseRestore"=0.0 (0.0 to 2.0)],
+[string "NoiseDeint"="Generate" ("Generate"/ "Bob")],
+[bool "StabilizeNoise"=True],
+int "InputType"=0 (0 to 3),
+[float "ProgSADMask"=10 (0 to 20)],
+int "FPSDivisor"=1 (1 to 4),
+[int "ShutterBlur"=0 (0 to 3)],
+[float "ShutterAngleSrc"=180 (0 to 360)],
+[float "ShutterAngleOut"=180 (0 to 360)],
+[int "SBlurLimit"=4 (2 to 12)],
+[bool "Border"=False],
+[bool "Precise"=True],
+[string "Tuning"="None" ("None"/ "DV-SD"/ "DV-HD")],
+bool "ShowSettings"=False,
+[string "GlobalNames"="QTGMC"],
+[string "PrevGlobals"="Replace" ("Replace"/ "Reuse")],
+[int "ForceTR"=0 (0 to 3)]
+)
+
+ReBlend(
+clip clip,
+int "start"=0,
+int "end",
+int "order"=1,
+int "mode"=4,
+int "ythresh"=3,
+int "cthresh"=5
+)
+
+ReFadeIn(
+clip c,
+int start,
+int end,
+int "offset"=0,
+int "color"=$000000,
+bool "dup"=false
+)
+
+ReFadeOut(
+clip c,
+int start,
+int end,
+int "offset"=0,
+int "color"=$000000,
+bool "dup"=false
+)
+
+RemoveDirt(
+clip input,
+bool "_grey"=false,
+int "repmode"=16)
+)
+
+SAA(
+clip,
+int "SS"=2,
+bool "CP"=True
+)
+
+SeeSaw(
+clip,
+[clip "denoised"],
+int "NRlimit"=2 (0 to 10),
+int "NRlimit2"=3 (0 to 10),
+float "Sstr"=1.5 (0.0 to 3.0 by 0.1),
+int "Slimit"=4 (0 to 10),
+float "Spower"=4 (1.0 to 8.0 by 0.1),
+float "SdampLo"=5.0 (0 to 10),
+float "SdampHi"=24.0 (0 to 50),
+float "Szp"=18.0 (-50 to 50),
+float "bias"=49.0 (0 to 100),
+int "Smode"=11 (1 to 25),
+int "sootheT"=49 (-100 to 100),
+int "sootheS"=0 (0 to 100),
+float "ssx"=1.0 (1.0 to 2.0),
+float "ssy"=1.0 (1.0 to 2.0)
+)
+
+SeeTheDifference(
+clip a,
+clip b,
+int "frameadjust"=0
+)
+
+SmartFade(
+clip clip,
+float "threshold"=0.4,
+bool "dgm"=false,
+bool "show"=false
+)
+
+Stab(
+clip clp,
+int "range"=1,
+int "dxmax"=4,
+int "dymax"=4
+)
+
+TempGaussMC_beta2(
+clip clp,
+int "tr0"=2,
+int "tr1"=2,
+int "tr2"=1,
+int "rep0"=4,
+int "rep1"=0,
+int "rep2"=4,
+string "EdiMode"="EEDI2",
+int "qual"=1,
+int "EEDI2maxd"=8,
+int "lossless"=-1,
+float "sharpness",
+int "Smode"=2,
+int "SLmode"=2,
+int "SLrad"=1,
+float "Sbb"=1,
+float "SVthin"=1.0,
+int "Sovs"=0,
+int "blocksize"=16,
+int "overlap",
+bool "truemotion"=false,
+bool "globalmtn"=true,
+int "search"=4,
+int "searchparam"=2,
+int "pelsearch"=2,
+int "sharp"=2,
+int "lambda",
+int "DCT"=0,
+int "pnew",
+int "plevel",
+int "lsad",
+int "SCth1"=180,
+int "SCth2"=98,
+int "thSAD1"=640,
+int "thSAD2"=256,
+float "pel2hr"=0.0,
+bool "border"=true,
+int "draft"=0,
+[clip "edeint"]
+)
+
+vmToon(
+clip input,
+int "strength"=48 (0 to 255),
+int "luma_cap"=191 (0 to 255),
+int "threshold"=4 (0 to 255),
+int "thinning"=24 (0 to 255),
+bool "sharpen"=true,
+bool "mask"=true,
+bool "show"=false,
+string "showclip"="lines" ("edgemask"/ "darkened"/ "lines"/ "masked"/ "sharpened"),
+int "ssw"=4 (0 to 10),
+int "ssh"=4 (0 to 10),
+int "xstren"=255 (0 to 255),
+int "xthresh"=255 (0 to 255)
 )
