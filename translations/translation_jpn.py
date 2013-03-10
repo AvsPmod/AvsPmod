@@ -17,7 +17,7 @@
 # Japanese translation authors:
 #   niiyan v2.0.2
 
-version = "2.4.1"
+version = "2.4.2"
 
 messages = {
     "AviSynth fonts and colors" : u"フォントと色の設定",
@@ -72,7 +72,9 @@ messages = {
     "Edit selected" : u"編集",
     "Delete selected" : u"削除",
     "Select installed" : u"インストール済みのプラグインを選択",
+    "Import" : u"", # New in v2.4.2
     "Import from files" : u"", # New in v2.2.0
+    "Import from wiki" : u"", # New in v2.4.2
     "Export customizations" : u"カスタマイズのエクスポート",
     "Clear customizations" : u"カスタマイズのクリア",
     "Clear manual presets" : u"プリセットのクリア",
@@ -98,14 +100,18 @@ messages = {
     "Open Customization files, Avisynth scripts or Avsp options files" : u"", # New in v2.2.0
     "All supported" : u"", # New in v2.3.0
     "Customization file" : u"", # New in v2.3.0
-    "AvsP data" : u"", # New in v2.3.0
     "AviSynth script" : u"", # New in v2.3.0
+    "AvsP data" : u"", # New in v2.3.0
     "Unrecognized files" : u"", # New in v2.2.0
-    "Select import functions" : u"", # New in v2.2.0
-    "select all" : u"", # New in v2.2.0
-    "select none" : u"", # New in v2.2.0
-    "select all (file only)" : u"", # New in v2.2.0
-    "select none (file only)" : u"", # New in v2.2.0
+    "Select the functions to import" : u"", # New in v2.4.2
+    "Check selected" : u"", # New in v2.4.2
+    "Check all" : u"", # New in v2.4.2
+    "Check all in this file" : u"", # New in v2.4.2
+    "Check all not customized" : u"", # New in v2.4.2
+    "Uncheck selected" : u"", # New in v2.4.2
+    "Uncheck all" : u"", # New in v2.4.2
+    "Uncheck all in this file" : u"", # New in v2.4.2
+    "Uncheck all customized" : u"", # New in v2.4.2
     "Red - a customized function already exists." : u"", # New in v2.2.0
     "No customizations to export!" : u"エクスポートするカスタマイズが存在しません！",
     "Save filter customizations" : u"フィルタカスタマイズの保存",
@@ -120,7 +126,6 @@ messages = {
     "Step size" : u"ステップサイズ",
     "Value list (comma separated)" : u"値のリスト（カンマ区切り）",
     "Value must be True or False!" : u"値はTrueまたはFalseでなければなりません！",
-    "Must enter a value list!" : u"値のリストを入力してください",
     "Export filter customizations" : u"フィルタのカスタマイズのエクスポート",
     "Import filter customizations" : u"フィルタのカスタマイズのインポート",
     "Select filters to export:" : u"エクスポートするフィルタの選択:",
@@ -199,6 +204,16 @@ messages = {
     "Initial space to reserve for the line margin in terms of number of digits. Set it to 0 to disable showing line numbers" : u"", # New in v2.3.1
     "Line margin width" : u"行番号欄のマージン",
     "Autocomplete" : u"オートコンプリート",
+    "AviSynth user function database" : u"", # New in v2.4.2
+    "Select what functions beside internal and user-defined will be included in the database" : u"", # New in v2.4.2
+    "Autoloaded plugin functions" : u"", # New in v2.4.2
+    "Include the functions on autoloaded plugins in the database" : u"", # New in v2.4.2
+    "Autoloaded script functions" : u"", # New in v2.4.2
+    "Include the functions on autoloaded avsi files in the database" : u"", # New in v2.4.2
+    "Include plugin functions from the program's database" : u"", # New in v2.4.2
+    "Plugin functions from database" : u"", # New in v2.4.2
+    "Include user script functions from the program's database" : u"", # New in v2.4.2
+    "Script functions from database" : u"", # New in v2.4.2
     "Add user defined variables into autocomplete list" : u"", # New in v2.2.0
     "Show autocomplete with variables" : u"", # New in v2.2.0
     "Show autocomplete on single matched lowercase variable" : u"", # New in v2.2.0
@@ -484,6 +499,8 @@ messages = {
     "Show list of filternames matching the partial text at the cursor" : u"カーソル位置までの部分的なテキストにマッチするフィルタ名のリストを表示",
     "Autocomplete all" : u"", # New in v2.2.0
     "Disregard user's setting, show full list of filternames matching the partial text at the cursor" : u"", # New in v2.2.0
+    "Autocomplete parameter" : u"", # New in v2.4.2
+    "If the first characters typed match a parameter name, complete it" : u"", # New in v2.4.2
     "Show calltip" : u"コールチップの表示",
     "Show the calltip for the filter (only works if cursor within the arguments)" : u"フィルタのコールチップを表示する（カーソルが引数の中にある場合にのみ動作）",
     "Show function definition" : u"関数定義を表示",
@@ -591,6 +608,8 @@ messages = {
     "Keep variables on refreshing" : u"", # New in v2.4.0
     "Save image as..." : u"名前を付けて画像を保存...",
     "Save the current frame as a bitmap" : u"現在のフレームをビットマップファイルとして保存",
+    "Copy image to clipboard" : u"", # New in v2.4.2
+    "Copy the current frame to the clipboard as a bitmap" : u"", # New in v2.4.2
     "Force the script to reload and refresh the video frame" : u"スクリプトをリロードして、ビデオフレームを最新の状態にする",
     "Refresh preview" : u"プレビューの更新",
     "Show/Hide the preview" : u"", # New in v2.2.0
@@ -699,8 +718,12 @@ messages = {
     "Frame No." : u"", # New in v2.2.0
     "Time **" : u"", # New in v2.2.0
     "Left-click on a selected item or double-click to edit.\n\n*  RED - a historic title, not a real bookmark.\n** Time may be unavailable or incorrect before preview refreshed." : u"", # New in v2.3.0
+    "No image to save" : u"保存する画像がありません",
+    "Couldn't open clipboard" : u"", # New in v2.4.2
     "Error loading the script" : u"スクリプトの読み込みエラー",
     "Starting analysis pass..." : u"", # New in v2.3.0
+    "Frame %s/%s (%#.4g fps)" : u"", # New in v2.4.2
+    "Finished (%#.4g fps average)" : u"", # New in v2.4.2
     "Frame size:" : u"フレームサイズ:",
     "Length:" : u"長さ:",
     "Frame rate:" : u"フレームレート:",
@@ -786,6 +809,8 @@ messages = {
     "Invalid crop values detected.  Continue?" : u"無効なCrop値が検出されました。続行しますか？",
     "You must create at least one frame selection first!" : u"少なくとも1つ以上の選択範囲を作成しなければなりません！",
     "Select autocomplete keywords" : u"", # New in v2.2.0
+    "select all" : u"", # New in v2.2.0
+    "select none" : u"", # New in v2.2.0
     "exclude long names" : u"", # New in v2.2.0
     "Customize the video status bar message" : u"ビデオステータスバーのメッセージをカスタマイズ",
     "Video status bar message:" : u"ビデオステータスバーのメッセージ:",
@@ -831,7 +856,6 @@ messages = {
     "Load a session" : u"セッションの読み込み",
     "File has been modified since the session was saved. Reload?" : u"前にセッションが保存されてからファイルが修正されています。リロードしますか？",
     "Save the session" : u"セッションの保存",
-    "No image to save" : u"保存する画像がありません",
     "Save current frame" : u"現在のフレームを保存",
     "Insert a source" : u"ソースの挿入",
     "All supported plugins" : u"", # New in v2.3.0
@@ -1094,6 +1118,9 @@ messages = {
     "Choose a frame step or a number of intervals" : u"", # New in v2.3.0
     "Frame step" : u"", # New in v2.3.0
     "Number of intervals" : u"", # New in v2.3.0
+    "End frame" : u"", # New in v2.4.2
+    "Start frame" : u"", # New in v2.4.2
+    "Clear bookmarks in the same range" : u"", # New in v2.4.2
 
     #--- Macro: Bookmarks to Chapter ---#
     "Save chapter file as..." : u"", # New in v2.4.0

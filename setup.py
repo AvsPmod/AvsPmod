@@ -179,7 +179,7 @@ setup(
         "compressed": True,
         "optimize": 1,
         "includes": ['glob', 'shutil'],
-        "excludes": ["translation", "Tkconstants", "Tkinter", "tcl", '_ssl', 'pyreadline'],
+        "excludes": ["translation", "Tkconstants", "Tkinter", "tcl", 'pyreadline'],
         "dll_excludes": ['MSVCP90.dll', 'w9xpopen.exe', 'mswsock.dll', 'powrprof.dll'],
     }},
     zipfile = 'lib/library.zip',

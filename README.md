@@ -48,28 +48,61 @@ program's main features:
 What is AvsPmod?
 ----------------
 
-The AvsP project was abandoned by its original author by late 2007. 
-AvsPmod is a modified version of AvsP which provides some bug fixes 
-and enhancements.
+The AvsP project was abandoned by its original author by late 2007.  
+AvsPmod is an ongoing community effort to maintain and provide some 
+enhancements to AvsP:
+
+- Importing of function definitions, including from online wiki
+- Improved function autocomplete
+- Move, rename and undo close tabs
+- Better Unicode support
+- Video preview usability improvements
+- YUV -> RGB options for previewing
+- Support for AviSynth 2.6.0 new colorspaces
+- Autocrop
+- Bookmark titles
+- Improved macro API with several scripts included
+- Native *nix support through AvxSynth
+- Codebase updated to Python 2.7 and wxPython 2.8
+- Many bug fixes
+
+
+Running AvsPmod
+---------------
+
+AviSynth (Windows) or AvxSynth (*nix) is required.  When not using the 
+AvsPmod builds, currently only supplied for Windows, the following is 
+also needed:
+
+- Python 2.6-2.7
+- wxPython 2.8-2.9
+
+In that case start AvsPmod by running avsp.py.
 
 
 Links
 -----
 
-AviSynth wiki: 
-<http://avisynth.org/mediawiki/Main_Page>
+Development:
+<https://github.com/AvsPmod/AvsPmod>
+
+Windows builds:
+<http://www.amvhell.com/avspmod/>
+
+Filter database wiki:
+<https://github.com/AvsPmod/AvsPmod/wiki/Filter-database>
+
+Discussion: 
+<http://forum.doom9.org/showthread.php?t=153248>
 
 AvsP homepage: 
 <http://avisynth.org/qwerpoi/>
 
-AvsP discussion thread: 
-<http://forum.doom9.org/showthread.php?t=129385>
+AviSynth wiki: 
+<http://avisynth.org/mediawiki/Main_Page>
 
-AvsPmod public repository:
-<https://github.com/avspmod/avspmod>
-
-AvsPmod discussion thread: 
-<http://forum.doom9.org/showthread.php?t=153248>
+AvxSynth wiki: 
+<https://github.com/avxsynth/avxsynth/wiki>
 
 
 ---------------

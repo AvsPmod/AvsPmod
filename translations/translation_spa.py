@@ -18,7 +18,7 @@
 #   zemog v2.0.1
 #   Overdrive80 v2.2.0
 
-version = "2.4.1"
+version = "2.4.2"
 
 messages = {
     "AviSynth fonts and colors" : u"Fuentes y colores script AviSynth",
@@ -73,7 +73,9 @@ messages = {
     "Edit selected" : u"Editar seleccionado",
     "Delete selected" : u"Borrar seleccionado",
     "Select installed" : u"Marcar solo los instalados",
+    "Import" : u"", # New in v2.4.2
     "Import from files" : u"Importar desde archivos",
+    "Import from wiki" : u"", # New in v2.4.2
     "Export customizations" : u"Exportar personalizaciones",
     "Clear customizations" : u"Borrar personalizaciones",
     "Clear manual presets" : u"Borrar valores iniciales manuales",
@@ -99,14 +101,18 @@ messages = {
     "Open Customization files, Avisynth scripts or Avsp options files" : u"Abrir archivos personalizados, scripts de Avisynth o archivos de opciones de AvsP",
     "All supported" : u"", # New in v2.3.0
     "Customization file" : u"", # New in v2.3.0
-    "AvsP data" : u"", # New in v2.3.0
     "AviSynth script" : u"", # New in v2.3.0
+    "AvsP data" : u"", # New in v2.3.0
     "Unrecognized files" : u"Archivos no reconocidos",
-    "Select import functions" : u"Seleccione las funciones a importar",
-    "select all" : u"Seleccionar todos",
-    "select none" : u"No seleccionar ninguno",
-    "select all (file only)" : u"Seleccionar todo (sólo archivo)",
-    "select none (file only)" : u"No seleccionar ninguno (sólo archivo)",
+    "Select the functions to import" : u"", # New in v2.4.2
+    "Check selected" : u"", # New in v2.4.2
+    "Check all" : u"", # New in v2.4.2
+    "Check all in this file" : u"", # New in v2.4.2
+    "Check all not customized" : u"", # New in v2.4.2
+    "Uncheck selected" : u"", # New in v2.4.2
+    "Uncheck all" : u"", # New in v2.4.2
+    "Uncheck all in this file" : u"", # New in v2.4.2
+    "Uncheck all customized" : u"", # New in v2.4.2
     "Red - a customized function already exists." : u"Rojo - ya existe una función personalizada.",
     "No customizations to export!" : u"¡No hay personalizaciones para exportar!",
     "Save filter customizations" : u"Guardar personalizaciones de filtros",
@@ -121,7 +127,6 @@ messages = {
     "Step size" : u"Intervalo",
     "Value list (comma separated)" : u"Lista de valores (separados por comas)",
     "Value must be True or False!" : u"¡El valor debe ser True o False!",
-    "Must enter a value list!" : u"¡Debe teclearse una lista de valores!",
     "Export filter customizations" : u"Exportar configuraciones de filtros",
     "Import filter customizations" : u"Importar configuraciones de filtros",
     "Select filters to export:" : u"Seleccionar filtros para exportar:",
@@ -200,6 +205,16 @@ messages = {
     "Initial space to reserve for the line margin in terms of number of digits. Set it to 0 to disable showing line numbers" : u"", # New in v2.3.1
     "Line margin width" : u"Ancho del margen de línea",
     "Autocomplete" : u"Autocompletar",
+    "AviSynth user function database" : u"", # New in v2.4.2
+    "Select what functions beside internal and user-defined will be included in the database" : u"", # New in v2.4.2
+    "Autoloaded plugin functions" : u"", # New in v2.4.2
+    "Include the functions on autoloaded plugins in the database" : u"", # New in v2.4.2
+    "Autoloaded script functions" : u"", # New in v2.4.2
+    "Include the functions on autoloaded avsi files in the database" : u"", # New in v2.4.2
+    "Include plugin functions from the program's database" : u"", # New in v2.4.2
+    "Plugin functions from database" : u"", # New in v2.4.2
+    "Include user script functions from the program's database" : u"", # New in v2.4.2
+    "Script functions from database" : u"", # New in v2.4.2
     "Add user defined variables into autocomplete list" : u"Añadir variables definidas por el usuario en lista de autocompletado",
     "Show autocomplete with variables" : u"Mostrar autocompletado con variables",
     "Show autocomplete on single matched lowercase variable" : u"Mostrar autocompletado solo en variables escritas en minúscula",
@@ -485,6 +500,8 @@ messages = {
     "Show list of filternames matching the partial text at the cursor" : u"Mostrar lista de filtros cuyo nombre coincida parcialmente con el texto seleccionado",
     "Autocomplete all" : u"Autocompletar todo",
     "Disregard user's setting, show full list of filternames matching the partial text at the cursor" : u"Haga caso omiso de configuración del usuario, mostrar la lista completa de nombres de filtros coinciden con el texto parcial en el cursor",
+    "Autocomplete parameter" : u"", # New in v2.4.2
+    "If the first characters typed match a parameter name, complete it" : u"", # New in v2.4.2
     "Show calltip" : u"Motrar argumentos",
     "Show the calltip for the filter (only works if cursor within the arguments)" : u"Mostrar los argumentos del filtro (Solo funciona si el cursor esta posicionado en la zona de argumentos)",
     "Show function definition" : u"Editar información función",
@@ -592,6 +609,8 @@ messages = {
     "Keep variables on refreshing" : u"", # New in v2.4.0
     "Save image as..." : u"Guardar imagen como...",
     "Save the current frame as a bitmap" : u"Guardar el fotograma actual como... (.bmp/.jpg/.pcx/.png)",
+    "Copy image to clipboard" : u"", # New in v2.4.2
+    "Copy the current frame to the clipboard as a bitmap" : u"", # New in v2.4.2
     "Force the script to reload and refresh the video frame" : u"Forzar la ejecución del scrip para actualizar la previsualización del fotograma actual",
     "Refresh preview" : u"Actualizar previsualización",
     "Show/Hide the preview" : u"Mostrar/Ocultar la vista previa",
@@ -700,8 +719,12 @@ messages = {
     "Frame No." : u"Fotograma No.",
     "Time **" : u"Tiempo **",
     "Left-click on a selected item or double-click to edit.\n\n*  RED - a historic title, not a real bookmark.\n** Time may be unavailable or incorrect before preview refreshed." : u"", # New in v2.3.0
+    "No image to save" : u"No hay imagen que guardar",
+    "Couldn't open clipboard" : u"", # New in v2.4.2
     "Error loading the script" : u"Error abriendo el script",
     "Starting analysis pass..." : u"", # New in v2.3.0
+    "Frame %s/%s (%#.4g fps)" : u"", # New in v2.4.2
+    "Finished (%#.4g fps average)" : u"", # New in v2.4.2
     "Frame size:" : u"Dimensiones fotograma:",
     "Length:" : u"Tamaño:",
     "Frame rate:" : u"Velocidad fotogramas:",
@@ -787,6 +810,8 @@ messages = {
     "Invalid crop values detected.  Continue?" : u"Valores para recortar no válidos. ¿Continuar? ",
     "You must create at least one frame selection first!" : u"¡Debe efectuarse al menos una selección de fotogramas!",
     "Select autocomplete keywords" : u"Seleccionar palabras claves el autocompletado",
+    "select all" : u"Seleccionar todos",
+    "select none" : u"No seleccionar ninguno",
     "exclude long names" : u"excluir nombres largos",
     "Customize the video status bar message" : u"Personalización de la información del vídeo en la barra de estado",
     "Video status bar message:" : u"Información del vídeo en la barra de estado:",
@@ -832,7 +857,6 @@ messages = {
     "Load a session" : u"Abrir sesión",
     "File has been modified since the session was saved. Reload?" : u"El fichero se ha modificado despues de guardar la Sesión.  ¿Recargar?",
     "Save the session" : u"Guardar la sesión como archivo .ses",
-    "No image to save" : u"No hay imagen que guardar",
     "Save current frame" : u"Guardar el fotograma activo",
     "Insert a source" : u"Seleccionar un archivo",
     "All supported plugins" : u"", # New in v2.3.0
@@ -1095,6 +1119,9 @@ messages = {
     "Choose a frame step or a number of intervals" : u"", # New in v2.3.0
     "Frame step" : u"", # New in v2.3.0
     "Number of intervals" : u"", # New in v2.3.0
+    "End frame" : u"", # New in v2.4.2
+    "Start frame" : u"", # New in v2.4.2
+    "Clear bookmarks in the same range" : u"", # New in v2.4.2
 
     #--- Macro: Bookmarks to Chapter ---#
     "Save chapter file as..." : u"", # New in v2.4.0

@@ -1,7 +1,7 @@
 # AvsP - an AviSynth editor
 # 
 # Copyright 2007 Peter Jang <http://www.avisynth.org/qwerpoi>
-#           2010-2012 the AvsPmod authors <https://github.com/avspmod/avspmod>
+#           2010-2013 the AvsPmod authors <https://github.com/avspmod/avspmod>
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -54,7 +54,7 @@ def main():
     upx = os.path.join(os.environ['PROGRAMFILES'], 'upx', 'upx.exe')
     exe7z = os.path.join(os.environ['PROGRAMFILES'], '7-Zip', '7z.exe')
     editbin = os.path.join(os.environ['PROGRAMFILES'], 'Microsoft Visual Studio 10.0', 
-                          'VC', 'bin', 'amd64', 'editbin.exe')
+                          'VC', 'bin', 'editbin.exe')
     tempdir = tempfile.mkdtemp()
     programdirname = os.path.join(tempdir, global_vars.name)
     
@@ -77,6 +77,10 @@ def main():
     if not os.path.isfile(editbin):
         editbin = isinpath('editbin.exe')
     if editbin:
+        mspdb100_dir = os.path.join(os.environ['PROGRAMFILES'], 'Microsoft Visual Studio 10.0', 
+                                    'Common7', 'IDE')
+        if os.path.isdir(mspdb100_dir):
+            os.environ['PATH'] += os.pathsep + mspdb100_dir
         print '\nSetting large address aware flag...'
         if os.system('""%s" /LARGEADDRESSAWARE "%s""' % (editbin, os.path.join(programdirname, 'run.exe'))):
             print 'Failed'

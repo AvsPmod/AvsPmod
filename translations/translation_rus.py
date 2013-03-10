@@ -28,7 +28,7 @@
 # Russian interface file for AvsP editor by qwerpoi, http://www.avisynth.org/qwerpoi
 # Translated by Fizick 19.09.2006-11.03.2007 for AvsP v1.3.7, http://avisynth.org.ru/avsp
 
-version = "2.4.1"
+version = "2.4.2"
 
 messages = {
     "AviSynth fonts and colors" : u"", 
@@ -83,7 +83,9 @@ messages = {
     "Edit selected" : u"", # New in v2.2.1
     "Delete selected" : u"", # New in v2.2.1
     "Select installed" : u"", # New in v2.2.1
+    "Import" : u"", # New in v2.4.2
     "Import from files" : u"", # New in v2.2.1
+    "Import from wiki" : u"", # New in v2.4.2
     "Export customizations" : u"", # New in v2.2.1
     "Clear customizations" : u"", # New in v2.2.1
     "Clear manual presets" : u"", # New in v2.2.1
@@ -109,14 +111,18 @@ messages = {
     "Open Customization files, Avisynth scripts or Avsp options files" : u"", # New in v2.2.1
     "All supported" : u"", # New in v2.3.0
     "Customization file" : u"", # New in v2.3.0
-    "AvsP data" : u"", # New in v2.3.0
     "AviSynth script" : u"", # New in v2.3.0
+    "AvsP data" : u"", # New in v2.3.0
     "Unrecognized files" : u"", # New in v2.2.1
-    "Select import functions" : u"", # New in v2.2.1
-    "select all" : u"", # New in v2.2.1
-    "select none" : u"", # New in v2.2.1
-    "select all (file only)" : u"", # New in v2.2.1
-    "select none (file only)" : u"", # New in v2.2.1
+    "Select the functions to import" : u"", # New in v2.4.2
+    "Check selected" : u"", # New in v2.4.2
+    "Check all" : u"", # New in v2.4.2
+    "Check all in this file" : u"", # New in v2.4.2
+    "Check all not customized" : u"", # New in v2.4.2
+    "Uncheck selected" : u"", # New in v2.4.2
+    "Uncheck all" : u"", # New in v2.4.2
+    "Uncheck all in this file" : u"", # New in v2.4.2
+    "Uncheck all customized" : u"", # New in v2.4.2
     "Red - a customized function already exists." : u"", # New in v2.2.1
     "No customizations to export!" : u"", # New in v2.2.1
     "Save filter customizations" : u"", # New in v2.2.1
@@ -131,7 +137,6 @@ messages = {
     "Step size" : u"", # New in v2.2.1
     "Value list (comma separated)" : u"", # New in v2.2.1
     "Value must be True or False!" : u"", # New in v2.2.1
-    "Must enter a value list!" : u"", # New in v2.2.1
     "Export filter customizations" : u"Экспорт настроенных фильтров",
     "Import filter customizations" : u"Импорт настроенных фильтров",
     "Select filters to export:" : u"Выбрать фильтры для экспорта:",
@@ -210,6 +215,16 @@ messages = {
     "Initial space to reserve for the line margin in terms of number of digits. Set it to 0 to disable showing line numbers" : u"", # New in v2.3.1
     "Line margin width" : u"Ширина отступа строк",
     "Autocomplete" : u"Автозавершение",
+    "AviSynth user function database" : u"", # New in v2.4.2
+    "Select what functions beside internal and user-defined will be included in the database" : u"", # New in v2.4.2
+    "Autoloaded plugin functions" : u"", # New in v2.4.2
+    "Include the functions on autoloaded plugins in the database" : u"", # New in v2.4.2
+    "Autoloaded script functions" : u"", # New in v2.4.2
+    "Include the functions on autoloaded avsi files in the database" : u"", # New in v2.4.2
+    "Include plugin functions from the program's database" : u"", # New in v2.4.2
+    "Plugin functions from database" : u"", # New in v2.4.2
+    "Include user script functions from the program's database" : u"", # New in v2.4.2
+    "Script functions from database" : u"", # New in v2.4.2
     "Add user defined variables into autocomplete list" : u"", # New in v2.2.1
     "Show autocomplete with variables" : u"", # New in v2.2.1
     "Show autocomplete on single matched lowercase variable" : u"", # New in v2.2.1
@@ -495,6 +510,8 @@ messages = {
     "Show list of filternames matching the partial text at the cursor" : u"Показать список имен фильтров, соответствующих части текста, выделенной курсором",
     "Autocomplete all" : u"", # New in v2.2.1
     "Disregard user's setting, show full list of filternames matching the partial text at the cursor" : u"", # New in v2.2.1
+    "Autocomplete parameter" : u"", # New in v2.4.2
+    "If the first characters typed match a parameter name, complete it" : u"", # New in v2.4.2
     "Show calltip" : u"Показать подсказку", 
     "Show the calltip for the filter (only works if cursor within the arguments)" : u"Показать подсказку по фильтру (работает только если курсор на аргументах)", 
     "Show function definition" : u"Показать определение функции",
@@ -602,6 +619,8 @@ messages = {
     "Keep variables on refreshing" : u"", # New in v2.4.0
     "Save image as..." : u"Сохранить изображение как...",
     "Save the current frame as a bitmap" : u"Сохранить текущий кадр как файл картинки",
+    "Copy image to clipboard" : u"", # New in v2.4.2
+    "Copy the current frame to the clipboard as a bitmap" : u"", # New in v2.4.2
     "Force the script to reload and refresh the video frame" : u"Перезагрузить скрипт и обновить видео кадр",
     "Refresh preview" : u"Обновить просмотр",
     "Show/Hide the preview" : u"", # New in v2.2.1
@@ -710,8 +729,12 @@ messages = {
     "Frame No." : u"", # New in v2.2.1
     "Time **" : u"", # New in v2.2.1
     "Left-click on a selected item or double-click to edit.\n\n*  RED - a historic title, not a real bookmark.\n** Time may be unavailable or incorrect before preview refreshed." : u"", # New in v2.3.0
+    "No image to save" : u"Нет изображения для сохранения",
+    "Couldn't open clipboard" : u"", # New in v2.4.2
     "Error loading the script" : u"Ошибка загрузки скрипта",
     "Starting analysis pass..." : u"", # New in v2.3.0
+    "Frame %s/%s (%#.4g fps)" : u"", # New in v2.4.2
+    "Finished (%#.4g fps average)" : u"", # New in v2.4.2
     "Frame size:" : u"Размер кадра",
     "Length:" : u"Длина",
     "Frame rate:" : u"Частота кадров",
@@ -797,6 +820,8 @@ messages = {
     "Invalid crop values detected.  Continue?" : u"", # New in v2.2.1
     "You must create at least one frame selection first!" : u"Вы должны сначала создать по крайней мере одну выборку кадров!",
     "Select autocomplete keywords" : u"", # New in v2.2.1
+    "select all" : u"", # New in v2.2.1
+    "select none" : u"", # New in v2.2.1
     "exclude long names" : u"", # New in v2.2.1
     "Customize the video status bar message" : u"Настроить сообщение в полосе статуса видео",
     "Video status bar message:" : u"Сообщение статуса видео",
@@ -842,7 +867,6 @@ messages = {
     "Load a session" : u"Загрузить сеанс",
     "File has been modified since the session was saved. Reload?" : u"Файл был изменен с момента сохранения сеанса. Загрузить заново?",
     "Save the session" : u"Сохранить сеанс",
-    "No image to save" : u"Нет изображения для сохранения",
     "Save current frame" : u"Сохранить текущий кадр",
     "Insert a source" : u"Вставить источник",
     "All supported plugins" : u"", # New in v2.3.0
@@ -1105,6 +1129,9 @@ messages = {
     "Choose a frame step or a number of intervals" : u"", # New in v2.3.0
     "Frame step" : u"", # New in v2.3.0
     "Number of intervals" : u"", # New in v2.3.0
+    "End frame" : u"", # New in v2.4.2
+    "Start frame" : u"", # New in v2.4.2
+    "Clear bookmarks in the same range" : u"", # New in v2.4.2
 
     #--- Macro: Bookmarks to Chapter ---#
     "Save chapter file as..." : u"", # New in v2.4.0

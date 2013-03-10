@@ -2,6 +2,23 @@ CHANGELOG
 =========
 
 
+Version 2.4.2 [2013-03-10]
+--------------------------
+
+- Function definitions can be imported now from a new wiki
+- Allow specifying what sources of function definitions to read on start
+- Updates to the filter database
+- Add syntax for function parameters not included by default in autocomplete, [arg info]
+- Add 'autocomplete parameter' menu option, Ctrl+Alt+Space shortcut
+- Add 'copy image to clipboard' menu option
+- Speed-up handling of a large number of bookmarks
+- Fix corruption of the margin of the video preview
+- Fix tab renaming
+- Add a new macro function 'ClearBookmarks'
+- Improve 'Bookmarks at Intervals' macro
+- Other minor changes and fixes
+
+
 Version 2.4.1 [2012-12-05]
 --------------------------
 

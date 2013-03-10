@@ -1,6 +1,6 @@
 # AvsP - an AviSynth editor
 # 
-# Copyright 2012 the AvsPmod authors <https://github.com/avspmod/avspmod>
+# Copyright 2012, 2013 the AvsPmod authors <https://github.com/avspmod/avspmod>
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -28,9 +28,9 @@ except NameError: _ = lambda s:s
 # Application info
 name = 'AvsPmod'
 description = _('An AviSynth script editor')
-url = 'https://github.com/avspmod/avspmod'
+url = 'http://avspmod.github.com/'
 license = 'GNU GPL v2'
-version = '2.4.1'
+version = '2.4.2'
 
 # Used to pass the shared library location to avisynth.py, don't touch
 avisynth_library_dir = ''

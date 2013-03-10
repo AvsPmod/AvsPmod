@@ -33,8 +33,8 @@ as the AvsPmod source files (the version needed is 9.0.21022.8).
 
 Additional included resources
 -----------------------------
-avs2avi <http://moitah.net/> is needed for the 'Save to AVI' tool.  This two 
-files are expected to be found in the 'tools' subdirectory:
+avs2avi <http://moitah.net/> is needed for the 'Script encoder (VfW)' tool.  
+These two files are expected to be found in the 'tools' subdirectory:
 - avs2avi.exe
 - avs2avi_src.zip
 
