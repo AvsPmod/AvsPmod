@@ -5180,6 +5180,7 @@ class MainFrame(wxp.Frame):
             'customjumpunits': 'sec',
             'enabletabscrolling': False,
             'enableframepertab': True,
+            'enableframepertab_same': True,
             # AUTOSLIDER OPTIONS
             'keepsliderwindowhidden': False,
             'autoslideron': True,
@@ -5910,6 +5911,7 @@ class MainFrame(wxp.Frame):
                 ((_('Focus the video preview upon refresh'), wxp.OPT_ELEM_CHECK, 'focusonrefresh', _('Switch focus to the video preview window when using the refresh command'), dict() ), ),
                 ((_('Refresh preview automatically'), wxp.OPT_ELEM_CHECK, 'refreshpreview', _('Refresh preview when switch focus on video window or change a value in slider window'), dict() ), ),
                 ((_('Shared timeline'), wxp.OPT_ELEM_CHECK, 'enableframepertab', _('Seeking to a certain frame will seek to that frame on all tabs'), dict() ), ),
+                ((_('Only on tabs of the same characteristics'), wxp.OPT_ELEM_CHECK, 'enableframepertab_same', _('Only share timeline for clips with the same resolution and frame count'), dict(ident=20) ), ),
                 ((_('Allow AvsPmod to resize the window'), wxp.OPT_ELEM_CHECK, 'allowresize', _('Allow AvsPmod to resize and/or move the program window when updating the video preview'), dict() ), ),
                 ((_('Separate video preview window')+' *', wxp.OPT_ELEM_CHECK, 'separatevideowindow', _('Use a separate window for the video preview'), dict() ), ),
                 ((_('Keep it on top of the main window')+' *', wxp.OPT_ELEM_CHECK, 'previewontopofmain', _('Keep the video preview window always on top of the main one and link its visibility'), dict(ident=20) ), ),
@@ -9262,6 +9264,8 @@ class MainFrame(wxp.Frame):
                         #~ script.sliderWindowShown = self.oldSliderWindowShown
                 if script.AVI.Framecount == self.videoSlider.GetMax()+1 and self.options['enableframepertab']:
                     script.lastFramenum = None
+            if self.options['enableframepertab'] and not self.options['enableframepertab_same']:
+                script.lastFramenum = None
             if self.zoomwindowfit:
                 script.lastSplitVideoPos = self.oldLastSplitVideoPos
                 #~ self.ShowVideoFrame(forceRefresh=True, focus=False)
