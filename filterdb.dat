@@ -1672,6 +1672,36 @@ float "scd"=9 (-1 to 20),
 string "fcf"= (*.fcf)
 )
 
+defreq_DeFreq(
+clip,
+float "fx"=10 (0 to 100),
+float "fy"=-10 (-100 to 100),
+float "dx"=1.5 (0 to 50),
+float "dy"=2.0 (0 to 50),
+float "sharp"=50 (0 to 100),
+[float "fx2"=0 (0 to 100)],
+[float "fy2"=0 (-100 to 100)],
+[float "dx2"=1.5 (0 to 50)],
+[float "dy2"=2.0 (0 to 50)],
+[float "sharp2"=50 (0 to 100)],
+[float "fx3"=0 (0 to 100)],
+[float "fy3"=0 (-100 to 100)],
+[float "dx3"=1.5 (0 to 50)],
+[float "dy3"=2.0 (0 to 50)],
+[float "sharp3"=50 (0 to 100)],
+[float "fx4"=0 (0 to 100)],
+[float "fy4"=0 (-100 to 100)],
+[float "dx4"=1.5 (0 to 50)],
+[float "dy4"=2.0 (0 to 50)],
+[float "sharp4"=50 (0 to 100)],
+float "cutx"=0 (0 to 300),
+float "cuty"=0 (0 to 300),
+int "plane"=0 (0 to 2),
+int "show"=0 (0 to 2),
+bool "info"=False,
+[bool "measure"=True]
+)
+
 degrainmedian_DeGrainMedian(
 clip,
 int "limitY"=4 (0 to 255),
@@ -2889,36 +2919,6 @@ int "bOff1"=2 (1 to 50),
 int "aOff2"=1 (1 to 50),
 int "bOff2"=2 (1 to 50),
 int "uv"=3 (1 to 3)
-)
-
-defreq_DeFreq(
-clip,
-float "fx"=10 (0 to 100),
-float "fy"=-10 (-100 to 100),
-float "dx"=1.5 (0 to 50),
-float "dy"=2.0 (0 to 50),
-float "sharp"=50 (0 to 100),
-[float "fx2"=0 (0 to 100)],
-[float "fy2"=0 (-100 to 100)],
-[float "dx2"=1.5 (0 to 50)],
-[float "dy2"=2.0 (0 to 50)],
-[float "sharp2"=50 (0 to 100)],
-[float "fx3"=0 (0 to 100)],
-[float "fy3"=0 (-100 to 100)],
-[float "dx3"=1.5 (0 to 50)],
-[float "dy3"=2.0 (0 to 50)],
-[float "sharp3"=50 (0 to 100)],
-[float "fx4"=0 (0 to 100)],
-[float "fy4"=0 (-100 to 100)],
-[float "dx4"=1.5 (0 to 50)],
-[float "dy4"=2.0 (0 to 50)],
-[float "sharp4"=50 (0 to 100)],
-float "cutx"=0 (0 to 300),
-float "cuty"=0 (0 to 300),
-int "plane"=0 (0 to 2),
-int "show"=0 (0 to 2),
-bool "info"=False,
-[bool "measure"=True]
 )
 
 DeHalo_Alpha(

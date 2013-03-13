@@ -77,7 +77,16 @@ also needed:
 - Python 2.6-2.7
 - wxPython 2.8-2.9
 
-In that case start AvsPmod by running avsp.py.
+In that case start AvsPmod by running avsp.py, i.e. `python -O avsp.py`, 
+pythonw recommended on Windows.
+
+
+Updating to a new version
+-------------------------
+
+To update AvsPmod just overwrite the previous files.  Personal preferences 
+and customizations are preserved.  However note that edited macro scripts 
+and preset files must be backed up first.
 
 
 Links
