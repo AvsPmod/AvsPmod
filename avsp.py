@@ -5182,6 +5182,7 @@ class MainFrame(wxp.Frame):
             'enabletabscrolling_groups': False,
             'enableframepertab': True,
             'enableframepertab_same': True,
+            'applygroupoffsets': True,
             # AUTOSLIDER OPTIONS
             'keepsliderwindowhidden': False,
             'autoslideron': True,
@@ -6839,15 +6840,22 @@ class MainFrame(wxp.Frame):
             (_('Rename'), '', self.OnMenuFileRenameTab),
             (_('Group'), 
                 (
-                (_('None'), '', self.OnMenuFileGroupTab, _('Not include this tab in any group'), wx.ITEM_RADIO, True),
-                (_('1'), '', self.OnMenuFileGroupTab, _('Add tab to this group'), wx.ITEM_RADIO, False),
-                (_('2'), '', self.OnMenuFileGroupTab, _('Add tab to this group'), wx.ITEM_RADIO, False),
-                (_('3'), '', self.OnMenuFileGroupTab, _('Add tab to this group'), wx.ITEM_RADIO, False),
-                (_('4'), '', self.OnMenuFileGroupTab, _('Add tab to this group'), wx.ITEM_RADIO, False),
-                (_('5'), '', self.OnMenuFileGroupTab, _('Add tab to this group'), wx.ITEM_RADIO, False),
-                (_('6'), '', self.OnMenuFileGroupTab, _('Add tab to this group'), wx.ITEM_RADIO, False),
-                (_('7'), '', self.OnMenuFileGroupTab, _('Add tab to this group'), wx.ITEM_RADIO, False),
-                (_('8'), '', self.OnMenuFileGroupTab, _('Add tab to this group'), wx.ITEM_RADIO, False),
+                (_('Apply offsets'), '', self.OnGroupApplyOffsets, 
+                    _('Use the difference between each showed frame when the tabs were added to the group as offsets'), 
+                    wx.ITEM_CHECK, self.options['applygroupoffsets']),
+                (''),
+                (_('Clear current tab group'), '', self.OnGroupClearTabGroup, _('Clear current tab group')),
+                (_('Clear all tab groups'), '', self.OnGroupClearAllTabGroups, _('Clear all tab groups')),
+                (''),
+                (_('None'), '', self.OnGroupAssignTabGroup, _('Not include this tab on any group'), wx.ITEM_RADIO, True),
+                (_('1'), '', self.OnGroupAssignTabGroup, _('Add tab to this group'), wx.ITEM_RADIO, False),
+                (_('2'), '', self.OnGroupAssignTabGroup, _('Add tab to this group'), wx.ITEM_RADIO, False),
+                (_('3'), '', self.OnGroupAssignTabGroup, _('Add tab to this group'), wx.ITEM_RADIO, False),
+                (_('4'), '', self.OnGroupAssignTabGroup, _('Add tab to this group'), wx.ITEM_RADIO, False),
+                (_('5'), '', self.OnGroupAssignTabGroup, _('Add tab to this group'), wx.ITEM_RADIO, False),
+                (_('6'), '', self.OnGroupAssignTabGroup, _('Add tab to this group'), wx.ITEM_RADIO, False),
+                (_('7'), '', self.OnGroupAssignTabGroup, _('Add tab to this group'), wx.ITEM_RADIO, False),
+                (_('8'), '', self.OnGroupAssignTabGroup, _('Add tab to this group'), wx.ITEM_RADIO, False),
                 ),
             ),
             (''),
@@ -6959,6 +6967,7 @@ class MainFrame(wxp.Frame):
         scriptWindow.userHidSliders = False
         scriptWindow.lastFramenum = 0
         scriptWindow.group = None
+        scriptWindow.group_frame = 0
         scriptWindow.sliderWindowShown = not self.options['keepsliderwindowhidden']
         scriptWindow.autocrop_values = None
         try:
@@ -7420,15 +7429,6 @@ class MainFrame(wxp.Frame):
             wx.CallLater(300, CheckTabPosition)
         if self.scriptNotebook.dblClicked:
             wx.CallLater(300, setattr, self.scriptNotebook, 'dblClicked' ,False)        
-    
-    def OnMenuFileGroupTab(self, event):
-        id = event.GetId()
-        menu = event.GetEventObject()
-        menu = menu.FindItemById(menu.FindItem(_('Group'))).GetSubMenu()
-        label = menu.FindItemById(id).GetLabel()
-        if label == _('None'):
-            label = None
-        self.currentScript.group = label
     
     def OnMenuFilePageSetup(self, event):
         setup_dlg = wx.PageSetupDialog(self, self.print_data)
@@ -9289,9 +9289,13 @@ class MainFrame(wxp.Frame):
                         #~ script.sliderWindowShown = self.oldSliderWindowShown
                 if script.group is None and script.AVI.Framecount == self.videoSlider.GetMax()+1 and self.options['enableframepertab']:
                     script.lastFramenum = None
-            if (script.group is not None and script.group == self.oldGroup or 
-                script.group is None and self.options['enableframepertab'] and not self.options['enableframepertab_same']):
+            if script.group is not None and script.group == self.oldGroup:
+                if self.options['applygroupoffsets']:
+                    script.lastFramenum = self.oldLastFramenum + script.group_frame - self.oldGroupFrame
+                else:
                     script.lastFramenum = None
+            elif script.group is None and self.options['enableframepertab'] and not self.options['enableframepertab_same']:
+                script.lastFramenum = None
             if self.zoomwindowfit:
                 script.lastSplitVideoPos = self.oldLastSplitVideoPos
                 #~ self.ShowVideoFrame(forceRefresh=True, focus=False)
@@ -9350,7 +9354,9 @@ class MainFrame(wxp.Frame):
         oldSelectionIndex = event.GetOldSelection()
         if oldSelectionIndex >= 0:
             oldScript = self.scriptNotebook.GetPage(oldSelectionIndex)
+            self.oldLastFramenum = oldScript.lastFramenum
             self.oldGroup = oldScript.group
+            self.oldGroupFrame = oldScript.group_frame
         if self.previewWindowVisible:
             if oldSelectionIndex >= 0:
                 if oldScript.lastSplitVideoPos is not None:
@@ -9410,19 +9416,21 @@ class MainFrame(wxp.Frame):
 
     def OnRightClickNotebook(self, event):
         win = event.GetEventObject()
-        menu = win.contextMenu
         pos = event.GetPosition()
         ipage = self.scriptNotebook.HitTest(pos)[0]
-        group_menu = menu.FindItemById(menu.FindItem(_('Group'))).GetSubMenu()
-        group = self.currentScript.group
-        if group is None:
-            group = _('None')
-        id = group_menu.FindItem(group)
-        group_menu.Check(id, True)
         if ipage != wx.NOT_FOUND:
             script, index = self.getScriptAtIndex(ipage)
             try:
+                menu = win.contextMenu
                 self.scriptNotebook.SetSelection(index)
+                # group
+                group_menu = menu.FindItemById(menu.FindItem(_('Group'))).GetSubMenu()
+                group = script.group
+                if group is None:
+                    group = _('None')
+                id = group_menu.FindItem(group)
+                group_menu.Check(id, True)
+                # reposition
                 menuItem = menu.FindItemByPosition(menu.GetMenuItemCount()-1)
                 menu = menuItem.GetSubMenu()
                 for i in range(menu.GetMenuItemCount()):
@@ -9437,7 +9445,35 @@ class MainFrame(wxp.Frame):
                 win.PopupMenu(win.contextMenu, pos)
             except AttributeError:
                 pass
-                
+    
+    def OnGroupApplyOffsets(self, event):
+        self.options['applygroupoffsets'] = not self.options['applygroupoffsets']
+    
+    def OnGroupClearTabGroup(self, event=None, group=None):
+        if group is None:
+            group = self.currentScript.group
+            if group is None:
+                return
+        for index in xrange(self.scriptNotebook.GetPageCount()):
+            script = self.scriptNotebook.GetPage(index)
+            if script.group == group:
+                script.group = None
+    
+    def OnGroupClearAllTabGroups(self, event):
+        for index in xrange(self.scriptNotebook.GetPageCount()):
+            self.scriptNotebook.GetPage(index).group = None
+    
+    def OnGroupAssignTabGroup(self, event):
+        id = event.GetId()
+        menu = event.GetEventObject()
+        menu = menu.FindItemById(menu.FindItem(_('Group'))).GetSubMenu()
+        label = menu.FindItemById(id).GetLabel()
+        if label == _('None'):
+            label = None
+        script = self.currentScript
+        script.group = label
+        script.group_frame = script.lastFramenum
+    
     def OnMouseMotionNotebook(self, event):
         if event.Dragging() and event.LeftIsDown():
             self.scriptNotebook.dragging = True
@@ -10545,6 +10581,7 @@ class MainFrame(wxp.Frame):
             scriptWindow.workdir = self.currentScript.workdir
             scriptWindow.encoding = self.currentScript.encoding
             scriptWindow.group = self.currentScript.group
+            scriptWindow.group_frame = self.currentScript.group_frame
         # Add the tab to the notebook, pasting the text (unless it only contains whitespace)
         if text.strip():
             self.scriptNotebook.AddPage(scriptWindow,'%s (%s)' % (self.NewFileName, iMax+1), select=False)
@@ -10574,7 +10611,7 @@ class MainFrame(wxp.Frame):
     @AsyncCallWrapper
     def OpenFile(self, filename='', default='', f_encoding='latin1', workdir='', 
                  scripttext=None, setSavePoint=True, splits=None, framenum=None, 
-                 group=None):#, index=None):
+                 group=None, group_frame=None):#, index=None):
         r'''OpenFile(filename='', default='')
         
         If the string 'filename' is a path to an Avisynth script, this function opens 
@@ -10630,6 +10667,7 @@ class MainFrame(wxp.Frame):
                             script.encoding = f_encoding
                             script.workdir = workdir
                             script.group = group
+                            script.group_frame = group_frame
                             if setSavePoint:
                                 script.EmptyUndoBuffer()
                                 script.SetSavePoint()
@@ -10638,6 +10676,7 @@ class MainFrame(wxp.Frame):
                                 self.ShowVideoFrame()
                     else:
                         script.group = group
+                        script.group_frame = group_frame
                     dirname = os.path.dirname(filename)
                     if os.path.isdir(dirname):
                         self.options['recentdir'] = dirname
@@ -10698,6 +10737,7 @@ class MainFrame(wxp.Frame):
                 self.UpdateRecentFilesList(filename)
             # Misc stuff
             script.group = group
+            script.group_frame = group_frame
             if os.path.isdir(dirname):
                 self.options['recentdir'] = dirname
             return index
@@ -11233,8 +11273,8 @@ class MainFrame(wxp.Frame):
         '''
         if compat:
             nItems = len(item)
-            defaults = (None, None, None, None, None, 0, 'latin1', '', None)
-            name, selected, text, hash, splits, current_frame, f_encoding, workdir, group = item + defaults[nItems:]
+            defaults = (None, None, None, None, None, 0, 'latin1', '')
+            name, selected, text, hash, splits, current_frame, f_encoding, workdir = item + defaults[nItems:]
             item = locals()
             #~ if len(item) == 4:
                 #~ scriptname, boolSelected, scripttext, hash = item
@@ -11268,7 +11308,8 @@ class MainFrame(wxp.Frame):
         index = self.OpenFile(filename=scriptname, f_encoding=item['f_encoding'], 
                               workdir=item['workdir'], scripttext=item['text'], 
                               setSavePoint=setSavePoint, splits=item['splits'], 
-                              framenum=item['current_frame'], group=item['group'])
+                              framenum=item['current_frame'], group=item.get('group'), 
+                              group_frame=item.get('group_frame', 0))
         if reload:
             self.reloadList.append((index, scriptname, txt))
         return index
@@ -11348,7 +11389,8 @@ class MainFrame(wxp.Frame):
         splits = (script.lastSplitVideoPos, script.lastSplitSliderPos, script.sliderWindowShown)
         return dict(name=scriptname, selected=boolSelected, text=script.GetText(), 
                     hash=hash, splits=splits, current_frame=script.lastFramenum, 
-                    f_encoding=script.encoding, workdir=script.workdir, group=script.group)
+                    f_encoding=script.encoding, workdir=script.workdir, 
+                    group=script.group, group_frame=script.group_frame)
     
     def SaveCurrentImage(self, filename='', index=None, default='', quality=None):
         script, index = self.getScriptAtIndex(index)
