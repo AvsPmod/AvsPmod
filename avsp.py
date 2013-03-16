@@ -5179,7 +5179,7 @@ class MainFrame(wxp.Frame):
             'customjump': 10,
             'customjumpunits': 'sec',
             'enabletabscrolling': False,
-            'enabletabscrolling_groups': False,
+            'enabletabscrolling_groups': True,
             'enableframepertab': True,
             'enableframepertab_same': True,
             'applygroupoffsets': True,
@@ -6175,6 +6175,9 @@ class MainFrame(wxp.Frame):
         self.menuBackups = [1, 2] #if wx.VERSION > (2, 8) else []
         menuBar = self.createMenuBar(self.menuInfo(), shortcutList, oldShortcuts, self.menuBackups)
         self.SetMenuBar(menuBar)
+        self.Bind(wx.EVT_MENU_OPEN, self.OnMenuBar)
+        video_menu = self.GetMenuBar().GetMenu(2)
+        self.tab_group_menu = video_menu.FindItemById(video_menu.FindItem(_('Tab group'))).GetSubMenu()
         scriptWindow.contextMenu = self.menuBackups[0] if self.menuBackups else self.GetMenuBar().GetMenu(1)
         self.videoWindow.contextMenu = self.menuBackups[1] if self.menuBackups else self.GetMenuBar().GetMenu(2)
         # Add the tools to the menu
@@ -6542,6 +6545,26 @@ class MainFrame(wxp.Frame):
                     ),
                 ),
                 (''),
+                (_('Tab group'), 
+                    (
+                    (_('Apply offsets'), '', self.OnMenuVideoGroupApplyOffsets, 
+                        _('Use the difference between each showed frame when the tabs were added to the group as offsets'), 
+                        wx.ITEM_CHECK, self.options['applygroupoffsets']),
+                    (''),
+                    (_('Clear current tab group'), '', self.OnMenuVideoGroupClearTabGroup, _('Clear current tab group')),
+                    (_('Clear all tab groups'), '', self.OnMenuVideoGroupClearAllTabGroups, _('Clear all tab groups')),
+                    (''),
+                    (_('None'), '', self.OnMenuVideoGroupAssignTabGroup, _('Not include this tab on any group'), wx.ITEM_RADIO, True),
+                    ('1', '', self.OnMenuVideoGroupAssignTabGroup, _('Add tab to this group'), wx.ITEM_RADIO, False),
+                    ('2', '', self.OnMenuVideoGroupAssignTabGroup, _('Add tab to this group'), wx.ITEM_RADIO, False),
+                    ('3', '', self.OnMenuVideoGroupAssignTabGroup, _('Add tab to this group'), wx.ITEM_RADIO, False),
+                    ('4', '', self.OnMenuVideoGroupAssignTabGroup, _('Add tab to this group'), wx.ITEM_RADIO, False),
+                    ('5', '', self.OnMenuVideoGroupAssignTabGroup, _('Add tab to this group'), wx.ITEM_RADIO, False),
+                    ('6', '', self.OnMenuVideoGroupAssignTabGroup, _('Add tab to this group'), wx.ITEM_RADIO, False),
+                    ('7', '', self.OnMenuVideoGroupAssignTabGroup, _('Add tab to this group'), wx.ITEM_RADIO, False),
+                    ('8', '', self.OnMenuVideoGroupAssignTabGroup, _('Add tab to this group'), wx.ITEM_RADIO, False),
+                    ),
+                ),
                 (_('&Navigate'),
                     (
                     (_('Go to &bookmark'), self.menuBookmark, -1),
@@ -6848,14 +6871,14 @@ class MainFrame(wxp.Frame):
                 (_('Clear all tab groups'), '', self.OnGroupClearAllTabGroups, _('Clear all tab groups')),
                 (''),
                 (_('None'), '', self.OnGroupAssignTabGroup, _('Not include this tab on any group'), wx.ITEM_RADIO, True),
-                (_('1'), '', self.OnGroupAssignTabGroup, _('Add tab to this group'), wx.ITEM_RADIO, False),
-                (_('2'), '', self.OnGroupAssignTabGroup, _('Add tab to this group'), wx.ITEM_RADIO, False),
-                (_('3'), '', self.OnGroupAssignTabGroup, _('Add tab to this group'), wx.ITEM_RADIO, False),
-                (_('4'), '', self.OnGroupAssignTabGroup, _('Add tab to this group'), wx.ITEM_RADIO, False),
-                (_('5'), '', self.OnGroupAssignTabGroup, _('Add tab to this group'), wx.ITEM_RADIO, False),
-                (_('6'), '', self.OnGroupAssignTabGroup, _('Add tab to this group'), wx.ITEM_RADIO, False),
-                (_('7'), '', self.OnGroupAssignTabGroup, _('Add tab to this group'), wx.ITEM_RADIO, False),
-                (_('8'), '', self.OnGroupAssignTabGroup, _('Add tab to this group'), wx.ITEM_RADIO, False),
+                ('1', '', self.OnGroupAssignTabGroup, _('Add tab to this group'), wx.ITEM_RADIO, False),
+                ('2', '', self.OnGroupAssignTabGroup, _('Add tab to this group'), wx.ITEM_RADIO, False),
+                ('3', '', self.OnGroupAssignTabGroup, _('Add tab to this group'), wx.ITEM_RADIO, False),
+                ('4', '', self.OnGroupAssignTabGroup, _('Add tab to this group'), wx.ITEM_RADIO, False),
+                ('5', '', self.OnGroupAssignTabGroup, _('Add tab to this group'), wx.ITEM_RADIO, False),
+                ('6', '', self.OnGroupAssignTabGroup, _('Add tab to this group'), wx.ITEM_RADIO, False),
+                ('7', '', self.OnGroupAssignTabGroup, _('Add tab to this group'), wx.ITEM_RADIO, False),
+                ('8', '', self.OnGroupAssignTabGroup, _('Add tab to this group'), wx.ITEM_RADIO, False),
                 ),
             ),
             (''),
@@ -7302,7 +7325,29 @@ class MainFrame(wxp.Frame):
     # Event functions
     def OnClose(self, event):
         self.ExitProgram()
-
+    
+    def OnMenuBar(self, event):
+        # tab groups
+        if wx.version() >= '2.9':
+            tab_group_menu = event.GetMenu()
+            if tab_group_menu is not self.tab_group_menu:
+                event.Skip()
+                return 
+        else:
+            if event.GetMenu() is None: # None for submenus on 2.8
+                event.Skip()
+                return 
+            video_menu = self.GetMenuBar().GetMenu(2)
+            tab_group_menu = video_menu.FindItemById(video_menu.FindItem(_('Tab group'))).GetSubMenu()
+        group = self.currentScript.group 
+        if group == None:
+            group = _('None')
+        id = tab_group_menu.FindItem(group)
+        tab_group_menu.Check(id, True)
+        id = tab_group_menu.FindItem(_('Apply offsets'))
+        tab_group_menu.Check(id, self.options['applygroupoffsets'])
+        event.Skip()
+    
     def OnMenuFileNew(self, event):
         self.NewTab()
 
@@ -7995,7 +8040,22 @@ class MainFrame(wxp.Frame):
                 if self.separatevideowindow:
                     self.videoSlider2.Refresh()
         dlg.Destroy()
-
+    
+    def OnMenuVideoGroupApplyOffsets(self, event):
+        self.OnGroupApplyOffsets(event)
+    
+    def OnMenuVideoGroupClearTabGroup(self, event):
+        self.OnGroupClearTabGroup(event)
+    
+    def OnMenuVideoGroupClearAllTabGroups(self, event):
+        self.OnGroupClearAllTabGroups(event)
+    
+    def OnMenuVideoGroupAssignTabGroup(self, event):
+        video_menu = self.GetMenuBar().GetMenu(2)
+        group_menu = video_menu.FindItemById(video_menu.FindItem(_('Tab group'))).GetSubMenu()
+        label = group_menu.FindItemById(event.GetId()).GetLabel()
+        self.AssignTabGroup(label)
+    
     def OnMenuVideoGotoLastScrolled(self, event):
         if self.playing_video:
             self.PlayPauseVideo()
@@ -9430,6 +9490,8 @@ class MainFrame(wxp.Frame):
                     group = _('None')
                 id = group_menu.FindItem(group)
                 group_menu.Check(id, True)
+                id = group_menu.FindItem(_('Apply offsets'))
+                group_menu.Check(id, self.options['applygroupoffsets'])
                 # reposition
                 menuItem = menu.FindItemByPosition(menu.GetMenuItemCount()-1)
                 menu = menuItem.GetSubMenu()
@@ -9465,13 +9527,19 @@ class MainFrame(wxp.Frame):
     
     def OnGroupAssignTabGroup(self, event):
         id = event.GetId()
-        menu = event.GetEventObject()
-        menu = menu.FindItemById(menu.FindItem(_('Group'))).GetSubMenu()
-        label = menu.FindItemById(id).GetLabel()
-        if label == _('None'):
-            label = None
-        script = self.currentScript
-        script.group = label
+        context_menu = event.GetEventObject()
+        group_menu = context_menu.FindItemById(context_menu.FindItem(_('Group'))).GetSubMenu()
+        label = group_menu.FindItemById(id).GetLabel()
+        self.AssignTabGroup(label)
+    
+    def AssignTabGroup(self, group, tab_index=None):
+        if group == _('None'):
+            group = None
+        if tab_index is None:
+            script = self.currentScript
+        else:
+            script = self.scriptNotebook.GetPage(tab_index)
+        script.group = group
         script.group_frame = script.lastFramenum
     
     def OnMouseMotionNotebook(self, event):
@@ -9617,7 +9685,7 @@ class MainFrame(wxp.Frame):
         # Scroll similar tabs or tab groups
         similar_clips = self.options['enabletabscrolling']
         tab_groups = self.options['enabletabscrolling_groups']
-        if similar_clips or tab_groups:
+        if similar_clips or (tab_groups and self.currentScript.group is not None):
             rotation = event.GetWheelRotation()
             if self.mouse_wheel_rotation * rotation < 0:
                 self.mouse_wheel_rotation = rotation
