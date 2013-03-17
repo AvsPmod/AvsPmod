@@ -15,7 +15,7 @@ class CompressVideoDialog(wx.Dialog):
         self.inputname = inputname
         if not inputname:
             index = parent.scriptNotebook.GetSelection()
-            self.outputname = parent.scriptNotebook.GetPageText(index).lstrip('* ')
+            self.outputname = parent.scriptNotebook.GetPageText(index)
             self.inputname = parent.MakePreviewScriptFile(parent.currentScript)
         self.framecount = framecount
         self.framerate = framerate

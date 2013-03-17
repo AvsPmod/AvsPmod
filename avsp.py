@@ -4870,7 +4870,7 @@ class MainFrame(wxp.Frame):
         else:
             self.need_to_show_preview = False
         # Misc
-        self.SetProgramTitle()
+        self.UpdateProgramTitle()
         self.SetIcon(AvsP_icon.getIcon())
 
         if self.separatevideowindow:
@@ -6850,12 +6850,50 @@ class MainFrame(wxp.Frame):
 
     def createScriptNotebook(self):
         # Create the notebook
+        
+        class Notebook(wx.Notebook):
+            
+            def SetPageText(self, index, text):
+                script = self.GetPage(index)
+                if script.group is not None:
+                    text = u'[{0}] {1}'.format(script.group, text)
+                if script.GetModify():
+                    text = '* ' + text
+                return wx.Notebook.SetPageText(self, index, text)
+            
+            def GetPageText(self, index, full=False):
+                text = wx.Notebook.GetPageText(self, index)
+                if not full:
+                    script = self.GetPage(index)
+                    if script.GetModify():
+                        text = text[2:]
+                    if script.group is not None:
+                        text = text[4:]
+                return text
+            
+            def UpdatePageText(self, index):
+                text = wx.Notebook.GetPageText(self, index)
+                script = self.GetPage(index)
+                if script.old_modified:
+                    text = text[2:]
+                if script.old_group != script.group:
+                    if script.old_group is not None:
+                        text = text[4:]
+                    if script.group is not None:
+                        text = u'[{0}] {1}'.format(script.group, text)
+                modified = script.GetModify()
+                if modified:
+                    text = '* ' + text
+                script.old_modified = modified
+                script.old_group = script.group
+                return wx.Notebook.SetPageText(self, index, text)
+        
         style = wx.NO_BORDER
         if self.options['multilinetab']:
             style |= wx.NB_MULTILINE
         if self.options['fixedwidthtab']:
             style |= wx.NB_FIXEDWIDTH
-        nb = wx.Notebook(self.mainSplitter, wx.ID_ANY, style=style)
+        nb = Notebook(self.mainSplitter, wx.ID_ANY, style=style)
         nb.app = self
         # Create the right-click menu
         menuInfo = (
@@ -6991,6 +7029,8 @@ class MainFrame(wxp.Frame):
         scriptWindow.lastFramenum = 0
         scriptWindow.group = None
         scriptWindow.group_frame = 0
+        scriptWindow.old_group = None
+        scriptWindow.old_modified = False
         scriptWindow.sliderWindowShown = not self.options['keepsliderwindowhidden']
         scriptWindow.autocrop_values = None
         try:
@@ -7030,8 +7070,8 @@ class MainFrame(wxp.Frame):
         scriptWindow.Bind(stc.EVT_STC_UPDATEUI, self.OnScriptTextChange)
         #~ scriptWindow.Bind(stc.EVT_STC_SAVEPOINTLEFT, self.OnScriptSavePointLeft)
         #~ scriptWindow.Bind(stc.EVT_STC_SAVEPOINTREACHED, self.OnScriptSavePointReached)
-        scriptWindow.Bind(stc.EVT_STC_SAVEPOINTLEFT, lambda event: self.SetScriptTabname(event.GetEventObject()))
-        scriptWindow.Bind(stc.EVT_STC_SAVEPOINTREACHED, lambda event: self.SetScriptTabname(event.GetEventObject()))
+        scriptWindow.Bind(stc.EVT_STC_SAVEPOINTLEFT, lambda event: self.UpdateScriptTabname(event.GetEventObject()))
+        scriptWindow.Bind(stc.EVT_STC_SAVEPOINTREACHED, lambda event: self.UpdateScriptTabname(event.GetEventObject()))
         scriptWindow.Bind(wx.EVT_KEY_UP, self.OnScriptKeyUp)
         # Drag-and-drop target
         scriptWindow.SetDropTarget(self.scriptDropTarget(scriptWindow, self))
@@ -7426,11 +7466,6 @@ class MainFrame(wxp.Frame):
                 ipage = self.scriptNotebook.HitTest((x, y))[0]
             bottom = y - 1
             title = self.scriptNotebook.GetPageText(index)
-            if title.startswith('* '):
-                title = title.lstrip('* ')
-                unsaved = '* '
-            else:
-                unsaved = ''
             self.titleEntry = wx.TextCtrl(self.scriptNotebook, -1, title, pos=(left, top), size=(right-left, bottom-top), style=wx.TE_PROCESS_ENTER|wx.BORDER_SIMPLE)
             self.titleEntry.SetFocus()
             self.titleEntry.SetSelection(-1, -1)
@@ -7455,7 +7490,7 @@ class MainFrame(wxp.Frame):
                         wx.Bell()
                         self.IdleCall.append((self.titleEntry.Destroy, tuple(), {}))
                         return
-                self.scriptNotebook.SetPageText(index, unsaved + title)
+                self.SetScriptTabname(title, index=index)
                 self.IdleCall.append((self.titleEntry.Destroy, tuple(), {}))
                 
             def CheckTabPosition():
@@ -9347,14 +9382,14 @@ class MainFrame(wxp.Frame):
                         script.lastSplitSliderPos = self.oldLastSplitSliderPos
                     #~ elif self.oldSliderWindowShown != script.sliderWindowShown:
                         #~ script.sliderWindowShown = self.oldSliderWindowShown
-                if script.group is None and script.AVI.Framecount == self.videoSlider.GetMax()+1 and self.options['enableframepertab']:
+                if script.group == self.oldGroup is None and script.AVI.Framecount == self.videoSlider.GetMax()+1 and self.options['enableframepertab']:
                     script.lastFramenum = None
             if script.group is not None and script.group == self.oldGroup:
                 if self.options['applygroupoffsets']:
                     script.lastFramenum = self.oldLastFramenum + script.group_frame - self.oldGroupFrame
                 else:
                     script.lastFramenum = None
-            elif script.group is None and self.options['enableframepertab'] and not self.options['enableframepertab_same']:
+            elif script.group == self.oldGroup is None and self.options['enableframepertab'] and not self.options['enableframepertab_same']:
                 script.lastFramenum = None
             if self.zoomwindowfit:
                 script.lastSplitVideoPos = self.oldLastSplitVideoPos
@@ -9395,7 +9430,7 @@ class MainFrame(wxp.Frame):
             self.replaceDialog.SetFocus()
         else:
             script.SetFocus()
-        self.SetProgramTitle()
+        self.UpdateProgramTitle()
         self.oldlinenum = None
 
     def OnNotebookPageChanging(self, event):
@@ -9498,7 +9533,7 @@ class MainFrame(wxp.Frame):
                 for i in range(menu.GetMenuItemCount()):
                     menu.DestroyItem(menu.FindItemByPosition(0))
                 for i in range(self.scriptNotebook.GetPageCount()):
-                    label = self.scriptNotebook.GetPageText(i).lstrip('* ')
+                    label = self.scriptNotebook.GetPageText(i)
                     menuItem = menu.Insert(i, wx.ID_ANY, label)                
                     if i != index:
                         self.Bind(wx.EVT_MENU, self.RepositionTab, menuItem)
@@ -9519,11 +9554,11 @@ class MainFrame(wxp.Frame):
         for index in xrange(self.scriptNotebook.GetPageCount()):
             script = self.scriptNotebook.GetPage(index)
             if script.group == group:
-                script.group = None
+                self.AssignTabGroup(None, index)
     
     def OnGroupClearAllTabGroups(self, event):
         for index in xrange(self.scriptNotebook.GetPageCount()):
-            self.scriptNotebook.GetPage(index).group = None
+            self.AssignTabGroup(None, index)
     
     def OnGroupAssignTabGroup(self, event):
         id = event.GetId()
@@ -9532,15 +9567,16 @@ class MainFrame(wxp.Frame):
         label = group_menu.FindItemById(id).GetLabel()
         self.AssignTabGroup(label)
     
-    def AssignTabGroup(self, group, tab_index=None):
+    def AssignTabGroup(self, group, index=None):
         if group == _('None'):
             group = None
-        if tab_index is None:
-            script = self.currentScript
-        else:
-            script = self.scriptNotebook.GetPage(tab_index)
+        current_tab = self.scriptNotebook.GetSelection()
+        if index is None:
+            index = current_tab
+        script = self.scriptNotebook.GetPage(index)
         script.group = group
         script.group_frame = script.lastFramenum
+        self.UpdateScriptTabname(index=index)
     
     def OnMouseMotionNotebook(self, event):
         if event.Dragging() and event.LeftIsDown():
@@ -10374,7 +10410,7 @@ class MainFrame(wxp.Frame):
                     break
         title = '* %s' % self.scriptNotebook.GetPageText(index).lstrip('* ')
         self.scriptNotebook.SetPageText(index, title)
-        self.SetProgramTitle()
+        self.UpdateProgramTitle()
 
     def _x_OnScriptSavePointReached(self, event):
         script = event.GetEventObject()
@@ -10386,7 +10422,7 @@ class MainFrame(wxp.Frame):
                     break
         title = self.scriptNotebook.GetPageText(index).lstrip('* ')
         self.scriptNotebook.SetPageText(index, title)
-        self.SetProgramTitle()
+        self.UpdateProgramTitle()
 
     def OnScriptKeyUp(self, event):
         self.AutoUpdateVideo()
@@ -10645,17 +10681,16 @@ class MainFrame(wxp.Frame):
             elif copyselected:
                 text = self.currentScript.GetSelectedText()
                 copytab = bool(text.strip())
-        if text and copytab:
-            scriptWindow.workdir = self.currentScript.workdir
-            scriptWindow.encoding = self.currentScript.encoding
-            scriptWindow.group = self.currentScript.group
-            scriptWindow.group_frame = self.currentScript.group_frame
         # Add the tab to the notebook, pasting the text (unless it only contains whitespace)
         if text.strip():
+            if copytab:
+                scriptWindow.workdir = self.currentScript.workdir
+                scriptWindow.encoding = self.currentScript.encoding
+                scriptWindow.group = self.currentScript.group # must be before scriptWindow.SetText (or just call UpdateScriptTabname here)
+                scriptWindow.group_frame = self.currentScript.group_frame
             self.scriptNotebook.AddPage(scriptWindow,'%s (%s)' % (self.NewFileName, iMax+1), select=False)
             scriptWindow.SetText(text)
             scriptWindow.SelectAll()
-            scriptWindow.EmptyUndoBuffer()
             if select:
                 self.refreshAVI = True
                 self.scriptNotebook.SetSelection(self.scriptNotebook.GetPageCount()-1)
@@ -10734,7 +10769,9 @@ class MainFrame(wxp.Frame):
                             script.SetText(txt)
                             script.encoding = f_encoding
                             script.workdir = workdir
-                            script.group = group
+                            if script.group != group:
+                                script.group = group
+                                self.UpdateScriptTabname(index=index)
                             script.group_frame = group_frame
                             if setSavePoint:
                                 script.EmptyUndoBuffer()
@@ -10743,7 +10780,9 @@ class MainFrame(wxp.Frame):
                             if self.previewWindowVisible:
                                 self.ShowVideoFrame()
                     else:
-                        script.group = group
+                        if script.group != group:
+                            script.group = group
+                            self.UpdateScriptTabname(index=index)
                         script.group_frame = group_frame
                     dirname = os.path.dirname(filename)
                     if os.path.isdir(dirname):
@@ -10781,14 +10820,16 @@ class MainFrame(wxp.Frame):
                 if self.previewWindowVisible:
                     self.ShowVideoFrame()
             else:
+                # Treat the file as an avisynth script
                 if dirname != '':
-                    self.scriptNotebook.SetPageText(index, basename)
-                    self.SetProgramTitle()
+                    self.SetScriptTabname(basename, script)
                     script.filename = filename
                 elif not root.startswith(self.NewFileName):
-                    self.scriptNotebook.SetPageText(index, root)
-                    self.SetProgramTitle()
-                # Treat the file as an avisynth script
+                    self.SetScriptTabname(root, script)
+                if group is not None:
+                    script.group = group
+                    self.UpdateScriptTabname(index=index)
+                script.group_frame = group_frame
                 if scripttext is None:
                     txt, f_encoding = self.GetMarkedScriptFromFile(filename)
                     script.SetText(txt)
@@ -10796,16 +10837,14 @@ class MainFrame(wxp.Frame):
                     script.SetText(scripttext)
                 script.encoding = f_encoding
                 script.workdir = workdir
-                script.EmptyUndoBuffer()
                 if setSavePoint:
+                    script.EmptyUndoBuffer()
                     script.SetSavePoint()
                 self.refreshAVI = True
                 if self.previewWindowVisible:
                     self.ShowVideoFrame()
                 self.UpdateRecentFilesList(filename)
             # Misc stuff
-            script.group = group
-            script.group_frame = group_frame
             if os.path.isdir(dirname):
                 self.options['recentdir'] = dirname
             return index
@@ -10970,8 +11009,7 @@ class MainFrame(wxp.Frame):
         # If only 1 tab, make another
         if self.scriptNotebook.GetPageCount() == 1:
             self.NewTab(copyselected=False)
-            self.scriptNotebook.SetPageText(1, self.NewFileName)
-            self.SetProgramTitle()
+            self.SetScriptTabname(self.NewFileName, index=1)
             self.HidePreviewWindow()
         if self.options['multilinetab']:
             rows = self.scriptNotebook.GetRowCount()
@@ -11061,8 +11099,7 @@ class MainFrame(wxp.Frame):
             # Misc stuff
             script.SetSavePoint()
             script.filename = filename
-            self.scriptNotebook.SetPageText(index, basename)
-            self.SetProgramTitle()
+            self.SetScriptTabname(basename, script)
             if os.path.isdir(dirname):
                 self.options['recentdir'] = dirname
             self.refreshAVI = True
@@ -11158,7 +11195,7 @@ class MainFrame(wxp.Frame):
         # Get script filename
         dirname, basename = os.path.split(script.filename)
         if not basename and not only == 'dir':
-            page_text = self.scriptNotebook.GetPageText(index).lstrip('* ')
+            page_text = self.scriptNotebook.GetPageText(index)
             if not page_text.startswith(self.NewFileName):
                 basename = page_text
         
@@ -11240,7 +11277,7 @@ class MainFrame(wxp.Frame):
                     break        
         index = self.scriptNotebook.GetSelection()
         page = self.scriptNotebook.GetPage(index)
-        label = self.scriptNotebook.GetPageText(index)
+        label = self.scriptNotebook.GetPageText(index, full=True)
         win = self.FindFocus()
         self.scriptNotebook.RemovePage(index)
         self.scriptNotebook.InsertPage(newIndex, page, label, select=True)
@@ -11448,7 +11485,7 @@ class MainFrame(wxp.Frame):
         scriptname = script.filename
         if not os.path.isfile(scriptname):
             hash = None
-            title = self.scriptNotebook.GetPageText(index).lstrip('* ')
+            title = self.scriptNotebook.GetPageText(index)
             if not title.startswith(self.NewFileName):
                 scriptname = title
         else:
@@ -13098,8 +13135,7 @@ class MainFrame(wxp.Frame):
                     pos = self.videoDialog.GetPosition()
                     if (pos[0]+size[0]>wC) or (pos[1]+size[1]>hC):
                         self.videoDialog.Center()
-            self.SetProgramTitle()
-            #~ self.videoDialog.SetTitle(_('AvsP preview') + '  -  ' + self.getScriptTabname(allowfull=False))
+            self.UpdateProgramTitle()
             self.videoDialog.Show()
             #~ self.videoSplitter.SetSashPosition(self.currentScript.lastSplitSliderPos)
             return
@@ -13314,7 +13350,7 @@ class MainFrame(wxp.Frame):
                 #~ previewname = self.MakePreviewScriptFile(script)
                 #~ AVI = PyAVIFile(previewname)
                 sDirname = os.path.dirname(script.filename)
-                sBasename = self.scriptNotebook.GetPageText(index).lstrip('* ')
+                sBasename = self.scriptNotebook.GetPageText(index)
                 filename = os.path.join(sDirname, sBasename)
                 if script.AVI is None:
                     oldFramecount = 240
@@ -15219,39 +15255,61 @@ class MainFrame(wxp.Frame):
                 checkbox.Bind(wx.EVT_CHECKBOX, self.OnToggleTagChecked)
                 script.toggleTagSizer.Add(checkbox, 0, wx.BOTTOM, 15)
                 labels.append(label)
-
-    def SetScriptTabname(self, script):
+    
+    def SetScriptTabname(self, name, script=None, index=None):
+        if index is not None:
+            self.scriptNotebook.SetPageText(index, name)
+            if index == self.scriptNotebook.GetSelection():
+                self.UpdateProgramTitle()
+            return
         if script == self.scriptNotebook.GetCurrentPage():
             index = self.scriptNotebook.GetSelection()
+            self.scriptNotebook.SetPageText(index, name)
+            self.UpdateProgramTitle()
         else:
             for index in xrange(self.scriptNotebook.GetPageCount()):
                 if script == self.scriptNotebook.GetPage(index):
-                    break
-        title = self.scriptNotebook.GetPageText(index).lstrip('* ')
-        if script.GetModify():
-            title = '* '+title
-        self.scriptNotebook.SetPageText(index, title)
-        self.SetProgramTitle()
-
-    def SetProgramTitle(self):
-        tabname = self.getScriptTabname()
-        self.SetTitle('%s - %s' % (tabname, self.name))
+                    self.scriptNotebook.SetPageText(index, name)
+                    return
+    
+    def UpdateScriptTabname(self, script=None, index=None):
+        if index is not None:
+            self.scriptNotebook.UpdatePageText(index)
+            if index == self.scriptNotebook.GetSelection():
+                self.UpdateProgramTitle()
+            return
+        if script == self.scriptNotebook.GetCurrentPage():
+            index = self.scriptNotebook.GetSelection()
+            self.scriptNotebook.UpdatePageText(index)
+            self.UpdateProgramTitle()
+        else:
+            for index in xrange(self.scriptNotebook.GetPageCount()):
+                if script == self.scriptNotebook.GetPage(index):
+                    self.scriptNotebook.UpdatePageText(index)
+                    return
+    
+    def UpdateProgramTitle(self, title=None):
+        if title is None:
+            title = self.GetProgramTitle()
+        self.SetTitle('%s - %s' % (title, self.name))
         if self.separatevideowindow:
-            #~ self.videoDialog.SetTitle(_('AvsP') + ' - ' + self.getScriptTabname(allowfull=True))
-            self.videoDialog.SetTitle('%s - [%s]' % (tabname, self.name))
-
-    def getScriptTabname(self, allowfull=True):
-        index = self.scriptNotebook.GetSelection()
-        tabname = self.scriptNotebook.GetPageText(index)
-        filename = self.currentScript.filename
+            self.videoDialog.SetTitle('%s - [%s]' % (title, self.name))
+    
+    def GetProgramTitle(self, allowfull=True):
+        script = self.currentScript
+        filename = script.filename
         #~ if allowfull and self.options['showfullname'] and filename:
         if allowfull and filename:
-            if self.currentScript.GetModify():
-                tabname = '* ' + filename
-            else:
-                tabname = filename
+            tabname = filename
+            if script.group is not None:
+                tabname = u'[{0}] {1}'.format(script.group, tabname)
+            if script.GetModify():
+                tabname = '* ' + tabname
+        else:
+            index = self.scriptNotebook.GetSelection()
+            tabname = self.scriptNotebook.GetPageText(index, full=True)
         return tabname
-
+    
     def UpdateTabImages(self):
         if self.options['usetabimages']:
             if self.options['multilinetab']:
@@ -15320,7 +15378,7 @@ class MainFrame(wxp.Frame):
                 script.SetUserOptions()
                 if not self.options['usetabimages']:
                     self.scriptNotebook.SetPageImage(i, -1)            
-            self.SetProgramTitle()
+            self.UpdateProgramTitle()
             style = wx.NO_BORDER
             if self.options['multilinetab']:
                 style |= wx.NB_MULTILINE

@@ -51,7 +51,7 @@ class Avs2aviDialog(wx.Dialog):
         self.progressinfo = '%s\n%s\n%s\n%s\n%s' % (line1, line2, line3, line4, line5)
         if not inputname:
             index = parent.scriptNotebook.GetSelection()
-            self.outputname = parent.scriptNotebook.GetPageText(index).lstrip('* ')
+            self.outputname = parent.scriptNotebook.GetPageText(index)
             inputname = parent.MakePreviewScriptFile(parent.currentScript)
         self.CreateInterface(inputname)
         
