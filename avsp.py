@@ -9719,9 +9719,11 @@ class MainFrame(wxp.Frame):
             return
         
         # Scroll similar tabs or tab groups
+        group = self.currentScript.group
+        tab_groups = self.options['enabletabscrolling_groups'] and group is not None
         similar_clips = self.options['enabletabscrolling']
-        tab_groups = self.options['enabletabscrolling_groups']
-        if similar_clips or (tab_groups and self.currentScript.group is not None):
+        similar_clips_groups = self.options['enabletabscrolling'] and not tab_groups
+        if similar_clips or tab_groups:
             rotation = event.GetWheelRotation()
             if self.mouse_wheel_rotation * rotation < 0:
                 self.mouse_wheel_rotation = rotation
@@ -9749,18 +9751,18 @@ class MainFrame(wxp.Frame):
                     r.insert(0,j)
             # Loop through r to find next suitable tab
             curframe = self.videoSlider.GetValue()
-            oldGroup = self.currentScript.group
             oldWidth = self.oldWidth
             oldHeight = self.oldHeight
             oldFramecount = self.oldFramecount
             oldInfo = (self.oldWidth, self.oldHeight, self.oldFramecount)
             for index in r:
                 script = self.scriptNotebook.GetPage(index)
-                if tab_groups and oldGroup is not None and oldGroup == script.group:
+                if tab_groups and group == script.group:
                     self.SelectTab(index)
                     break
-                if not similar_clips:
-                    continue
+                if (not similar_clips or script.group != group or 
+                    script.group is not None and not similar_clips_groups):
+                        continue
                 self.refreshAVI = True
                 if self.UpdateScriptAVI(script, prompt=True) is None:
                     try:
