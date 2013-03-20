@@ -10642,7 +10642,7 @@ class MainFrame(wxp.Frame):
         self.Destroy()
     
     @AsyncCallWrapper
-    def NewTab(self, copyselected=True, copytab=False, text='', select=True, splits=None):
+    def NewTab(self, copyselected=True, copytab=False, text='', select=True):
         r'''NewTab(copyselected=True)
         
         Creates a new tab (automatically named "New File (x)", where x is an appropriate 
@@ -10714,9 +10714,9 @@ class MainFrame(wxp.Frame):
         self.Thaw()
     
     @AsyncCallWrapper
-    def OpenFile(self, filename='', default='', f_encoding='latin1', workdir='', 
+    def OpenFile(self, filename='', default='', f_encoding=None, workdir=None, 
                  scripttext=None, setSavePoint=True, splits=None, framenum=None, 
-                 group=None, group_frame=None):#, index=None):
+                 group=-1, group_frame=None):
         r'''OpenFile(filename='', default='')
         
         If the string 'filename' is a path to an Avisynth script, this function opens 
@@ -10756,101 +10756,82 @@ class MainFrame(wxp.Frame):
             dlg.Destroy()
         # Open script if filename exists (user could cancel dialog box...)
         if filename:
-            # If script already exists in a tab, select that tab and exit
-            for index in xrange(self.scriptNotebook.GetPageCount()):
-                script = self.scriptNotebook.GetPage(index)
-                if filename == script.filename:
-                    self.SelectTab(index)
-                    if script.GetModify():
-                        dlg = wx.MessageDialog(self, _('Reload the file and lose the current changes?'),
-                            os.path.basename(filename), wx.YES_NO)
-                        ID = dlg.ShowModal()
-                        dlg.Destroy()
-                        if ID == wx.ID_YES:
-                            txt, f_encoding = self.GetMarkedScriptFromFile(filename)
-                            script.SetText(txt)
-                            script.encoding = f_encoding
-                            script.workdir = workdir
-                            if script.group != group:
-                                script.group = group
-                                self.UpdateScriptTabname(index=index)
-                            script.group_frame = group_frame
-                            if setSavePoint:
-                                script.EmptyUndoBuffer()
-                                script.SetSavePoint()
-                            self.refreshAVI = True
-                            if self.previewWindowVisible:
-                                self.ShowVideoFrame()
-                    else:
-                        if script.group != group:
-                            script.group = group
-                            self.UpdateScriptTabname(index=index)
-                        script.group_frame = group_frame
-                    dirname = os.path.dirname(filename)
-                    if os.path.isdir(dirname):
-                        self.options['recentdir'] = dirname
-                    return index
-            # Get current tab if not specified
-            if True: #index is None:
-                # Make a new tab if current one is not empty
-                indexCur = self.scriptNotebook.GetSelection()
-                txt = self.scriptNotebook.GetPage(indexCur).GetText()
-                title = self.scriptNotebook.GetPageText(indexCur)
-                if txt == "" and title.startswith(self.NewFileName):
-                    boolNewTab = False
-                    index = indexCur
-                else:
-                    boolNewTab = True
-                    self.NewTab(splits=splits)
-                    index = self.scriptNotebook.GetSelection()
-            script = self.scriptNotebook.GetPage(index)
-            if splits is not None:
-                script.lastSplitVideoPos = splits[0]
-                script.lastSplitSliderPos = splits[1]
-                script.sliderWindowShown = splits[2]
-            script.lastFramenum = framenum
             # Process the filename
             dirname, basename = os.path.split(filename)
             root, ext = os.path.splitext(basename)
-            if ext.lower() == '.ses':
+            if ext.lower() == '.ses': # Treat the file as a session file
                 if not self.LoadSession(filename):
                     wx.MessageBox(_('Damaged session file'), _('Error'), wx.ICON_ERROR)
                     return
-            elif ext.lower() not in ('.avs', '.avsi', '.vpy'):
-                # Treat the file as a source
+            elif ext.lower() not in ('.avs', '.avsi', '.vpy'): # Treat the file as a source
                 self.InsertSource(filename)
                 if self.previewWindowVisible:
                     self.ShowVideoFrame()
-            else:
-                # Treat the file as an avisynth script
-                if dirname != '':
-                    self.SetScriptTabname(basename, script)
-                    script.filename = filename
-                elif not root.startswith(self.NewFileName):
-                    self.SetScriptTabname(root, script)
-                if group is not None:
+            else: # Treat the file as an avisynth script
+                if scripttext is None:
+                    scripttext, f_encoding = self.GetMarkedScriptFromFile(filename)
+                # If script already exists in a tab, select it
+                for index in xrange(self.scriptNotebook.GetPageCount()):
+                    script = self.scriptNotebook.GetPage(index)
+                    if filename == script.filename:
+                        self.SelectTab(index)
+                        if scripttext != script.GetText():
+                            dlg = wx.MessageDialog(self, _('Reload the file and lose the current changes?'),
+                                                   os.path.basename(filename), wx.YES_NO)
+                            ID = dlg.ShowModal()
+                            dlg.Destroy()
+                            if ID != wx.ID_YES:
+                                return
+                            pos = script.GetCurrentPos()
+                            script.SetText(scripttext)
+                            script.GotoPos(pos)
+                        break
+                else:
+                    # Make a new tab if current one is not empty
+                    indexCur = self.scriptNotebook.GetSelection()
+                    txt = self.scriptNotebook.GetPage(indexCur).GetText()
+                    title = self.scriptNotebook.GetPageText(indexCur)
+                    if txt == "" and title.startswith(self.NewFileName):
+                        boolNewTab = False
+                        index = indexCur
+                    else:
+                        boolNewTab = True
+                        self.NewTab()
+                        index = self.scriptNotebook.GetSelection()
+                    script = self.scriptNotebook.GetPage(index)
+                    if dirname != '':
+                        self.SetScriptTabname(basename, script)
+                        script.filename = filename
+                    elif not root.startswith(self.NewFileName):
+                        self.SetScriptTabname(root, script)
+                    script.SetText(scripttext)
+                    self.UpdateRecentFilesList(filename)
+                if f_encoding is not None:
+                    script.encoding = f_encoding
+                if workdir is not None:
+                    script.workdir = workdir
+                if framenum is not None:
+                    script.lastFramenum = framenum
+                if splits is not None:
+                    script.lastSplitVideoPos = splits[0]
+                    script.lastSplitSliderPos = splits[1]
+                    script.sliderWindowShown = splits[2]
+                if group is not -1 and script.group != group:
                     script.group = group
                     self.UpdateScriptTabname(index=index)
-                script.group_frame = group_frame
-                if scripttext is None:
-                    txt, f_encoding = self.GetMarkedScriptFromFile(filename)
-                    script.SetText(txt)
-                else:
-                    script.SetText(scripttext)
-                script.encoding = f_encoding
-                script.workdir = workdir
+                if group_frame is not None:
+                    script.group_frame = group_frame
                 if setSavePoint:
                     script.EmptyUndoBuffer()
                     script.SetSavePoint()
                 self.refreshAVI = True
                 if self.previewWindowVisible:
                     self.ShowVideoFrame()
-                self.UpdateRecentFilesList(filename)
             # Misc stuff
             if os.path.isdir(dirname):
                 self.options['recentdir'] = dirname
             return index
-
+    
     def GetMarkedScriptFromFile(self, filename, returnFull=False):
         txt, f_encoding = self.GetTextFromFile(filename)
         lines = txt.rstrip().split('\n')
@@ -11415,8 +11396,8 @@ class MainFrame(wxp.Frame):
         index = self.OpenFile(filename=scriptname, f_encoding=item['f_encoding'], 
                               workdir=item['workdir'], scripttext=item['text'], 
                               setSavePoint=setSavePoint, splits=item['splits'], 
-                              framenum=item['current_frame'], group=item.get('group'), 
-                              group_frame=item.get('group_frame', 0))
+                              framenum=item['current_frame'], group=item.get('group', -1), 
+                              group_frame=item.get('group_frame'))
         if reload:
             self.reloadList.append((index, scriptname, txt))
         return index
