@@ -8497,8 +8497,9 @@ class MainFrame(wxp.Frame):
                                        _('Frame %s/%s (%#.4g fps)') % (frame, frame_count, fps))[0]:
                     progress.Destroy()
                     return False
-        average_fps = frame_count / (time.time() - initial_time)
-        progress.Update(100, _('Finished (%#.4g fps average)') % average_fps)
+        elapsed_time = time.time() - initial_time
+        progress.Update(100, _('Finished (%s fps average)') % (
+                        '%#.4g' % (frame_count / elapsed_time) if elapsed_time else 'INF'))
         progress.Destroy()
         return True
     
