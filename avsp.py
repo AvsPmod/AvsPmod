@@ -10811,12 +10811,10 @@ class MainFrame(wxp.Frame):
                     txt = self.scriptNotebook.GetPage(indexCur).GetText()
                     title = self.scriptNotebook.GetPageText(indexCur)
                     if txt == "" and title.startswith(self.NewFileName):
-                        boolNewTab = False
                         index = indexCur
                     else:
-                        boolNewTab = True
-                        self.NewTab()
-                        index = self.scriptNotebook.GetSelection()
+                        self.NewTab(select=False)
+                        index = self.scriptNotebook.GetPageCount() - 1
                     script = self.scriptNotebook.GetPage(index)
                     if dirname != '':
                         self.SetScriptTabname(basename, script)
@@ -10845,6 +10843,7 @@ class MainFrame(wxp.Frame):
                 if setSavePoint:
                     script.EmptyUndoBuffer()
                     script.SetSavePoint()
+                self.scriptNotebook.SetSelection(index)
                 self.refreshAVI = True
                 if self.previewWindowVisible:
                     self.ShowVideoFrame()
