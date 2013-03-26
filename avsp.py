@@ -7027,6 +7027,7 @@ class MainFrame(wxp.Frame):
         scriptWindow.lastSplitSliderPos = -300
         scriptWindow.userHidSliders = False
         scriptWindow.lastFramenum = 0
+        scriptWindow.lastLength = None
         scriptWindow.group = None
         scriptWindow.group_frame = 0
         scriptWindow.old_group = None
@@ -9410,7 +9411,27 @@ class MainFrame(wxp.Frame):
             else:
                 newSliderWindow.Show()
                 self.ShowSliderWindow(script)
-
+        else: # Update slider position and frame text control
+            frame = script.lastFramenum
+            if frame is not None:
+                bms = self.GetBookmarkFrameList()
+                if frame in bms and bms[frame] == 0:
+                    color = wx.RED
+                else:
+                    color = wx.BLACK
+                self.frameTextCtrl.SetForegroundColour(color)
+                self.frameTextCtrl.Replace(0, -1, str(frame))
+                if self.separatevideowindow:
+                    self.frameTextCtrl2.SetForegroundColour(color)
+                    self.frameTextCtrl2.Replace(0, -1, str(frame))
+                if script.lastLength is not None:
+                    self.videoSlider.SetRange(0, script.lastLength - 1, refresh=False)
+                    if self.separatevideowindow:
+                        self.videoSlider2.SetRange(0, script.lastLength - 1, refresh=False)
+                    self.videoSlider.SetValue(frame)
+                elif frame == 0:
+                    self.videoSlider.SetValue(0)
+        
         #~ # Update visuals...
         #~ if script.sliderWindowShown:
             #~ newSliderWindow.Show()
@@ -9418,8 +9439,7 @@ class MainFrame(wxp.Frame):
                 #~ self.videoSplitter.ReplaceWindow(oldSliderWindow, newSliderWindow)
             #~ else:
                 #~ self.videoSplitter.SplitVertically(self.videoWindow, newSliderWindow, script.lastSplitSliderPos)
-
-
+        
         # Misc
         #~ if not self.previewWindowVisible:
             #~ script.SetFocus()
@@ -10691,6 +10711,8 @@ class MainFrame(wxp.Frame):
                 scriptWindow.encoding = self.currentScript.encoding
                 scriptWindow.group = self.currentScript.group # must be before scriptWindow.SetText (or just call UpdateScriptTabname here)
                 scriptWindow.group_frame = self.currentScript.group_frame
+                scriptWindow.lastFramenum = self.currentScript.lastFramenum
+                scriptWindow.lastLength = self.currentScript.lastLength
             self.scriptNotebook.AddPage(scriptWindow,'%s (%s)' % (self.NewFileName, iMax+1), select=False)
             scriptWindow.SetText(text)
             scriptWindow.SelectAll()
@@ -10717,7 +10739,7 @@ class MainFrame(wxp.Frame):
     @AsyncCallWrapper
     def OpenFile(self, filename='', default='', f_encoding=None, workdir=None, 
                  scripttext=None, setSavePoint=True, splits=None, framenum=None, 
-                 group=-1, group_frame=None):
+                 last_length=None, group=-1, group_frame=None):
         r'''OpenFile(filename='', default='')
         
         If the string 'filename' is a path to an Avisynth script, this function opens 
@@ -10813,6 +10835,8 @@ class MainFrame(wxp.Frame):
                     script.workdir = workdir
                 if framenum is not None:
                     script.lastFramenum = framenum
+                if last_length is not None:
+                    script.lastLength = last_length
                 if splits is not None:
                     script.lastSplitVideoPos = splits[0]
                     script.lastSplitSliderPos = splits[1]
@@ -11397,8 +11421,8 @@ class MainFrame(wxp.Frame):
         index = self.OpenFile(filename=scriptname, f_encoding=item['f_encoding'], 
                               workdir=item['workdir'], scripttext=item['text'], 
                               setSavePoint=setSavePoint, splits=item['splits'], 
-                              framenum=item['current_frame'], group=item.get('group', -1), 
-                              group_frame=item.get('group_frame'))
+                              framenum=item['current_frame'], last_length=item.get('last_length'), 
+                              group=item.get('group', -1), group_frame=item.get('group_frame'))
         if reload:
             self.reloadList.append((index, scriptname, txt))
         return index
@@ -11478,8 +11502,8 @@ class MainFrame(wxp.Frame):
         splits = (script.lastSplitVideoPos, script.lastSplitSliderPos, script.sliderWindowShown)
         return dict(name=scriptname, selected=boolSelected, text=script.GetText(), 
                     hash=hash, splits=splits, current_frame=script.lastFramenum, 
-                    f_encoding=script.encoding, workdir=script.workdir, 
-                    group=script.group, group_frame=script.group_frame)
+                    last_length=script.lastLength, f_encoding=script.encoding, 
+                    workdir=script.workdir, group=script.group, group_frame=script.group_frame)
     
     def SaveCurrentImage(self, filename='', index=None, default='', quality=None):
         script, index = self.getScriptAtIndex(index)
@@ -13052,6 +13076,7 @@ class MainFrame(wxp.Frame):
         script.oldAutoSliderInfo = script.autoSliderInfo
         script.oldToggleTags = script.toggleTags
         script.lastFramenum = framenum
+        script.lastLength = script.AVI.Framecount
         return True
 
     def LayoutVideoWindows(self, w=None, h=None, resize=True, forcefit=False, forceRefresh=False):
