@@ -9387,7 +9387,7 @@ class MainFrame(wxp.Frame):
                     script.lastFramenum = None
             if script.group is not None and script.group == self.oldGroup:
                 if self.options['applygroupoffsets']:
-                    script.lastFramenum = self.oldLastFramenum + script.group_frame - self.oldGroupFrame
+                    script.lastFramenum = max(0, self.oldLastFramenum + script.group_frame - self.oldGroupFrame)
                 else:
                     script.lastFramenum = None
             elif script.group == self.oldGroup is None and self.options['enableframepertab'] and not self.options['enableframepertab_same']:
