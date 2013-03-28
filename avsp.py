@@ -8085,7 +8085,7 @@ class MainFrame(wxp.Frame):
         self.OnGroupClearAllTabGroups(event)
     
     def OnMenuVideoGroupAssignTabGroup(self, event):
-        label = self.tab_group_menu.FindItemById(event.GetId()).GetLabel()
+        label = event.GetEventObject().GetLabel(event.GetId())
         self.AssignTabGroup(label)
     
     def OnMenuVideoGotoLastScrolled(self, event):
@@ -10407,6 +10407,17 @@ class MainFrame(wxp.Frame):
         win = event.GetEventObject()
         self.lastContextMenuWin = win
         pos = win.ScreenToClient(event.GetPosition())
+        # update 'video -> add tab to group' submenu
+        group_menu_id = win.contextMenu.FindItem(_('Add tab to group'))
+        if group_menu_id is not None:
+            group_menu = win.contextMenu.FindItemById(group_menu_id).GetSubMenu()
+            group = self.currentScript.group
+            if group is None:
+                group = _('None')
+            id = group_menu.FindItem(group)
+            group_menu.Check(id, True)
+            id = group_menu.FindItem(_('Apply offsets'))
+            group_menu.Check(id, self.options['applygroupoffsets'])
         try:
             win.PopupMenu(win.contextMenu, pos)
         except AttributeError:
