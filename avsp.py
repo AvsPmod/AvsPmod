@@ -10409,7 +10409,7 @@ class MainFrame(wxp.Frame):
         pos = win.ScreenToClient(event.GetPosition())
         # update 'video -> add tab to group' submenu
         group_menu_id = win.contextMenu.FindItem(_('Add tab to group'))
-        if group_menu_id is not None:
+        if group_menu_id != wx.NOT_FOUND:
             group_menu = win.contextMenu.FindItemById(group_menu_id).GetSubMenu()
             group = self.currentScript.group
             if group is None:
