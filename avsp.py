@@ -7214,9 +7214,7 @@ class MainFrame(wxp.Frame):
             value='{0} ({1})'.format(_('Samples'), self.options['autocrop_samples']), 
             min=1, initial=self.options['autocrop_samples'], 
             style=wx.TE_PROCESS_ENTER|wx.SP_ARROW_KEYS|wx.ALIGN_RIGHT)
-        dlg.Bind(wx.EVT_SPINCTRL, lambda event : 
-            self.options.__setitem__('autocrop_samples', event.GetEventObject().GetValue()), 
-            spinAutocrop)
+        dlg.Bind(wx.EVT_SPINCTRL, self.OnCropAutocropSamples, spinAutocrop)
         autocropSizer = wx.BoxSizer(wx.HORIZONTAL)
         autocropSizer.Add(buttonAutocrop, 0, wx.ALIGN_CENTER|wx.ALL, 5)
         autocropSizer.Add(spinAutocrop, 0, wx.ALIGN_CENTER|wx.ALL, 5)
@@ -10029,6 +10027,12 @@ class MainFrame(wxp.Frame):
         button.running = not button.running 
         if button.running:
             wx.CallAfter(self.Autocrop, button)
+    
+    def OnCropAutocropSamples(self, event):
+        new_sample_size = event.GetEventObject().GetValue()
+        if new_sample_size != self.options['autocrop_samples']:
+            self.options['autocrop_samples'] = new_sample_size
+            self.currentScript.autocrop_values = None
     
     def Autocrop(self, button):
         '''Run crop editor's auto-crop option'''
