@@ -7880,11 +7880,13 @@ class MainFrame(wxp.Frame):
             wx.TheClipboard.Close()
 
     def OnMenuCopyAvisynthError(self, event):
-        if self.currentScript.AVI and self.currentScript.AVI.error_message and not wx.TheClipboard.IsOpened():            
-            text_data = wx.TextDataObject(self.currentScript.AVI.error_message)
-            wx.TheClipboard.Open()
-            wx.TheClipboard.SetData(text_data)
-            wx.TheClipboard.Close()
+        if self.currentScript.AVI:           
+            error_message = self.currentScript.AVI.error_message or self.currentScript.AVI.clip.GetError()
+            if error_message and not wx.TheClipboard.IsOpened(): 
+                text_data = wx.TextDataObject(error_message)
+                wx.TheClipboard.Open()
+                wx.TheClipboard.SetData(text_data)
+                wx.TheClipboard.Close()
             
     def OnMenuCopyStatusBar(self, event):
         if not wx.TheClipboard.IsOpened():
@@ -8184,7 +8186,10 @@ class MainFrame(wxp.Frame):
         bmp = wx.EmptyBitmap(w, h)
         mdc = wx.MemoryDC()
         mdc.SelectObject(bmp)
-        script.AVI.DrawFrame(self.currentframenum, mdc)
+        if not script.AVI.DrawFrame(self.currentframenum, mdc):
+            wx.MessageBox(u'\n\n'.join((_('Error requesting frame {number}'.format(number=self.currentframenum)), 
+                          script.AVI.clip.GetError())), _('Error'), style=wx.OK|wx.ICON_ERROR)
+            return False
         bmp_data = wx.BitmapDataObject(bmp)
         if wx.TheClipboard.Open():
             wx.TheClipboard.SetData(bmp_data)
@@ -8484,6 +8489,12 @@ class MainFrame(wxp.Frame):
         previous_frame = -1
         for frame in range(frame_count):
             script.AVI.clip.GetFrame(frame)
+            error = script.AVI.clip.GetError()
+            if error:
+                progress.Destroy()
+                wx.MessageBox(u'\n\n'.join((_('Error requesting frame {number}'.format(number=frame)), 
+                              error)), _('Error'), style=wx.OK|wx.ICON_ERROR)
+                return False
             now = time.time()
             delta = now - previous_time
             if delta > 0.1:
@@ -10041,7 +10052,11 @@ class MainFrame(wxp.Frame):
             crop_values = []
             for i, frame in enumerate(frames):
                 button.SetLabel(_('Cancel') + ' ({0}/{1})'.format(i+1, samples))
-                crop_values.append(clip.AutocropFrame(frame, tol))
+                crop_values_frame = clip.AutocropFrame(frame, tol)
+                if not crop_values_frame:
+                    button.SetLabel(_('Auto-crop'))
+                    return
+                crop_values.append(crop_values_frame)
                 wx.Yield()
                 if not button.running:
                     button.SetLabel(_('Auto-crop'))
@@ -11577,7 +11592,10 @@ class MainFrame(wxp.Frame):
             bmp = wx.EmptyBitmap(w, h)
             mdc = wx.MemoryDC()
             mdc.SelectObject(bmp)
-            script.AVI.DrawFrame(self.currentframenum, mdc)
+            if not script.AVI.DrawFrame(self.currentframenum, mdc):
+                wx.MessageBox(u'\n\n'.join((_('Error requesting frame {number}'.format(number=self.currentframenum)), 
+                              script.AVI.clip.GetError())), _('Error'), style=wx.OK|wx.ICON_ERROR)
+                return False
             ext = os.path.splitext(filename)[1].lower()
             if ext not in extlist:
                 ext = filter if filter else '.bmp'
@@ -12960,7 +12978,30 @@ class MainFrame(wxp.Frame):
         if framenum >= script.AVI.Framecount:
             framenum = script.AVI.Framecount-1
         self.currentframenum = framenum
-
+        
+        # Update video slider
+        self.videoSlider.SetValue(framenum)
+        bms = self.GetBookmarkFrameList()
+        if framenum in bms and bms[framenum] == 0:
+            color = wx.RED
+        else:
+            color = wx.BLACK
+        self.frameTextCtrl.SetForegroundColour(color)
+        self.frameTextCtrl.Replace(0, -1, str(framenum))
+        if self.separatevideowindow:
+            self.videoSlider2.SetValue(framenum)
+            self.frameTextCtrl2.SetForegroundColour(color)
+            self.frameTextCtrl2.Replace(0, -1, str(framenum))
+        
+        # Check for errors when retrieving the frame
+        script.AVI.clip.GetFrame(framenum)
+        error = script.AVI.clip.GetError()
+        if error is not None:
+            self.HidePreviewWindow()
+            wx.MessageBox(u'\n\n'.join((_('Error requesting frame {number}'.format(number=framenum)), 
+                          error)), _('Error'), style=wx.OK|wx.ICON_ERROR)
+            return False
+        
         self.videoPaneSizer.Layout()
         #~ self.videoSplitter.UpdateSize()
 
@@ -13022,19 +13063,6 @@ class MainFrame(wxp.Frame):
         if scroll is not None:
             self.videoWindow.Scroll(*scroll)
             self.Thaw()
-        # Update various elements
-        self.videoSlider.SetValue(framenum)
-        bms = self.GetBookmarkFrameList()
-        if framenum in bms and bms[framenum] == 0:
-            color = wx.RED
-        else:
-            color = wx.BLACK
-        self.frameTextCtrl.SetForegroundColour(color)
-        self.frameTextCtrl.Replace(0, -1, str(framenum))
-        if self.separatevideowindow:
-            self.videoSlider2.SetValue(framenum)
-            self.frameTextCtrl2.SetForegroundColour(color)
-            self.frameTextCtrl2.Replace(0, -1, str(framenum))
         # If error clip, highlight the line with the error
         errmsg = script.AVI.error_message
         if errmsg is not None and not self.options['autoupdatevideo']:
@@ -13627,7 +13655,10 @@ class MainFrame(wxp.Frame):
                 dc = wx.MemoryDC()
                 bmp = wx.EmptyBitmap(w,h)
                 dc.SelectObject(bmp)
-                script.AVI.DrawFrame(frame, dc)
+                if not script.AVI.DrawFrame(frame, dc):
+                    wx.MessageBox(u'\n\n'.join((_('Error requesting frame {number}'.format(number=frame)), 
+                                  script.AVI.clip.GetError())), _('Error'), style=wx.OK|wx.ICON_ERROR)
+                    return
                 self.PaintCropRectangles(dc, script)
                 self.PaintTrimSelectionMark(dc, script, frame)
                 try: # DoPrepareDC causes NameError in wx2.9.1 and fixed in wx2.9.2
@@ -13641,7 +13672,10 @@ class MainFrame(wxp.Frame):
                     self.videoWindow.DoPrepareDC(dc)
                 except:
                     self.videoWindow.PrepareDC(dc)
-                script.AVI.DrawFrame(frame, dc)
+                if not script.AVI.DrawFrame(frame, dc):
+                    wx.MessageBox(u'\n\n'.join((_('Error requesting frame {number}'.format(number=frame)), 
+                                  script.AVI.clip.GetError())), _('Error'), style=wx.OK|wx.ICON_ERROR)
+                    return
         else:
             dc = wx.MemoryDC()
             w = script.AVI.Width
@@ -13651,7 +13685,10 @@ class MainFrame(wxp.Frame):
             else:
                 bmp = wx.EmptyBitmap(w,h)
                 dc.SelectObject(bmp)
-                script.AVI.DrawFrame(frame, dc)
+                if not script.AVI.DrawFrame(frame, dc):
+                    wx.MessageBox(u'\n\n'.join((_('Error requesting frame {number}'.format(number=frame)), 
+                                  script.AVI.clip.GetError())), _('Error'), style=wx.OK|wx.ICON_ERROR)
+                    return
                 if self.flip:
                     img = bmp.ConvertToImage()
                     if 'flipvertical' in self.flip:
@@ -13674,6 +13711,7 @@ class MainFrame(wxp.Frame):
                 wx.CallAfter(self.ShowVideoFrame)
                 self.firstToggled = False
         self.paintedframe = frame
+        return True
 
     def PaintTrimSelectionMark(self, dc, script, frame):
         if self.trimDialog.IsShown() and self.markFrameInOut:
@@ -16556,7 +16594,7 @@ class MainFrame(wxp.Frame):
         clip = pyavs.AvsClip(text, filename, workdir, display_clip=False, 
                              reorder_rgb=reorder_rgb, interlaced=self.interlaced)   
         if not clip.initialized or clip.IsErrorClip():
-            self.MacroMsgBox('\n\n'.join((_('Error loading the script'), clip.error_message)), 
+            self.MacroMsgBox(u'\n\n'.join((_('Error loading the script'), clip.error_message)), 
                              _('Error'))
             return
         if not frames:
@@ -16604,12 +16642,18 @@ class MainFrame(wxp.Frame):
                 y4m_frame = False
             for i, frame in enumerate(frames):
                 if not callback or callback(i, frame, total_frames):
-                    cmd.stdin.write(clip.RawFrame(frame, y4m_frame))
-                else:
-                    cmd.terminate()
-                    if wait:
-                        return cmd, 1
-                    return cmd
+                    buf = clip.RawFrame(frame, y4m_frame)
+                    error = clip.clip.GetError()
+                    if not error:
+                        cmd.stdin.write(buf)
+                        continue
+                    else:
+                        self.MacroMsgBox(u'\n\n'.join((_('Error requesting frame {number}'.
+                                         format(number=frame)), error)), _('Error'))
+                cmd.terminate()
+                if wait:
+                    return cmd, 1
+                return cmd
             cmd.stdin.close()
             if callback and not callback(total_frames, frame, total_frames):
                 cmd.terminate()

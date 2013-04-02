@@ -266,20 +266,24 @@ class AvsClipBase:
                 frame = 0
             if frame >= self.Framecount:
                 frame = self.Framecount - 1
-            self.current_frame = frame
-            # Display
-            if self.display_clip:
-                src = self.display_clip.GetFrame(frame)
-                self.display_pitch = src.GetPitch()
-                self.pBits = src.GetReadPtr()
             # Original clip
-            frame = self.clip.GetFrame(frame)
-            self.pitch = frame.GetPitch()
-            self.pitchUV = frame.GetPitch(avisynth.PLANAR_U)
-            self.ptrY = frame.GetReadPtr()
+            src_frame = self.clip.GetFrame(frame)
+            if self.clip.GetError():
+                return False
+            self.pitch = src_frame.GetPitch()
+            self.pitchUV = src_frame.GetPitch(avisynth.PLANAR_U)
+            self.ptrY = src_frame.GetReadPtr()
             if not self.IsY8:
-                self.ptrU = frame.GetReadPtr(plane=avisynth.PLANAR_U)
-                self.ptrV = frame.GetReadPtr(plane=avisynth.PLANAR_V)
+                self.ptrU = src_frame.GetReadPtr(plane=avisynth.PLANAR_U)
+                self.ptrV = src_frame.GetReadPtr(plane=avisynth.PLANAR_V)
+            # Display clip
+            if self.display_clip:
+                display_frame = self.display_clip.GetFrame(frame)
+                if self.display_clip.GetError():
+                    return False
+                self.display_pitch = display_frame.GetPitch()
+                self.pBits = display_frame.GetReadPtr()
+            self.current_frame = frame
             return True
         return False
     
@@ -431,6 +435,8 @@ class AvsClipBase:
             if frame >= self.Framecount:
                 frame = self.Framecount - 1
             frame = self.clip.GetFrame(frame)
+            if self.clip.GetError():
+                return
             total_bytes = self.Width * self.Height * self.vi.BitsPerPixel() >> 3
             if y4m_header is not False:
                 X = ' X' + y4m_header if isinstance(y4m_header, basestring) else ''
@@ -461,7 +467,8 @@ class AvsClipBase:
     def AutocropFrame(self, frame, tol=70):
         '''Return crop values for a specific frame'''
         width, height = self.Width, self.Height
-        self._GetFrame(frame)
+        if not self._GetFrame(frame):
+            return
         GetPixelColor = self.GetPixelRGB if self.IsRGB else self.GetPixelYUV
         w, h = width - 1, height - 1
         top_left0, top_left1, top_left2 = GetPixelColor(0, 0)
@@ -725,6 +732,7 @@ if os.name == 'nt':
                     w, h = size 
                 DrawDibDraw(handleDib[0], hdc, offset[0], offset[1], w, h, 
                             self.pInfo, self.pBits, 0, 0, w, h, 0)
+                return True
 
 
 # Use generical wxPython drawing support on other platforms
@@ -794,6 +802,7 @@ else:
                     write_addr += w * 3
                 bmp = wx.BitmapFromBuffer(w, h, buf)
                 dc.DrawBitmap(bmp, 0, 0)
+                return True
 
 
 if __name__ == '__main__':
