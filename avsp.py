@@ -8185,7 +8185,7 @@ class MainFrame(wxp.Frame):
         mdc = wx.MemoryDC()
         mdc.SelectObject(bmp)
         if not script.AVI.DrawFrame(self.currentframenum, mdc):
-            wx.MessageBox(u'\n\n'.join((_('Error requesting frame {number}'.format(number=self.currentframenum)), 
+            wx.MessageBox(u'\n\n'.join((_('Error requesting frame {number}').format(number=self.currentframenum), 
                           script.AVI.clip.GetError())), _('Error'), style=wx.OK|wx.ICON_ERROR)
             return False
         bmp_data = wx.BitmapDataObject(bmp)
@@ -8490,7 +8490,7 @@ class MainFrame(wxp.Frame):
             error = script.AVI.clip.GetError()
             if error:
                 progress.Destroy()
-                wx.MessageBox(u'\n\n'.join((_('Error requesting frame {number}'.format(number=frame)), 
+                wx.MessageBox(u'\n\n'.join((_('Error requesting frame {number}').format(number=frame), 
                               error)), _('Error'), style=wx.OK|wx.ICON_ERROR)
                 return False
             now = time.time()
@@ -11597,7 +11597,7 @@ class MainFrame(wxp.Frame):
             mdc = wx.MemoryDC()
             mdc.SelectObject(bmp)
             if not script.AVI.DrawFrame(self.currentframenum, mdc):
-                wx.MessageBox(u'\n\n'.join((_('Error requesting frame {number}'.format(number=self.currentframenum)), 
+                wx.MessageBox(u'\n\n'.join((_('Error requesting frame {number}').format(number=self.currentframenum), 
                               script.AVI.clip.GetError())), _('Error'), style=wx.OK|wx.ICON_ERROR)
                 return False
             ext = os.path.splitext(filename)[1].lower()
@@ -13002,7 +13002,7 @@ class MainFrame(wxp.Frame):
         error = script.AVI.clip.GetError()
         if error is not None:
             self.HidePreviewWindow()
-            wx.MessageBox(u'\n\n'.join((_('Error requesting frame {number}'.format(number=framenum)), 
+            wx.MessageBox(u'\n\n'.join((_('Error requesting frame {number}').format(number=framenum), 
                           error)), _('Error'), style=wx.OK|wx.ICON_ERROR)
             return False
         
@@ -13660,7 +13660,7 @@ class MainFrame(wxp.Frame):
                 bmp = wx.EmptyBitmap(w,h)
                 dc.SelectObject(bmp)
                 if not script.AVI.DrawFrame(frame, dc):
-                    wx.MessageBox(u'\n\n'.join((_('Error requesting frame {number}'.format(number=frame)), 
+                    wx.MessageBox(u'\n\n'.join((_('Error requesting frame {number}').format(number=frame), 
                                   script.AVI.clip.GetError())), _('Error'), style=wx.OK|wx.ICON_ERROR)
                     return
                 self.PaintCropRectangles(dc, script)
@@ -13677,7 +13677,7 @@ class MainFrame(wxp.Frame):
                 except:
                     self.videoWindow.PrepareDC(dc)
                 if not script.AVI.DrawFrame(frame, dc):
-                    wx.MessageBox(u'\n\n'.join((_('Error requesting frame {number}'.format(number=frame)), 
+                    wx.MessageBox(u'\n\n'.join((_('Error requesting frame {number}').format(number=frame), 
                                   script.AVI.clip.GetError())), _('Error'), style=wx.OK|wx.ICON_ERROR)
                     return
         else:
@@ -13690,7 +13690,7 @@ class MainFrame(wxp.Frame):
                 bmp = wx.EmptyBitmap(w,h)
                 dc.SelectObject(bmp)
                 if not script.AVI.DrawFrame(frame, dc):
-                    wx.MessageBox(u'\n\n'.join((_('Error requesting frame {number}'.format(number=frame)), 
+                    wx.MessageBox(u'\n\n'.join((_('Error requesting frame {number}').format(number=frame), 
                                   script.AVI.clip.GetError())), _('Error'), style=wx.OK|wx.ICON_ERROR)
                     return
                 if self.flip:
@@ -16652,8 +16652,8 @@ class MainFrame(wxp.Frame):
                         cmd.stdin.write(buf)
                         continue
                     else:
-                        self.MacroMsgBox(u'\n\n'.join((_('Error requesting frame {number}'.
-                                         format(number=frame)), error)), _('Error'))
+                        self.MacroMsgBox(u'\n\n'.join((_('Error requesting frame {number}').
+                                         format(number=frame), error)), _('Error'))
                 cmd.terminate()
                 if wait:
                     return cmd, 1
