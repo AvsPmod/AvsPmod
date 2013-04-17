@@ -1275,8 +1275,17 @@ class OptionsDialog(wx.Dialog):
                         expand = misc['expand'] if 'expand' in misc else False
                         label_position = misc['label_position'] if 'label_position' in misc else wx.HORIZONTAL
                         list_type = wx.CB_DROPDOWN if 'writable' in misc and misc['writable'] else wx.CB_READONLY
-                        ctrl = wx.ComboBox(tabPanel, wx.ID_ANY, size=(width,-1), choices=misc['choices'], 
-                                           value=optionsValue, style=list_type)
+                        if misc['choices'] and not isinstance(misc['choices'][0], basestring):
+                            ctrl = wx.ComboBox(tabPanel, wx.ID_ANY, size=(width,-1), style=wx.CB_READONLY)
+                            ctrl.client_data = True # not ctrl.HasClientData() in wxWidgets 2.8
+                            for display_string, client_data in misc['choices']:
+                                ctrl.Append(display_string, client_data)
+                                if client_data == optionsValue:
+                                    ctrl.SetValue(display_string)
+                        else:
+                            ctrl = wx.ComboBox(tabPanel, wx.ID_ANY, size=(width,-1), choices=misc['choices'], 
+                                               value=optionsValue, style=list_type)
+                            ctrl.client_data = False
                         itemSizer = wx.BoxSizer(label_position)
                         staticText = wx.StaticText(tabPanel, wx.ID_ANY, label)
                         if tip:
@@ -1501,7 +1510,10 @@ class OptionsDialog(wx.Dialog):
                 index = ctrl.GetSelection()
                 newValue = ctrl.items[index][1]
             elif flag == OPT_ELEM_LIST:
-                newValue = ctrl.GetValue()
+                if ctrl.client_data: # ctrl.HasClientData() in wxWidgets 2.9+
+                    newValue = ctrl.GetClientData(ctrl.GetSelection())
+                else:
+                    newValue = ctrl.GetValue()
             elif flag == OPT_ELEM_BUTTON:
                 newValue = self.optionsOriginal[key]
             else: # flag == OPT_ELEM_STRING:
