@@ -4975,14 +4975,14 @@ class MainFrame(wxp.Frame):
                         if i18n.UpdateTranslationFile(os.path.join(self.programdir, self.translations_dir), 
                                                       self.options['lang'], self.version):
                             wx.MessageBox(_('%s translation file updated with new messages to translate') 
-                                            % self.options['lang'], _('Translation updated'))
+                                            % i18n.display_name(self.options['lang']), _('Translation updated'))
                         else:
                             wx.MessageBox(_('%s translation file updated.  No new messages to translate.') 
-                                            % self.options['lang'], _('Translation updated'))
+                                            % i18n.display_name(self.options['lang']), _('Translation updated'))
                 except NameError, err:
                     pass
             else:
-                wx.MessageBox(_("%s language couldn't be loaded") % self.options['lang'], 
+                wx.MessageBox(_("%s language couldn't be loaded") % i18n.display_name(self.options['lang']), 
                               _('Error'), style=wx.OK|wx.ICON_ERROR)
                 self.options['lang'] = 'eng'
         
@@ -5968,13 +5968,14 @@ class MainFrame(wxp.Frame):
     
     def getTranslations(self):
         '''Return the list of 'translation_lng.py' files within the translations subfolder'''
-        translation_list = set(('eng',))
+        translation_list = set()
+        translation_list.add((i18n.display_name('eng'), 'eng'))
         re_lng = re.compile(r'translation_(\w{3})\.py[co]?', re.I)
         if os.path.isdir(self.translations_dir):
             for file in os.listdir(self.translations_dir): 
                 match = re_lng.match(file)
                 if match:
-                    translation_list.add(match.group(1))
+                    translation_list.add((i18n.display_name(match.group(1)), match.group(1)))
         return sorted(translation_list)
     
     def createWindowElements(self):
