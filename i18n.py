@@ -45,6 +45,7 @@ toolsdir = 'tools'
 macrosdir = 'macros'
 
 def main(version=global_vars.version):
+    """Generate __translation_new.py"""
     
     argsList = ['avsp.py wxp.py pyavs.py pyavs_avifile.py global_vars.py']
     # Get additional files to translate from the tools directory
@@ -196,6 +197,7 @@ def UpdateTranslationFile(dir, lang=None, version=global_vars.version):
             '# touch line breaks (\\n) and any words inside formatted strings (ie, any \n'
             '# portions of the text which look like {...}, %(...)s, %(...)i, etc.)\n'
             ).split('\n')
+            extra_txt = None
         else:
             newlines = []
             boolStartLines = True

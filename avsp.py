@@ -4964,6 +4964,9 @@ class MainFrame(wxp.Frame):
             print>>sys.stderr, '{0}: {1}'.format(_('Error'), _('Damaged {0}. Using default settings.').format(', '.join(self.loaderror)))
         
         # Update the translation file if necessary
+        for path, lang in self.getTranslations(return_paths=True):
+            if not os.stat(path).st_size:
+                i18n.UpdateTranslationFile(self.translations_dir, lang, self.version)
         if self.options['lang'] != 'eng':
             if translation:
                 try:
@@ -4972,7 +4975,7 @@ class MainFrame(wxp.Frame):
                     except AttributeError:
                         translation_version = None
                     if translation_version != self.version:
-                        if i18n.UpdateTranslationFile(os.path.join(self.programdir, self.translations_dir), 
+                        if i18n.UpdateTranslationFile(os.path.join(self.translations_dir), 
                                                       self.options['lang'], self.version):
                             wx.MessageBox(_('%s translation file updated with new messages to translate') 
                                             % i18n.display_name(self.options['lang']), _('Translation updated'))
@@ -5966,16 +5969,25 @@ class MainFrame(wxp.Frame):
             ),
         )
     
-    def getTranslations(self):
+    def getTranslations(self, return_paths=False):
         '''Return the list of 'translation_lng.py' files within the translations subfolder'''
-        translation_list = set()
-        translation_list.add((i18n.display_name('eng'), 'eng'))
-        re_lng = re.compile(r'translation_(\w{3})\.py[co]?', re.I)
+        if return_paths:
+            paths = []
+            re_lng = re.compile(r'translation_(\w{3})\.py', re.I)
+        else:
+            translation_list = set()
+            translation_list.add((i18n.display_name('eng'), 'eng'))
+            re_lng = re.compile(r'translation_(\w{3})\.py[co]?', re.I)
         if os.path.isdir(self.translations_dir):
             for file in os.listdir(self.translations_dir): 
                 match = re_lng.match(file)
                 if match:
-                    translation_list.add((i18n.display_name(match.group(1)), match.group(1)))
+                    if return_paths:
+                        paths.append((os.path.join(self.translations_dir, file), match.group(1)))
+                    else:
+                        translation_list.add((i18n.display_name(match.group(1)), match.group(1)))
+        if return_paths:
+            return paths
         return sorted(translation_list)
     
     def createWindowElements(self):
