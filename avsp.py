@@ -14551,21 +14551,15 @@ class MainFrame(wxp.Frame):
             sizer = script.sliderSizer
         parent = script.sliderWindow
         isRescaled = False
-        if mod:            
-            m = re.search(r'([\d.+-]+)%', labelTxt)
-            try:
-                minValue2 = int(m.group(1))
+        if not mod:            
+            if labelTxt[-1] == '+':
+                minValue2 = 0
+                mod = (maxValue - minValue) / 100.
                 isRescaled = True
-            except:
-                self.IdleCall.append((wx.MessageBox, (_('Invalid slider tag for rescaling!\nAccept only +, -, or an integer.'), _('Warning'), wx.OK|wx.ICON_EXCLAMATION, self), {})) 
-        elif labelTxt[-1] == '+':
-            minValue2 = 0
-            mod = (maxValue - minValue) / 100.
-            isRescaled = True
-        elif labelTxt[-1] == '-':
-            minValue2 = -100
-            mod = (maxValue - minValue) / 200.
-            isRescaled = True
+            elif labelTxt[-1] == '-':
+                minValue2 = -100
+                mod = (maxValue - minValue) / 200.
+                isRescaled = True
         if isRescaled:
             def Rescale(val):
                 return minValue2 + (val - minValue)/mod
