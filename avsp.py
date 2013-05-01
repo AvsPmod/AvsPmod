@@ -1403,7 +1403,32 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
             #~ else:
                 #~ self.ShowFilterDocumentation(self.GetSelectedText())
         return word
-
+    
+    def IsString(self, pos):
+        if pos == self.GetTextLength():
+            return self.IsString(pos - 1)
+        return self.GetStyleAt(pos) in (self.STC_AVS_STRING, self.STC_AVS_TRIPLE, self.STC_AVS_STRINGEOL)
+    
+    def GetStringRange(self, pos):
+        if not self.IsString(pos):
+            return
+        start = end = pos
+        last_pos = self.GetTextLength()
+        if pos == last_pos:
+            start -= 1
+        else:
+            while end + 1 <= last_pos and self.IsString(end + 1):
+                end += 1
+        while start - 1 >= 0 and self.IsString(start - 1):
+            start -= 1
+        if self.GetStyleAt(start) == self.STC_AVS_TRIPLE:
+            start += 3
+            if self.GetStyleAt(end) != self.STC_AVS_STRINGEOL and end != last_pos:
+                end -= 2
+        else:
+            start += 1
+        return start, end
+    
     # Event functions
 
     def OnUpdateUI(self, event):
@@ -6527,7 +6552,7 @@ class MainFrame(wxp.Frame):
                     (
                     (_('Autocomplete'), 'Ctrl+Space', self.OnMenuEditAutocomplete, _('Show list of filternames matching the partial text at the cursor')),
                     (_('Autocomplete all'), 'Alt+Space', self.OnMenuEditAutocompleteAll, _("Disregard user's setting, show full list of filternames matching the partial text at the cursor")),
-                    (_('Autocomplete parameter'), 'Ctrl+Alt+Space', self.OnMenuEditAutocompleteParameter, _("If the first characters typed match a parameter name, complete it")),
+                    (_('Autocomplete parameter/filename'), 'Ctrl+Alt+Space', self.OnMenuEditAutocompleteParameterFilename, _("If the first characters typed match a parameter name, complete it. If they're typed on a string, autocomplete the filename (like TAB in a shell)")),
                     (_('Show calltip'), 'Ctrl+Shift+Space', self.OnMenuEditShowCalltip, _('Show the calltip for the filter (only works if cursor within the arguments)')),
                     (_('Show function definition'), 'Ctrl+Shift+D', self.OnMenuEditShowFunctionDefinition, _('Show the AviSynth function definition dialog for the filter')),
                     (_('Filter help file'), 'Shift+F1', self.OnMenuEditFilterHelp, _("Run the help file for the filter (only works if cursor within the arguments or name is highlighted)")),
@@ -7828,7 +7853,16 @@ class MainFrame(wxp.Frame):
         else:
             self.currentScript.ShowAutocomplete(all=True)
     
-    def OnMenuEditAutocompleteParameter(self, event):
+    def OnMenuEditAutocompleteParameterFilename(self, event):
+        script = self.currentScript
+        pos = script.GetCurrentPos()
+        if script.IsString(pos):
+            self.AutocompleteFilename()
+        else:
+            self.AutocompleteParameter()
+    
+    def AutocompleteParameter(self):
+        """Autocomplete parameter name in a function call"""
         script = self.currentScript
         pos = script.GetCurrentPos()
         arg_start_pos = script.WordStartPosition(pos, 1)
@@ -7854,6 +7888,45 @@ class MainFrame(wxp.Frame):
                     script.ReplaceTarget(arg_name + '=')
                     script.GotoPos(pos + len(arg_name) + 1 - len(chrs))
                     break
+    
+    def AutocompleteFilename(self):
+        """Shell-like filename autocomplete"""
+        script = self.currentScript
+        pos = script.GetCurrentPos()
+        start_end = script.GetStringRange(pos)
+        if not start_end:
+            return
+        start, end = start_end
+        if script.GetStyleAt(start) == script.STC_AVS_TRIPLE:
+            line = script.LineFromPosition(pos)
+            start = max(start, script.PositionFromLine(line))
+            end = min(end, script.GetLineEndPosition(line))
+        old_text = script.GetTextRange(start, end)
+        ac_str = script.GetTextRange(start, pos)
+        if not ac_str:
+            return
+
+        dir, base = os.path.split(ac_str)
+        if not base:
+            return
+        try:
+            filenames = [path for path in os.listdir(dir or script.workdir or u'.') 
+                         if os.path.normcase(path).startswith(os.path.normcase(base))]
+        except OSError:
+            return
+        if filenames:
+            new_text = os.path.commonprefix(filenames)
+            if not new_text:
+                return
+            new_text = os.path.join(dir, new_text)
+            if os.path.isdir(os.path.join(dir, new_text)):
+                new_text += os.sep
+            if new_text == old_text:
+                return
+            script.SetTargetStart(start)
+            script.SetTargetEnd(end)
+            new_end = start + script.ReplaceTarget(new_text)
+            script.GotoPos(new_end)
     
     def OnMenuEditShowCalltip(self, event):
         if self.currentScript.CallTipActive():
