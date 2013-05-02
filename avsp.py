@@ -5933,7 +5933,7 @@ class MainFrame(wxp.Frame):
                 ((_("Don't show autocomplete when calltip is active"), wxp.OPT_ELEM_CHECK, 'calltipsoverautocomplete', _('When calltip is active, autocomplete will not be activate automatically. You can still show autocomplete manually'), dict() ), ),
                 ((_('Customize autocomplete keyword list...'), wxp.OPT_ELEM_BUTTON, 'autocompleteexclusions', _('Customize the keyword list shown in the autocomplete choice box'), dict(handler=self.OnCustomizeAutoCompList) ), ),
                 ((_('Autoparentheses level'), wxp.OPT_ELEM_RADIO, 'autoparentheses', _('Determines parentheses to insert upon autocompletion'), dict(choices=[(_('None " "'), 0),(_('Open "("'), 1),(_('Close "()"'), 2)])), ),
-                ((_('Preset activation key'), wxp.OPT_ELEM_RADIO, 'presetactivatekey', _('Determines which key activates the filter preset when the autocomplete box is visible'), dict(choices=[(_('Tab'), 'tab'),(_('Return'), 'return'),(_('None'), None)]) ), ),
+                ((_('Preset activation key'), wxp.OPT_ELEM_RADIO, 'presetactivatekey', _('Determines which key activates the filter preset when the autocomplete box is visible'), dict(choices=[(_('Tab'), 'tab'),(_('Return'), 'return'),(_('None'), 'none')]) ), ),
             ),
             (_('Video'),
                 ((_('Constantly update video while dragging'), wxp.OPT_ELEM_CHECK, 'dragupdate', _('Update the video constantly when dragging the frame slider'), dict() ), ),
