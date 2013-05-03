@@ -172,6 +172,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
         self.AutoCompSetAutoHide(1)
         self.AutoCompSetChooseSingle(0)
         self.AutoCompSetCancelAtStart(1)
+        self.AutoCompSetSeparator(ord('\n'))
         self.AutoCompStops(''' `~!@#$%^&*()+=[]{};:'",<.>/?\|''')
         # Margin options
         #~ self.SetMarginType(0, stc.STC_MARGIN_NUMBER)
@@ -200,6 +201,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
         self.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
         self.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
         self.Bind(wx.EVT_LEFT_DOWN, self.OnLeftMouseDown)
+        self.Bind(stc.EVT_STC_AUTOCOMP_SELECTION, self.OnAutocompleteSelection)
         self.Bind(stc.EVT_STC_CALLTIP_CLICK, self.OnCalltipClick)
         self.Bind(wx.EVT_KILL_FOCUS, self.OnKillFocus)
         self.Bind(wx.EVT_SET_FOCUS, self.OnSetFocus)
@@ -231,6 +233,8 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
             self.RegisterImage(2, smile_icon.GetBitmap())
             self.RegisterImage(3, question_icon.GetBitmap())            
             self.RegisterImage(4, rectangle_icon.GetBitmap())
+            self.RegisterImage(5, wx.ArtProvider.GetBitmap(wx.ART_FOLDER))
+            self.RegisterImage(6, wx.ArtProvider.GetBitmap(wx.ART_NORMAL_FILE))
         else:
             self.ClearRegisteredImages()
         # General options
@@ -673,6 +677,8 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
         self.EndUndoAction()
 
     def ShowAutocomplete(self, all=False, auto=0):
+        self.autocomplete_function = True
+        self.AutoCompStops(''' `~!@#$%^&*()+=[]{};:'",<.>/?\|''')
         pos = self.GetCurrentPos()
         startwordpos = self.WordStartPosition(pos,1)
         if pos == startwordpos:
@@ -757,7 +763,9 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                             pass
                         elif question*10 >= (comma+1)*7:
                             keywords[i] += '?3'                
-                self.AutoCompShow(len(word), ' '.join(keywords))
+                self.AutoCompShow(len(word), '\n'.join(keywords))
+                if self.CallTipActive():
+                    self.CallTipCancelCustom()
             #~ if len(keywords) == 1:
                 #~ self.FinishAutocomplete()
         elif auto == 0 and pos - startwordpos > 0:
@@ -839,13 +847,92 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
         elif level==2:
             self.InsertText(pos,'()')
             self.GotoPos(pos+1)
-
+    
+    def AutocompleteFilename(self):
+        """Autocomplete a filename string, showing choices if necessary"""
+        pos = self.GetCurrentPos()
+        str_range = self.GetStringRange(pos)
+        if not str_range:
+            return
+        start, end = str_range
+        if self.GetStyleAt(start) == self.STC_AVS_TRIPLE: # only current line
+            line = self.LineFromPosition(pos)
+            start = max(start, self.PositionFromLine(line))
+            end = min(end, self.GetLineEndPosition(line))
+        ac_str = self.GetTextRange(start, pos)
+        if os.path.isdir(ac_str):
+            dir = ac_str
+            base = ''
+        else:
+            dir, base = os.path.split(ac_str)
+        try:
+            filenames = sorted([path for path in os.listdir(dir or self.workdir or unicode(os.curdir)) 
+                                if not base or os.path.normcase(path).startswith(os.path.normcase(base))], 
+                               key=lambda s: s.upper())
+        except OSError:
+            return
+        if filenames:
+            if len(filenames) == 1:
+                self.AutocompleteReplaceText(start, end, os.path.join(dir, filenames[0]))
+            else:
+                self.autocomplete_filename_params = pos, start, end, dir
+                if self.app.options['autocompleteicons']:
+                    filenames = [u'{0}?{1}'.format(file, 5 if os.path.isdir(os.path.join(dir, file)) 
+                                 else 6) for file in filenames]
+                self.autocomplete_function = False
+                self.AutoCompStops('')
+                self.AutoCompShow(len(base), '\n'.join(filenames))
+                if self.CallTipActive():
+                    self.CallTipCancelCustom()
+    
+    def AutocompleteReplaceText(self, start, end, new_text):
+        """Used on filename autocomplete, instead of the default handler"""
+        if new_text != self.GetTextRange(start, end):
+            self.SetTargetStart(start)
+            self.SetTargetEnd(end)
+            new_end = start + self.ReplaceTarget(new_text)
+            self.GotoPos(new_end)
+        else:
+            self.GotoPos(end)
+        if os.path.isdir(new_text):
+            def autocomplete_again():
+                wx.GetApp().Yield(True)
+                self.AutocompleteFilename()
+            wx.CallAfter(autocomplete_again)
+    
+    def AutocompleteParameter(self):
+        """Autocomplete parameter name in a function call"""
+        pos = self.GetCurrentPos()
+        arg_start_pos = self.WordStartPosition(pos, 1)
+        chrs = self.GetTextRange(arg_start_pos, pos).lower()
+        if not chrs:
+            return
+        openpos = self.GetOpenParenthesesPos(pos - 1)
+        if openpos is None:
+            return
+        wordstartpos = self.WordStartPosition(openpos, 1)
+        if openpos == wordstartpos:
+            wordstartpos = self.WordStartPosition(self.WordStartPosition(openpos, 0), 1)
+        if wordstartpos != -1:
+            function_name = self.GetTextRange(wordstartpos, openpos)
+            args_script = [arg[0].lower() for arg in self.GetFilterScriptArgInfo(openpos)]
+            for arg_name in (arg[2].strip('"') for arg in self.GetFilterCalltipArgInfo(function_name) 
+                             if arg[2].startswith('"') and arg[2].endswith('"')):
+                arg_name_lower = arg_name.lower()
+                if arg_name_lower.startswith(chrs) and arg_name_lower not in args_script:
+                    default = arg[-1].split()
+                    self.SetTargetStart(arg_start_pos)
+                    self.SetTargetEnd(pos)
+                    self.ReplaceTarget(arg_name + '=')
+                    self.GotoPos(pos + len(arg_name) + 1 - len(chrs))
+                    break
+    
     def UpdateCalltip(self, force=False):
         caretPos = self.GetCurrentPos()
         # Cancel under certain conditions
         boolHasFocus = (self.app.FindFocus() == self)
         boolIsComment = (self.GetStyleAt(caretPos - 1) in self.commentStyle)
-        if not self.app.options['calltips'] or not boolHasFocus or boolIsComment:
+        if not self.app.options['calltips'] or not boolHasFocus or self.AutoCompActive() or boolIsComment:
             self.CallTipCancelCustom()
             return
         # Determine the positions of the filter within the script
@@ -1584,7 +1671,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                 #~ if keywords[i] in self.app.options['autocompleteexclusions']:
                     #~ del keywords[i]
             #~ if keywords:
-                #~ self.AutoCompShow(1, ' '.join(keywords))
+                #~ self.AutoCompShow(1, '\n'.join(keywords))
         keys = (wx.WXK_ESCAPE, wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER, wx.WXK_TAB)
         if event.GetKeyCode() not in keys\
         and not self.AutoCompActive()\
@@ -1605,23 +1692,22 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
     def OnKeyDown(self,event):
         key = event.GetKeyCode()
         #~ flags = event.GetModifiers()
-        if self.AutoCompActive() and key in (wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER, wx.WXK_TAB) and not (event.ControlDown() or event.AltDown() or event.ShiftDown()):
-            if self.GetCurrentPos() != self.GetAnchor():
-                self.AutoCompCancel()
-                return
-            self.FinishAutocomplete(key=key)
-            #~ if key == wx.WXK_TAB:
-                #~ self.app.tab_processed = True
-        #~ elif key == wx.WXK_TAB and mod == wx.MOD_NONE:
-            #~ self.app.OnMenuEditIndentSelection()
-        #~ elif key in (wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER) and not event.ControlDown():
-            #~ pos = self.GetCurrentPos()
-            #~ line = self.LineFromPosition(pos)
-            #~ indentText = self.GetTextRange(self.PositionFromLine(line), self.GetLineIndentPosition(line))
-            #~ self.ReplaceSelection('\n'+indentText)
-            #~ level = self.GetFoldLevel(line)
-            #~ if level & stc.STC_FOLDLEVELHEADERFLAG:
-                #~ self.SetFoldLevel(line+1, level & stc.STC_FOLDLEVELNUMBERMASK)
+        if (self.AutoCompActive() and self.autocomplete_function and 
+            key in (wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER, wx.WXK_TAB) and 
+            not (event.ControlDown() or event.AltDown() or event.ShiftDown())):
+                self.FinishAutocomplete(key=key)
+                #~ if key == wx.WXK_TAB:
+                    #~ self.app.tab_processed = True
+            #~ elif key == wx.WXK_TAB and mod == wx.MOD_NONE:
+                #~ self.app.OnMenuEditIndentSelection()
+            #~ elif key in (wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER) and not event.ControlDown():
+                #~ pos = self.GetCurrentPos()
+                #~ line = self.LineFromPosition(pos)
+                #~ indentText = self.GetTextRange(self.PositionFromLine(line), self.GetLineIndentPosition(line))
+                #~ self.ReplaceSelection('\n'+indentText)
+                #~ level = self.GetFoldLevel(line)
+                #~ if level & stc.STC_FOLDLEVELHEADERFLAG:
+                    #~ self.SetFoldLevel(line+1, level & stc.STC_FOLDLEVELNUMBERMASK)
         else:
             event.Skip()
         
@@ -1641,7 +1727,16 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
     def OnLeftMouseDown(self, event):
         #~ self.CallTipCancelCustom()
         event.Skip()
-
+    
+    def OnAutocompleteSelection(self, event):
+        if self.autocomplete_function:
+            event.Skip() # processing on EVT_KEY_DOWN, because we need event.GetKeyCode()
+        else:
+            self.AutoCompCancel()
+            pos0, start, end0, dir = self.autocomplete_filename_params
+            self.AutocompleteReplaceText(start, end0 + self.GetCurrentPos() - pos0, 
+                                         os.path.join(dir, event.GetText()))
+    
     def OnCalltipClick(self, event):
         if wx.GetKeyState(wx.WXK_ALT) or wx.GetKeyState(wx.WXK_CONTROL) or wx.GetKeyState(wx.WXK_SHIFT):
             self.ShowFilterDocumentation()
@@ -6552,7 +6647,7 @@ class MainFrame(wxp.Frame):
                     (
                     (_('Autocomplete'), 'Ctrl+Space', self.OnMenuEditAutocomplete, _('Show list of filternames matching the partial text at the cursor')),
                     (_('Autocomplete all'), 'Alt+Space', self.OnMenuEditAutocompleteAll, _("Disregard user's setting, show full list of filternames matching the partial text at the cursor")),
-                    (_('Autocomplete parameter/filename'), 'Ctrl+Alt+Space', self.OnMenuEditAutocompleteParameterFilename, _("If the first characters typed match a parameter name, complete it. If they're typed on a string, autocomplete the filename (like TAB in a shell)")),
+                    (_('Autocomplete parameter/filename'), 'Ctrl+Alt+Space', self.OnMenuEditAutocompleteParameterFilename, _("If the first characters typed match a parameter name, complete it. If they're typed on a string, complete the filename")),
                     (_('Show calltip'), 'Ctrl+Shift+Space', self.OnMenuEditShowCalltip, _('Show the calltip for the filter (only works if cursor within the arguments)')),
                     (_('Show function definition'), 'Ctrl+Shift+D', self.OnMenuEditShowFunctionDefinition, _('Show the AviSynth function definition dialog for the filter')),
                     (_('Filter help file'), 'Shift+F1', self.OnMenuEditFilterHelp, _("Run the help file for the filter (only works if cursor within the arguments or name is highlighted)")),
@@ -7842,91 +7937,32 @@ class MainFrame(wxp.Frame):
         self.AutoUpdateVideo(force=True)
 
     def OnMenuEditAutocomplete(self, event):
-        if self.currentScript.AutoCompActive():
-            self.currentScript.CmdKeyExecute(wx.stc.STC_CMD_CANCEL)
-        else:
-            self.currentScript.ShowAutocomplete()
+        script = self.currentScript
+        if script.AutoCompActive():
+            script.CmdKeyExecute(wx.stc.STC_CMD_CANCEL)
+            if script.autocomplete_function:
+                    return
+        script.ShowAutocomplete()
         
     def OnMenuEditAutocompleteAll(self, event):
-        if self.currentScript.AutoCompActive():
-            self.currentScript.CmdKeyExecute(wx.stc.STC_CMD_CANCEL)
-        else:
-            self.currentScript.ShowAutocomplete(all=True)
+        script = self.currentScript
+        if script.AutoCompActive():
+            script.CmdKeyExecute(wx.stc.STC_CMD_CANCEL)
+            if script.autocomplete_function:
+                    return
+        script.ShowAutocomplete(all=True)
     
     def OnMenuEditAutocompleteParameterFilename(self, event):
         script = self.currentScript
         pos = script.GetCurrentPos()
         if script.IsString(pos):
-            self.AutocompleteFilename()
+            if script.AutoCompActive():
+                script.CmdKeyExecute(wx.stc.STC_CMD_CANCEL)
+                if not script.autocomplete_function:
+                    return
+            script.AutocompleteFilename()
         else:
-            self.AutocompleteParameter()
-    
-    def AutocompleteParameter(self):
-        """Autocomplete parameter name in a function call"""
-        script = self.currentScript
-        pos = script.GetCurrentPos()
-        arg_start_pos = script.WordStartPosition(pos, 1)
-        chrs = script.GetTextRange(arg_start_pos, pos).lower()
-        if not chrs:
-            return
-        openpos = script.GetOpenParenthesesPos(pos - 1)
-        if openpos is None:
-            return
-        wordstartpos = script.WordStartPosition(openpos, 1)
-        if openpos == wordstartpos:
-            wordstartpos = script.WordStartPosition(script.WordStartPosition(openpos, 0), 1)
-        if wordstartpos != -1:
-            function_name = script.GetTextRange(wordstartpos, openpos)
-            args_script = [arg[0].lower() for arg in script.GetFilterScriptArgInfo(openpos)]
-            for arg_name in (arg[2].strip('"') for arg in script.GetFilterCalltipArgInfo(function_name) 
-                             if arg[2].startswith('"') and arg[2].endswith('"')):
-                arg_name_lower = arg_name.lower()
-                if arg_name_lower.startswith(chrs) and arg_name_lower not in args_script:
-                    default = arg[-1].split()
-                    script.SetTargetStart(arg_start_pos)
-                    script.SetTargetEnd(pos)
-                    script.ReplaceTarget(arg_name + '=')
-                    script.GotoPos(pos + len(arg_name) + 1 - len(chrs))
-                    break
-    
-    def AutocompleteFilename(self):
-        """Shell-like filename autocomplete"""
-        script = self.currentScript
-        pos = script.GetCurrentPos()
-        start_end = script.GetStringRange(pos)
-        if not start_end:
-            return
-        start, end = start_end
-        if script.GetStyleAt(start) == script.STC_AVS_TRIPLE:
-            line = script.LineFromPosition(pos)
-            start = max(start, script.PositionFromLine(line))
-            end = min(end, script.GetLineEndPosition(line))
-        old_text = script.GetTextRange(start, end)
-        ac_str = script.GetTextRange(start, pos)
-        if not ac_str:
-            return
-
-        dir, base = os.path.split(ac_str)
-        if not base:
-            return
-        try:
-            filenames = [path for path in os.listdir(dir or script.workdir or u'.') 
-                         if os.path.normcase(path).startswith(os.path.normcase(base))]
-        except OSError:
-            return
-        if filenames:
-            new_text = os.path.commonprefix(filenames)
-            if not new_text:
-                return
-            new_text = os.path.join(dir, new_text)
-            if os.path.isdir(os.path.join(dir, new_text)):
-                new_text += os.sep
-            if new_text == old_text:
-                return
-            script.SetTargetStart(start)
-            script.SetTargetEnd(end)
-            new_end = start + script.ReplaceTarget(new_text)
-            script.GotoPos(new_end)
+            script.AutocompleteParameter()
     
     def OnMenuEditShowCalltip(self, event):
         if self.currentScript.CallTipActive():
