@@ -44,7 +44,6 @@ class AvsClipBase:
                  fitWidth=None, oldFramecount=240, display_clip=True, reorder_rgb=False, 
                  matrix=['auto', 'tv'], interlaced=False, swapuv=False):
         # Internal variables
-        self.workdir = ''
         self.initialized = False
         self.error_message = None
         self.current_frame = -1
@@ -119,7 +118,6 @@ class AvsClipBase:
             workdir = os.path.isdir(workdir) and workdir or scriptdirname
             if os.path.isdir(workdir):
                 self.env.SetWorkingDir(workdir)
-                self.workdir = workdir
             self.file = avisynth.AVS_Value(scriptbasename)
             self.name = avisynth.AVS_Value(filename)
             self.dir = avisynth.AVS_Value(scriptdirname)

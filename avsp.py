@@ -860,24 +860,25 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
             start = max(start, self.PositionFromLine(line))
             end = min(end, self.GetLineEndPosition(line))
         ac_str = self.GetTextRange(start, pos)
-        if os.path.isdir(ac_str):
+        prefix = '' if os.path.isabs(ac_str) else self.workdir
+        if os.path.isdir(os.path.join(prefix, ac_str)):
             dir = ac_str
             base = ''
         else:
             dir, base = os.path.split(ac_str)
         try:
-            filenames = sorted([path for path in os.listdir(dir or self.workdir or unicode(os.curdir)) 
+            filenames = sorted([path for path in os.listdir(os.path.join(prefix, dir) or unicode(os.curdir)) 
                                 if not base or os.path.normcase(path).startswith(os.path.normcase(base))], 
                                key=lambda s: s.upper())
         except OSError:
             return
         if filenames:
             if len(filenames) == 1:
-                self.AutocompleteReplaceText(start, end, os.path.join(dir, filenames[0]))
+                self.AutocompleteReplaceText(start, end, prefix, os.path.join(dir, filenames[0]))
             else:
-                self.autocomplete_filename_params = pos, start, end, dir
+                self.autocomplete_filename_params = pos, start, end, prefix, dir
                 if self.app.options['autocompleteicons']:
-                    filenames = [u'{0}?{1}'.format(file, 5 if os.path.isdir(os.path.join(dir, file)) 
+                    filenames = [u'{0}?{1}'.format(file, 5 if os.path.isdir(os.path.join(prefix, dir, file)) 
                                  else 6) for file in filenames]
                 self.autocomplete_case = 'filename'
                 self.AutoCompStops('')
@@ -885,7 +886,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                 if self.CallTipActive():
                     self.CallTipCancelCustom()
     
-    def AutocompleteReplaceText(self, start, end, new_text):
+    def AutocompleteReplaceText(self, start, end, prefix, new_text):
         """Used on filename autocomplete, instead of the default handler"""
         if new_text != self.GetTextRange(start, end):
             self.SetTargetStart(start)
@@ -894,7 +895,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
             self.GotoPos(new_end)
         else:
             self.GotoPos(end)
-        if os.path.isdir(new_text):
+        if os.path.isdir(os.path.join(prefix, new_text)):
             def autocomplete_again():
                 wx.GetApp().Yield(True)
                 self.AutocompleteFilename()
@@ -903,10 +904,6 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
     def AutocompleteParameter(self):
         """Autocomplete parameter name in a function call"""
         pos = self.GetCurrentPos()
-        arg_start_pos = self.WordStartPosition(pos, 1)
-        chrs = self.GetTextRange(arg_start_pos, pos).lower()
-        if not chrs:
-            return
         openpos = self.GetOpenParenthesesPos(pos - 1)
         if openpos is None:
             return
@@ -915,19 +912,24 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
             wordstartpos = self.WordStartPosition(self.WordStartPosition(openpos, 0), 1)
         if wordstartpos != -1:
             matched_args = []
-            function_name = self.GetTextRange(wordstartpos, openpos)
-            args_script = [arg[0].lower() for arg in self.GetFilterScriptArgInfo(openpos)]
-            for arg_name in (arg[2].strip('"') for arg in self.GetFilterCalltipArgInfo(function_name) 
+            arg_start_pos = self.WordStartPosition(pos, 1)
+            chrs = self.GetTextRange(arg_start_pos, pos).lower()
+            function_name = self.GetTextRange(wordstartpos, openpos).strip()
+            args_script = [arg[0].lower() for arg in self.GetFilterScriptArgInfo(openpos) or []]
+            for arg_name in (arg[2].strip('"') for arg in self.GetFilterCalltipArgInfo(function_name) or []
                              if arg[2].startswith('"') and arg[2].endswith('"')):
                 arg_name_lower = arg_name.lower()
                 if arg_name_lower.startswith(chrs) and arg_name_lower not in args_script:
                     matched_args.append(arg_name)
             if matched_args:
                 if len(matched_args) == 1:
+                    if unichr(self.GetCharAt(pos)) == '=':
+                        new_text = matched_args[0]
+                    else:
+                        new_text = matched_args[0] + '='
                     self.SetTargetStart(arg_start_pos)
                     self.SetTargetEnd(self.WordEndPosition(pos, 1))
-                    self.ReplaceTarget(matched_args[0] + '=')
-                    self.GotoPos(pos + len(matched_args[0]) + 1 - len(chrs))
+                    self.GotoPos(arg_start_pos + self.ReplaceTarget(new_text))
                 else:
                     matched_args.sort(key=lambda s: s.upper())
                     self.autocomplete_case = 'parameter'
@@ -1251,8 +1253,10 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
     def GetFilterCalltipArgInfo(self, word=None, calltip=None, ignore_opt_args=False):
         if calltip is None:
             # Get the user slider info from the filter's calltip
-            calltip = self.app.avsfilterdict[word.lower()][0].split('\n\n')[0]
-        
+            try:
+                calltip = self.app.avsfilterdict[word.lower()][0].split('\n\n')[0]
+            except KeyError:
+                return
         # Delete open and close parentheses
         if calltip.startswith('(') and calltip.endswith(')'):
             calltip = calltip[1:-1]
@@ -1742,12 +1746,18 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
             event.Skip() # processing on EVT_KEY_DOWN, because we need event.GetKeyCode()
         elif self.autocomplete_case == 'parameter':
             event.Skip()
-            wx.CallAfter(self.AddText, '=')
+            def add_equal_sign():
+                pos = self.GetCurrentPos()
+                if unichr(self.GetCharAt(pos)) == '=':
+                    self.GotoPos(pos + 1)
+                else:
+                    self.AddText('=')
+            wx.CallAfter(add_equal_sign)
         elif self.autocomplete_case == 'filename':
             self.AutoCompCancel()
-            pos0, start, end0, dir = self.autocomplete_filename_params
+            pos0, start, end0, prefix, dir = self.autocomplete_filename_params
             self.AutocompleteReplaceText(start, end0 + self.GetCurrentPos() - pos0, 
-                                         os.path.join(dir, event.GetText()))
+                                         prefix, os.path.join(dir, event.GetText()))
     
     def OnCalltipClick(self, event):
         if wx.GetKeyState(wx.WXK_ALT) or wx.GetKeyState(wx.WXK_CONTROL) or wx.GetKeyState(wx.WXK_SHIFT):
@@ -10987,6 +10997,7 @@ class MainFrame(wxp.Frame):
                     if dirname != '':
                         self.SetScriptTabname(basename, script)
                         script.filename = filename
+                        script.workdir = dirname
                     elif not root.startswith(self.NewFileName):
                         self.SetScriptTabname(root, script)
                     script.SetText(scripttext)
@@ -11237,7 +11248,6 @@ class MainFrame(wxp.Frame):
             ID = dlg.ShowModal()
             if ID == wx.ID_OK:
                 filename = dlg.GetPath()
-                script.workdir = os.path.basename(filename)
             dlg.Destroy()
         # Save script if filename exists (either given or user clicked OK)
         if filename:
@@ -11270,6 +11280,7 @@ class MainFrame(wxp.Frame):
             # Misc stuff
             script.SetSavePoint()
             script.filename = filename
+            script.workdir = os.path.dirname(filename)
             self.SetScriptTabname(basename, script)
             if os.path.isdir(dirname):
                 self.options['recentdir'] = dirname
@@ -13553,10 +13564,8 @@ class MainFrame(wxp.Frame):
                     if (self.options['useworkdir'] and self.options['alwaysworkdir']
                         and os.path.isdir(workdir_exp)):
                             workdir = workdir_exp
-                            used_workdir = True
                     else:
                         workdir = script.workdir
-                        used_workdir = False
                     # vpy hack, remove when VapourSynth is supported
                     if os.name == 'nt' and filename.endswith('.vpy'):
                         self.SaveScript(filename)
@@ -13582,8 +13591,6 @@ class MainFrame(wxp.Frame):
                         wx.MessageBox('%s\n\n%s' % (s1, s2), _('Error'), style=wx.OK|wx.ICON_ERROR)
                     script.AVI = None
                     return None
-                if not used_workdir:
-                    script.workdir = script.AVI.workdir
                 if not self.zoomwindow:
                     script.zoomwindow_actualsize = None
                     if boolOldAVI and (oldWidth, oldHeight) != (script.AVI.Width, script.AVI.Height):
