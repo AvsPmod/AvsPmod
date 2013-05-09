@@ -40,6 +40,8 @@ import traceback
 import cPickle
 import shutil
 import string
+import array
+import struct
 import codecs
 import re
 import functools
@@ -54,6 +56,7 @@ import StringIO
 import textwrap
 import ctypes
 import tempfile
+import zlib
 import glob
 import urllib2
 if os.name == 'nt':
@@ -11683,7 +11686,7 @@ class MainFrame(wxp.Frame):
                     last_length=script.lastLength, f_encoding=script.encoding, 
                     workdir=script.workdir, group=script.group, group_frame=script.group_frame)
     
-    def SaveCurrentImage(self, filename='', ask_filename=True, index=None, default='', quality=None):
+    def SaveCurrentImage(self, filename='', ask_filename=True, index=None, default='', quality=None, depth=8):
         script, index = self.getScriptAtIndex(index)
         if script is None or script.AVI is None:
             wx.MessageBox(_('No image to save'), _('Error'), style=wx.OK|wx.ICON_ERROR)
@@ -11750,19 +11753,27 @@ class MainFrame(wxp.Frame):
         else:
             filter = None
         if filename:
-            w = script.AVI.Width
-            h = script.AVI.Height
-            bmp = wx.EmptyBitmap(w, h)
-            mdc = wx.MemoryDC()
-            mdc.SelectObject(bmp)
-            if not script.AVI.DrawFrame(self.currentframenum, mdc):
-                wx.MessageBox(u'\n\n'.join((_('Error requesting frame {number}').format(number=self.currentframenum), 
-                              script.AVI.clip.GetError())), _('Error'), style=wx.OK|wx.ICON_ERROR)
-                return False
             ext = os.path.splitext(filename)[1].lower()
             if ext not in extlist:
                 ext = filter if filter else '.bmp'
                 filename = '%s%s' % (filename, ext)
+            #~if ext == '.png' and depth == 16:
+            if ext == '.png' and (depth == 16 or self.check_RGB48(script)):
+                ret = script.AVI.RawFrame(self.currentframenum)
+                if ret:
+                    self.SavePNG(filename, ret, script.AVI.Height / 2)
+                    return True
+            else:
+                w = script.AVI.Width
+                h = script.AVI.Height
+                bmp = wx.EmptyBitmap(w, h)
+                mdc = wx.MemoryDC()
+                mdc.SelectObject(bmp)
+                ret = script.AVI.DrawFrame(self.currentframenum, mdc)
+            if not ret:
+                wx.MessageBox(u'\n\n'.join((_('Error requesting frame {number}').format(number=self.currentframenum), 
+                              script.AVI.clip.GetError())), _('Error'), style=wx.OK|wx.ICON_ERROR)
+                return False
             #~ bmp.SaveFile(filename, self.imageFormats[ext][1])
             img = bmp.ConvertToImage()
             if ext==".jpg":
@@ -11782,7 +11793,135 @@ class MainFrame(wxp.Frame):
         else:
             return False
         return True
-
+    
+    @staticmethod
+    def check_RGB48(script):
+        """Check if the clip returned by 'script' is RGB48
+        
+        This is supposed to be removed when SetExtraControlCreator is 
+        implemented in wx.FileDialog
+        """
+        convey = ('Dither_convey_rgb48_on_yv12',  # Dither package
+                  'Dither_convert_yuv_to_rgb', 'rgb48yv12')
+        re_convey = re.compile(r'[^#]*(?:{0})|({1})\s*\(.*(?(1){2}).*\)'.
+                               format(*convey), re.I)
+        for i in range(script.GetLineCount() - 1, -1, -1):
+            if re_convey.match(script.GetLine(i)):
+                return True
+    
+    @staticmethod
+    def SavePNG(filename, buf, height, alpha=False, filter_type=None):
+        """PNG encoder in pure Python, based on png.py v0.0.15
+        
+        Only accepts a RGB48 or RGB64 buffer as input
+        """
+        # png.py license
+        #
+        # Copyright (C) 2006 Johann C. Rocholl <johann@browsershots.org>
+        # Portions Copyright (C) 2009 David Jones <drj@pobox.com>
+        # And probably portions Copyright (C) 2006 Nicko van Someren <nicko@nicko.org>
+        #
+        # Original concept by Johann C. Rocholl.
+        #
+        # LICENCE (MIT)
+        #
+        # Permission is hereby granted, free of charge, to any person
+        # obtaining a copy of this software and associated documentation files
+        # (the "Software"), to deal in the Software without restriction,
+        # including without limitation the rights to use, copy, modify, merge,
+        # publish, distribute, sublicense, and/or sell copies of the Software,
+        # and to permit persons to whom the Software is furnished to do so,
+        # subject to the following conditions:
+        #
+        # The above copyright notice and this permission notice shall be
+        # included in all copies or substantial portions of the Software.
+        #
+        # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+        # EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+        # MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+        # NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+        # BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+        # ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+        # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+        # SOFTWARE.        
+        
+        # http://www.w3.org/TR/PNG/
+        
+        byte_depth = 2
+        if alpha:
+            channels = 4
+            color_type = 6
+        else:
+            channels = 3
+            color_type = 2
+        bpp = channels * byte_depth
+        scanline_size = len(buf) / height
+        width = scanline_size / channels / byte_depth
+        if width <= 0 or height <= 0:
+            raise ValueError("width and height must be greater than zero")
+        if width > 2**32-1 or height > 2**32-1:
+            raise ValueError("width and height cannot exceed 2**32-1")
+        
+        def sub_filter(scanline):
+            """Apply 'Sub' filter (type 1) to a scanline"""
+            for i in range(scanline_size - 1, bpp - 1, -1):
+                scanline[i] = (scanline[i] - scanline[i - bpp]) % 256
+            return scanline
+        
+        if filter_type is None:
+            filter_type = 0 if width * height > 6e5 else 1 # don't filter HD
+        if filter_type == 0: # no filter
+            filter = lambda x:x
+        elif filter_type == 1: # 10-20% better compression, x3-6 overall time
+            filter = sub_filter
+        
+        def write_chunk(file, tag, data=''):
+            """
+            Write a PNG chunk to the output file, including length and
+            checksum.
+            """
+            file.write(struct.pack("!I", len(data)))
+            file.write(tag)
+            file.write(data)
+            checksum = zlib.crc32(tag)
+            checksum = zlib.crc32(data, checksum)
+            checksum &= 2**32-1 # signed int -> unsigned
+            file.write(struct.pack("!I", checksum))
+        
+        with open(filename, 'wb') as file:
+            
+            # PNG signature
+            signature = struct.pack('8B', 137, 80, 78, 71, 13, 10, 26, 10)
+            file.write(signature)
+            
+            # Image header
+            write_chunk(file, 'IHDR', struct.pack("!2I5B", width, height, 
+                                           byte_depth * 8, color_type, 0, 0, 0))
+            # Image data
+            compressor = zlib.compressobj(9)
+            chunk_limit = 2**20 # 1 MiB
+            data = array.array('B') # ugly memory management ahead
+            for i in range(0, len(buf), scanline_size):
+                data.append(filter_type)
+                scanline = array.array('H', buf[i:i + scanline_size])
+                scanline.byteswap() # network order (big-endian)
+                data.extend(filter(array.array('B', scanline.tostring())))
+                if len(data) > chunk_limit:
+                    compressed = compressor.compress(data)
+                    if len(compressed):
+                        write_chunk(file, 'IDAT', compressed)
+                    del data[:]
+            if len(data):
+                compressed = compressor.compress(data)
+            else:
+                compressed = ''
+            flushed = compressor.flush()
+            if len(compressed) or len(flushed):
+                write_chunk(file, 'IDAT', compressed + flushed)
+            
+            # Image trailer
+            write_chunk(file, 'IEND')
+    
     #~ def ZoomPreviewWindow(self, zoomfactor, show=True):
         #~ self.zoomfactor = zoomfactor
         #~ if show:
@@ -16394,8 +16533,8 @@ class MainFrame(wxp.Frame):
         return script.filename
     
     @AsyncCallWrapper
-    def MacroSaveImage(self, filename='', framenum=None, index=None, default='', quality=None):
-        r'''SaveImage(filename='', framenum=None, index=None, default='', quality=None)
+    def MacroSaveImage(self, filename='', framenum=None, index=None, default='', quality=None, depth=8):
+        r'''SaveImage(filename='', framenum=None, index=None, default='', quality=None, depth=8)
         
         Saves the video frame specified by the integer 'framenum' as a file specified 
         by the string 'filename', where the video corresponds with the script at the 
@@ -16408,6 +16547,10 @@ class MainFrame(wxp.Frame):
         A quality level (0-100) can be specified for JPEG output. If the quality is 
         not specified, it gets prompted from a dialog window.
         
+        The image can be saved as RGB48 if 'depth' is 16 and the ouptut format PNG.  
+        In this case it's assumed that the script returns a fake clip double the real 
+        height.
+        
         Returns True if the image was saved, False otherwise.
         
         '''
@@ -16419,7 +16562,7 @@ class MainFrame(wxp.Frame):
         if self.UpdateScriptAVI(script) is None:
             wx.MessageBox(_('Error loading the script'), _('Error'), style=wx.OK|wx.ICON_ERROR)
             return
-        return self.SaveCurrentImage(filename, index, default=default, quality=quality)
+        return self.SaveCurrentImage(filename, index, default=default, quality=quality, depth=depth)
     
     @AsyncCallWrapper
     def MacroGetVideoWidth(self, index=None):
