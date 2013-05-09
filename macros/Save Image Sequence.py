@@ -27,7 +27,7 @@ self = avsp.GetWindow()
 frames = avsp.Options.get('frames', _('Bookmarks'))
 show_progress = avsp.Options.get('show_progress', False)
 format = avsp.Options.get('format', _('Portable Network Graphics') + ' (*.png)')
-quality = avsp.Options.get('quality', 90)
+quality = self.options['jpegquality']
 use_dir = avsp.Options.get('use_dir', False)
 use_base = avsp.Options.get('use_base', False)
 if use_dir and not dirname:
@@ -45,19 +45,19 @@ filename = os.path.join(dirname, basename)
 format_dict = dict([(name[0], (ext, name[1])) for ext, name in self.imageFormats.iteritems()])
 while True:
     options = avsp.GetTextEntry(title=_('Save image sequence'),
-            message=[[_('Select frames'), _('Show saving progress')], 
-                     [_('Output format'), _('Quality (JPEG only)')], 
+            message=[[_('Select frames'), _('Output format')], 
+                     [_('Quality (JPEG only)'), _('Depth (PNG only)'), _('Show saving progress')], 
                      _('Output directory and basename. The padded frame number is added as suffix'), 
                      [_('Use always this directory'), _('Use always this basename')]],
             default=[[(_('Bookmarks'), _('Range between bookmarks'), _('Trim editor selections'), 
-                       _('All frames'), frames), show_progress], 
-                     [sorted(format_dict.keys()) + [format], (quality, 0, 100)], 
+                       _('All frames'), frames), sorted(format_dict.keys()) + [format]],
+                     [(quality, 0, 100), (8, 8, 16, 0, 8), show_progress], 
                      filename, [use_dir, use_base]],
-            types=[['list_read_only', 'check'], ['list_read_only', 'spin'], 'file_save', 
+            types=[['list_read_only', 'list_read_only'], ['spin', 'spin', 'check'], 'file_save', 
                    ['check', 'check']],
             )
     if not options: return
-    frames, show_progress, format, quality, filename, use_dir, use_base = options
+    frames, format, quality, depth, show_progress, filename, use_dir, use_base = options
     if not filename:
         avsp.MsgBox(_('Select an output directory and basename for the new images files'), _('Error'))
     else: break
@@ -66,7 +66,7 @@ while True:
 avsp.Options['frames'] = frames
 avsp.Options['show_progress'] = show_progress
 avsp.Options['format'] = format
-avsp.Options['quality'] = quality
+self.options['jpegquality'] = quality
 avsp.Options['use_dir'] = use_dir
 avsp.Options['use_base'] = use_base
 if use_dir:
@@ -132,9 +132,6 @@ if not re.search(r'%0\d+[di]', filename):
 filename += ext
 
 # Save the images
-bmp = wx.EmptyBitmap(AVS.Width, AVS.Height)
-mdc = wx.MemoryDC()
-mdc.SelectObject(bmp)
 total_frames = len(frames)
 if show_progress:
     progress = avsp.ProgressBox(total_frames, '', _('Saving images...'))
@@ -142,13 +139,9 @@ for i, frame in enumerate(frames):
     if show_progress and not avsp.SafeCall(progress.Update, 
                                            i, str(i+1) + ' / ' + str(total_frames))[0]:
         break
-    dc = mdc# if avsp.Version['AvsP'] > '2.3.1' else mdc.GetHDC()
-    AVS.DrawFrame(frame, dc)
-    if ext == '.jpg':
-        img = bmp.ConvertToImage()
-        img.SetOptionInt(wx.IMAGE_OPTION_QUALITY, quality)
-        if not img.SaveFile(filename % frame, format_dict[format][1]): break
-    elif not bmp.SaveFile(filename % frame, format_dict[format][1]): break
+    if not self.SaveImage(filename % frame, frame=frame, avs_clip=AVS, 
+                          quality=quality, depth=depth):
+        break
 if show_progress:
     avsp.SafeCall(progress.Destroy)
 else:

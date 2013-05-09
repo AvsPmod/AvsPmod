@@ -8326,10 +8326,10 @@ class MainFrame(wxp.Frame):
         self.ShowVideoOffset(offset, units=units)
 
     def OnMenuVideoSaveImage(self, event):
-        self.SaveCurrentImage()
+        self.SaveImage()
     
     def OnMenuVideoQuickSaveImage(self, event):
-        self.SaveCurrentImage(silent=True)
+        self.SaveImage(silent=True)
     
     def OnMenuVideoCopyImageClipboard(self, event):
         script = self.currentScript
@@ -11689,11 +11689,16 @@ class MainFrame(wxp.Frame):
                     last_length=script.lastLength, f_encoding=script.encoding, 
                     workdir=script.workdir, group=script.group, group_frame=script.group_frame)
     
-    def SaveCurrentImage(self, filename='', silent=False, index=None, default='', quality=None, depth=8):
+    def SaveImage(self, filename='', frame=None, silent=False, index=None, avs_clip=None, default='', quality=None, depth=None):
         script, index = self.getScriptAtIndex(index)
-        if script is None or script.AVI is None:
+        # avs_clip: use 'index' tab, but with an alternative clip
+        if not avs_clip:
+            avs_clip = script.AVI
+        if script is None or avs_clip is None:
             wx.MessageBox(_('No image to save'), _('Error'), style=wx.OK|wx.ICON_ERROR)
             return False
+        if frame is None:
+            frame = self.currentframenum
         extlist = self.imageFormats.keys()
         extlist.sort()
         if not filename:
@@ -11705,19 +11710,19 @@ class MainFrame(wxp.Frame):
                     defaultdir = source_dir
                 if not title:
                     title = os.path.splitext(source_base)[0]
-            id = self.currentScript.GetId()
+            id = script.GetId()
             if id == self.options['lastscriptid']:
                 fmt = self.options['imagenameformat']
             else:
                 fmt = '%s%06d'
             try:
-                defaultname =  fmt % (title, self.currentframenum)
+                defaultname =  fmt % (title, frame)
             except:
                 try:
-                    defaultname = fmt % self.currentframenum
+                    defaultname = fmt % frame
                 except:
                     try:
-                        defaultname = fmt % (self.currentframenum, title)
+                        defaultname = fmt % (frame, title)
                     except:
                         try:
                             defaultname = fmt % title
@@ -11747,7 +11752,7 @@ class MainFrame(wxp.Frame):
                     self.options['imagesavedir'] = os.path.dirname(filename)
                     fmt = os.path.splitext(os.path.basename(filename))[0]
                     fmt = re.sub(re.escape(title), '%s', fmt, 1)
-                    fmt = re.sub(r'([0]*?)%d' % self.currentframenum,
+                    fmt = re.sub(r'([0]*?)%d' % frame,
                                  lambda m: '%%0%dd' % len(m.group(0)) if m.group(1) else '%d',
                                  fmt, 1)
                     self.options['imagenameformat'] = fmt
@@ -11761,21 +11766,21 @@ class MainFrame(wxp.Frame):
                 ext = filter if filter else '.bmp'
                 filename = '%s%s' % (filename, ext)
             #~if ext == '.png' and depth == 16:
-            if ext == '.png' and (depth == 16 or self.check_RGB48(script)):
-                ret = script.AVI.RawFrame(self.currentframenum)
+            if ext == '.png' and (depth == 16 or depth is None and self.check_RGB48(script)):
+                ret = avs_clip.RawFrame(frame)
                 if ret:
-                    self.SavePNG(filename, ret, script.AVI.Height / 2)
+                    self.SavePNG(filename, ret, avs_clip.Height / 2)
                     return True
             else:
-                w = script.AVI.Width
-                h = script.AVI.Height
+                w = avs_clip.Width
+                h = avs_clip.Height
                 bmp = wx.EmptyBitmap(w, h)
                 mdc = wx.MemoryDC()
                 mdc.SelectObject(bmp)
-                ret = script.AVI.DrawFrame(self.currentframenum, mdc)
+                ret = avs_clip.DrawFrame(frame, mdc)
             if not ret:
-                wx.MessageBox(u'\n\n'.join((_('Error requesting frame {number}').format(number=self.currentframenum), 
-                              script.AVI.clip.GetError())), _('Error'), style=wx.OK|wx.ICON_ERROR)
+                wx.MessageBox(u'\n\n'.join((_('Error requesting frame {number}').format(number=frame), 
+                              avs_clip.clip.GetError())), _('Error'), style=wx.OK|wx.ICON_ERROR)
                 return False
             #~ bmp.SaveFile(filename, self.imageFormats[ext][1])
             img = bmp.ConvertToImage()
@@ -11870,7 +11875,7 @@ class MainFrame(wxp.Frame):
         def sub_filter(scanline):
             """Apply 'Sub' filter (type 1) to a scanline"""
             for i in range(scanline_size - 1, bpp - 1, -1):
-                scanline[i] = (scanline[i] - scanline[i - bpp]) % 256
+                scanline[i] = (scanline[i] - scanline[i - bpp]) & 0xFF
             return scanline
         
         if filter_type is None:
@@ -16538,7 +16543,7 @@ class MainFrame(wxp.Frame):
         return script.filename
     
     @AsyncCallWrapper
-    def MacroSaveImage(self, filename='', framenum=None, index=None, default='', quality=None, depth=8):
+    def MacroSaveImage(self, filename='', framenum=None, index=None, default='', quality=None, depth=None):
         r'''SaveImage(filename='', framenum=None, index=None, default='', quality=None, depth=8)
         
         Saves the video frame specified by the integer 'framenum' as a file specified 
@@ -16567,7 +16572,7 @@ class MainFrame(wxp.Frame):
         if self.UpdateScriptAVI(script) is None:
             wx.MessageBox(_('Error loading the script'), _('Error'), style=wx.OK|wx.ICON_ERROR)
             return
-        return self.SaveCurrentImage(filename, index, default=default, quality=quality, depth=depth)
+        return self.SaveImage(filename, index=index, default=default, quality=quality, depth=depth)
     
     @AsyncCallWrapper
     def MacroGetVideoWidth(self, index=None):
