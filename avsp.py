@@ -6806,6 +6806,7 @@ class MainFrame(wxp.Frame):
                 (_('Keep variables on refreshing'), '', self.OnMenuVideoReuseEnvironment, _('Create the new AviSynth clip on the same environment. Useful for tweaking parameters'), wx.ITEM_CHECK, False),
                 (''),
                 (_('Save image as...'), '', self.OnMenuVideoSaveImage, _('Save the current frame as a bitmap')),
+                (_('Quick save image'), '', self.OnMenuVideoQuickSaveImage, _('Save the current frame as a bitmap with a default filename, overwriting the file if already exists')),
                 (_('Copy image to clipboard'), '', self.OnMenuVideoCopyImageClipboard, _('Copy the current frame to the clipboard as a bitmap')),
                 (''),
                 (_('Refresh preview'), 'F5', self.OnMenuVideoRefresh, _('Force the script to reload and refresh the video frame')),
@@ -8320,6 +8321,9 @@ class MainFrame(wxp.Frame):
 
     def OnMenuVideoSaveImage(self, event):
         self.SaveCurrentImage()
+    
+    def OnMenuVideoQuickSaveImage(self, event):
+        self.SaveCurrentImage(ask_filename=False)
     
     def OnMenuVideoCopyImageClipboard(self, event):
         script = self.currentScript
@@ -11679,7 +11683,7 @@ class MainFrame(wxp.Frame):
                     last_length=script.lastLength, f_encoding=script.encoding, 
                     workdir=script.workdir, group=script.group, group_frame=script.group_frame)
     
-    def SaveCurrentImage(self, filename='', index=None, default='', quality=None):
+    def SaveCurrentImage(self, filename='', ask_filename=True, index=None, default='', quality=None):
         script, index = self.getScriptAtIndex(index)
         if script is None or script.AVI is None:
             wx.MessageBox(_('No image to save'), _('Error'), style=wx.OK|wx.ICON_ERROR)
@@ -11687,11 +11691,6 @@ class MainFrame(wxp.Frame):
         extlist = self.imageFormats.keys()
         extlist.sort()
         if not filename:
-            filefilterList = []
-            for ext in extlist:
-                filefilterList.append('%s|*%s' % (self.imageFormats[ext][0], ext))
-            maxFilterIndex = len(filefilterList) - 1
-            filefilter = '|'.join(filefilterList)
             defaultdir, title  = (default, '') if os.path.isdir(default) else os.path.split(default)
             isdir = os.path.isdir(defaultdir)
             if not isdir or not title:
@@ -11718,25 +11717,36 @@ class MainFrame(wxp.Frame):
                             defaultname = fmt % title
                         except:
                             defaultname = fmt
-            if os.name != 'nt' and '2.9' <= wx.version() < '2.9.5': # XXX
-                defaultname = defaultname + extlist[self.options['imagechoice']]
-            dlg = wx.FileDialog(self,_('Save current frame'), defaultdir, defaultname,
-                filefilter,wx.SAVE | wx.OVERWRITE_PROMPT,(0,0))
-            dlg.SetFilterIndex(min(self.options['imagechoice'], maxFilterIndex))
-            ID = dlg.ShowModal()
-            if ID == wx.ID_OK:
-                filename = dlg.GetPath()
-                filter = extlist[dlg.GetFilterIndex()]
-                self.options['imagechoice'] = dlg.GetFilterIndex()
-                self.options['imagesavedir'] = os.path.dirname(filename)
-                fmt = os.path.splitext(os.path.basename(filename))[0]
-                fmt = re.sub(re.escape(title), '%s', fmt, 1)
-                fmt = re.sub(r'([0]*?)%d' % self.currentframenum,
-                             lambda m: '%%0%dd' % len(m.group(0)) if m.group(1) else '%d',
-                             fmt, 1)
+            if ask_filename:
+                if os.name != 'nt' and '2.9' <= wx.version() < '2.9.5': # XXX
+                    defaultname = defaultname + extlist[self.options['imagechoice']]
+                filefilterList = []
+                for ext in extlist:
+                    filefilterList.append('%s|*%s' % (self.imageFormats[ext][0], ext))
+                maxFilterIndex = len(filefilterList) - 1
+                filefilter = '|'.join(filefilterList)
+                dlg = wx.FileDialog(self,_('Save current frame'), defaultdir, defaultname,
+                    filefilter,wx.SAVE | wx.OVERWRITE_PROMPT,(0,0))
+                dlg.SetFilterIndex(min(self.options['imagechoice'], maxFilterIndex))
+                ID = dlg.ShowModal()
+                if ID == wx.ID_OK:
+                    filename = dlg.GetPath()
+                    filter = extlist[dlg.GetFilterIndex()]
+                    self.options['imagechoice'] = dlg.GetFilterIndex()
+                    self.options['imagesavedir'] = os.path.dirname(filename)
+                    fmt = os.path.splitext(os.path.basename(filename))[0]
+                    fmt = re.sub(re.escape(title), '%s', fmt, 1)
+                    fmt = re.sub(r'([0]*?)%d' % self.currentframenum,
+                                 lambda m: '%%0%dd' % len(m.group(0)) if m.group(1) else '%d',
+                                 fmt, 1)
+                    self.options['imagenameformat'] = fmt
+                    self.options['lastscriptid'] = id
+                dlg.Destroy()
+            else:
+                filename = os.path.join(defaultdir, defaultname + 
+                                        extlist[self.options['imagechoice']])
                 self.options['imagenameformat'] = fmt
                 self.options['lastscriptid'] = id
-            dlg.Destroy()
         else:
             filter = None
         if filename:
