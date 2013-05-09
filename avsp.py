@@ -5263,6 +5263,8 @@ class MainFrame(wxp.Frame):
             'trimreversechoice': 0,
             'trimmarkframes': True,
             'imagechoice': 0,
+            'jpegquality': 70,
+            'askjpegquality': True,
             'imagenameformat': '%s%06d',
             'imagesavedir': '',
             'useimagesavedir': True,
@@ -6095,6 +6097,7 @@ class MainFrame(wxp.Frame):
                 ((_('Save *.avs scripts with AvsPmod markings'), wxp.OPT_ELEM_CHECK, 'savemarkedavs', _('Save AvsPmod-specific markings (user sliders, toggle tags, etc) as a commented section in the *.avs file'), dict() ), ),
                 ((_('Start dialogs on the last used directory'), wxp.OPT_ELEM_CHECK, 'userecentdir', _("If unchecked, the script's directory is used"), dict() ), ),
                 ((_('Start save image dialogs on the last used directory'), wxp.OPT_ELEM_CHECK, 'useimagesavedir', _("If unchecked, the script's directory is used"), dict() ), ),
+                ((_('Ask for JPEG quality'), wxp.OPT_ELEM_CHECK, 'askjpegquality', _("When saving a JPEG image, prompt for the quality level. Use the value from the last time if not checked"), dict() ), ),
             ),
             (_('Misc'),
                 ((_('Language')+' *', wxp.OPT_ELEM_LIST, 'lang', _('Choose the language used for the interface'), dict(choices=self.getTranslations()) ), ),
@@ -8326,7 +8329,7 @@ class MainFrame(wxp.Frame):
         self.SaveCurrentImage()
     
     def OnMenuVideoQuickSaveImage(self, event):
-        self.SaveCurrentImage(ask_filename=False)
+        self.SaveCurrentImage(silent=True)
     
     def OnMenuVideoCopyImageClipboard(self, event):
         script = self.currentScript
@@ -11686,7 +11689,7 @@ class MainFrame(wxp.Frame):
                     last_length=script.lastLength, f_encoding=script.encoding, 
                     workdir=script.workdir, group=script.group, group_frame=script.group_frame)
     
-    def SaveCurrentImage(self, filename='', ask_filename=True, index=None, default='', quality=None, depth=8):
+    def SaveCurrentImage(self, filename='', silent=False, index=None, default='', quality=None, depth=8):
         script, index = self.getScriptAtIndex(index)
         if script is None or script.AVI is None:
             wx.MessageBox(_('No image to save'), _('Error'), style=wx.OK|wx.ICON_ERROR)
@@ -11720,7 +11723,12 @@ class MainFrame(wxp.Frame):
                             defaultname = fmt % title
                         except:
                             defaultname = fmt
-            if ask_filename:
+            if silent:
+                filename = os.path.join(defaultdir, defaultname + 
+                                        extlist[self.options['imagechoice']])
+                self.options['imagenameformat'] = fmt
+                self.options['lastscriptid'] = id
+            else:
                 if os.name != 'nt' and '2.9' <= wx.version() < '2.9.5': # XXX
                     defaultname = defaultname + extlist[self.options['imagechoice']]
                 filefilterList = []
@@ -11745,11 +11753,6 @@ class MainFrame(wxp.Frame):
                     self.options['imagenameformat'] = fmt
                     self.options['lastscriptid'] = id
                 dlg.Destroy()
-            else:
-                filename = os.path.join(defaultdir, defaultname + 
-                                        extlist[self.options['imagechoice']])
-                self.options['imagenameformat'] = fmt
-                self.options['lastscriptid'] = id
         else:
             filter = None
         if filename:
@@ -11778,10 +11781,12 @@ class MainFrame(wxp.Frame):
             img = bmp.ConvertToImage()
             if ext==".jpg":
                 if quality is None:
-                    quality = self.MacroGetTextEntry('Introduce the JPEG Quality (0-100)', 
-                                   (70, 0, 100), 'JPEG Quality', 'spin', 100)
-                    if quality == '':
-                        quality = 70
+                    quality = self.options['jpegquality']
+                    if self.options['askjpegquality'] and not silent:
+                        ret = self.MacroGetTextEntry(_('Introduce the JPEG Quality (0-100)'), 
+                                       (quality, 0, 100), _('JPEG Quality'), 'spin', 100)
+                        if ret != '':
+                            quality = self.options['jpegquality'] = ret
                 else:
                     quality = int(quality)
                 if quality > 100:
