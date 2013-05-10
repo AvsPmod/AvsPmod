@@ -8329,7 +8329,10 @@ class MainFrame(wxp.Frame):
         self.SaveImage()
     
     def OnMenuVideoQuickSaveImage(self, event):
-        self.SaveImage(silent=True)
+        path = self.SaveImage(silent=True)
+        if path:
+            text = _(u'Image saved to "{0}"').format(path)
+            self.GetStatusBar().SetStatusText(text)
     
     def OnMenuVideoCopyImageClipboard(self, event):
         script = self.currentScript
@@ -11696,7 +11699,7 @@ class MainFrame(wxp.Frame):
             avs_clip = script.AVI
         if script is None or avs_clip is None:
             wx.MessageBox(_('No image to save'), _('Error'), style=wx.OK|wx.ICON_ERROR)
-            return False
+            return
         if frame is None:
             frame = self.currentframenum
         extlist = self.imageFormats.keys()
@@ -11770,7 +11773,7 @@ class MainFrame(wxp.Frame):
                 ret = avs_clip.RawFrame(frame)
                 if ret:
                     self.SavePNG(filename, ret, avs_clip.Height / 2)
-                    return True
+                    return filename
             else:
                 w = avs_clip.Width
                 h = avs_clip.Height
@@ -11781,7 +11784,7 @@ class MainFrame(wxp.Frame):
             if not ret:
                 wx.MessageBox(u'\n\n'.join((_('Error requesting frame {number}').format(number=frame), 
                               avs_clip.clip.GetError())), _('Error'), style=wx.OK|wx.ICON_ERROR)
-                return False
+                return
             #~ bmp.SaveFile(filename, self.imageFormats[ext][1])
             img = bmp.ConvertToImage()
             if ext==".jpg":
@@ -11800,9 +11803,7 @@ class MainFrame(wxp.Frame):
                     quality = 0
                 img.SetOption(wx.IMAGE_OPTION_QUALITY, str(quality))
             img.SaveFile(filename, self.imageFormats[ext][1])
-        else:
-            return False
-        return True
+            return filename
     
     @staticmethod
     def check_RGB48(script):
@@ -16561,7 +16562,7 @@ class MainFrame(wxp.Frame):
         In this case it's assumed that the script returns a fake clip double the real 
         height.
         
-        Returns True if the image was saved, False otherwise.
+        Returns the choosen filename if the image was saved, None otherwise.
         
         '''
         script, index = self.getScriptAtIndex(index)
