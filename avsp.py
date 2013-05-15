@@ -7834,7 +7834,7 @@ class MainFrame(wxp.Frame):
         script.SelectAll()
 
     def OnMenuEditInsertSource(self, event):
-        self.InsertSource()
+        self.InsertSource(check_selection=True)
 
     def OnMenuEditInsertFilename(self, event):
         filefilter = _('All files') + ' (*.*)|*.*'
@@ -12030,8 +12030,13 @@ class MainFrame(wxp.Frame):
                 self.IdleCall.append((self.ShowVideoFrame, tuple(), dict(focus=False)))
         self.oldlinenum = newlinenum
 
-    def InsertSource(self, filename=''):
+    def InsertSource(self, filename='', check_selection=False):
         script = self.currentScript
+        if check_selection and not filename:
+            text = script.GetSelectedText()
+            ext = os.path.splitext(text)[1].lstrip('.')
+            if ext in self.options['templates']:
+                filename = text
         strsource, filename = self.GetSourceString(filename, return_filename=True)
         if script.GetText() == '' and filename is not None and os.path.splitext(filename)[1].lower() in ('.avs', '.avsi', '.vpy'):
             self.OpenFile(filename)
@@ -12058,9 +12063,9 @@ class MainFrame(wxp.Frame):
         with 'default' as the default filename; it can be just a directory or basename.
         
         '''
-        extlist = self.options['templates'].keys()
-        extlist.sort()
         if not filename or not os.path.isfile(filename):
+            extlist = self.options['templates'].keys()
+            extlist.sort()
             extlist1 = ', '.join(extlist)
             extlist2 = ';*.'.join(extlist)
             filefilter = (_('Source files') + ' (%(extlist1)s)|*.%(extlist2)s|' + 
