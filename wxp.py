@@ -1800,13 +1800,16 @@ class ShortcutsDialog(wx.Dialog):
         menuItem.SetText(newLabel)
         
 class EditStringDictDialog(wx.Dialog):
-    def __init__(self, parent, infoDict, title='Edit', keyTitle='Key', valueTitle='Value', editable=False, insertable=False, about='', keyChecker=None, valueChecker=None):
+    def __init__(self, parent, infoDict, title='Edit', keyTitle='Key', 
+                 valueTitle='Value', editable=False, insertable=False, 
+                 about='', keyChecker=None, valueChecker=None, nag=True):
         wx.Dialog.__init__(self, parent, wx.ID_ANY, title, size=(500, 300), style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
         self.infoDict = infoDict.copy()
         self.keyTitle = keyTitle
         self.valueTitle = valueTitle
         self.keyChecker = keyChecker
         self.valueChecker = valueChecker
+        self.nag = nag
         self.previousKey = None
         self.editName = ''
         self.textChanged = False
@@ -1898,14 +1901,24 @@ class EditStringDictDialog(wx.Dialog):
         if event.IsEditCancelled():
             return
         newName = event.GetLabel()
+        if not newName:
+            event.Veto()
+            return
         if newName.lower() != self.editName.lower():
-            oldName = self.editName
-            dlg = wx.MessageDialog(self, _('Are you sure you want to rename from %(oldName)s to %(newName)s?') % locals(), _('Question'))
-            ID = dlg.ShowModal()
-            dlg.Destroy()
-            if ID != wx.ID_OK:
-                event.Veto()
-                return
+            if self.keyChecker:
+                msg = self.keyChecker(newName)
+                if msg is not None:
+                    wx.MessageBox(msg, _('Error'), style=wx.ICON_ERROR)
+                    event.Veto()
+                    return
+            if self.nag:
+                oldName = self.editName
+                dlg = wx.MessageDialog(self, _('Are you sure you want to rename from %(oldName)s to %(newName)s?') % locals(), _('Question'))
+                ID = dlg.ShowModal()
+                dlg.Destroy()
+                if ID != wx.ID_OK:
+                    event.Veto()
+                    return
         # "Rename" the key in the dictionary
         del self.infoDict[self.editName]
         self.infoDict[newName] = self.textCtrl.GetValue()
@@ -1957,7 +1970,7 @@ class EditStringDictDialog(wx.Dialog):
             self.infoDict[newKey] = newValue
             self.listCtrl.InsertStringItem(0, newKey)
             self.listCtrl.SelectLabel(newKey)
-            if newValue == '':
+            if newValue == '' and self.nag:
                 wx.MessageBox(_('Warning: no value entered for item %(newKey)s!') % locals(), _('Warning'))
                 self.textCtrl.SetFocus()
         

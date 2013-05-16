@@ -205,6 +205,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
         self.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
         self.Bind(wx.EVT_LEFT_DOWN, self.OnLeftMouseDown)
         self.Bind(stc.EVT_STC_AUTOCOMP_SELECTION, self.OnAutocompleteSelection)
+        self.Bind(stc.EVT_STC_USERLISTSELECTION, self.OnUserListSelection)
         self.Bind(stc.EVT_STC_CALLTIP_CLICK, self.OnCalltipClick)
         self.Bind(wx.EVT_KILL_FOCUS, self.OnKillFocus)
         self.Bind(wx.EVT_SET_FOCUS, self.OnSetFocus)
@@ -879,7 +880,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
             if len(filenames) == 1:
                 self.AutocompleteReplaceText(start, end, prefix, os.path.join(dir, filenames[0]))
             else:
-                self.autocomplete_filename_params = pos, start, end, prefix, dir
+                self.autocomplete_params = pos, start, end, prefix, dir
                 if self.app.options['autocompleteicons']:
                     filenames = [u'{0}?{1}'.format(file, 5 if os.path.isdir(os.path.join(prefix, dir, file)) 
                                  else 6) for file in filenames]
@@ -940,6 +941,28 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                     self.AutoCompShow(len(chrs), '\n'.join(matched_args))
                     if self.CallTipActive():
                         self.CallTipCancelCustom()
+    
+    def InsertSnippet(self):
+        pos = self.GetCurrentPos()
+        start = self.WordStartPosition(pos, 1)
+        end = self.WordEndPosition(pos, 1)
+        word = self.GetTextRange(start, end)
+        if word in self.app.options['snippets']:
+            text = self.app.options['snippets'][word]
+            if text:
+                self.SetTargetStart(start)
+                self.SetTargetEnd(end)
+                self.GotoPos(start + self.ReplaceTarget(text))
+        else:
+            if self.AutoCompActive():
+                self.CmdKeyExecute(wx.stc.STC_CMD_CANCEL)
+                if self.autocomplete_case == 'snippet':
+                        return
+            tag_list = [tag for tag, text in self.app.options['snippets'].iteritems() if text]
+            if tag_list:
+                self.autocomplete_case = 'snippet'
+                self.autocomplete_params = pos
+                self.UserListShow(1, '\n'.join(sorted(tag_list)))    
     
     def UpdateCalltip(self, force=False):
         caretPos = self.GetCurrentPos()
@@ -1758,9 +1781,16 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
             wx.CallAfter(add_equal_sign)
         elif self.autocomplete_case == 'filename':
             self.AutoCompCancel()
-            pos0, start, end0, prefix, dir = self.autocomplete_filename_params
+            pos0, start, end0, prefix, dir = self.autocomplete_params
             self.AutocompleteReplaceText(start, end0 + self.GetCurrentPos() - pos0, 
                                          prefix, os.path.join(dir, event.GetText()))
+    
+    def OnUserListSelection(self, event):
+        if self.autocomplete_case == 'snippet':
+            start, end = self.autocomplete_params, self.GetCurrentPos()
+            self.SetTargetStart(start)
+            self.SetTargetEnd(end)
+            self.GotoPos(start + self.ReplaceTarget(self.app.options['snippets'][event.GetText()]))
     
     def OnCalltipClick(self, event):
         if wx.GetKeyState(wx.WXK_ALT) or wx.GetKeyState(wx.WXK_CONTROL) or wx.GetKeyState(wx.WXK_SHIFT):
@@ -5200,6 +5230,8 @@ class MainFrame(wxp.Frame):
                 'jpg': 'FFVideoSource(***, cache=false, seekmode=-1)',
                 'png': 'FFVideoSource(***, cache=false, seekmode=-1)',
             }
+        snippetsDict = {
+        }
         textstylesDict = {
             'default': 'face:Verdana,size:10,fore:#000000,back:#FFFFFF',
             'comment': 'face:Comic Sans MS,size:9,fore:#007F00,back:#FFFFFF',
@@ -5233,6 +5265,7 @@ class MainFrame(wxp.Frame):
         self.options = {
             # INTERNAL OPTIONS
             'templates': templateDict,
+            'snippets': snippetsDict,
             'textstyles': textstylesDict,
             #~ 'avskeywords': avsKeywords,
             #~ 'avsoperators': avsOperators,
@@ -6650,6 +6683,8 @@ class MainFrame(wxp.Frame):
                 (''),
                 (_('&Insert'),
                     (
+                    (_('Insert snippet'), 'F7', self.OnMenuEditInsertSnippet, _('Expand a snippet tag, or select a snippet from the list')),
+                    (''),
                     (_('Insert source...'), 'F9', self.OnMenuEditInsertSource, _('Choose a source file to insert into the text')),
                     (_('Insert filename...'), 'Shift+F9', self.OnMenuEditInsertFilename, _('Get a filename from a dialog box to insert into the text')),
                     (_('Insert plugin...'), 'F10', self.OnMenuEditInsertPlugin, _('Choose a plugin file to insert into the text')),
@@ -6840,6 +6875,7 @@ class MainFrame(wxp.Frame):
                 #~ (_('AviSynth function definition...'), '', self.OnMenuOptionsFilters, _('Edit the AviSynth function info for syntax highlighting and calltips')),
                 (_('Fonts and colors...'), '', self.OnMenuOptionsFontsAndColors, _('Edit the various AviSynth script fonts and colors')),
                 (_('Extension templates...'), '', self.OnMenuOptionsTemplates, _('Edit the extension-based templates for inserting sources')),
+                (_('Snippets...'), '', self.OnMenuOptionsSnippets, _('Edit insertable text snippets')),
                 (''),
                 (_('Keyboard shortcuts...'), '', self.OnMenuConfigureShortcuts, _('Configure the program keyboard shortcuts')),
                 (_('Program settings...'), '', self.OnMenuOptionsSettings, _('Configure program settings')),
@@ -7832,7 +7868,10 @@ class MainFrame(wxp.Frame):
     def OnMenuEditSelectAll(self, event):
         script = self.currentScript
         script.SelectAll()
-
+    
+    def OnMenuEditInsertSnippet(self, event):
+        self.currentScript.InsertSnippet()
+    
     def OnMenuEditInsertSource(self, event):
         self.InsertSource(check_selection=True)
 
@@ -8930,6 +8969,30 @@ class MainFrame(wxp.Frame):
         # Set the data
         if ID == wx.ID_OK:
             self.options['templates'] = dlg.GetDict()
+            with open(self.optionsfilename, mode='wb') as f:
+                cPickle.dump(self.options, f, protocol=0)
+        dlg.Destroy()
+
+    def OnMenuOptionsSnippets(self, event):
+        # Build and show the dialog
+        def keyChecker(key):
+            if not re.match(r'^\w+$', key):
+                return '%s\n%s' % (_('Insert aborted:'), _('Only alphanumeric and underscores allowed!'))
+        dlg = wxp.EditStringDictDialog(
+            self,
+            self.options['snippets'],
+            title=_('Edit insertable text snippets'),
+            keyTitle='  '+_('Tag'),
+            valueTitle=_('Snippet'),
+            editable=True,
+            insertable=True,
+            keyChecker=keyChecker,
+            nag=False
+        )
+        ID = dlg.ShowModal()
+        # Set the data
+        if ID == wx.ID_OK:
+            self.options['snippets'] = dlg.GetDict()
             with open(self.optionsfilename, mode='wb') as f:
                 cPickle.dump(self.options, f, protocol=0)
         dlg.Destroy()
