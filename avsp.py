@@ -5485,6 +5485,7 @@ class MainFrame(wxp.Frame):
             'imagechoice': 0,
             'jpegquality': 70,
             'askjpegquality': True,
+            'imagenamedefaultformat': '%s%06d',
             'imagenameformat': '%s%06d',
             'imagesavedir': '',
             'useimagesavedir': True,
@@ -6310,6 +6311,7 @@ class MainFrame(wxp.Frame):
                 ((_('Save *.avs scripts with AvsPmod markings'), wxp.OPT_ELEM_CHECK, 'savemarkedavs', _('Save AvsPmod-specific markings (user sliders, toggle tags, etc) as a commented section in the *.avs file'), dict() ), ),
                 ((_('Start dialogs on the last used directory'), wxp.OPT_ELEM_CHECK, 'userecentdir', _("If unchecked, the script's directory is used"), dict() ), ),
                 ((_('Start save image dialogs on the last used directory'), wxp.OPT_ELEM_CHECK, 'useimagesavedir', _("If unchecked, the script's directory is used"), dict() ), ),
+                ((_('Default image filename pattern'), wxp.OPT_ELEM_STRING, 'imagenamedefaultformat', _("Choose a default pattern for image filenames. %s -> script title, %06d -> frame number padded to six digits"), dict() ), ),
                 ((_('Ask for JPEG quality'), wxp.OPT_ELEM_CHECK, 'askjpegquality', _("When saving a JPEG image, prompt for the quality level. Use the value from the last time if not checked"), dict() ), ),
             ),
             (_('Misc'),
@@ -12008,7 +12010,7 @@ class MainFrame(wxp.Frame):
             if id == self.options['lastscriptid']:
                 fmt = self.options['imagenameformat']
             else:
-                fmt = '%s%06d'
+                fmt = self.options['imagenamedefaultformat']
             try:
                 defaultname =  fmt % (title, frame)
             except:
