@@ -59,6 +59,7 @@ import tempfile
 import zlib
 import glob
 import urllib2
+import cgi
 if os.name == 'nt':
     import _winreg
 from hashlib import md5
@@ -135,6 +136,33 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
             ):
         stc.StyledTextCtrl.__init__(self, parent, id, pos, size, style)
         self.app = app
+        self.styleInfo = {
+            self.STC_AVS_DEFAULT: ('default', ''),
+            self.STC_AVS_COMMENT: ('comment', ',eol'),
+            self.STC_AVS_ENDCOMMENT: ('endcomment', ''),
+            self.STC_AVS_BLOCKCOMMENT: ('blockcomment', ''),
+            self.STC_AVS_NUMBER: ('number', ''),
+            self.STC_AVS_STRING: ('string', ''),
+            self.STC_AVS_TRIPLE: ('stringtriple', ''),
+            self.STC_AVS_COREFILTER: ('internalfilter', ''),
+            self.STC_AVS_PLUGIN: ('externalfilter', ''),
+            self.STC_AVS_CLIPPROPERTY: ('clipproperty', ''),
+            self.STC_AVS_USERFUNCTION: ('userdefined', ''),
+            self.STC_AVS_OPERATOR: ('operator', ''),
+            self.STC_AVS_STRINGEOL: ('stringeol', ',eol'),
+            self.STC_AVS_USERSLIDER: ('userslider', ''),
+
+            self.STC_AVS_SCRIPTFUNCTION: ('internalfunction', ''),
+            self.STC_AVS_KEYWORD: ('keyword', ''),
+            self.STC_AVS_MISCWORD: ('miscword', ''),
+
+            stc.STC_STYLE_LINENUMBER: ('linenumber', ''),
+            stc.STC_STYLE_BRACELIGHT: ('bracelight', ''),
+            stc.STC_STYLE_BRACEBAD: ('badbrace', ''),
+            self.STC_AVS_NUMBERBAD: ('badnumber', ''),
+
+            self.STC_AVS_DATATYPE: ('datatype', ''),
+        }
         self.SetUserOptions()
         self.SetEOLMode(stc.STC_EOL_LF)
         #~ self.CmdKeyClear(stc.STC_KEY_TAB,0)
@@ -169,6 +197,18 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
             self.STC_AVS_STRINGEOL,
             self.STC_AVS_USERSLIDER,
         ]
+        self.stc_attr = ( # 'eol' not supported in html export
+            ('bold', 'italic', 'underline'),
+            ('fore', 'back', 'face', 'size'))
+        self.css_properties = {
+            'bold':      'font-weight',
+            'italic':    'font-style',
+            'fore':      'color',
+            'back':      'background-color',
+            'face':      'font-family',
+            'size':      'font-size',
+            'underline': 'text-decoration',
+        }
         # Auto-completion options
         self.AutoCompSetIgnoreCase(1)
         self.AutoCompSetDropRestOfWord(1)
@@ -424,33 +464,6 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
             #~ self.STC_AVS_STRINGEOL,
             #~ self.STC_AVS_USERSLIDER,
         #~ ]
-        styleInfo = (
-            (self.STC_AVS_DEFAULT, 'default', ''),
-            (self.STC_AVS_COMMENT, 'comment', ',eol'),
-            (self.STC_AVS_ENDCOMMENT, 'endcomment', ''),
-            (self.STC_AVS_BLOCKCOMMENT, 'blockcomment', ''),
-            (self.STC_AVS_NUMBER, 'number', ''),
-            (self.STC_AVS_STRING, 'string', ''),
-            (self.STC_AVS_TRIPLE, 'stringtriple', ''),
-            (self.STC_AVS_COREFILTER, 'internalfilter', ''),
-            (self.STC_AVS_PLUGIN, 'externalfilter', ''),
-            (self.STC_AVS_CLIPPROPERTY, 'clipproperty', ''),
-            (self.STC_AVS_USERFUNCTION, 'userdefined', ''),
-            (self.STC_AVS_OPERATOR, 'operator', ''),
-            (self.STC_AVS_STRINGEOL, 'stringeol', ',eol'),
-            (self.STC_AVS_USERSLIDER, 'userslider', ''),
-
-            (self.STC_AVS_SCRIPTFUNCTION, 'internalfunction', ''),
-            (self.STC_AVS_KEYWORD, 'keyword', ''),
-            (self.STC_AVS_MISCWORD, 'miscword', ''),
-
-            (stc.STC_STYLE_LINENUMBER, 'linenumber', ''),
-            (stc.STC_STYLE_BRACELIGHT, 'bracelight', ''),
-            (stc.STC_STYLE_BRACEBAD, 'badbrace', ''),
-            (self.STC_AVS_NUMBERBAD, 'badnumber', ''),
-
-            (self.STC_AVS_DATATYPE, 'datatype', ''),
-        )
         default = 'font:Arial, size:10, fore:#000000, back:#FFFFFF'
 
         # Global default styles for all languages
@@ -471,7 +484,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
             self.StyleSetSize(stc.STC_STYLE_DEFAULT, size)
         self.StyleClearAll()  # Reset all to be like the default
 
-        for style, key, extra in styleInfo:
+        for style, (key, extra) in self.styleInfo.iteritems():
             self.StyleSetSpec(style, textstyles.get(key, default) + extra)
             if monospaced:
                 self.StyleSetFaceName(style, face)
@@ -1554,6 +1567,143 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
         else:
             start += 1
         return start, end
+    
+    def GenerateHTML(self, title=None, ext_css=None):
+        """Return a HTML version of the text in the stc
+        
+        'ext_css' can be a filename for linking to an external style sheet.  
+        In that case a tuple (html, css) is returned
+        """
+        
+        # Override face and size with the monospace font if used
+        if self.app.options['usemonospacedfont']:
+            monospaced = self.GenerateCSSBlock('monospaced', join=False)
+            face = monospaced[self.css_properties['face']]
+            size = monospaced[self.css_properties['size']]
+            monospaced = face, size
+        else:
+            monospaced = None
+        
+        # Generate the body of the html and the style sheet
+        # a complete sheet if external, otherwise only the needed styles 
+        # without inheritable declarations 
+        body = list()
+        if not ext_css:
+            default_css = self.GenerateCSSBlock('default', join=False, 
+                                                monospaced=monospaced)
+            css = {'default': self.JoinCSSBlock('default', default_css)}
+            default_css = default_css.items()
+        last_style = self.GetStyleAt(0)
+        style_start = 0
+        length = self.GetLength()
+        if not length:
+            return
+        for pos in xrange(0, length + 1):
+            if pos != length:
+                style = self.GetStyleAt(pos)
+                if style == last_style:
+                    continue
+            style_name = self.styleInfo[last_style][0]
+            if not ext_css and style_name not in css:
+                css[style_name] = self.GenerateCSSBlock(style_name, default_css, 
+                                                        monospaced=monospaced)
+            text = cgi.escape(self.GetTextRange(style_start, pos), True)
+            if style_name != 'default':
+                text = u'<span class="{0}">{1}</span>'.format(style_name, text)
+            body.append(text)
+            last_style = style
+            style_start = pos
+        body = u'<body>\n<pre class="default">\n{0}\n</pre>\n</body>'.format(
+                                                                  ''.join(body))
+        css =  self.GenerateCSS(monospaced=monospaced) if ext_css else \
+               '\n'.join(css.values())
+        
+        # Generate the head, inserting the css if required
+        title = cgi.escape(title or _('AviSynth script'), True)
+        generator = cgi.escape(u'{0} v{1}'.format(global_vars.name, 
+                               global_vars.version), True)
+        if ext_css:
+            head_css = u'<link rel="stylesheet" type="text/css" '\
+                        'href="{0}">'.format(ext_css)
+        else:
+            head_css = u'<style type="text/css">\n{0}\n</style>'.format(css)
+        head = textwrap.dedent(u'''\
+            <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+            "http://www.w3.org/TR/html4/strict.dtd">
+            <html>
+            <head>
+            <meta http-equiv="content-type" content="text/html; charset=utf-8">
+            <meta name="generator" content="{0}">
+            <title>{1}</title>
+            {2}
+            </head>''').format(generator, title, head_css)
+        
+        # Return the html file, and optionally the style sheet
+        html = u'{0}\n{1}\n</html>'.format(head, body)
+        if ext_css:
+            return html, css
+        return html
+    
+    def GenerateCSS(self, monospaced=None):
+        """Generate a style sheet from the styled text in the STC
+        
+        Override face and size with 'monospaced', if given
+        """
+        css = []
+        for style, (key, extra) in self.styleInfo.iteritems():
+            css.append(self.GenerateCSSBlock(key, monospaced=monospaced))
+        return '\n'.join(css)
+    
+    def GenerateCSSBlock(self, style_name, default=None, monospaced=None, join=True):
+        """Return a CSS block from a STC style
+        
+        Don't include in the block declarations in 'default', if given
+        Override face and size with 'monospaced', if given
+        """
+        if not style_name in self.app.options['textstyles']:
+            return ''
+        if style_name == 'default' and default:
+            default = None
+        declarations = {}
+        for attr in self.app.options['textstyles'][style_name].split(','):
+            values = None
+            splitted_attr = attr.split(':')
+            if len(splitted_attr) == 1:
+                if attr in self.stc_attr[0]:
+                    values = self.css_properties[attr], attr
+            elif len(splitted_attr) == 2:
+                attr, value = splitted_attr
+                if attr in self.stc_attr[1]:
+                    if attr == 'face':
+                        if monospaced:
+                            value = monospaced[0]
+                        else: # add fallback
+                            if 'monospace' in style_name or 'string' in style_name:
+                                fallback = 'monospace'
+                            elif 'comment' in style_name:
+                                fallback = 'serif'
+                            else:
+                                fallback = 'sans-serif'
+                            value = u'"{0}", {1}'.format(value, fallback)
+                    elif attr == 'size':
+                        if monospaced:
+                            value = monospaced[1]
+                        else: # specify unit
+                            value += 'pt'
+                    values = self.css_properties[attr], value
+            if values and (not default or values not in default):
+                declarations[values[0]] = values[1]
+        if join:
+            return self.JoinCSSBlock(style_name, declarations)
+        return declarations
+    
+    @staticmethod
+    def JoinCSSBlock(css_class, css):
+        """Generate a CSS block from a property: value dict"""
+        declarations = []
+        for property, value in css.iteritems():
+            declarations.append(u"\n\t{0}: {1};".format(property, value))
+        return u".{0} {{{1}\n}}".format(css_class, ''.join(declarations))
     
     # Event functions
 
@@ -6639,6 +6789,7 @@ class MainFrame(wxp.Frame):
                 (_('Save script'), 'Ctrl+S', self.OnMenuFileSaveScript, _('Save the current script')),
                 (_('Save script as...'), 'Ctrl+Shift+S', self.OnMenuFileSaveScriptAs, _('Choose where to save the current script')),
                 (_('Reload script'), '', self.OnMenuFileReloadScript, _('Reopen the current script file if it has changed')),
+                (_('Export HTML'), '', self.OnMenuFileExportHTML, _('Save the current script as a HTML document')),
                 (_('&Print script'),
                     (
                     (_('Page setup'), '', self.OnMenuFilePageSetup, _('Configure page for printing')),
@@ -7704,6 +7855,9 @@ class MainFrame(wxp.Frame):
             wx.CallLater(300, CheckTabPosition)
         if self.scriptNotebook.dblClicked:
             wx.CallLater(300, setattr, self.scriptNotebook, 'dblClicked' ,False)        
+    
+    def OnMenuFileExportHTML(self, event):
+        self.ExportHTML()
     
     def OnMenuFilePageSetup(self, event):
         setup_dlg = wx.PageSetupDialog(self, self.print_data)
@@ -11552,7 +11706,48 @@ class MainFrame(wxp.Frame):
             expr = re.compile('\[%s(\s*=.*?)*?\].*?\[/%s\]' % (tagname, tagname), re.IGNORECASE|re.DOTALL)
             text = expr.sub(self.re_replace2, text)
         return text
-
+    
+    def ExportHTML(self, filename=None, ext_css=None, index=None):
+        """Save a script as a HTML document
+        
+        If 'index' is None, the current tab is used
+        If a filename is not specified, the user is asked for
+        'ext_css' can be a filename for saving the style sheet
+        """
+        if not self.options['syntaxhighlight']:
+            wx.MessageBox(_('Syntax highlighting is not active!'), _('Error'), 
+                          style=wx.OK|wx.ICON_ERROR)
+            return
+        script, index = self.getScriptAtIndex(index)
+        if script is None:
+            return
+        if not script.GetLength():
+            wx.MessageBox(_('Script has no text!'), _('Error'), 
+                          style=wx.OK|wx.ICON_ERROR)
+            return
+        if not filename:
+            filefilter = (_('HTML files') + ' (*.html, *.htm)|*.html;*.htm|' + 
+                          _('All files') + ' (*.*)|*.*')
+            initial_dir, initial_base = os.path.split(self.GetProposedPath(index))
+            initial_base = os.path.splitext(initial_base)[0] + '.html'
+            dlg = wx.FileDialog(self, _('Export HTML'), initial_dir, initial_base, 
+                                filefilter, wx.SAVE | wx.OVERWRITE_PROMPT)
+            ID = dlg.ShowModal()
+            if ID == wx.ID_OK:
+                filename = dlg.GetPath()
+            dlg.Destroy()
+        if filename:
+            dirname = os.path.dirname(filename)
+            if os.path.isdir(dirname):
+                self.options['recentdir'] = dirname
+            html = script.GenerateHTML(self.GetProposedPath(only='base'), ext_css)
+            if ext_css is not None:
+                html, css = html
+                with open(os.path.join(dirname, ext_css), 'w') as f:
+                    f.write(css.encode('utf-8'))
+            with open(filename, 'w') as f:
+                f.write(html.encode('utf-8'))
+    
     def LoadSession(self, filename=None, saverecentdir=True, resize=True, backup=False, startup=False):
         # Get the filename to load from the user
         if filename is None or not os.path.isfile(filename):
