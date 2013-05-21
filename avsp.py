@@ -95,26 +95,15 @@ from icons import AvsP_icon, next_icon, play_icon, pause_icon, external_icon, \
 
 # Custom styled text control for avisynth language
 class AvsStyledTextCtrl(stc.StyledTextCtrl):
-    STC_AVS_DEFAULT = stc.STC_LUA_DEFAULT
-    STC_AVS_COMMENT = stc.STC_LUA_COMMENT
-    STC_AVS_ENDCOMMENT = stc.STC_LUA_COMMENTLINE
-    STC_AVS_BLOCKCOMMENT = stc.STC_LUA_COMMENTDOC
-    STC_AVS_NUMBER = stc.STC_LUA_NUMBER
-    STC_AVS_NUMBERBAD = stc.STC_LUA_CHARACTER
-    STC_AVS_OPERATOR = stc.STC_LUA_OPERATOR
-    STC_AVS_STRING = stc.STC_LUA_STRING
-    STC_AVS_STRINGEOL = stc.STC_LUA_STRINGEOL
-    STC_AVS_TRIPLE = stc.STC_LUA_LITERALSTRING
-    STC_AVS_COREFILTER = stc.STC_LUA_WORD
-    STC_AVS_PLUGIN = stc.STC_LUA_WORD2
-    STC_AVS_CLIPPROPERTY = stc.STC_LUA_WORD3
-    STC_AVS_USERFUNCTION = stc.STC_LUA_WORD4
-    STC_AVS_USERSLIDER = stc.STC_LUA_WORD5
-    STC_AVS_SCRIPTFUNCTION = stc.STC_LUA_WORD6
-    STC_AVS_KEYWORD = stc.STC_LUA_WORD7
-    STC_AVS_MISCWORD = stc.STC_LUA_WORD8
-    STC_AVS_DATATYPE = stc.STC_LUA_PREPROCESSOR
-    STC_AVS_IDENTIFIER = stc.STC_LUA_IDENTIFIER
+    (
+    STC_AVS_DEFAULT, STC_AVS_COMMENT, STC_AVS_ENDCOMMENT, 
+    STC_AVS_BLOCKCOMMENT, STC_AVS_NUMBER, STC_AVS_NUMBERBAD,
+    STC_AVS_OPERATOR, STC_AVS_STRING, STC_AVS_STRINGEOL, 
+    STC_AVS_TRIPLE, STC_AVS_COREFILTER, STC_AVS_PLUGIN,
+    STC_AVS_CLIPPROPERTY, STC_AVS_USERFUNCTION, STC_AVS_UNKNOWNFUNCTION, 
+    STC_AVS_USERSLIDER, STC_AVS_SCRIPTFUNCTION, STC_AVS_PARAMETER, 
+    STC_AVS_ASSIGN, STC_AVS_KEYWORD, STC_AVS_MISCWORD, 
+    STC_AVS_DATATYPE, STC_AVS_IDENTIFIER) = range(23)
     def __init__(self, parent, app, id=wx.ID_ANY, pos=wx.DefaultPosition, size=wx.DefaultSize, style=wx.SIMPLE_BORDER,
             #~ filterDict=None,
             #~ filterPresetDict=None,
@@ -148,6 +137,9 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
             self.STC_AVS_PLUGIN: ('externalfilter', ''),
             self.STC_AVS_CLIPPROPERTY: ('clipproperty', ''),
             self.STC_AVS_USERFUNCTION: ('userdefined', ''),
+            self.STC_AVS_UNKNOWNFUNCTION: ('unknownfunction', ''),
+            self.STC_AVS_PARAMETER: ('parameter', ''),
+            self.STC_AVS_ASSIGN: ('assignment', ''),
             self.STC_AVS_OPERATOR: ('operator', ''),
             self.STC_AVS_STRINGEOL: ('stringeol', ',eol'),
             self.STC_AVS_USERSLIDER: ('userslider', ''),
@@ -737,7 +729,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                 end = self.WordEndPosition(start, 1)
                 keyword = self.GetTextRange(start, end)
                 #~ print keyword
-                if self.GetStyleAt(start) == self.STC_AVS_DEFAULT and keyword.lower().startswith(wordlower) and keyword not in keywords:
+                if self.GetStyleAt(start) == self.STC_AVS_ASSIGN and keyword.lower().startswith(wordlower) and keyword not in keywords:
                     keywords.append(keyword)
                 elif keyword == 'global' or keyword == 'function':
                     start = self.FindText(end, self.GetLineEndPosition(line), r'\<', stc.STC_FIND_REGEXP)
@@ -2064,15 +2056,14 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                 if fragment[0] not in self.app.avssingleletters and (ch.isalnum() or ch == '_'):
                     fragment.append(ch)
                 else:
+                    pos2 = pos
                     pos -= 1
                     word =''.join(fragment).lower()
+                    while unichr(self.GetCharAt(pos2)) in (u' ', u'\t'):
+                        pos2 += 1
+                    ch2 = unichr(self.GetCharAt(pos2))
                     if word in self.app.avsdatatypes and unichr(self.GetCharAt(pos+1)).isspace():
                         self.ColourTo(pos, self.STC_AVS_DATATYPE)
-                    elif word in self.app.avsfilterdict:
-                        #~ self.ColourTo(pos, self.keywordstyles[word])
-                        self.ColourTo(pos, self.app.avsfilterdict[word][1])
-                        if word == 'loadplugin':
-                            isLoadPlugin = True
                     elif word in self.app.avskeywords:
                         self.ColourTo(pos, self.STC_AVS_KEYWORD)
                     elif word in self.app.avsmiscwords:
@@ -2082,6 +2073,19 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                             self.SetFoldLevel(line, self.GetFoldLevel(line) | stc.STC_FOLDLEVELHEADERFLAG)
                             pos = self.GetLength()
                             self.ColourTo(pos, self.STC_AVS_ENDCOMMENT)
+                    elif ch2 == u'(':
+                        if word in self.app.avsfilterdict:
+                            #~ self.ColourTo(pos, self.keywordstyles[word])
+                            self.ColourTo(pos, self.app.avsfilterdict[word][1])
+                            if word == 'loadplugin':
+                                isLoadPlugin = True
+                        else:
+                            self.ColourTo(pos, self.STC_AVS_UNKNOWNFUNCTION)
+                    elif ch2 == u'=' and unichr(self.GetCharAt(pos2 + 1)) != '=':
+                        if self.GetOpenParenthesesPos(pos - len(word)):
+                            self.ColourTo(pos, self.STC_AVS_PARAMETER)
+                        else:
+                            self.ColourTo(pos, self.STC_AVS_ASSIGN)
                     else:
                         self.ColourTo(pos, self.STC_AVS_DEFAULT)
                     fragment = []
@@ -5390,10 +5394,13 @@ class MainFrame(wxp.Frame):
             'string': 'face:Courier New,size:10,fore:#7F007F,back:#FFFFFF',
             'stringtriple': 'face:Courier New,size:10,fore:#7F0000,back:#FFFFFF',
             'stringeol': 'face:Courier New,size:10,fore:#000000,back:#E0C0E0',
+            'assignment': 'face:Verdana,size:10,fore:#000000,back:#FFFFFF,bold',
             'internalfilter': 'face:Verdana,size:10,fore:#00007F,back:#FFFFFF,bold',
             'externalfilter': 'face:Verdana,size:10,fore:#0080C0,back:#FFFFFF,bold',
             'clipproperty': 'face:Verdana,size:10,fore:#00007F,back:#FFFFFF',
             'userdefined': 'face:Verdana,size:10,fore:#8000FF,back:#FFFFFF,bold',
+            'unknownfunction': 'face:Verdana,size:10,fore:#E10000,back:#FFFFFF',
+            'parameter': 'face:Verdana,size:10,fore:#555555,back:#FFFFFF',
             'userslider': 'face:Arial,size:10,fore:#00007F,back:#FFFFFF',
             'monospaced': 'face:Courier New,size:10',
             'internalfunction': 'face:Verdana,size:10,fore:#007F7F,back:#FFFFFF',
@@ -9056,7 +9063,10 @@ class MainFrame(wxp.Frame):
                     (_('External filter:'), 'externalfilter'),
                     (_('Internal function:'), 'internalfunction'),
                     (_('User defined function:'), 'userdefined'),
+                    (_('Unknown function:'), 'unknownfunction'),
                     (_('Clip property:'), 'clipproperty'),
+                    (_('Parameter:'), 'parameter'),
+                    (_('Assignment:'), 'assignment'),
                     (_('AviSynth keyword:'), 'keyword'),
                     (_('AviSynth data type:'), 'datatype'),
                     (_('AvsP user slider:'), 'userslider'),
