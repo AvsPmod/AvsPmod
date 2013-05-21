@@ -2271,9 +2271,11 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
 # Dialog for choosing AviSynth specific fonts and colors
 class AvsStyleDialog(wx.Dialog):
     # TODO: add export and import styles, macros to import...
-    def __init__(self, parent, dlgInfo, options, extra, title=_('AviSynth fonts and colors')):
+    def __init__(self, parent, dlgInfo, options, defaults, extra, title=_('AviSynth fonts and colors')):
         wx.Dialog.__init__(self, parent, wx.ID_ANY, title)
+        self.dlgInfo = dlgInfo
         self.options = options.copy()
+        self.defaults = defaults
         # Create the font buttons
         self.controls = {}
         self.controls2 = {}
@@ -2359,11 +2361,14 @@ class AvsStyleDialog(wx.Dialog):
         checkbox.SetToolTipString(tip)
         self.controls2[optKey] = checkbox
         # Standard buttons
+        reset  = wx.Button(self, wx.ID_NO, _('Reset'))
+        self.Bind(wx.EVT_BUTTON, self.OnButtonReset, reset)
         okay  = wx.Button(self, wx.ID_OK, _('OK'))
         self.Bind(wx.EVT_BUTTON, self.OnButtonOK, okay)
         cancel = wx.Button(self, wx.ID_CANCEL, _('Cancel'))
         btns = wx.StdDialogButtonSizer()
         btns.Add(checkbox)
+        btns.AddButton(reset)
         btns.AddButton(okay)
         btns.AddButton(cancel)
         btns.Realize()
@@ -2411,7 +2416,26 @@ class AvsStyleDialog(wx.Dialog):
                 fontUnderline = True
         return (fontSize, fontStyle, fontWeight, fontUnderline,
                 fontFace, fontFore, fontBack)
-                
+    
+    def OnButtonReset(self, event):
+        for tabLabel, tabInfo in self.dlgInfo:
+            for label, key in tabInfo:
+                fontButton, foreButton, backButton = self.controls[key]
+                (fontSize, fontStyle, fontWeight, fontUnderline,
+                fontFace, fontFore, fontBack) = self.ParseStyleInfo(self.defaults[key].split(','))
+                if fontButton is not None and fontFace is not None:
+                    font = wx.Font(fontSize, wx.FONTFAMILY_DEFAULT, fontStyle, 
+                                   fontWeight, fontUnderline, faceName=fontFace)
+                    fontButton.SetLabel('%s, %d' % (fontFace, fontSize))
+                    fontButton.SetFont(font)
+                    fontButton.SetBestSize()
+                    fontButton.Refresh()
+                if foreButton is not None and fontFore is not None:
+                    foreButton.SetColour(wx.Colour(*fontFore))
+                if backButton is not None and fontBack is not None:
+                    backButton.SetColour(wx.Colour(*fontBack))
+            self.sizer.Fit(self)
+    
     def OnButtonOK(self, event):
         if self.UpdateDict():
             event.Skip()
@@ -5386,7 +5410,9 @@ class MainFrame(wxp.Frame):
             }
         snippetsDict = {
         }
-        textstylesDict = {
+        rgb = tuple(map(lambda x: (x+255)/2, 
+                       wx.SystemSettings.GetColour(wx.SYS_COLOUR_3DFACE).Get()))
+        self.defaulttextstylesDict = {
             'default': 'face:Verdana,size:10,fore:#000000,back:#FFFFFF',
             'comment': 'face:Comic Sans MS,size:9,fore:#007F00,back:#FFFFFF',
             'number': 'face:Verdana,size:10,fore:#007F7F,back:#FFFFFF',
@@ -5417,7 +5443,11 @@ class MainFrame(wxp.Frame):
             'highlight': 'back:#C0C0C0',                
             'highlightline': 'back:#E8E8FF',
             'scrapwindow': 'face:Comic Sans MS,size:10,fore:#0000AA,back:#F5EF90',
+            'endcomment': 'face:Verdana,size:10,fore:#C0C0C0,back:#FFFFFF',
+            'blockcomment': 'face:Comic Sans MS,size:9,fore:#007F00,back:#FFFFFF',
+            'foldmargin': 'back:#%02X%02X%02X' % rgb,
         }
+        textstylesDict = self.defaulttextstylesDict.copy()
         # Create the options dict
         self.options = {
             # INTERNAL OPTIONS
@@ -5591,16 +5621,9 @@ class MainFrame(wxp.Frame):
             pass
                 
         # check new key to make options.dat compatible for all 2.x version
-        self.options['textstyles'].setdefault('endcomment', 'face:Verdana,size:10,fore:#C0C0C0,back:#FFFFFF')
-        self.options['textstyles'].setdefault('blockcomment', 'face:Comic Sans MS,size:9,fore:#007F00,back:#FFFFFF')
-        #~ clr = wx.SystemSettings.GetColour(wx.SYS_COLOUR_3DFACE).GetAsString(wx.C2S_HTML_SYNTAX)
-        rgb = tuple(map(lambda x: (x+255)/2, wx.SystemSettings.GetColour(wx.SYS_COLOUR_3DFACE).Get()))
-        clr = self.options['textstyles'].setdefault('foldmargin', 'back:#%02X%02X%02X' % rgb)
-        self.options['textstyles']['foldmargin'] = clr.split(',')[-1]
+        self.options['textstyles']['foldmargin'] = self.options['textstyles']['foldmargin'].split(',')[-1]
         self.options['cropminx'] = self.options['cropminy'] = 1
         self.options['loadstartupbookmarks'] = True
-        self.options['textstyles'].setdefault('highlightline', 'back:#E8E8FF')
-        self.options['textstyles'].setdefault('scrapwindow', 'face:Comic Sans MS,size:10,fore:#0000AA,back:#F5EF90')
 
     def SetPaths(self):
         '''Set configurable paths'''
@@ -9091,8 +9114,8 @@ class MainFrame(wxp.Frame):
                 ),
             )
         )
-        extra = (_('Use monspaced font'), 'usemonospacedfont', _('Override all fonts to use a specified monospace font(no effect on scrap window)'))
-        dlg = AvsStyleDialog(self, dlgInfo, self.options['textstyles'], extra)
+        extra = (_('Use monospaced font'), 'usemonospacedfont', _('Override all fonts to use a specified monospace font(no effect on scrap window)'))
+        dlg = AvsStyleDialog(self, dlgInfo, self.options['textstyles'], self.defaulttextstylesDict, extra)
         ID = dlg.ShowModal()
         if ID == wx.ID_OK:
             self.options['textstyles'] = dlg.GetDict()
