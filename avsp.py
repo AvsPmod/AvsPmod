@@ -2087,7 +2087,14 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                         else:
                             self.ColourTo(pos, self.STC_AVS_ASSIGN)
                     else:
-                        self.ColourTo(pos, self.STC_AVS_DEFAULT)
+                        if self.app.options['syntaxhighlight_preferfunctions'] and \
+                                word in self.app.avsfilterdict:
+                            #~ self.ColourTo(pos, self.keywordstyles[word])
+                            self.ColourTo(pos, self.app.avsfilterdict[word][1])
+                            if word == 'loadplugin':
+                                isLoadPlugin = True
+                        else:
+                            self.ColourTo(pos, self.STC_AVS_DEFAULT)
                     fragment = []
                     state = self.STC_AVS_DEFAULT
             elif state == self.STC_AVS_STRING:
@@ -5512,6 +5519,7 @@ class MainFrame(wxp.Frame):
             'calltips': True,
             'frequentcalltips': False,
             'syntaxhighlight': True,
+            'syntaxhighlight_preferfunctions': False,
             'usestringeol': True,
             'autocomplete': True,
             'autocompletelength': 1,
@@ -6244,6 +6252,7 @@ class MainFrame(wxp.Frame):
                 ((_('Show filter calltips'), wxp.OPT_ELEM_CHECK, 'calltips', _('Turn on/off automatic tips when typing filter names'), dict() ), ),
                 ((_('Frequent calltips'), wxp.OPT_ELEM_CHECK, 'frequentcalltips', _("Always show calltips any time the cursor is within the filter's arguments"), dict(ident=20) ), ),
                 ((_('Syntax highlighting'), wxp.OPT_ELEM_CHECK, 'syntaxhighlight', _('Turn on/off avisynth-specific text colors and fonts'), dict() ), ),
+                ((_('Prefer functions over variables'), wxp.OPT_ELEM_CHECK, 'syntaxhighlight_preferfunctions', _('When a word could be either a function or a variable, highlight it as function'), dict(ident=20) ), ),
                 #~((_('Syntax highlight incomplete strings'), wxp.OPT_ELEM_CHECK, 'usestringeol', _('Syntax highlight strings which are not completed in a single line differently'), dict() ), ),
                 #~((_('Highlight current line'), wxp.OPT_ELEM_CHECK, 'highlightline', _('Highlight the line that the caret is currently in'), dict() ), ),
                 #~(('       '+_('Highlight line color'), wxp.OPT_ELEM_COLOR, 'highlightlinecolor', _('Change the the highlight line color'), dict() ), ),
