@@ -1908,7 +1908,7 @@ class EditStringDictDialog(wx.Dialog):
             if self.keyChecker:
                 msg = self.keyChecker(newName)
                 if msg is not None:
-                    wx.MessageBox(msg, _('Error'), style=wx.ICON_ERROR)
+                    wx.MessageBox(msg, _('Error'), style=wx.OK|wx.ICON_ERROR)
                     event.Veto()
                     return
             if self.nag:
@@ -1952,20 +1952,22 @@ class EditStringDictDialog(wx.Dialog):
         # Add the new item to the dictionary as well as the listCtrl
         if ID == wx.ID_OK:
             if not newKey:
-                wx.MessageBox(_('Must enter a name!'), _('Error'), style=wx.ICON_ERROR)
+                wx.MessageBox(_('Must enter a name!'), _('Error'), 
+                              style=wx.OK|wx.ICON_ERROR)
                 return
             if self.infoDict.has_key(newKey):
-                wx.MessageBox(_('Item %(newKey)s already exists!') % locals(), _('Error'), style=wx.ICON_ERROR)
+                wx.MessageBox(_('Item %(newKey)s already exists!') % locals(), 
+                              _('Error'), style=wx.OK|wx.ICON_ERROR)
                 return
             if self.keyChecker:
                 msg = self.keyChecker(newKey)
                 if msg is not None:
-                    wx.MessageBox(msg, _('Error'), style=wx.ICON_ERROR)
+                    wx.MessageBox(msg, _('Error'), style=wx.OK|wx.ICON_ERROR)
                     return
             if self.valueChecker:
                 msg = self.valueChecker(newValue)
                 if msg is not None:
-                    wx.MessageBox(msg, _('Error'), style=wx.ICON_ERROR)
+                    wx.MessageBox(msg, _('Error'), style=wx.OK|wx.ICON_ERROR)
                     return
             self.infoDict[newKey] = newValue
             self.listCtrl.InsertStringItem(0, newKey)

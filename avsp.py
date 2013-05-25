@@ -7956,7 +7956,7 @@ class MainFrame(wxp.Frame):
     
     def OnMenuFileLoadSession(self, event):
         if not self.LoadSession():
-            wx.MessageBox(_('Damaged session file'), _('Error'), wx.ICON_ERROR)
+            wx.MessageBox(_('Damaged session file'), _('Error'), wx.OK|wx.ICON_ERROR)
             return
         self.SaveSession(self.lastSessionFilename, saverecentdir=False, previewvisible=False)
         
@@ -11232,7 +11232,7 @@ class MainFrame(wxp.Frame):
             root, ext = os.path.splitext(basename)
             if ext.lower() == '.ses': # Treat the file as a session file
                 if not self.LoadSession(filename):
-                    wx.MessageBox(_('Damaged session file'), _('Error'), wx.ICON_ERROR)
+                    wx.MessageBox(_('Damaged session file'), _('Error'), wx.OK|wx.ICON_ERROR)
                     return
             elif ext.lower() not in ('.avs', '.avsi', '.vpy'): # Treat the file as a source
                 self.InsertSource(filename)

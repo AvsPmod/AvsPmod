@@ -22,7 +22,8 @@ class Avs2aviDialog(wx.Dialog):
                 self.avs2avipath = ''
             dlg.Destroy()
             if not os.path.isfile(self.avs2avipath):
-                wx.MessageBox(_('Error: avs2avi is required to save an avi!'), _('Error'), style=wx.ICON_ERROR)
+                wx.MessageBox(_('Error: avs2avi is required to save an avi!'), 
+                              _('Error'), style=wx.OK|wx.ICON_ERROR)
                 return
             else:
                 self.options['avs2avipath'] = self.avs2avipath
@@ -166,32 +167,37 @@ class Avs2aviDialog(wx.Dialog):
             # Retrieve and validate inputs
             infilename = self.ctrlDict['input'].GetLineText(0)
             if not os.path.exists(infilename):
-                wx.MessageBox(_('Input file does not exist!'), _('Error'), style=wx.ICON_ERROR)
+                wx.MessageBox(_('Input file does not exist!'), _('Error'), 
+                              style=wx.OK|wx.ICON_ERROR)
                 self.ctrlDict['input'].SetFocus()
                 self.ctrlDict['input'].SetSelection(-1, -1)
                 return
             if os.path.splitext(infilename)[1].lower() != '.avs':
-                wx.MessageBox(_('Input file must be an avisynth script!'), _('Error'), style=wx.ICON_ERROR)
+                wx.MessageBox(_('Input file must be an avisynth script!'), 
+                              _('Error'), style=wx.OK|wx.ICON_ERROR)
                 self.ctrlDict['input'].SetFocus()
                 self.ctrlDict['input'].SetSelection(-1, -1)
                 return
             outfilename = self.ctrlDict['output'].GetLineText(0)
             if not os.path.exists(os.path.dirname(outfilename)):
-                wx.MessageBox(_('Output path does not exist!'), _('Error'), style=wx.ICON_ERROR)
+                wx.MessageBox(_('Output path does not exist!'), _('Error'), 
+                              style=wx.OK|wx.ICON_ERROR)
                 self.ctrlDict['output'].SetFocus()
                 self.ctrlDict['output'].SetSelection(-1, -1)
                 return
             try:
                 self.jobInfo['passes'] = int(self.ctrlDict['passes'].GetValue())
             except ValueError:
-                wx.MessageBox(_('# of passes must be an integer!'), _('Error'), style=wx.ICON_ERROR)
+                wx.MessageBox(_('# of passes must be an integer!'), _('Error'), 
+                              style=wx.OK|wx.ICON_ERROR)
                 self.ctrlDict['passes'].SetFocus()
                 self.ctrlDict['passes'].SetSelection(-1, -1)
                 return
             try:
                 prioritylevel = int(self.ctrlDict['priority'].GetValue())
             except ValueError:
-                wx.MessageBox(_('Priority must be an integer!'), _('Error'), style=wx.ICON_ERROR)
+                wx.MessageBox(_('Priority must be an integer!'), _('Error'), 
+                              style=wx.OK|wx.ICON_ERROR)
                 self.ctrlDict['priority'].SetFocus()
                 self.ctrlDict['priority'].SetSelection(-1, -1)
                 return

@@ -613,7 +613,7 @@ class CompressVideoDialog(wx.Dialog):
                 args = s2[1].replace('NUL ', '/dev/null ')  
                 lines.append('"%s" %s\n%s' % (key, args, ret))
         if unknownPathKeys != []:
-            wx.MessageBox(_('Unknown exe paths!'), _('Error'), style=wx.ICON_ERROR)
+            wx.MessageBox(_('Unknown exe paths!'), _('Error'), style=wx.OK|wx.ICON_ERROR)
             return
         else:
             batchname = os.path.join(self.GetParent().toolsfolder, 
