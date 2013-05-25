@@ -1904,7 +1904,12 @@ class EditStringDictDialog(wx.Dialog):
         if not newName:
             event.Veto()
             return
-        if newName.lower() != self.editName.lower():
+        if newName != self.editName:
+            if newName in self.infoDict:
+                wx.MessageBox(_('Item %(newKey)s already exists!') % {'newKey': newName},
+                              _('Error'), style=wx.OK|wx.ICON_ERROR)
+                event.Veto()
+                return
             if self.keyChecker:
                 msg = self.keyChecker(newName)
                 if msg is not None:
@@ -1919,9 +1924,9 @@ class EditStringDictDialog(wx.Dialog):
                 if ID != wx.ID_OK:
                     event.Veto()
                     return
-        # "Rename" the key in the dictionary
-        del self.infoDict[self.editName]
-        self.infoDict[newName] = self.textCtrl.GetValue()
+            # "Rename" the key in the dictionary
+            del self.infoDict[self.editName]
+            self.infoDict[newName] = self.textCtrl.GetValue()
         
     def OnButtonInsert(self, event):
         dlg = wx.Dialog(self, wx.ID_ANY, _('Insert a new item'))
