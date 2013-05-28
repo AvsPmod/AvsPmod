@@ -752,7 +752,8 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                             continue
                         preset = self.app.options['filterpresets'].get(keyword)
                         if preset is None:
-                            for key in self.app.options['filterpresets']:
+                            for key in (key for key in self.app.options['filterpresets'] if 
+                                        key in self.app.avsfilterdict):
                                 if self.app.avsfilterdict[key][1] == self.STC_AVS_PLUGIN:
                                     index = key.rfind('_'+keyword)
                                     if index != -1 and len(key) == index + 1 + len(keyword):
