@@ -289,8 +289,6 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
         else:
             self.initialMarginWidth = 0
             self.SetMarginWidth(0, 0)
-        self.Colourise(0, self.GetTextLength())
-        
 
     def defineFilterDict(self): # not used anymore, filter info is stored in MainFrame.filterdbfilename
         return {
@@ -1732,11 +1730,8 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
         # Display call tips
         self.UpdateCalltip()
         self.flagTextChanged = False
-        
-        # incompatible, STC_UPDATEUI event doesn't tigger on wx2.9
-        self.CodeFolding()
     
-    def CodeFolding(self):    # update folding level
+    def x_CodeFolding(self):    # update folding level
         lineCount = self.GetLineCount()
         line = 0
         while line < lineCount:
@@ -1952,14 +1947,17 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
     def OnStyleNeeded(self, event, forceAll=False):
         if forceAll:
             start = -1
+            line = 0
+            isCommentNest = 0
             end = self.GetLength()
         else:
             pos = self.GetEndStyled()
             line = self.LineFromPosition(pos)
             start = self.PositionFromLine(line) - 1
-            while line > 0 and self.GetStyleAt(start) == self.STC_AVS_BLOCKCOMMENT:
-                line -= 1
-                start = self.PositionFromLine(line) - 1
+            if self.GetStyleAt(start) == self.STC_AVS_BLOCKCOMMENT:
+                isCommentNest = self.GetLineState(line - 1) 
+            else:
+                isCommentNest = 0
             end = event.GetPosition()
         if start < 1:
             start = 0
@@ -1969,7 +1967,12 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
             if state == self.STC_AVS_STRINGEOL:
                 start += 1
                 state = self.STC_AVS_DEFAULT
-        isCommentC = isCommentNest = isLoadPlugin = False
+        isLoadPlugin = False
+        flag = None # True -> start, False -> end
+        if line and self.GetFoldLevel(line - 1) & stc.STC_FOLDLEVELHEADERFLAG:
+            prev_flag = True
+        else:
+            prev_flag = None
         self.endstyled = pos = start
         fragment = []
         hexfragment = []
@@ -1982,12 +1985,9 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                 if ch == '#':
                     state = self.STC_AVS_COMMENT
                 elif ch == '/' and unichr(self.GetCharAt(pos+1)) == '*':
-                    end = self.GetTextLength()
                     pos += 1
-                    isCommentC = True
+                    flag = True
                     state = self.STC_AVS_BLOCKCOMMENT
-                    line = self.LineFromPosition(pos)
-                    self.SetFoldLevel(line, self.GetFoldLevel(line) | stc.STC_FOLDLEVELHEADERFLAG)
                 elif ch in ('"', "'"):
                     self.ColourTo(pos-1, state)
                     if unichr(self.GetCharAt(pos+1)) in ('"', "'") and unichr(self.GetCharAt(pos+2)) in ('"', "'"):
@@ -2001,12 +2001,11 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                     hexfragment = []
                     state = self.STC_AVS_NUMBERBAD
                 elif ch == '[' and unichr(self.GetCharAt(pos+1)) == '*':
-                    end = self.GetTextLength()
                     pos += 1
-                    isCommentNest = 1
+                    isCommentNest += 1
+                    self.SetLineState(self.LineFromPosition(pos), isCommentNest)
+                    flag = True
                     state = self.STC_AVS_BLOCKCOMMENT
-                    line = self.LineFromPosition(pos)
-                    self.SetFoldLevel(line, self.GetFoldLevel(line) | stc.STC_FOLDLEVELHEADERFLAG)
                 elif ch == '[' and unichr(self.GetCharAt(pos+1)) == '<':
                     pos += 1
                     state = self.STC_AVS_USERSLIDER
@@ -2019,8 +2018,9 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                     self.ColourTo(pos - 1, state)
                     self.ColourTo(pos, self.STC_AVS_OPERATOR)
                     if ch == '{':
-                        line = self.LineFromPosition(pos)
-                        self.SetFoldLevel(line, self.GetFoldLevel(line) | stc.STC_FOLDLEVELHEADERFLAG)
+                        flag = True
+                    elif ch == '}':
+                        flag = None if flag else False
                 else:
                     if isEOD:
                         self.ColourTo(pos - 1, self.STC_AVS_DEFAULT)
@@ -2034,24 +2034,29 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                         self.ColourTo(pos, self.STC_AVS_COMMENT)
                     state = self.STC_AVS_DEFAULT
             elif state == self.STC_AVS_BLOCKCOMMENT:
-                if isEOD:
+                if isEOD or pos == end:
                     self.ColourTo(pos - 1, self.STC_AVS_BLOCKCOMMENT)
-                elif isCommentC:
-                    if ch == '*' and unichr(self.GetCharAt(pos+1)) == '/':
-                        pos += 1
-                        self.ColourTo(pos, self.STC_AVS_BLOCKCOMMENT)
-                        isCommentC = False
-                        state = self.STC_AVS_DEFAULT
+                elif isEOL:
+                    self.SetLineState(self.LineFromPosition(pos), isCommentNest)
                 elif isCommentNest:
                     if ch == '*' and unichr(self.GetCharAt(pos+1)) == ']':
                         pos += 1
                         isCommentNest -= 1
+                        self.SetLineState(self.LineFromPosition(pos), isCommentNest)
+                        flag = None if flag else False
                         if not isCommentNest:
                             self.ColourTo(pos, self.STC_AVS_BLOCKCOMMENT)
                             state = self.STC_AVS_DEFAULT
                     elif ch == '[' and unichr(self.GetCharAt(pos+1)) == '*':
                         pos += 1
                         isCommentNest += 1
+                        self.SetLineState(self.LineFromPosition(pos), isCommentNest)
+                        flag = True
+                elif ch == '*' and unichr(self.GetCharAt(pos+1)) == '/':
+                    pos += 1
+                    self.ColourTo(pos, self.STC_AVS_BLOCKCOMMENT)
+                    flag = None if flag else False
+                    state = self.STC_AVS_DEFAULT
             elif state == self.STC_AVS_IDENTIFIER:
                 if fragment[0] not in self.app.avssingleletters and (ch.isalnum() or ch == '_'):
                     fragment.append(ch)
@@ -2070,9 +2075,12 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                         self.ColourTo(pos, self.STC_AVS_MISCWORD)
                         if word == '__end__':
                             line = self.LineFromPosition(pos)
-                            self.SetFoldLevel(line, self.GetFoldLevel(line) | stc.STC_FOLDLEVELHEADERFLAG)
-                            pos = self.GetLength()
-                            self.ColourTo(pos, self.STC_AVS_ENDCOMMENT)
+                            self.UpdateFolding(line, True, prev_flag)
+                            level = (self.GetFoldLevel(line) & stc.STC_FOLDLEVELNUMBERMASK) + 1
+                            for line in range(line + 1, self.LineFromPosition(end) + 1):
+                                self.SetFoldLevel(line, level)
+                            self.ColourTo(end, self.STC_AVS_ENDCOMMENT)
+                            break
                     elif ch2 == u'(':
                         if word in self.app.avsfilterdict:
                             #~ self.ColourTo(pos, self.keywordstyles[word])
@@ -2091,8 +2099,6 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                                 word in self.app.avsfilterdict:
                             #~ self.ColourTo(pos, self.keywordstyles[word])
                             self.ColourTo(pos, self.app.avsfilterdict[word][1])
-                            if word == 'loadplugin':
-                                isLoadPlugin = True
                         else:
                             self.ColourTo(pos, self.STC_AVS_DEFAULT)
                     fragment = []
@@ -2137,6 +2143,8 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                         if not isEOD:
                             self.parseDllname(isLoadPlugin, pos)
                         isLoadPlugin = False
+                elif isEOL:
+                    self.ColourTo(pos, self.STC_AVS_TRIPLE)
             elif state == self.STC_AVS_NUMBER:
                 if not ch.isdigit():
                     pos -= 1
@@ -2165,10 +2173,23 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                     else:
                         self.ColourTo(pos, self.STC_AVS_USERSLIDER)
                     state = self.STC_AVS_DEFAULT
+            elif state == self.STC_AVS_ENDCOMMENT:
+                line = self.LineFromPosition(pos)
+                if self.GetStyleAt(self.PositionFromLine(line)) != self.STC_AVS_ENDCOMMENT:
+                    line += 1
+                level = (self.GetFoldLevel(line) & stc.STC_FOLDLEVELNUMBERMASK)
+                for line in range(line, self.LineFromPosition(end) + 1):
+                    self.SetFoldLevel(line, level)
+                self.ColourTo(end, self.STC_AVS_ENDCOMMENT)
+                break
+            ch = unichr(self.GetCharAt(pos))
+            if pos != start and (ch == unichr(0) or ch == '\n' or ch == '\r'):
+                self.UpdateFolding(self.LineFromPosition(pos), flag, prev_flag)
+                prev_flag = flag
+                flag = None
             pos += 1
-            if pos > end and state in (self.STC_AVS_STRING, self.STC_AVS_TRIPLE):
-                if end+1 <= self.GetTextLength():
-                    end += 1
+        if wx.VERSION > (2, 9):
+            self.app.IdleCall.append((self.Refresh, tuple(), dict()))
                     
     def ColourTo(self, pos, style):
         self.SetStyling(pos +1 - self.endstyled, style)
@@ -2183,7 +2204,22 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
             if dllname.count('_') and dllname not in self.app.dllnameunderscored:
                 self.app.dllnameunderscored.add(dllname)
                 self.app.defineScriptFilterInfo()
-
+    
+    def UpdateFolding(self, line, flag, prev_flag):
+        if line == 0:
+            level = stc.STC_FOLDLEVELBASE
+        else:
+            level = self.GetFoldLevel(line - 1) & stc.STC_FOLDLEVELNUMBERMASK
+            if prev_flag:
+                level += 1
+        if flag == True:
+            level |= stc.STC_FOLDLEVELHEADERFLAG
+        elif flag == False:
+            level = max(stc.STC_FOLDLEVELBASE, level - 1)
+        elif not self.GetLine(line).strip():
+            level |=  stc.STC_FOLDLEVELWHITEFLAG 
+        self.SetFoldLevel(line, level)
+    
     def OnMarginClick(self, evt):
         # fold and unfold as needed
         if evt.GetMargin() == 2:
@@ -2209,7 +2245,6 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
     def FoldAll(self):
         if self.GetEndStyled() != self.GetLength():
             self.OnStyleNeeded(None, forceAll=True)
-            self.CodeFolding()
         lineCount = self.GetLineCount()
         expanding = True
 
@@ -10834,8 +10869,7 @@ class MainFrame(wxp.Frame):
                     cPickle.dump(self.options, f, protocol=0)
                 self.defineScriptFilterInfo()
                 for i in xrange(self.scriptNotebook.GetPageCount()):
-                    script = self.scriptNotebook.GetPage(i)
-                    script.Colourise(0, script.GetTextLength())
+                    self.scriptNotebook.GetPage(i).Colourise(0, 0)
         dlg.Destroy()
 
     def OnSliderLabelSettings(self, event):
@@ -13316,8 +13350,7 @@ class MainFrame(wxp.Frame):
                 cPickle.dump(self.options, f, protocol=0)
             self.defineScriptFilterInfo()
             for i in xrange(self.scriptNotebook.GetPageCount()):
-                script = self.scriptNotebook.GetPage(i)
-                script.Colourise(0, script.GetTextLength())
+                self.scriptNotebook.GetPage(i).Colourise(0, 0) # set script.GetEndStyled() to 0
         dlg.Destroy()
 
     def _x_ShowFunctionDefinitionDialog(self, functionName=None):
