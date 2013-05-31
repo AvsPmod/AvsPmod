@@ -1867,7 +1867,8 @@ class EditStringDictDialog(wx.Dialog):
         dlgSizer.Add(btns, 0, wx.EXPAND|wx.ALL, 5)
         self.SetSizer(dlgSizer)
         # Misc
-        self.listCtrl.SelectItem(0)
+        if self.listCtrl.GetItemCount():
+            self.listCtrl.SelectItem(0)
         okay.SetDefault()
         
     def GetDict(self):
@@ -1992,10 +1993,11 @@ class EditStringDictDialog(wx.Dialog):
         if ID == wx.ID_OK:
             del self.infoDict[key]
             self.listCtrl.DeleteItem(index)
-            if index - 1 < 0:
-                self.listCtrl.SelectItem(0)
-            else:
-                self.listCtrl.SelectItem(index-1)
+            if self.listCtrl.GetItemCount():
+                if index - 1 < 0:
+                    self.listCtrl.SelectItem(0)
+                else:
+                    self.listCtrl.SelectItem(index-1)
         dlg.Destroy()
         
         
