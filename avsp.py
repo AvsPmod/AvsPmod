@@ -6161,7 +6161,7 @@ class MainFrame(wxp.Frame):
                             except KeyError:
                                 print>>sys.stderr, (
                                     'Error parsing %s plugin parameters: '
-                                    'unknown character %s') % (name, c)
+                                    'unknown character %s') % (name, repr(c))
                                 typeValue = '?'
                             argList.append(typeValue)
                         if namedargname:
