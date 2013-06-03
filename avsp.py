@@ -7728,7 +7728,7 @@ class MainFrame(wxp.Frame):
         buttonAutocrop.running = False
         dlg.Bind(wx.EVT_BUTTON, self.OnCropAutocrop, buttonAutocrop)
         spinAutocrop = wx.SpinCtrl(dlg, wx.ID_ANY, size=(100,-1), 
-            value='{0} ({1})'.format(_('Samples'), self.options['autocrop_samples']), 
+            value=u'{0} ({1})'.format(_('Samples'), self.options['autocrop_samples']), 
             min=1, initial=self.options['autocrop_samples'], 
             style=wx.TE_PROCESS_ENTER|wx.SP_ARROW_KEYS|wx.ALIGN_RIGHT)
         dlg.Bind(wx.EVT_SPINCTRL, self.OnCropAutocropSamples, spinAutocrop)
