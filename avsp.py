@@ -693,10 +693,11 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
             #~ return
         keywords = []
         wordlower = word.lower()
-        keywordSublist = self.app.avsazdict.get(word[0].lower())
+        avsazdict = self.app.avsazdict_all if all else self.app.avsazdict
+        keywordSublist = avsazdict.get(word[0].lower())
         if keywordSublist is not None:
             for keyword in keywordSublist:
-                if (all or keyword not in self.app.options['autocompleteexclusions']) and keyword.lower().startswith(wordlower):
+                if keyword.lower().startswith(wordlower):
                     keywords.append(keyword)
         if self.app.options['autocompletevariables']:
             lineCount = self.LineFromPosition(pos)
@@ -748,15 +749,8 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                         if keyword not in self.app.avsfilterdict:
                             keywords[i] += '?4'
                             continue
+                        keyword = self.app.avsfilterdict[keyword][3] or keyword
                         preset = self.app.options['filterpresets'].get(keyword)
-                        if preset is None:
-                            for key in (key for key in self.app.options['filterpresets'] if 
-                                        key in self.app.avsfilterdict):
-                                if self.app.avsfilterdict[key][1] == self.STC_AVS_PLUGIN:
-                                    index = key.rfind('_'+keyword)
-                                    if index != -1 and len(key) == index + 1 + len(keyword):
-                                        preset = self.app.options['filterpresets'][key][index+1:]
-                                        break
                         if preset is None:
                             preset = self.CreateDefaultPreset(keywords[i])
                         question = preset.count('?')
@@ -792,15 +786,10 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
             self.app.options['presetactivatekey'] == 'return' and key in (wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER) or
             self.app.options['presetactivatekey'] == 'both')
         if boolActivatePreset:
-            preset = self.app.options['filterpresets'].get(filtername.lower())
+            keyword = filtername.lower()
+            keyword = self.app.avsfilterdict[keyword][3] or keyword
+            preset = self.app.options['filterpresets'].get(keyword)
             boolHighlightQuestionMarks = True
-            if preset is None:
-                for key in self.app.options['filterpresets']:
-                    if self.app.avsfilterdict[key][1] == self.STC_AVS_PLUGIN:
-                        index = key.find('_'+filtername.lower())
-                        if index != -1 and len(key) == index + 1 + len(filtername):
-                            preset = self.app.options['filterpresets'][key][index+1:]
-                            break
             if preset is not None:
                 self.SetSelection(startwordpos, pos)
                 self.ReplaceSelection(preset)
@@ -1489,17 +1478,31 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
         extensions = ['.htm', '.html', '.txt', '.lnk']
         
         def get_names(name):
-            yield name
-            name_lower = name.lower()
-            for plugin in self.app.installed_plugins:
-                plugin_lower = plugin.lower()
-                long_name = '_'.join((plugin_lower, name_lower))
-                if long_name in self.app.avsfilterdict:
-                    yield plugin
-                partition = name_lower.partition(plugin_lower + '_')
-                if not partition[0] and partition[2] in self.app.avsfilterdict:
-                    yield name[-len(partition[2]):]
-                    yield plugin
+            name = name.lower()
+            if name in self.app.avsfilterdict:
+                if self.app.avsfilterdict[name][1] == AvsStyledTextCtrl.STC_AVS_PLUGIN:
+                    is_short = self.app.avsfilterdict[name][3]
+                    if is_short:
+                        long_name = self.app.avsfilterdict[is_short][2]
+                        yield long_name[:-len(name)-1]
+                        yield self.app.avsfilterdict[name][2]
+                        yield long_name
+                    else:
+                        long_name = self.app.avsfilterdict[name][2]
+                        for dllname in sorted(self.app.dllnameunderscored, reverse=True):
+                            if name.startswith(dllname):
+                                index = len(dllname)
+                                yield long_name[:index]
+                                yield long_name[index+1:]
+                                break
+                        else:
+                            splitname = long_name.split('_', 1)
+                            if len(splitname) == 2:
+                                yield splitname[0]
+                                yield splitname[1]
+                        yield long_name
+                else:
+                    yield self.app.avsfilterdict[name][2]
         
         for find_name in get_names(name):
             for dir in docsearchpaths:
@@ -3144,10 +3147,12 @@ class UserSliderDialog(wx.Dialog):
 
 # Dialog for AviSynth filter information
 class AvsFunctionDialog(wx.Dialog):
-    def __init__(self, parent, filterDict, overrideDict, presetDict, removedSet, 
-                       autcompletetypeFlags, installed_plugins_filternames, 
+    def __init__(self, parent, filterDict, overrideDict, avsfilterdict, 
+                       presetDict, removedSet, pluginDict, 
+                       installed_plugins_filternames, 
                        installed_avsi_filternames, functionName=None, 
-                       CreateDefaultPreset=None, ExportFilterData=None):
+                       CreateDefaultPreset=None, ExportFilterData=None, 
+                       nag=True):
         wx.Dialog.__init__(
             self, parent, wx.ID_ANY,
             _('Add or override AviSynth functions in the database'),
@@ -3156,13 +3161,15 @@ class AvsFunctionDialog(wx.Dialog):
         self.parent = parent
         self.filterDict = filterDict.copy()
         self.overrideDict = overrideDict.copy()
+        self.avsfilterdict = avsfilterdict.copy()
         self.presetDict = presetDict.copy()
-        self.removedSet = removedSet
-        self.autcompletetypeFlags = autcompletetypeFlags
+        self.removedSet = removedSet.copy()
+        self.pluginDict = pluginDict.copy()
         self.installed_plugins_filternames = installed_plugins_filternames
         self.installed_avsi_filternames = installed_avsi_filternames
         self.CreateDefaultPreset = CreateDefaultPreset
         self.ExportFilterData = ExportFilterData
+        self.nag = nag
         self.CreateWindowElements()
         self.CreateFilterInfoDialog()
         wx.FutureCall(100, self.HighlightFunction, functionName)
@@ -3171,33 +3178,47 @@ class AvsFunctionDialog(wx.Dialog):
         # Highlight the function if specified
         if functionName is not None:
             lowername = functionName.lower()
-            for index in xrange(self.notebook.GetPageCount()):
-                panel = self.notebook.GetPage(index)
-                listbox = panel.listbox
-                for i in xrange(listbox.GetCount()):
-                    label = listbox.GetString(i)
-                    if label.split()[0].lower() == lowername:
-                        self.notebook.SetSelection(index)
-                        listbox.SetSelection(i)
-                        self.EditFunctionInfo()
-                        return
-            # functionName may be a shortname
-            if lowername in self.parent.avsfilterdict:
-                panel = self.notebook.GetPage(1) # Plugins tab
-                listbox = panel.listbox
-                for i in xrange(listbox.GetCount()):
-                    label = listbox.GetString(i)
-                    if label.split()[0].lower().endswith(lowername):
-                        self.notebook.SetSelection(1)
-                        listbox.SetSelection(i)
-                        self.EditFunctionInfo()
-                        return
-            # functionName was not found, show dialog to define new function
-            self.AddNewFunction(functionName)
+            if lowername in self.avsfilterdict:
+                lowername = self.avsfilterdict[lowername][3] or lowername
+                for index in xrange(self.notebook.GetPageCount()):
+                    panel = self.notebook.GetPage(index)
+                    listbox = panel.listbox
+                    for i in xrange(listbox.GetCount()):
+                        label = listbox.GetString(i)
+                        if label.split()[0].lower() == lowername:
+                            self.notebook.SetSelection(index)
+                            listbox.SetSelection(i)
+                            self.EditFunctionInfo()
+                            return
+            else: # functionName was not found, show dialog to define new function
+                self.AddNewFunction(functionName)
 
     def CreateWindowElements(self):
         self.notebook = wxp.Notebook(self, wx.ID_ANY, style=wx.NO_BORDER, 
                                      invert_scroll=self.GetParent().options['invertscrolling'])
+        
+        class CheckListBox(wx.CheckListBox):
+            def __init__(self, *args, **kwargs):
+                wx.CheckListBox.__init__(self, *args, **kwargs)
+                self.Bind(wx.EVT_CHECKLISTBOX, self.OnCheckListBox)
+                self.removedSet = self.GetTopLevelParent().removedSet
+            
+            def Check(self, item, check=True):
+                wx.CheckListBox.Check(self, item, check)
+                self.UpdateRemovedSet(item)
+            
+            def OnCheckListBox(self, event):
+                self.UpdateRemovedSet(event.GetInt())
+                event.Skip()
+            
+            def UpdateRemovedSet(self, item):
+                name = self.GetString(item).split()[0].lower()
+                if self.IsChecked(item):
+                    if name in self.removedSet:
+                        self.removedSet.remove(name)
+                else:
+                    self.removedSet.add(name)
+        
         pageInfo = (
             (_('Core filters'), 0),
             (_('Plugins'), 2),
@@ -3205,6 +3226,20 @@ class AvsFunctionDialog(wx.Dialog):
             (_('Script functions'), 4),
             (_('Clip properties'), 1),
         )
+        pageDict = defaultdict(list)
+        for key in set(self.filterDict.keys()+self.overrideDict.keys()):
+            name, args, ftype = self.overrideDict.get(key, (None, None, None))
+            if name is None:
+                try:
+                    name, args, ftype = self.filterDict[key]
+                    extra = ' '
+                except:
+                    continue
+            else:
+                extra += '*'
+            if key in self.presetDict:
+                extra += '~'
+            pageDict[ftype].append(name + extra)
         for title, index in pageInfo:
             panel = wx.Panel(self.notebook, wx.ID_ANY, size=(700,-1))
             self.notebook.AddPage(panel, title)
@@ -3221,25 +3256,8 @@ class AvsFunctionDialog(wx.Dialog):
             #~ d1.update(d2)
             #~ choices = [value for key, value in d1.items()]
 
-            choices = []
-            keys = set(self.filterDict.keys()+self.overrideDict.keys()+self.presetDict.keys())
-            for key in keys:
-                extra = ' '
-                name, args, ftype = self.overrideDict.get(key, (None, None, None))
-                if name is None:
-                    try:
-                        name, args, ftype = self.filterDict[key]
-                    except:
-                        del self.presetDict[key]
-                        continue
-                else:
-                    extra += '*'
-                if key in self.presetDict:
-                    extra += '~'
-                if ftype == index:
-                    choices.append(name+extra)
-
-            listbox = wx.CheckListBox(panel, wx.ID_ANY, choices=choices, size=(-1,300), style=wx.LB_SORT)
+            choices = pageDict[index]
+            listbox = CheckListBox(panel, wx.ID_ANY, choices=choices, size=(-1,300), style=wx.LB_SORT)
             if choices:
                 listbox.SetSelection(0)
             listbox.Bind(wx.EVT_LISTBOX_DCLICK, lambda event: self.EditFunctionInfo())
@@ -3248,8 +3266,6 @@ class AvsFunctionDialog(wx.Dialog):
                 if name.lower() not in self.removedSet:
                     listbox.Check(i)
             title = title.lower()
-            autocompletecheckbox = wx.CheckBox(panel, wx.ID_ANY, _('Include %(title)s in autcompletion lists') % locals())
-            autocompletecheckbox.SetValue(self.autcompletetypeFlags[index])
             # Buttons
             buttonadd = wx.Button(panel, wx.ID_ANY, _('New function'))#, size=(100, -1))
             buttonedit = wx.Button(panel, wx.ID_ANY, _('Edit selected'))
@@ -3276,21 +3292,18 @@ class AvsFunctionDialog(wx.Dialog):
                 buttonselectinstalled = wx.Button(panel, wx.ID_ANY, _('Select installed'))
                 panel.Bind(wx.EVT_BUTTON, lambda event: self.SelectInstalledFilters(), buttonselectinstalled)
                 buttonSizer.Add(buttonselectinstalled, 0, wx.EXPAND|wx.BOTTOM, 5)
-                
             # Size the elements in the panel
             listboxSizer = wx.BoxSizer(wx.HORIZONTAL)
             listboxSizer.Add(listbox, 1, wx.EXPAND|wx.RIGHT, 15)            
             listboxSizer.Add(buttonSizer, 0, wx.EXPAND|wx.RIGHT, 5)            
             panelSizer = wx.BoxSizer(wx.VERTICAL)
             panelSizer.Add(listboxSizer, 1, wx.EXPAND|wx.ALL, 5)            
-            panelSizer.Add(autocompletecheckbox, 0, wx.ALL, 5)
-            panelSizer.Add((-1, 5))
             panel.SetSizer(panelSizer)
             panelSizer.Layout()
             # Bind items to the panel itself
             panel.listbox = listbox
-            panel.autocompletecheckbox = autocompletecheckbox
             panel.functiontype = index
+        self.CreatePluginsContextMenu()
         # Buttons
         button0 = wx.Button(self, wx.ID_ANY, _('Import'))
         menu0 = wx.Menu()
@@ -3472,7 +3485,60 @@ class AvsFunctionDialog(wx.Dialog):
         dlg.defaultName = ''
         dlg.enteredName = ''
         self.FilterInfoDialog = dlg
-
+    
+    def CreatePluginsContextMenu(self):
+        """Chose between long and short names"""
+        
+        def OnPluginsContextMenu(event):
+            name = listbox.GetString(listbox.GetSelection()).split()[0].lower()
+            item = menu.FindItemByPosition((self.pluginDict[name] + 2) % 3)
+            item.Check()
+            listbox.PopupMenu(menu)
+        
+        def OnContextMenuItem(event):
+            id = event.GetId()
+            if id in [idLong, idShort, idBoth]:
+                if id == idLong:
+                    value = 1
+                elif id == idShort:
+                    value = 2
+                elif id == idBoth:
+                    value = 0
+                name = listbox.GetString(listbox.GetSelection())
+                self.pluginDict[name.split()[0].lower()] = value
+            else:
+                if id == idLongOnly:
+                    value = 1
+                elif id == idShortOnly:
+                    value = 2
+                elif id == idAll:
+                    value = 0
+                for name in self.pluginDict:
+                    self.pluginDict[name] = value
+        
+        listbox = self.notebook.GetPage(1).listbox
+        listbox.Bind(wx.EVT_CONTEXT_MENU, OnPluginsContextMenu)
+        idLong = wx.NewId()
+        idShort = wx.NewId()
+        idBoth = wx.NewId()
+        idLongOnly = wx.NewId()
+        idShortOnly = wx.NewId()
+        idAll = wx.NewId()
+        menu = wx.Menu()
+        menu.AppendRadioItem(idLong, _('Long name'))
+        menu.AppendRadioItem(idShort, _('Short name'))
+        menu.AppendRadioItem(idBoth, _('Both'))
+        menu.AppendSeparator()
+        menu.Append(idLongOnly, _('Only long names'))
+        menu.Append(idShortOnly, _('Only short names'))
+        menu.Append(idAll, _('All names'))
+        listbox.Bind(wx.EVT_MENU, OnContextMenuItem, id=idLong)
+        listbox.Bind(wx.EVT_MENU, OnContextMenuItem, id=idShort)
+        listbox.Bind(wx.EVT_MENU, OnContextMenuItem, id=idBoth)
+        listbox.Bind(wx.EVT_MENU, OnContextMenuItem, id=idLongOnly)
+        listbox.Bind(wx.EVT_MENU, OnContextMenuItem, id=idShortOnly)
+        listbox.Bind(wx.EVT_MENU, OnContextMenuItem, id=idAll)
+    
     def CheckAllFunctions(self, check=True):
         listbox = self.notebook.GetCurrentPage().listbox
         for i in xrange(listbox.GetCount()):
@@ -3866,6 +3932,8 @@ class AvsFunctionDialog(wx.Dialog):
                     #~ del self.overrideDict[lowername]
             lowername = newName.lower()
             self.overrideDict[lowername] = (newName, newArgs, newType)
+            if newType == 2:
+                self.pluginDict[lowername] = 0
             extra += '*'
             # Update the preset dict
             if boolAutoPreset:
@@ -3963,6 +4031,10 @@ class AvsFunctionDialog(wx.Dialog):
                             break
                 listbox.SetString(listbox.GetSelection(), newName+extra)
             else:
+                if newType == 2:
+                    self.pluginDict[lowername] = 0
+                elif enteredType == 2:
+                    del self.pluginDict[lowername]
                 for index in xrange(self.notebook.GetPageCount()):
                     panel = self.notebook.GetPage(index)
                     if panel.functiontype == newType:
@@ -3979,24 +4051,43 @@ class AvsFunctionDialog(wx.Dialog):
                     return
 
     def DeleteFunction(self):
-        listbox = self.notebook.GetCurrentPage().listbox
+        panel = self.notebook.GetCurrentPage()
+        listbox = panel.listbox
         index = listbox.GetSelection()
         if index == wx.NOT_FOUND:
             return
-        name = listbox.GetString(index).split()[0]
+        complete_string = listbox.GetString(index)
+        name = complete_string.split()[0]
         lowername = name.lower()
-        listbox.Check(index, False)
-        if lowername not in self.filterDict:
-            dlg = wx.MessageDialog(self, _('Do you want to delete this custom filter entirely?'), _('Warning'), wx.YES_NO)
+        added_by_user = lowername not in self.filterDict
+        modified = lowername != complete_string.rstrip().lower()
+        if not added_by_user and not modified:
+            return
+        delete = not self.nag
+        if self.nag:
+            if added_by_user:
+                message = _('Do you really want to delete this custom filter?')
+            else:
+                message = _('Do you really want to reset this filter?')
+            dlg = wx.MessageDialog(self, message, _('Warning'), wx.YES_NO)
             ID = dlg.ShowModal()
             if ID == wx.ID_YES:
-                if lowername in self.overrideDict:
-                    del self.overrideDict[lowername]
-                    if lowername in self.presetDict:
-                        del self.presetDict[lowername]
-                listbox.Delete(index)
+                delete = True
             dlg.Destroy()
-
+        if delete:
+            if lowername in self.overrideDict:
+                del self.overrideDict[lowername]
+            if lowername in self.presetDict:
+                del self.presetDict[lowername]
+            if added_by_user:
+                if panel.functiontype == 2:
+                    del self.pluginDict[lowername]
+                if lowername in self.removedSet:
+                    self.removedSet.remove(lowername)
+                listbox.Delete(index)
+            else:
+                listbox.SetString(index, name)
+    
     def GetOverrideDict(self):
         return self.overrideDict
 
@@ -4004,22 +4095,10 @@ class AvsFunctionDialog(wx.Dialog):
         return self.presetDict
 
     def GetRemovedSet(self):
-        removedList = []
-        for index in xrange(self.notebook.GetPageCount()):
-            listbox = self.notebook.GetPage(index).listbox
-            for i in xrange(listbox.GetCount()):
-                if not listbox.IsChecked(i):
-                    removedList.append(listbox.GetString(i).split()[0].lower())
-        return set(removedList)
+        return self.removedSet
 
-    def GetAutcompletetypeFlags(self):
-        flags = [True,True,True,True,True]
-        for i in xrange(self.notebook.GetPageCount()):
-            panel = self.notebook.GetPage(i)
-            index = panel.functiontype
-            checkbox = panel.autocompletecheckbox
-            flags[index] = checkbox.GetValue()
-        return flags
+    def GetAutocompletePluginNames(self):
+        return self.pluginDict
         
 # Dialog specifically for AviSynth filter auto-slider information
 class AvsFilterAutoSliderInfo(wx.Dialog):
@@ -5503,7 +5582,6 @@ class MainFrame(wxp.Frame):
             'filteroverrides': {},
             'filterpresets': {},
             'filterdb': {},
-            'autcompletetypeflags': [True,True,True,True,True],
             'filterremoved': set(),
             'shortcuts': [],
             'recentdir': '',
@@ -5558,7 +5636,7 @@ class MainFrame(wxp.Frame):
             'usestringeol': True,
             'autocomplete': True,
             'autocompletelength': 1,
-            'autocompleteexclusions': set(),
+            'autocompletepluginnames': {},
             'autoparentheses': 1,
             'presetactivatekey': 'return',
             'wrap': False,
@@ -5668,7 +5746,10 @@ class MainFrame(wxp.Frame):
         self.options['textstyles']['foldmargin'] = self.options['textstyles']['foldmargin'].split(',')[-1]
         self.options['cropminx'] = self.options['cropminy'] = 1
         self.options['loadstartupbookmarks'] = True
-
+        if oldOptions and 'autocompleteexclusions' in oldOptions:
+            for name in oldOptions['autocompleteexclusions']:
+                self.options['filterremoved'].add(name.lower())
+    
     def SetPaths(self):
         '''Set configurable paths'''
         self.avisynthdir = ''
@@ -5933,14 +6014,11 @@ class MainFrame(wxp.Frame):
                 deleteKeys.append(key) 
         for key in deleteKeys:
             del self.options['filteroverrides'][key]        
+        # Don't lose edited plugin functions definitions if its filename changes (e.g. different version)
         for key, value in self.options['filterdb'].items():
             if key not in self.optionsFilters:
                 if key not in self.options['filteroverrides'] and key not in self.options['filterpresets']:
                     del self.options['filterdb'][key]
-                    if key in self.options['filterremoved']:
-                        self.options['filterremoved'].remove(key)
-                    if value[0] in self.options['autocompleteexclusions']:
-                        self.options['autocompleteexclusions'].remove(value[0])                        
                 else:
                     self.options['filteroverrides'].setdefault(key, value)
         # Define data structures that are used by each script
@@ -5997,48 +6075,63 @@ class MainFrame(wxp.Frame):
         ]
         self.avsfilterdict = dict(
             [
-            (lowername, (args, styleList[ftype], name))
+            (lowername, (args, styleList[ftype], name, None))
             for lowername,(name,args,ftype) in self.optionsFilters.items()
-            if lowername not in self.options['filterremoved']
             ]
         )
         overridedict = dict(
             [
-            (lowername, (args, styleList[ftype], name))
+            (lowername, (args, styleList[ftype], name, None))
             for lowername,(name,args,ftype) in self.options['filteroverrides'].items()
-            if lowername not in self.options['filterremoved']
             ]
         )
         self.avsfilterdict.update(overridedict)
-        # Add short plugin names to script database
-        for lowername,(args,styletype,name) in self.avsfilterdict.items():
+        avsfilterdict_autocomplete = self.avsfilterdict.copy()
+        # Add short plugin names to avsfilterdict
+        # Remove unchecked items from avsfilterdict_autocomplete, include long and short names as required
+        for lowername,(args,styletype,name,is_short) in self.avsfilterdict.items():
+            self.options['autocompletepluginnames'].setdefault(lowername, 0)
+            if lowername in self.options['filterremoved']:
+                del avsfilterdict_autocomplete[lowername]
             if styletype == styleList[2]:
-                shortname = None
+                shortname = ''
                 for dllname in sorted(self.dllnameunderscored, reverse=True):
                     if name.lower().startswith(dllname):
                         shortname = name[len(dllname)+1:]
-                        if shortname.lower() not in self.avsfilterdict or self.avsfilterdict[shortname.lower()][1] != styleList[3]:
-                            self.avsfilterdict[shortname.lower()] = (args, styletype, shortname)
                         break
                 if not shortname:
                     splitname = name.split('_', 1)
                     if len(splitname) == 2:
                         shortname = splitname[1]
-                        if shortname.lower() not in self.avsfilterdict or self.avsfilterdict[shortname.lower()][1] != styleList[3]:
-                            self.avsfilterdict[shortname.lower()] = (args, styletype, shortname)
-        #~ self.optionsFilters.update(self.options['filteroverrides'])
-        # Create a list for each letter (for autocompletion)
+                lowershortname = shortname.lower()
+                if shortname and (lowershortname not in self.avsfilterdict or 
+                                  self.avsfilterdict[lowershortname][1] != styleList[3]):
+                    self.avsfilterdict[lowershortname] = (args, styletype, shortname, lowername)
+                    if lowername in avsfilterdict_autocomplete:
+                        value = self.options['autocompletepluginnames'][lowername]
+                        if value != 1:
+                            avsfilterdict_autocomplete[lowershortname] = (args, styletype, shortname, lowername)
+                            if value == 2:
+                                del avsfilterdict_autocomplete[lowername]
+        self.avsazdict = self.GetAutocompleteDict(avsfilterdict_autocomplete)
+        self.avsazdict_all = self.GetAutocompleteDict(self.avsfilterdict)
+        self.avssingleletters = [
+            s for s in (self.avsfilterdict.keys()+self.avskeywords+self.avsmiscwords)
+            if (len(s) == 1 and not s.isalnum() and s != '_')
+        ]
+
+    @staticmethod
+    def GetAutocompleteDict(filter_dict):
+        """Create a list for each letter (for autocompletion)"""
         filternames = [
             lowername
-            for lowername,(args,style,name) in self.avsfilterdict.items()
-            if self.options['autcompletetypeflags'][styleList.index(style)]
+            for lowername,(args,style,name,is_short) in filter_dict.items()
         ]
-        #~ filternames = self.avsfilterdict.keys()
         filternames.sort()
-        self.avsazdict = {}
+        avsazdict = {}
         for lowername in filternames:
             letter = lowername[0]
-            letterlist = self.avsazdict.setdefault(letter, [])
+            letterlist = avsazdict.setdefault(letter, [])
             hasSymbol = False
             if not lowername[0].isalpha() and lowername[0] != '_':
                 hasSymbol = True
@@ -6048,12 +6141,9 @@ class MainFrame(wxp.Frame):
                         hasSymbol = True
                         break
             if not hasSymbol:
-                letterlist.append(self.avsfilterdict[lowername][2])
-        self.avssingleletters = [
-            s for s in (self.avsfilterdict.keys()+self.avskeywords+self.avsmiscwords)
-            if (len(s) == 1 and not s.isalnum() and s != '_')
-        ]
-
+                letterlist.append(filter_dict[lowername][2])
+        return avsazdict
+    
     def getFilterInfoFromAvisynth(self):
         self.avisynthVersion = (None,) * 3
         self.installed_plugins = set()
@@ -6311,7 +6401,6 @@ class MainFrame(wxp.Frame):
                 ((_('Show autocomplete on single matched lowercase variable'), wxp.OPT_ELEM_CHECK, 'autocompletesingle', _('When typing a lowercase variable name, show autocomplete if there is only one item matched in keyword list'), dict(ident=20) ), ),
                 ((_('Show autocomplete with icons'), wxp.OPT_ELEM_CHECK, 'autocompleteicons', _("Add icons into autocomplete list. Using different type to indicate how well a filter's presets is defined"), dict() ), ),
                 ((_("Don't show autocomplete when calltip is active"), wxp.OPT_ELEM_CHECK, 'calltipsoverautocomplete', _('When calltip is active, autocomplete will not be activate automatically. You can still show autocomplete manually'), dict() ), ),
-                ((_('Customize autocomplete keyword list...'), wxp.OPT_ELEM_BUTTON, 'autocompleteexclusions', _('Customize the keyword list shown in the autocomplete choice box'), dict(handler=self.OnCustomizeAutoCompList) ), ),
                 ((_('Autoparentheses level'), wxp.OPT_ELEM_RADIO, 'autoparentheses', _('Determines parentheses to insert upon autocompletion'), dict(choices=[(_('None " "'), 0),(_('Open "("'), 1),(_('Close "()"'), 2)])), ),
                 ((_('Preset activation key'), wxp.OPT_ELEM_RADIO, 'presetactivatekey', _('Determines which key activates the filter preset when the autocomplete box is visible'), dict(choices=[(_('Tab'), 'tab'),(_('Return'), 'return'),(_('Both'), 'both'),(_('None'), 'none')]) ), ),
             ),
@@ -10629,7 +10718,7 @@ class MainFrame(wxp.Frame):
         self.ShowVideoFrame()
         
     # the following 2 func called from wxp.OptionsDialog, not MainFrame
-    def OnCustomizeAutoCompList(self, event):
+    def x_OnCustomizeAutoCompList(self, event):
         choices = []
         for keywords in self.avsazdict.values():
             choices += keywords
@@ -10841,11 +10930,10 @@ class MainFrame(wxp.Frame):
         ctrl = self.lastContextMenuWin
         name = ctrl.GetLabel().lstrip(' -+').split()[0]
         lowername = name.lower()
-        if lowername not in self.optionsFilters:
-            for name in self.avsfilterdict:
-                if name.endswith('_' + lowername):
-                    lowername = name
-                    break
+        is_short = self.avsfilterdict[lowername][3]
+        if is_short:
+            lowername = is_short
+            name = self.avsfilterdict[lowername][2]
         #~ calltip = self.currentScript.FilterNameArgs[name.lower()]
         calltip = self.avsfilterdict[lowername][0]
         dlg = AvsFilterAutoSliderInfo(self, self, name, calltip)
@@ -10853,6 +10941,8 @@ class MainFrame(wxp.Frame):
         # Set the data
         if ID == wx.ID_OK:
             newCalltip = dlg.GetNewFilterInfo()
+            if newCalltip == calltip:
+                    return
             #~ for key, value in self.optionsFilters.items():
                 #~ if key.lower() == name.lower():
                     #~ self.optionsFilters[key] = newCalltip
@@ -10861,15 +10951,16 @@ class MainFrame(wxp.Frame):
                         #~ script.DefineKeywordCalltipInfo(self.optionsFilters, self.optionsFilterPresets, self.optionsFilterDocpaths, self.optionsFilterTypes, self.optionsKeywordLists)
                     #~ self.ShowVideoFrame(forceRefresh=True)
                     #~ break
-            info = self.optionsFilters.get(lowername)
-            if info is not None:
-                info = self.options['filteroverrides'].get(lowername, info)
-                self.options['filteroverrides'][lowername] = (name, newCalltip, info[2])
-                with open(self.optionsfilename, mode='wb') as f:
-                    cPickle.dump(self.options, f, protocol=0)
-                self.defineScriptFilterInfo()
-                for i in xrange(self.scriptNotebook.GetPageCount()):
-                    self.scriptNotebook.GetPage(i).Colourise(0, 0)
+            if lowername in self.options['filteroverrides']:
+                ftype = self.options['filteroverrides'][lowername][2]
+            else:
+                ftype = self.optionsFilters[lowername][2]
+            self.options['filteroverrides'][lowername] = (name, newCalltip, ftype)
+            with open(self.optionsfilename, mode='wb') as f:
+                cPickle.dump(self.options, f, protocol=0)
+            self.defineScriptFilterInfo()
+            for i in xrange(self.scriptNotebook.GetPageCount()):
+                self.scriptNotebook.GetPage(i).Colourise(0, 0)
         dlg.Destroy()
 
     def OnSliderLabelSettings(self, event):
@@ -13330,9 +13421,10 @@ class MainFrame(wxp.Frame):
             self,
             self.optionsFilters,
             self.options['filteroverrides'],
+            self.avsfilterdict,
             self.options['filterpresets'],
             self.options['filterremoved'],
-            self.options['autcompletetypeflags'],
+            self.options['autocompletepluginnames'],
             self.installed_plugins_filternames,
             self.installed_avsi_filternames,
             functionName=functionName,
@@ -13345,7 +13437,7 @@ class MainFrame(wxp.Frame):
             self.options['filteroverrides'] = dlg.GetOverrideDict()
             self.options['filterremoved'] = dlg.GetRemovedSet()
             self.options['filterpresets'] = dlg.GetPresetDict()
-            self.options['autcompletetypeflags'] = dlg.GetAutcompletetypeFlags()
+            self.options['autocompletepluginnames'] = dlg.GetAutocompletePluginNames()
             with open(self.optionsfilename, mode='wb') as f:
                 cPickle.dump(self.options, f, protocol=0)
             self.defineScriptFilterInfo()
