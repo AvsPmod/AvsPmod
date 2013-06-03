@@ -1961,7 +1961,10 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                 isCommentNest = self.GetLineState(line - 1) 
             else:
                 isCommentNest = 0
-            end = event.GetPosition()
+            if self.app.options['wrap']: # workaround
+                end = self.GetLineEndPosition(line + self.LinesOnScreen()) + 1
+            else:
+                end = event.GetPosition()
         if start < 1:
             start = 0
             state = self.STC_AVS_DEFAULT
