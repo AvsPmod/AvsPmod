@@ -11912,6 +11912,7 @@ class MainFrame(wxp.Frame):
                 filename = dlg.GetPath()
             dlg.Destroy()
         if filename:
+            script.OnStyleNeeded(None, forceAll=True)
             dirname = os.path.dirname(filename)
             if os.path.isdir(dirname):
                 self.options['recentdir'] = dirname
