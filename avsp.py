@@ -3232,10 +3232,10 @@ class AvsFunctionDialog(wx.Dialog):
         pageDict = defaultdict(list)
         for key in set(self.filterDict.keys()+self.overrideDict.keys()):
             name, args, ftype = self.overrideDict.get(key, (None, None, None))
+            extra = ' '
             if name is None:
                 try:
                     name, args, ftype = self.filterDict[key]
-                    extra = ' '
                 except:
                     continue
             else:
@@ -5584,7 +5584,7 @@ class MainFrame(wxp.Frame):
             #~ 'avsmiscwords': [],
             'filteroverrides': {},
             'filterpresets': {},
-            'filterdb': {},
+            'filterdefaults_presets': {},
             'filterremoved': set(),
             'shortcuts': [],
             'recentdir': '',
@@ -5979,8 +5979,6 @@ class MainFrame(wxp.Frame):
                                 #~ if len(splitname) == 2:
                                     #~ filtername = splitname[1]
                                     #~ self.optionsFilters[filtername.lower()] = (filtername, filterargs, 2)
-                                if key in self.options['filterdb']:
-                                    del self.options['filterdb'][key]
                     elif title == 'userfunctions':
                         if not self.options['fdb_userscriptfunctions']:
                             continue
@@ -6017,13 +6015,11 @@ class MainFrame(wxp.Frame):
                 deleteKeys.append(key) 
         for key in deleteKeys:
             del self.options['filteroverrides'][key]        
-        # Don't lose edited plugin functions definitions if its filename changes (e.g. different version)
-        for key, value in self.options['filterdb'].items():
+        # Don't lose edited plugin and user function presets when the plugin/avsi 
+        # is removed and the definition was not overrided
+        for key, value in self.options['filterdefaults_presets'].items():
             if key not in self.optionsFilters:
-                if key not in self.options['filteroverrides'] and key not in self.options['filterpresets']:
-                    del self.options['filterdb'][key]
-                else:
-                    self.options['filteroverrides'].setdefault(key, value)
+                self.options['filteroverrides'][key] = value
         # Define data structures that are used by each script
         self.defineScriptFilterInfo()
 
@@ -6076,6 +6072,15 @@ class MainFrame(wxp.Frame):
             AvsStyledTextCtrl.STC_AVS_USERFUNCTION,
             AvsStyledTextCtrl.STC_AVS_SCRIPTFUNCTION,
         ]
+        self.options['filterdefaults_presets'] = dict(
+            [ # plugins and user functions with its preset edited but not the definition
+            (lowername, (name, args, ftype)) 
+            for lowername, (name, args, ftype) in self.optionsFilters.items() 
+            if lowername in self.options['filterpresets'] and 
+               lowername not in self.options['filteroverrides'] and
+               ftype in (2, 3)
+            ]
+        )
         self.avsfilterdict = dict(
             [
             (lowername, (args, styleList[ftype], name, None))
@@ -6282,8 +6287,6 @@ class MainFrame(wxp.Frame):
                         functionType = 1
             key = name.lower()
             functionDict[key] = (name, argstring, functionType)
-            if functionType == 2:
-                self.options['filterdb'][key] = (name, argstring, functionType)
         env.Release()
         return functionDict
 
