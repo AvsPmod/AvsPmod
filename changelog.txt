@@ -2,6 +2,30 @@ CHANGELOG
 =========
 
 
+Version 2.5.0 [2013-06-04]
+--------------------------
+
+- Tabs can be assigned to groups. Tabs on the same group share the timeline, optionally applying offsets
+- Add 'enable scroll wheel through tabs on the same group' setting
+- Snippets of text can be associated to a tag and inserted in the script
+- Remove 'customize autocomplete keyword list' and add its functionality to the 'AviSynth function definition' dialog 
+- Improve 'autocomplete parameter' menu option and add filename string auto-completation
+- Add highlighting styles for unknown functions, parameters and assignments
+- Add setting for highlighting words as functions when in doubt
+- Fix slow typing on very large scripts
+- Scripts can be exported as HTML
+- Add 'quick save image' menu option
+- Add setting for customizing the default filename pattern used for saving images
+- Add setting for not prompting for JPEG quality when saving
+- Allow to save RGB48 data as 16-bit PNG
+- Improve output path options in the 'Save Image Sequence' macro
+- Update the current frame number when switching tabs also when the preview is hidden
+- Check that requesting a frame succeeded before attempting to use it
+- Fix error message appearing on preview refresh for user sliders with a custom modulo on its label
+- Fix empty translation files not being filled on start
+- Other minor changes and fixes
+
+
 Version 2.4.2 [2013-03-10]
 --------------------------
 

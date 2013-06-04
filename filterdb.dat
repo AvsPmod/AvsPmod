@@ -93,6 +93,7 @@ ChromaUDifference(clip1, clip2)
 ChromaVDifference(clip1, clip2)
 Default(val x, val d)
 Defined(val)
+Distributor(clip)
 Eval(string expression, [string "name"])
 Exist(string filename)
 Exp(float)
@@ -156,7 +157,6 @@ String(val x, [string "format"])
 StrLen(string)
 Tan(float)
 Tanh(float)
-Tau()
 Time(string format)
 UCase(string)
 UDifferenceFromPrevious(clip)
@@ -1501,6 +1501,28 @@ float "B"=-1.0 (-1.0 to 4.0),
 bool "hqbf"=false
 )
 
+AutoGain_AutoGain(
+clip,
+[clip "external_clip"],
+float "dark_limit"=1.5 (1.0 to 100.0),
+float "bright_limit"=1.5 (1.0 to 100.0),
+float "gamma_limit"=1.2 (1.0 to 100.0),
+[float "dark_exclude"=0.5 (0.0 to 10.0)],
+[float "bright_exclude"=0.5 (0.0 to 10.0)],
+int "adjust_mode"=0 (0 to 1),
+int "chroma_process"=100 (0 to 200),
+[int "temporal_radius"=20 (-1 to 60)],
+[int "scd_threshold"=12 (0 to 100)],
+string "change_status"="",
+[bool "use_interp"=True],
+[bool "use_dither"=True],
+bool "high_bitdepth"=False,
+bool "tv_range"=True,
+[int "threads_count"=0 (0 to 16)],
+[int "cache_size"=30 (1 to 100)],
+bool "debug_view"=False
+)
+
 avstp_avstp_set_threads(
 int ignored=0,
 int threads=0
@@ -2441,6 +2463,200 @@ SangNom_SangNom(
 clip,
 int "order"=1 (0 to 2),
 int "aa"=48 (0 to 255)
+)
+
+SmoothAdjust_SmoothCurve(
+clip,
+string "Ycurve"="0-0;255-255",
+string "Ucurve"="0-0;255-255",
+string "Vcurve"="0-0;255-255",
+[int "interp"=100 (0 to 100)],
+[bool "limiter"=False],
+[int "TVrange"=0 (0 to 2)],
+[int "smooth"=100 (0 to 200)],
+[int "dither"=75 (-1 to 100)],
+[int "useMT"=-1 (-1 to 64)],
+[int "useOPT"=-1 (-1 to 2)],
+bool "show"=False,
+[int "screenW"=-1 (-1 to 1920)],
+[int "screenH"=-1 (-1 to 1080)],
+[bool "scale"=True]
+)
+
+SmoothAdjust_SmoothCurve16(
+clip,
+string "Ycurve"="0-0;65535-65535",
+string "Ucurve"="0-0;65535-65535",
+string "Vcurve"="0-0;65535-65535",
+[int "interp"=100 (0 to 100)],
+[bool "limiter"=False],
+[int "TVrange"=0 (0 to 2)],
+[int "smooth"=100 (0 to 200)],
+[int "dither"=75 (-1 to 100)],
+[int "useMT"=-1 (-1 to 64)],
+[int "useOPT"=-1 (-1 to 2)],
+bool "show"=False,
+[int "screenW"=-1 (-1 to 1920)],
+[int "screenH"=-1 (-1 to 1080)],
+[bool "scale"=True]
+)
+
+SmoothAdjust_SmoothCustom(
+clip,
+string "Yexpr"="Y",
+string "Uexpr"="U",
+string "Vexpr"="V",
+[bool "limiter"=False],
+[int "TVrange"=0 (0 to 2)],
+[int "smooth"=100 (0 to 200)],
+[int "dither"=75 (-1 to 100)],
+[int "useMT"=-1 (-1 to 64)],
+[int "useOPT"=-1 (-1 to 2)],
+bool "show"=False,
+[int "screenW"=-1 (-1 to 1920)],
+[int "screenH"=-1 (-1 to 1080)],
+[bool "scale"=True]
+)
+
+SmoothAdjust_SmoothCustom16(
+clip,
+string "Yexpr"="Y",
+string "Uexpr"="U",
+string "Vexpr"="V",
+[bool "limiter"=False],
+[int "TVrange"=0 (0 to 2)],
+[int "smooth"=100 (0 to 200)],
+[int "dither"=75 (-1 to 100)],
+[int "useMT"=-1 (-1 to 64)],
+[int "useOPT"=-1 (-1 to 2)],
+bool "show"=False,
+[int "screenW"=-1 (-1 to 1920)],
+[int "screenH"=-1 (-1 to 1080)],
+[bool "scale"=True]
+)
+
+SmoothAdjust_SmoothLevels(
+clip,
+int "input_low"=16 (0 to 255),
+float "gamma"=1.0 (0.01 to 5 by 0.05),
+int "input_high"=235 (0 to 255),
+int "output_low"=16 (0 to 255),
+int "output_high"=235 (0 to 255),
+[int "chroma"=100 (0 to 200)],
+[int "limiter"=0 (0 to 2)],
+bool "TVrange"=True,
+[string "preset"="default" ("default"/ "fullrange"/ "pc2tv"/ "tv2pc")],
+int "Lmode"=0 (0 to 3),
+int "darkSTR"=100 (0 to 200),
+int "brightSTR"=100 (0 to 200),
+[int "Ecurve"=0 (0 to 1)],
+[int "Ecenter"=128 (0 to 255)],
+[int "protect"=-1 (-1 to 255)],
+[int "smooth"=100 (0 to 200)],
+[int "dither"=75 (-1 to 100)],
+[int "useMT"=-1 (-1 to 64)],
+[int "useOPT"=-1 (-1 to 2)],
+bool "show"=False,
+[int "screenW"=-1 (-1 to 1920)],
+[int "screenH"=-1 (-1 to 1080)],
+[bool "scale"=True]
+)
+
+SmoothAdjust_SmoothLevels16(
+clip,
+int "input_low"=16 (0 to 65535),
+float "gamma"=1.0 (0.01 to 5 by 0.05),
+int "input_high"=235 (0 to 65535),
+int "output_low"=16 (0 to 65535),
+int "output_high"=235 (0 to 65535),
+[int "chroma"=100 (0 to 200)],
+[int "limiter"=0 (0 to 2)],
+bool "TVrange"=True,
+[string "preset"="default" ("default"/ "fullrange"/ "pc2tv"/ "tv2pc")],
+int "Lmode"=0 (0 to 3),
+int "darkSTR"=100 (0 to 200),
+int "brightSTR"=100 (0 to 200),
+[int "Ecurve"=0 (0 to 1)],
+[int "Ecenter"=128 (0 to 65535)],
+[int "protect"=-1 (-1 to 65535)],
+[int "smooth"=100 (0 to 200)],
+[int "dither"=75 (-1 to 100)],
+[int "useMT"=-1 (-1 to 64)],
+[int "useOPT"=-1 (-1 to 2)],
+bool "show"=False,
+[int "screenW"=-1 (-1 to 1920)],
+[int "screenH"=-1 (-1 to 1080)],
+[bool "scale"=True]
+)
+
+SmoothAdjust_SmoothTools(
+clip,
+string "filename"="default.smt" ("*.smt"),
+[int "smooth"=100 (0 to 200)],
+[int "dither"=75 (-1 to 100)],
+[int "useMT"=-1 (-1 to 64)],
+[int "useOPT"=-1 (-1 to 2)],
+bool "show"=False,
+[int "screenW"=-1 (-1 to 1920)],
+[int "screenH"=-1 (-1 to 1080)],
+[bool "scale"=True]
+)
+
+SmoothAdjust_SmoothTools16(
+clip,
+string "filename"="default.smt" ("*.smt"),
+[int "smooth"=100 (0 to 200)],
+[int "dither"=75 (-1 to 100)],
+[int "useMT"=-1 (-1 to 64)],
+[int "useOPT"=-1 (-1 to 2)],
+bool "show"=False,
+[int "screenW"=-1 (-1 to 1920)],
+[int "screenH"=-1 (-1 to 1080)],
+[bool "scale"=True]
+)
+
+SmoothAdjust_SmoothTweak(
+clip,
+int "brightness"=0 (-255 to 255),
+float "contrast"=1.0 (0.0 to 10.0),
+float "saturation"=1.0 (0.0 to 10.0),
+int "hue1"=0 (-255 to 255),
+int "hue2"=0 (-255 to 255),
+[bool "limiter"=False],
+bool "TVrange"=True,
+int "Lmode"=0 (0 to 2),
+int "limitSTR"=100 (0 to 200),
+[int "Ecurve"=0 (0 to 1)],
+[int "smooth"=100 (0 to 200)],
+[int "dither"=75 (-1 to 100)],
+[int "useMT"=-1 (-1 to 64)],
+[int "useOPT"=-1 (-1 to 2)],
+bool "show"=False,
+[int "screenW"=-1 (-1 to 1920)],
+[int "screenH"=-1 (-1 to 1080)],
+[bool "scale"=True]
+)
+
+SmoothAdjust_SmoothTweak16(
+clip,
+int "brightness"=0 (-65535 to 65535),
+float "contrast"=1.0 (0.0 to 10.0),
+float "saturation"=1.0 (0.0 to 10.0),
+int "hue1"=0 (-65535 to 65535),
+int "hue2"=0 (-65535 to 65535),
+[bool "limiter"=False],
+bool "TVrange"=True,
+int "Lmode"=0 (0 to 2),
+int "limitSTR"=100 (0 to 200),
+[int "Ecurve"=0 (0 to 1)],
+[int "smooth"=100 (0 to 200)],
+[int "dither"=75 (-1 to 100)],
+[int "useMT"=-1 (-1 to 64)],
+[int "useOPT"=-1 (-1 to 2)],
+bool "show"=False,
+[int "screenW"=-1 (-1 to 1920)],
+[int "screenH"=-1 (-1 to 1080)],
+[bool "scale"=True]
 )
 
 SoundOut_SoundOut(

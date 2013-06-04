@@ -52,10 +52,14 @@ The AvsP project was abandoned by its original author by late 2007.
 AvsPmod is an ongoing community effort to maintain and provide some 
 enhancements to AvsP:
 
-- Importing of function definitions, including from online wiki
+- Improved syntax highlighting
+- Code folding
 - Improved function autocomplete
-- Move, rename and undo close tabs
+- Importing of function definitions, including from online wiki
+- Snippets of text
 - Better Unicode support
+- HTML export and printing
+- Move, rename, group and undo close tabs
 - Video preview usability improvements
 - YUV -> RGB options for previewing
 - Support for AviSynth 2.6.0 new colorspaces
@@ -85,8 +89,16 @@ Updating to a new version
 -------------------------
 
 To update AvsPmod just overwrite the previous files.  Personal preferences 
-and customizations are preserved.  However note that edited macro scripts 
-and preset files must be backed up first.
+and customizations are preserved.  However note that edited macro scripts, 
+preset files and translations must be backed up first.
+
+In case you want to backup the preferences or clean-up old files not longer 
+used, these are the relevant files:
+
+- options.dat: main preferences
+- tools/*.dat: tool preferences
+- macros/macros.dat: macro preferences
+- _last_session_.ses: auto-saved session info
 
 
 Links

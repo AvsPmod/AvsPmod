@@ -17,13 +17,15 @@
 # French traslation authors:
 #   André v2.0.2
 
-version = "2.4.2"
+version = "2.5.0"
 
 messages = {
+    "AviSynth script" : u"", # New in v2.3.0
     "AviSynth fonts and colors" : u"APolices et couleurs AvsP",
     "Background" : u"Arrière-plan",
     "Font" : u"Police",
     "Text color" : u"Couleur",
+    "Reset" : u"", # New in v2.5.0
     "OK" : u"", # New in v1.2.1
     "Cancel" : u"Annuler",
     "Page:" : u"", # New in v2.3.1
@@ -67,7 +69,6 @@ messages = {
     "User functions" : u"Scripts utilisateur",
     "Script functions" : u"Fonctions",
     "Clip properties" : u"Propriétés clip",
-    "Include %(title)s in autcompletion lists" : u"Inclure %(title)s dans les listes déroulantes automatiques",
     "New function" : u"Nouvelle fonction",
     "Edit selected" : u"Editer sélection",
     "Delete selected" : u"Supprimer sélection",
@@ -97,10 +98,15 @@ messages = {
     "Invalid filter name!" : u"Nom de filtre invalide !",
     "Renaming not allowed!" : u"Renommage refusé !",
     "You must use dllname_function naming format for plugins!" : u"Vous devez utiliser le format nomDeFicherDll_fonction pour nommer les plugins!",
+    "Long name" : u"", # New in v2.5.0
+    "Short name" : u"", # New in v2.5.0
+    "Both" : u"", # New in v2.5.0
+    "Only long names" : u"", # New in v2.5.0
+    "Only short names" : u"", # New in v2.5.0
+    "All names" : u"", # New in v2.5.0
     "Open Customization files, Avisynth scripts or Avsp options files" : u"", # New in v2.2.1
     "All supported" : u"", # New in v2.3.0
     "Customization file" : u"", # New in v2.3.0
-    "AviSynth script" : u"", # New in v2.3.0
     "AvsP data" : u"", # New in v2.3.0
     "Unrecognized files" : u"", # New in v2.2.1
     "Select the functions to import" : u"", # New in v2.4.2
@@ -118,7 +124,8 @@ messages = {
     "This will delete all filter customizations. Continue?" : u"Supprimer toute les personnalisations (*) ?",
     "Warning" : u"Attention",
     "This will delete all manually defined presets. Continue?" : u"Supprimer les presets manuels (~) ?",
-    "Do you want to delete this custom filter entirely?" : u"Supprimer completement ce filtre personnalisé ?",
+    "Do you really want to delete this custom filter?" : u"", # New in v2.5.0
+    "Do you really want to reset this filter?" : u"", # New in v2.5.0
     "Edit filter database" : u"Editer la base de donnée des filtres",
     "Default" : u"Par défaut ",
     "Min value" : u"Min",
@@ -189,6 +196,8 @@ messages = {
     "Frequent calltips" : u"Bulles d'aide automatiques",
     "Syntax highlighting" : u"Mise en évidence / coloration syntaxique",
     "Turn on/off avisynth-specific text colors and fonts" : u"Active/Désactive les couleures et polices spécifiques à Avisynth",
+    "Prefer functions over variables" : u"", # New in v2.5.0
+    "When a word could be either a function or a variable, highlight it as function" : u"", # New in v2.5.0
     "Show autocomplete on capital letters" : u"Sur lettres majuscules, afficher la liste automatique ",
     "Turn on/off automatic autocomplete list when typing words starting with capital letters" : u"Active/Désactive la liste des filtres quand un mot est commencé par une lettre en majuscule",
     "Amount of letters typed" : u"", # New in v2.3.0
@@ -222,18 +231,16 @@ messages = {
     "Show autocomplete with icons" : u"", # New in v2.2.1
     "Don't show autocomplete when calltip is active" : u"", # New in v2.2.1
     "When calltip is active, autocomplete will not be activate automatically. You can still show autocomplete manually" : u"", # New in v2.2.1
-    "Customize autocomplete keyword list..." : u"", # New in v2.2.1
-    "Customize the keyword list shown in the autocomplete choice box" : u"", # New in v2.2.1
     "Autoparentheses level" : u"Niveau de parenthèses automatiques",
     "Close \"()\"" : u"Fermés \"()\"", # New in v1.3.2
     "Determines parentheses to insert upon autocompletion" : u"Détermine les parenthèses à insérer en fin d'autocompletion",
     "None \" \"" : u"Aucune",
     "Open \"(\"" : u"Ouverte \"(\"", # New in v1.3.2
     "Determines which key activates the filter preset when the autocomplete box is visible" : u"Indique quelle touche activele texte automatique quand la liste déroulante d'autocompletion est visible",
-    "None" : u"Aucune",
     "Preset activation key" : u"Touche pour activation preset",
     "Return" : u"Retour chariot",
     "Tab" : u"", # New in v2.0.0
+    "None" : u"Aucune",
     "Video" : u"Vidéo",
     "Constantly update video while dragging" : u"Mettre à jour la vidéo en permanence pendant les déplacements du curseur",
     "Update the video constantly when dragging the frame slider" : u"Met à jour en permanence la fenêtre video lors des déplacement du curseur de frames",
@@ -245,6 +252,12 @@ messages = {
     "Refresh preview when switch focus on video window or change a value in slider window" : u"", # New in v2.2.1
     "Seeking to a certain frame will seek to that frame on all tabs" : u"", # New in v2.2.1
     "Shared timeline" : u"", # New in v2.2.1
+    "Only on tabs of the same characteristics" : u"", # New in v2.5.0
+    "Only share timeline for clips with the same resolution and frame count" : u"", # New in v2.5.0
+    "Enable scroll wheel through similar tabs" : u"", # New in v2.2.1
+    "Mouse scroll wheel cycles through tabs with similar videos" : u"Permettre de se déplacer d'onglet à onglet (videos similaires seulement) avec la roue de la sourie",
+    "Enable scroll wheel through tabs on the same group" : u"", # New in v2.5.0
+    "Mouse scroll wheel cycles through tabs assigned to the same tab group" : u"", # New in v2.5.0
     "Allow AvsPmod to resize and/or move the program window when updating the video preview" : u"", # New in v2.2.1
     "Allow AvsPmod to resize the window" : u"", # New in v2.2.1
     "Separate video preview window" : u"Séparer la fenêtre vidéo",
@@ -303,6 +316,10 @@ messages = {
     "Start dialogs on the last used directory" : u"", # New in v2.4.0
     "If unchecked, the script's directory is used" : u"", # New in v2.4.0
     "Start save image dialogs on the last used directory" : u"", # New in v2.4.0
+    "Choose a default pattern for image filenames. %s -> script title, %06d -> frame number padded to six digits" : u"", # New in v2.5.0
+    "Default image filename pattern" : u"", # New in v2.5.0
+    "Ask for JPEG quality" : u"", # New in v2.5.0
+    "When saving a JPEG image, prompt for the quality level. Use the value from the last time if not checked" : u"", # New in v2.5.0
     "Misc" : u"Divers",
     "Choose the language used for the interface" : u"", # New in v2.3.0
     "Language" : u"", # New in v2.3.0
@@ -314,8 +331,6 @@ messages = {
     "There can be several rows of tabs" : u"", # New in v2.2.1
     "All tabs will have same width" : u"", # New in v2.2.1
     "Show tabs in fixed width" : u"", # New in v2.2.1
-    "Enable scroll wheel through similar tabs" : u"", # New in v2.2.1
-    "Mouse scroll wheel cycles through tabs with similar videos" : u"Permettre de se déplacer d'onglet à onglet (videos similaires seulement) avec la roue de la sourie",
     "Invert scroll wheel direction" : u"", # New in v2.4.1
     "Scroll the mouse wheel up for changing tabs to the right" : u"", # New in v2.4.1
     "Only allow a single instance of AvsPmod" : u"", # New in v2.2.1
@@ -331,6 +346,7 @@ messages = {
     "minutes" : u"", # New in v1.3.3
     "seconds" : u"secondes",
     "frames" : u"", # New in v1.3.3
+    "Add tab to group" : u"", # New in v2.5.0
     "Extend selection to line down position" : u"", # New in v2.2.1
     "Scroll down" : u"", # New in v2.2.1
     "Extend rectangular selection to line down position" : u"", # New in v2.2.1
@@ -426,6 +442,8 @@ messages = {
     "Save script as..." : u"Enregistrer le script sous...",
     "Reload script" : u"", # New in v2.4.1
     "Reopen the current script file if it has changed" : u"", # New in v2.4.1
+    "Save the current script as a HTML document" : u"", # New in v2.5.0
+    "Export HTML" : u"", # New in v2.5.0
     "&Print script" : u"", # New in v2.3.1
     "Configure page for printing" : u"", # New in v2.3.1
     "Page setup" : u"", # New in v2.3.1
@@ -470,6 +488,8 @@ messages = {
     "Select All" : u"Sélectionner tout",
     "Select all the text" : u"Sélectionne tout le texte",
     "&Insert" : u"", # New in v2.2.1
+    "Expand a snippet tag, or select a snippet from the list" : u"", # New in v2.5.0
+    "Insert snippet" : u"", # New in v2.5.0
     "Choose a source file to insert into the text" : u"Choisir un fichier source à insérer dans le texte",
     "Insert source..." : u"Insérer source...",
     "Get a filename from a dialog box to insert into the text" : u"Récupère un nom de fichier à insérer dans le texte depuis la boîte de dialogue",
@@ -499,8 +519,8 @@ messages = {
     "Show list of filternames matching the partial text at the cursor" : u"Affiche la liste des filtres correspondant au texte partiel au niveau du curseur",
     "Autocomplete all" : u"", # New in v2.2.1
     "Disregard user's setting, show full list of filternames matching the partial text at the cursor" : u"", # New in v2.2.1
-    "Autocomplete parameter" : u"", # New in v2.4.2
-    "If the first characters typed match a parameter name, complete it" : u"", # New in v2.4.2
+    "Autocomplete parameter/filename" : u"", # New in v2.5.0
+    "If the first characters typed match a parameter name, complete it. If they're typed on a string, complete the filename" : u"", # New in v2.5.0
     "Show calltip" : u"Afficher bulle d'aide",
     "Show the calltip for the filter (only works if cursor within the arguments)" : u"Affiche la bulle d'aide associée à ce filtre (uniquement si le curseur se situe dans les paramètres)",
     "Show function definition" : u"Afficher/éditer la fonction",
@@ -531,6 +551,12 @@ messages = {
     "Set title (auto)" : u"", # New in v2.2.1
     "Edit title for bookmarks in a list table" : u"", # New in v2.2.1
     "Set title (manual)" : u"", # New in v2.2.1
+    "Not include this tab on any group" : u"", # New in v2.5.0
+    "Add tab to this group" : u"", # New in v2.5.0
+    "Clear current tab group" : u"", # New in v2.5.0
+    "Clear all tab groups" : u"", # New in v2.5.0
+    "Apply offsets" : u"", # New in v2.5.0
+    "Use the difference between showed frames when the tabs were added to the group as offsets" : u"", # New in v2.5.0
     "&Navigate" : u"", # New in v2.2.1
     "Go to &bookmark" : u"", # New in v2.2.1
     "Go to next bookmarked frame" : u"Va au favori suivant",
@@ -566,7 +592,7 @@ messages = {
     "Double the current playback speed" : u"", # New in v2.4.0
     "Increment speed" : u"", # New in v2.4.0
     "Decrement speed" : u"", # New in v2.4.0
-    "Half the current playback speed" : u"", # New in v2.4.0
+    "Halve the current playback speed" : u"", # New in v2.5.0
     "Normal speed" : u"", # New in v2.4.0
     "Set the playback speed to the script frame rate" : u"", # New in v2.4.0
     "Maximum speed" : u"", # New in v2.4.0
@@ -608,6 +634,8 @@ messages = {
     "Keep variables on refreshing" : u"", # New in v2.4.0
     "Save image as..." : u"Enregistrer l'image sous...",
     "Save the current frame as a bitmap" : u"Enregistre la frame courante en tant que bitmap (.BMP)",
+    "Quick save image" : u"", # New in v2.5.0
+    "Save the current frame as a bitmap with a default filename, overwriting the file if already exists" : u"", # New in v2.5.0
     "Copy image to clipboard" : u"", # New in v2.4.2
     "Copy the current frame to the clipboard as a bitmap" : u"", # New in v2.4.2
     "Force the script to reload and refresh the video frame" : u"Force le rechargement du script et affiche / raffraîchi la fenêtre vidéo",
@@ -640,6 +668,8 @@ messages = {
     "Fonts and colors..." : u"Polices et couleurs...",
     "Edit the extension-based templates for inserting sources" : u"Permet d'éditer le remplissage automatique du script lors de l'ajout de noms de fichiers d'extension connu",
     "Extension templates..." : u"Proformat extensions...",
+    "Snippets..." : u"", # New in v2.5.0
+    "Edit insertable text snippets" : u"", # New in v2.5.0
     "Configure the program keyboard shortcuts" : u"Permet de personnaliser les raccourcis clavier",
     "Keyboard shortcuts..." : u"", # New in v2.2.1
     "Configure program settings" : u"Permet de configurer les paramètres internes d'AvsP",
@@ -677,6 +707,7 @@ messages = {
     "&Macros" : u"", # New in v2.2.1
     "Close" : u"Fermer",
     "Rename" : u"", # New in v2.2.1
+    "Group" : u"", # New in v2.5.0
     "Save" : u"Enregistrer",
     "Save as..." : u"Enregistrer sous...",
     "Reload" : u"", # New in v2.4.1
@@ -718,12 +749,14 @@ messages = {
     "Frame No." : u"", # New in v2.2.1
     "Time **" : u"", # New in v2.2.1
     "Left-click on a selected item or double-click to edit.\n\n*  RED - a historic title, not a real bookmark.\n** Time may be unavailable or incorrect before preview refreshed." : u"", # New in v2.3.0
+    "Image saved to \"{0}\"" : u"", # New in v2.5.0
     "No image to save" : u"Pas d'image à enregistrer",
+    "Error requesting frame {number}" : u"", # New in v2.5.0
     "Couldn't open clipboard" : u"", # New in v2.4.2
     "Error loading the script" : u"Erreur pendant le chargement du script",
     "Starting analysis pass..." : u"", # New in v2.3.0
     "Frame %s/%s (%#.4g fps)" : u"", # New in v2.4.2
-    "Finished (%#.4g fps average)" : u"", # New in v2.4.2
+    "Finished (%s fps average)" : u"", # New in v2.5.0
     "Frame size:" : u"Taille de l'image :",
     "Length:" : u"Durée :",
     "Frame rate:" : u"Framerate :",
@@ -753,7 +786,10 @@ messages = {
     "External filter:" : u"Filtres externes :",
     "Internal function:" : u"Fonctions internes :",
     "User defined function:" : u"Fonctions utilisateur :",
+    "Unknown function:" : u"", # New in v2.5.0
     "Clip property:" : u"Définitions / propriétés :",
+    "Parameter:" : u"", # New in v2.5.0
+    "Assignment:" : u"", # New in v2.5.0
     "AviSynth keyword:" : u"Mots clefs AviSynth :",
     "AviSynth data type:" : u"Type de donnée AviSynth :",
     "AvsP user slider:" : u"Curseurs utilisateur AvsP :",
@@ -775,15 +811,18 @@ messages = {
     "Fold margin:" : u"", # New in v2.2.1
     "Scrap window" : u"", # New in v2.2.1
     "Override all fonts to use a specified monospace font(no effect on scrap window)" : u"", # New in v2.2.1
-    "Use monspaced font" : u"", # New in v2.2.1
-    "Insert aborted:" : u"Insertion annulée",
+    "Use monospaced font" : u"", # New in v2.2.1
     "No dot required in file extension!" : u"Entrer l'extention sans . !",
+    "Insert aborted:" : u"Insertion annulée",
     "Edit extension-based templates" : u"Editer le remplissages automatique pour les extentions de fichiers",
     "File extension" : u"Extention",
     "Template" : u"Remplissage automatique",
     "This info is used for inserting sources based on file extensions." : u"Cette info est utilisée pour remplir automatiquement le script en fonction de l'extention du fichier ajouté",
     "Any instances of *** in the template are replaced with the filename." : u"Toute répétition de *** dans la zone de remplissage automatique sera remplacé par NomDeFichier.",
     "(If you want relative paths instead of the full filename, use [***].)" : u"(Pour des chemins relatifs au lieu du nom de fichier complet, utiliser [***].)",
+    "Only alphanumeric and underscores allowed!" : u"", # New in v2.5.0
+    "Tag" : u"", # New in v2.5.0
+    "Snippet" : u"", # New in v2.5.0
     "Associating .avs files will write to the windows registry." : u"Associer les .avs avec AvsP va modifier le registre de windows.",
     "Do you wish to continue?" : u"Voulez-vous continuer ?",
     "Associate avs files for all users?" : u"", # New in v2.4.0
@@ -853,10 +892,15 @@ messages = {
     "Save session before closing all tabs?" : u"Sauver la session avant de fermer tous les tabs ?",
     "Save current script" : u"Enregistrer le script courant",
     "Directory %(dirname)s does not exist!" : u"Répertoire %(dirname)s n'existe pas !",
+    "Syntax highlighting is not active!" : u"", # New in v2.5.0
+    "Script has no text!" : u"", # New in v2.5.0
+    "HTML files" : u"", # New in v2.5.0
     "Load a session" : u"Charger une session",
     "File has been modified since the session was saved. Reload?" : u"Le script a été modifié depuis la dernière session. Recharger ?",
     "Save the session" : u"Enregistrer la session",
     "Save current frame" : u"Enregistrer la frame courante",
+    "Introduce the JPEG Quality (0-100)" : u"", # New in v2.5.0
+    "JPEG Quality" : u"", # New in v2.5.0
     "Insert a source" : u"Insérer une source",
     "All supported plugins" : u"", # New in v2.3.0
     "AviSynth plugins" : u"", # New in v2.3.0
@@ -899,7 +943,6 @@ messages = {
     "Invalid slider text: bad modulo label" : u"Erreur curseur : mise en forme du modulo incorrecte",
     "Invalid slider text: slider label already exists" : u"Erreur curseur : ce nom de curseur existe déjà",
     "Invalid slider text: invalid number" : u"Erreur curseur : nombre incorrecte",
-    "Invalid slider tag for rescaling!\nAccept only +, -, or an integer." : u"", # New in v2.3.0
     "Reset to initial value: %(value_formatted)s" : u"Retourner à la valeur initiale : %(value_formatted)s",
     "Reset to initial value: %(value2_formatted)s" : u"", # New in v2.2.1
     "Reset to default value: %(value_formatted)s" : u"Retourner à la valeur par défaut : %(value_formatted)s",
@@ -964,11 +1007,11 @@ messages = {
     "Insert" : u"Insérer",
     "Delete" : u"Supprimer",
     "Error: key %(key)s does not exist!" : u"Erreur : la clef %(key)s n'existe pas !",
+    "Item %(newKey)s already exists!" : u"Objet %(newKey)s existe déjà !",
     "Are you sure you want to rename from %(oldName)s to %(newName)s?" : u"Etes-vous sûr de vouloir renommer %(oldName)s en %(newName)s ?",
     "Question" : u"",
     "Insert a new item" : u"Insérer un nouvel object",
     "Must enter a name!" : u"Un nom doit être attribué !",
-    "Item %(newKey)s already exists!" : u"Objet %(newKey)s existe déjà !",
     "Warning: no value entered for item %(newKey)s!" : u"Attention : Aucune valeure entrée pour l'objet %(newKey)s !",
     "Message" : u"",
     "Select an item to delete first" : u"Sélectionner un objet à supprimer en premier",
@@ -1174,19 +1217,23 @@ messages = {
     #--- Macro: Save Image Sequence ---#
     "Bookmarks" : u"", # New in v2.4.0
     "Save image sequence" : u"", # New in v2.4.0
-    "Select frames" : u"", # New in v2.4.0
-    "Show saving progress" : u"", # New in v2.4.0
     "Output format" : u"", # New in v2.4.0
+    "Select frames" : u"", # New in v2.4.0
+    "Depth (PNG only)" : u"", # New in v2.5.0
     "Quality (JPEG only)" : u"", # New in v2.4.0
-    "Output directory and basename. The padded frame number is added as suffix" : u"", # New in v2.4.0
+    "Show saving progress" : u"", # New in v2.4.0
+    "Output directory and basename. A padded number is added as suffix" : u"", # New in v2.5.0
     "Use always this basename" : u"", # New in v2.4.0
     "Use always this directory" : u"", # New in v2.4.0
+    "Add the frame number as the suffix" : u"", # New in v2.5.0
+    "Save ranges to subdirectories" : u"", # New in v2.5.0
     "Range between bookmarks" : u"", # New in v2.4.0
     "Trim editor selections" : u"", # New in v2.4.0
     "All frames" : u"", # New in v2.4.0
     "Select an output directory and basename for the new images files" : u"", # New in v2.4.0
     "There is not Trim editor selections" : u"", # New in v2.4.0
     "Saving images..." : u"", # New in v2.3.0
+    "scene_{0:0{1}}" : u"", # New in v2.5.0
     "%d image files created." : u"", # New in v2.3.0
     "Information" : u"",
 

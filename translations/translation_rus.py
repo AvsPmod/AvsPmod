@@ -28,13 +28,15 @@
 # Russian interface file for AvsP editor by qwerpoi, http://www.avisynth.org/qwerpoi
 # Translated by Fizick 19.09.2006-11.03.2007 for AvsP v1.3.7, http://avisynth.org.ru/avsp
 
-version = "2.4.2"
+version = "2.5.0"
 
 messages = {
+    "AviSynth script" : u"", # New in v2.3.0
     "AviSynth fonts and colors" : u"", 
     "Background" : u"Фон", 
     "Font" : u"Шрифт", 
     "Text color" : u"Цвет текста", 
+    "Reset" : u"", # New in v2.5.0
     "OK" : u"Да", 
     "Cancel" : u"Отменить ",
     "Page:" : u"", # New in v2.3.1
@@ -78,7 +80,6 @@ messages = {
     "User functions" : u"", # New in v2.2.1
     "Script functions" : u"", # New in v2.2.1
     "Clip properties" : u"", # New in v2.2.1
-    "Include %(title)s in autcompletion lists" : u"", # New in v2.2.1
     "New function" : u"", # New in v2.2.1
     "Edit selected" : u"", # New in v2.2.1
     "Delete selected" : u"", # New in v2.2.1
@@ -108,10 +109,15 @@ messages = {
     "Invalid filter name!" : u"", # New in v2.2.1
     "Renaming not allowed!" : u"", # New in v2.2.1
     "You must use dllname_function naming format for plugins!" : u"", # New in v2.2.1
+    "Long name" : u"", # New in v2.5.0
+    "Short name" : u"", # New in v2.5.0
+    "Both" : u"", # New in v2.5.0
+    "Only long names" : u"", # New in v2.5.0
+    "Only short names" : u"", # New in v2.5.0
+    "All names" : u"", # New in v2.5.0
     "Open Customization files, Avisynth scripts or Avsp options files" : u"", # New in v2.2.1
     "All supported" : u"", # New in v2.3.0
     "Customization file" : u"", # New in v2.3.0
-    "AviSynth script" : u"", # New in v2.3.0
     "AvsP data" : u"", # New in v2.3.0
     "Unrecognized files" : u"", # New in v2.2.1
     "Select the functions to import" : u"", # New in v2.4.2
@@ -129,7 +135,8 @@ messages = {
     "This will delete all filter customizations. Continue?" : u"", # New in v2.2.1
     "Warning" : u"Предупреждение",
     "This will delete all manually defined presets. Continue?" : u"", # New in v2.2.1
-    "Do you want to delete this custom filter entirely?" : u"", # New in v2.2.1
+    "Do you really want to delete this custom filter?" : u"", # New in v2.5.0
+    "Do you really want to reset this filter?" : u"", # New in v2.5.0
     "Edit filter database" : u"", # New in v2.2.1
     "Default" : u"По умолчанию",
     "Min value" : u"Минимальное значение",
@@ -200,6 +207,8 @@ messages = {
     "Frequent calltips" : u"Частые подсказки",
     "Syntax highlighting" : u"Подсветка синтаксиса",
     "Turn on/off avisynth-specific text colors and fonts" : u"Включить/выключить  цвета и шрифты специфичного для Avisynth текста",
+    "Prefer functions over variables" : u"", # New in v2.5.0
+    "When a word could be either a function or a variable, highlight it as function" : u"", # New in v2.5.0
     "Show autocomplete on capital letters" : u"", # New in v2.2.1
     "Turn on/off automatic autocomplete list when typing words starting with capital letters" : u"Включить/выключить список автоматического автозавершения при наборе слов, начинающихся с заглавных букв",
     "Amount of letters typed" : u"", # New in v2.3.0
@@ -233,18 +242,16 @@ messages = {
     "Show autocomplete with icons" : u"", # New in v2.2.1
     "Don't show autocomplete when calltip is active" : u"", # New in v2.2.1
     "When calltip is active, autocomplete will not be activate automatically. You can still show autocomplete manually" : u"", # New in v2.2.1
-    "Customize autocomplete keyword list..." : u"", # New in v2.2.1
-    "Customize the keyword list shown in the autocomplete choice box" : u"", # New in v2.2.1
     "Autoparentheses level" : u"Уровень автоскобок",
     "Close \"()\"" : u"Закрытая \"()\"",
     "Determines parentheses to insert upon autocompletion" : u"Определяет скобки для вставки при автозавершении",
     "None \" \"" : u"Никакая \" \"",
     "Open \"(\"" : u"Открытая \"(\"",
     "Determines which key activates the filter preset when the autocomplete box is visible" : u"", # New in v2.2.1
-    "None" : u"Не определена",
     "Preset activation key" : u"", # New in v2.2.1
     "Return" : u"", # New in v2.2.1
     "Tab" : u"", # New in v2.2.1
+    "None" : u"Не определена",
     "Video" : u"Видео",
     "Constantly update video while dragging" : u"Непрерывно обновлять видео при перетаскивании",
     "Update the video constantly when dragging the frame slider" : u"Обновлять видео непрерывно при перемещении ползунка кадров",
@@ -256,6 +263,12 @@ messages = {
     "Refresh preview when switch focus on video window or change a value in slider window" : u"", # New in v2.2.1
     "Seeking to a certain frame will seek to that frame on all tabs" : u"", # New in v2.2.1
     "Shared timeline" : u"", # New in v2.2.1
+    "Only on tabs of the same characteristics" : u"", # New in v2.5.0
+    "Only share timeline for clips with the same resolution and frame count" : u"", # New in v2.5.0
+    "Enable scroll wheel through similar tabs" : u"", # New in v2.2.1
+    "Mouse scroll wheel cycles through tabs with similar videos" : u"", # New in v2.2.1
+    "Enable scroll wheel through tabs on the same group" : u"", # New in v2.5.0
+    "Mouse scroll wheel cycles through tabs assigned to the same tab group" : u"", # New in v2.5.0
     "Allow AvsPmod to resize and/or move the program window when updating the video preview" : u"", # New in v2.2.1
     "Allow AvsPmod to resize the window" : u"", # New in v2.2.1
     "Separate video preview window" : u"Отдельное окно просмотра видео",
@@ -314,6 +327,10 @@ messages = {
     "Start dialogs on the last used directory" : u"", # New in v2.4.0
     "If unchecked, the script's directory is used" : u"", # New in v2.4.0
     "Start save image dialogs on the last used directory" : u"", # New in v2.4.0
+    "Choose a default pattern for image filenames. %s -> script title, %06d -> frame number padded to six digits" : u"", # New in v2.5.0
+    "Default image filename pattern" : u"", # New in v2.5.0
+    "Ask for JPEG quality" : u"", # New in v2.5.0
+    "When saving a JPEG image, prompt for the quality level. Use the value from the last time if not checked" : u"", # New in v2.5.0
     "Misc" : u"Разное", 
     "Choose the language used for the interface" : u"", # New in v2.3.0
     "Language" : u"", # New in v2.3.0
@@ -325,8 +342,6 @@ messages = {
     "There can be several rows of tabs" : u"", # New in v2.2.1
     "All tabs will have same width" : u"", # New in v2.2.1
     "Show tabs in fixed width" : u"", # New in v2.2.1
-    "Enable scroll wheel through similar tabs" : u"", # New in v2.2.1
-    "Mouse scroll wheel cycles through tabs with similar videos" : u"", # New in v2.2.1
     "Invert scroll wheel direction" : u"", # New in v2.4.1
     "Scroll the mouse wheel up for changing tabs to the right" : u"", # New in v2.4.1
     "Only allow a single instance of AvsPmod" : u"", # New in v2.2.1
@@ -342,6 +357,7 @@ messages = {
     "minutes" : u"минуты",
     "seconds" : u"секунды",
     "frames" : u"кадры",
+    "Add tab to group" : u"", # New in v2.5.0
     "Extend selection to line down position" : u"", # New in v2.2.1
     "Scroll down" : u"", # New in v2.2.1
     "Extend rectangular selection to line down position" : u"", # New in v2.2.1
@@ -437,6 +453,8 @@ messages = {
     "Save script as..." : u"Сохранить скрипт как...",
     "Reload script" : u"", # New in v2.4.1
     "Reopen the current script file if it has changed" : u"", # New in v2.4.1
+    "Save the current script as a HTML document" : u"", # New in v2.5.0
+    "Export HTML" : u"", # New in v2.5.0
     "&Print script" : u"", # New in v2.3.1
     "Configure page for printing" : u"", # New in v2.3.1
     "Page setup" : u"", # New in v2.3.1
@@ -481,6 +499,8 @@ messages = {
     "Select All" : u"Выбрать все",
     "Select all the text" : u"Выбрать весь текст",
     "&Insert" : u"", # New in v2.2.1
+    "Expand a snippet tag, or select a snippet from the list" : u"", # New in v2.5.0
+    "Insert snippet" : u"", # New in v2.5.0
     "Choose a source file to insert into the text" : u"Задать файл (видео) источника для вставки в текст",
     "Insert source..." : u"Вставить источник...",
     "Get a filename from a dialog box to insert into the text" : u"Получить имя файла в диалоге для вставки в текст",
@@ -510,8 +530,8 @@ messages = {
     "Show list of filternames matching the partial text at the cursor" : u"Показать список имен фильтров, соответствующих части текста, выделенной курсором",
     "Autocomplete all" : u"", # New in v2.2.1
     "Disregard user's setting, show full list of filternames matching the partial text at the cursor" : u"", # New in v2.2.1
-    "Autocomplete parameter" : u"", # New in v2.4.2
-    "If the first characters typed match a parameter name, complete it" : u"", # New in v2.4.2
+    "Autocomplete parameter/filename" : u"", # New in v2.5.0
+    "If the first characters typed match a parameter name, complete it. If they're typed on a string, complete the filename" : u"", # New in v2.5.0
     "Show calltip" : u"Показать подсказку", 
     "Show the calltip for the filter (only works if cursor within the arguments)" : u"Показать подсказку по фильтру (работает только если курсор на аргументах)", 
     "Show function definition" : u"Показать определение функции",
@@ -542,6 +562,12 @@ messages = {
     "Set title (auto)" : u"", # New in v2.2.1
     "Edit title for bookmarks in a list table" : u"", # New in v2.2.1
     "Set title (manual)" : u"", # New in v2.2.1
+    "Not include this tab on any group" : u"", # New in v2.5.0
+    "Add tab to this group" : u"", # New in v2.5.0
+    "Clear current tab group" : u"", # New in v2.5.0
+    "Clear all tab groups" : u"", # New in v2.5.0
+    "Apply offsets" : u"", # New in v2.5.0
+    "Use the difference between showed frames when the tabs were added to the group as offsets" : u"", # New in v2.5.0
     "&Navigate" : u"", # New in v2.2.1
     "Go to &bookmark" : u"", # New in v2.2.1
     "Go to next bookmarked frame" : u"Перейти к следующей закладке на кадрах",
@@ -577,7 +603,7 @@ messages = {
     "Double the current playback speed" : u"", # New in v2.4.0
     "Increment speed" : u"", # New in v2.4.0
     "Decrement speed" : u"", # New in v2.4.0
-    "Half the current playback speed" : u"", # New in v2.4.0
+    "Halve the current playback speed" : u"", # New in v2.5.0
     "Normal speed" : u"", # New in v2.4.0
     "Set the playback speed to the script frame rate" : u"", # New in v2.4.0
     "Maximum speed" : u"", # New in v2.4.0
@@ -619,6 +645,8 @@ messages = {
     "Keep variables on refreshing" : u"", # New in v2.4.0
     "Save image as..." : u"Сохранить изображение как...",
     "Save the current frame as a bitmap" : u"Сохранить текущий кадр как файл картинки",
+    "Quick save image" : u"", # New in v2.5.0
+    "Save the current frame as a bitmap with a default filename, overwriting the file if already exists" : u"", # New in v2.5.0
     "Copy image to clipboard" : u"", # New in v2.4.2
     "Copy the current frame to the clipboard as a bitmap" : u"", # New in v2.4.2
     "Force the script to reload and refresh the video frame" : u"Перезагрузить скрипт и обновить видео кадр",
@@ -651,6 +679,8 @@ messages = {
     "Fonts and colors..." : u"Шрифты и цвета...", 
     "Edit the extension-based templates for inserting sources" : u"Редактировать шаблоны типов файлов для вставки источников",
     "Extension templates..." : u"Шаблоны расширений...", 
+    "Snippets..." : u"", # New in v2.5.0
+    "Edit insertable text snippets" : u"", # New in v2.5.0
     "Configure the program keyboard shortcuts" : u"Конфигурировать сочетания клавиш быстрого выполнения",
     "Keyboard shortcuts..." : u"", # New in v2.2.1
     "Configure program settings" : u"Конфигурировать настройки программы",
@@ -688,6 +718,7 @@ messages = {
     "&Macros" : u"", # New in v2.2.1
     "Close" : u"Закрыть",
     "Rename" : u"", # New in v2.2.1
+    "Group" : u"", # New in v2.5.0
     "Save" : u"Сохранить",
     "Save as..." : u"Сохранить как...",
     "Reload" : u"", # New in v2.4.1
@@ -729,12 +760,14 @@ messages = {
     "Frame No." : u"", # New in v2.2.1
     "Time **" : u"", # New in v2.2.1
     "Left-click on a selected item or double-click to edit.\n\n*  RED - a historic title, not a real bookmark.\n** Time may be unavailable or incorrect before preview refreshed." : u"", # New in v2.3.0
+    "Image saved to \"{0}\"" : u"", # New in v2.5.0
     "No image to save" : u"Нет изображения для сохранения",
+    "Error requesting frame {number}" : u"", # New in v2.5.0
     "Couldn't open clipboard" : u"", # New in v2.4.2
     "Error loading the script" : u"Ошибка загрузки скрипта",
     "Starting analysis pass..." : u"", # New in v2.3.0
     "Frame %s/%s (%#.4g fps)" : u"", # New in v2.4.2
-    "Finished (%#.4g fps average)" : u"", # New in v2.4.2
+    "Finished (%s fps average)" : u"", # New in v2.5.0
     "Frame size:" : u"Размер кадра",
     "Length:" : u"Длина",
     "Frame rate:" : u"Частота кадров",
@@ -764,7 +797,10 @@ messages = {
     "External filter:" : u"Внешний фильтр:", 
     "Internal function:" : u"Внутренняя функция:", 
     "User defined function:" : u"Функция определенная пользователем:",
+    "Unknown function:" : u"", # New in v2.5.0
     "Clip property:" : u"Свойство клипа:", 
+    "Parameter:" : u"", # New in v2.5.0
+    "Assignment:" : u"", # New in v2.5.0
     "AviSynth keyword:" : u"Ключевое слово AviSynth:",
     "AviSynth data type:" : u"Тип данных AviSynth:",
     "AvsP user slider:" : u"AvsP пользовательский ползунок:",
@@ -786,15 +822,18 @@ messages = {
     "Fold margin:" : u"", # New in v2.2.1
     "Scrap window" : u"", # New in v2.2.1
     "Override all fonts to use a specified monospace font(no effect on scrap window)" : u"", # New in v2.2.1
-    "Use monspaced font" : u"", # New in v2.2.1
-    "Insert aborted:" : u"Вставка прервана:",
+    "Use monospaced font" : u"", # New in v2.2.1
     "No dot required in file extension!" : u"Точка не требуется в раcширении файла!",
+    "Insert aborted:" : u"Вставка прервана:",
     "Edit extension-based templates" : u"Редактировать основанные на расширении шаблоны",
     "File extension" : u"Расширение файла",
     "Template" : u"Шаблон",
     "This info is used for inserting sources based on file extensions." : u"Эта информация используется для вставки источников, основываясь на расширениях.",
     "Any instances of *** in the template are replaced with the filename." : u"Любое нахождение *** в шаблоне заменяется именем файла.",
     "(If you want relative paths instead of the full filename, use [***].)" : u"", # New in v2.2.1
+    "Only alphanumeric and underscores allowed!" : u"", # New in v2.5.0
+    "Tag" : u"", # New in v2.5.0
+    "Snippet" : u"", # New in v2.5.0
     "Associating .avs files will write to the windows registry." : u"Ассоциирование .avs файлов проводится путем внесения изменений в реестр Windows.",
     "Do you wish to continue?" : u"Хотите продолжить?",
     "Associate avs files for all users?" : u"", # New in v2.4.0
@@ -864,10 +903,15 @@ messages = {
     "Save session before closing all tabs?" : u"", # New in v2.2.1
     "Save current script" : u"Сохранить текущий скрипт",
     "Directory %(dirname)s does not exist!" : u"Папка %(dirname)s не существует",
+    "Syntax highlighting is not active!" : u"", # New in v2.5.0
+    "Script has no text!" : u"", # New in v2.5.0
+    "HTML files" : u"", # New in v2.5.0
     "Load a session" : u"Загрузить сеанс",
     "File has been modified since the session was saved. Reload?" : u"Файл был изменен с момента сохранения сеанса. Загрузить заново?",
     "Save the session" : u"Сохранить сеанс",
     "Save current frame" : u"Сохранить текущий кадр",
+    "Introduce the JPEG Quality (0-100)" : u"", # New in v2.5.0
+    "JPEG Quality" : u"", # New in v2.5.0
     "Insert a source" : u"Вставить источник",
     "All supported plugins" : u"", # New in v2.3.0
     "AviSynth plugins" : u"", # New in v2.3.0
@@ -910,7 +954,6 @@ messages = {
     "Invalid slider text: bad modulo label" : u"Негодный текст ползунка: плохая метка",
     "Invalid slider text: slider label already exists" : u"Негодный текст ползунка: метка уже существует",
     "Invalid slider text: invalid number" : u"Негодный текст ползунка:",
-    "Invalid slider tag for rescaling!\nAccept only +, -, or an integer." : u"", # New in v2.3.0
     "Reset to initial value: %(value_formatted)s" : u"Сброс к начальному значению: %(value_formatted)s",
     "Reset to initial value: %(value2_formatted)s" : u"", # New in v2.2.1
     "Reset to default value: %(value_formatted)s" : u"", # New in v2.2.1
@@ -975,11 +1018,11 @@ messages = {
     "Insert" : u"Вставить",
     "Delete" : u"Удалить",
     "Error: key %(key)s does not exist!" : u"Ошибка: пункт %(key)s не существует!",
+    "Item %(newKey)s already exists!" : u"Пункт %(newKey)s уже существует",
     "Are you sure you want to rename from %(oldName)s to %(newName)s?" : u"Вы уверены, что хотите переименовать %(oldName)s в %(newName)s?",
     "Question" : u"Вопрос",
     "Insert a new item" : u"Вставьте новый пункт",
     "Must enter a name!" : u"Должны ввести имя!",
-    "Item %(newKey)s already exists!" : u"Пункт %(newKey)s уже существует",
     "Warning: no value entered for item %(newKey)s!" : u"Предупреждение: не введедена величина для пункта  %(newKey)s!",
     "Message" : u"Сообщение",
     "Select an item to delete first" : u"Для удаления сначала выберете пункт",
@@ -1185,19 +1228,23 @@ messages = {
     #--- Macro: Save Image Sequence ---#
     "Bookmarks" : u"", # New in v2.4.0
     "Save image sequence" : u"", # New in v2.4.0
-    "Select frames" : u"", # New in v2.4.0
-    "Show saving progress" : u"", # New in v2.4.0
     "Output format" : u"", # New in v2.4.0
+    "Select frames" : u"", # New in v2.4.0
+    "Depth (PNG only)" : u"", # New in v2.5.0
     "Quality (JPEG only)" : u"", # New in v2.4.0
-    "Output directory and basename. The padded frame number is added as suffix" : u"", # New in v2.4.0
+    "Show saving progress" : u"", # New in v2.4.0
+    "Output directory and basename. A padded number is added as suffix" : u"", # New in v2.5.0
     "Use always this basename" : u"", # New in v2.4.0
     "Use always this directory" : u"", # New in v2.4.0
+    "Add the frame number as the suffix" : u"", # New in v2.5.0
+    "Save ranges to subdirectories" : u"", # New in v2.5.0
     "Range between bookmarks" : u"", # New in v2.4.0
     "Trim editor selections" : u"", # New in v2.4.0
     "All frames" : u"", # New in v2.4.0
     "Select an output directory and basename for the new images files" : u"", # New in v2.4.0
     "There is not Trim editor selections" : u"", # New in v2.4.0
     "Saving images..." : u"", # New in v2.3.0
+    "scene_{0:0{1}}" : u"", # New in v2.5.0
     "%d image files created." : u"", # New in v2.3.0
     "Information" : u"Информация",
 
