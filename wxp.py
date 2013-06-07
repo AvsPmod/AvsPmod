@@ -190,7 +190,7 @@ class StdoutStderrWindow:
         self.frame  = None
         self.title  = title
         self.pos    = wx.DefaultPosition
-        self.size   = (450, 300)
+        self.size   = (550, 300)
         self.parent = None
         logname = 'error_log.txt'
         if hasattr(sys,'frozen'):

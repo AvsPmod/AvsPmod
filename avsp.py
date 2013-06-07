@@ -1480,29 +1480,20 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
         def get_names(name):
             name = name.lower()
             if name in self.app.avsfilterdict:
+                display_name = self.app.avsfilterdict[name][2]
                 if self.app.avsfilterdict[name][1] == AvsStyledTextCtrl.STC_AVS_PLUGIN:
                     is_short = self.app.avsfilterdict[name][3]
                     if is_short:
                         long_name = self.app.avsfilterdict[is_short][2]
-                        yield long_name[:-len(name)-1]
-                        yield self.app.avsfilterdict[name][2]
-                        yield long_name
+                        short_name = display_name
                     else:
-                        long_name = self.app.avsfilterdict[name][2]
-                        for dllname in sorted(self.app.dllnameunderscored, reverse=True):
-                            if name.startswith(dllname):
-                                index = len(dllname)
-                                yield long_name[:index]
-                                yield long_name[index+1:]
-                                break
-                        else:
-                            splitname = long_name.split('_', 1)
-                            if len(splitname) == 2:
-                                yield splitname[0]
-                                yield splitname[1]
-                        yield long_name
+                        long_name = display_name
+                        short_name = self.app.GetPluginFunctionShortName(long_name)
+                    yield long_name[:-len(short_name) - 1]
+                    yield short_name
+                    yield long_name
                 else:
-                    yield self.app.avsfilterdict[name][2]
+                    yield display_name
         
         for find_name in get_names(name):
             for dir in docsearchpaths:
@@ -3151,7 +3142,7 @@ class UserSliderDialog(wx.Dialog):
 # Dialog for AviSynth filter information
 class AvsFunctionDialog(wx.Dialog):
     def __init__(self, parent, filterDict, overrideDict, avsfilterdict, 
-                       presetDict, removedSet, pluginDict, 
+                       presetDict, removedSet, pluginDict, shortnamesDict, 
                        installed_plugins_filternames, 
                        installed_avsi_filternames, functionName=None, 
                        CreateDefaultPreset=None, ExportFilterData=None, 
@@ -3168,6 +3159,7 @@ class AvsFunctionDialog(wx.Dialog):
         self.presetDict = presetDict.copy()
         self.removedSet = removedSet.copy()
         self.pluginDict = pluginDict.copy()
+        self.shortnamesDict = shortnamesDict.copy()
         self.installed_plugins_filternames = installed_plugins_filternames
         self.installed_avsi_filternames = installed_avsi_filternames
         self.CreateDefaultPreset = CreateDefaultPreset
@@ -3765,6 +3757,10 @@ class AvsFunctionDialog(wx.Dialog):
                     splitstring = s.split('(', 1)
                     if len(splitstring) == 2:
                         filtername = splitstring[0].strip()
+                        if not self.parent.GetPluginFunctionShortName(filtername.lower()):
+                            print>>sys.stderr, '{0}: {1}'.format(_('Error'), _('Invalid plugin '
+                                'function name "{name}". Must be "pluginname_functionname".').format(name=filtername))
+                            continue
                         filterargs = '('+splitstring[1].strip(' ')
                         filterInfo.append((filename, filtername, filterargs, 2))
             elif title == 'userfunctions':
@@ -3937,6 +3933,7 @@ class AvsFunctionDialog(wx.Dialog):
             self.overrideDict[lowername] = (newName, newArgs, newType)
             if newType == 2:
                 self.pluginDict[lowername] = 0
+                self.shortnamesDict[self.parent.GetPluginFunctionShortName(lowername)].append(lowername)
             extra += '*'
             # Update the preset dict
             if boolAutoPreset:
@@ -4034,10 +4031,16 @@ class AvsFunctionDialog(wx.Dialog):
                             break
                 listbox.SetString(listbox.GetSelection(), newName+extra)
             else:
+                shortname = self.parent.GetPluginFunctionShortName(lowername)
                 if newType == 2:
                     self.pluginDict[lowername] = 0
+                    self.shortnamesDict[shortname].append(lowername)
                 elif enteredType == 2:
                     del self.pluginDict[lowername]
+                    if len(self.shortnamesDict[shortname]) == 1:
+                        del self.shortnamesDict[shortname]
+                    else:
+                        self.shortnamesDict[shortname].remove(lowername)
                 for index in xrange(self.notebook.GetPageCount()):
                     panel = self.notebook.GetPage(index)
                     if panel.functiontype == newType:
@@ -4085,6 +4088,11 @@ class AvsFunctionDialog(wx.Dialog):
             if added_by_user:
                 if panel.functiontype == 2:
                     del self.pluginDict[lowername]
+                    shortname = self.parent.GetPluginFunctionShortName(lowername)
+                    if len(self.shortnamesDict[shortname]) == 1:
+                        del self.shortnamesDict[shortname]
+                    else:
+                        self.shortnamesDict[shortname].remove(lowername)
                 if lowername in self.removedSet:
                     self.removedSet.remove(lowername)
                 listbox.Delete(index)
@@ -4102,7 +4110,11 @@ class AvsFunctionDialog(wx.Dialog):
 
     def GetAutocompletePluginNames(self):
         return self.pluginDict
-        
+    
+    def GetPluginShortNames(self):
+        return self.shortnamesDict
+
+
 # Dialog specifically for AviSynth filter auto-slider information
 class AvsFilterAutoSliderInfo(wx.Dialog):
     def __init__(self, parent, mainFrame, filterName, filterInfo, title=_('Edit filter database')):
@@ -5884,6 +5896,7 @@ class MainFrame(wxp.Frame):
         pyavs.InitRoutines()
     
     def defineFilterInfo(self):
+        self.plugin_shortnames = defaultdict(list)
         self.optionsFilters = self.getFilterInfoFromAvisynth()
         
         self.installed_avsi_filternames = set()
@@ -5974,11 +5987,17 @@ class MainFrame(wxp.Frame):
                                 #~ if filtername.lower() in self.optionsFilters:
                                     #~ self.optionsFilters[filtername.lower()] = (filtername, filterargs, 2)
                                 key = filtername.lower()
-                                self.optionsFilters[key] = (filtername, filterargs, 2)
                                 #~ splitname = filtername.split('_', 1)
                                 #~ if len(splitname) == 2:
                                     #~ filtername = splitname[1]
                                     #~ self.optionsFilters[filtername.lower()] = (filtername, filterargs, 2)
+                                short_name = self.GetPluginFunctionShortName(key)
+                                if short_name:
+                                    self.optionsFilters[key] = (filtername, filterargs, 2)
+                                    self.plugin_shortnames[short_name].append(key)
+                                else:
+                                    print>>sys.stderr, '{0}: {1}'.format(_('Error'), _('Invalid plugin '
+                                        'function name "{name}". Must be "pluginname_functionname".').format(name=key))
                     elif title == 'userfunctions':
                         if not self.options['fdb_userscriptfunctions']:
                             continue
@@ -6087,69 +6106,81 @@ class MainFrame(wxp.Frame):
             for lowername,(name,args,ftype) in self.optionsFilters.items()
             ]
         )
-        overridedict = dict(
-            [
-            (lowername, (args, styleList[ftype], name, None))
-            for lowername,(name,args,ftype) in self.options['filteroverrides'].items()
-            ]
-        )
+        overridedict = dict()
+        for lowername, (name, args, ftype) in self.options['filteroverrides'].iteritems():
+            overridedict[lowername] = args, styleList[ftype], name, None
+            if ftype == 2:
+                shortname = self.GetPluginFunctionShortName(lowername)
+                if lowername not in self.plugin_shortnames[shortname]:
+                    self.plugin_shortnames[shortname].append(lowername)
         self.avsfilterdict.update(overridedict)
+        # Add short plugin names to avsfilterdict.  Priority rules:
+        #   1. no excluded from autocomplete > excluded
+        #   2. don't override user script functions
+        #   3. autoloaded > filterdb > added by the user
+        #   4.1 AviSynth lookup order (autoloaded)
+        #   4.2 alphabetical (filterdb)
+        #   4.3 undefined (added by the user)
+        for shortname, long_name_list in self.plugin_shortnames.items():
+            if shortname in self.avsfilterdict and self.avsfilterdict[shortname][1] == styleList[3]:
+                if shortname not in self.options['filterremoved']:
+                    continue
+                user_function = True
+            else:
+                user_function = False
+            for index, long_name in enumerate(long_name_list):
+                if long_name not in self.options['filterremoved'] and \
+                        self.options['autocompletepluginnames'].get(long_name) != 1:
+                    break
+            else:
+                if user_function:
+                    continue
+                long_name = long_name_list[0]
+            args, styletype, name = self.avsfilterdict[long_name][:3]
+            self.avsfilterdict[shortname] = args, styletype, self.GetPluginFunctionShortName(name), long_name
+        # Remove unchecked items from autocompletion, delete long and short names as required
         avsfilterdict_autocomplete = self.avsfilterdict.copy()
-        # Add short plugin names to avsfilterdict
-        # Remove unchecked items from avsfilterdict_autocomplete, include long and short names as required
-        for lowername,(args,styletype,name,is_short) in self.avsfilterdict.items():
-            self.options['autocompletepluginnames'].setdefault(lowername, 0)
-            if lowername in self.options['filterremoved']:
-                del avsfilterdict_autocomplete[lowername]
+        for lowername, (args, styletype, name, is_short) in self.avsfilterdict.iteritems():
             if styletype == styleList[2]:
-                shortname = ''
-                for dllname in sorted(self.dllnameunderscored, reverse=True):
-                    if name.lower().startswith(dllname):
-                        shortname = name[len(dllname)+1:]
-                        break
-                if not shortname:
-                    splitname = name.split('_', 1)
-                    if len(splitname) == 2:
-                        shortname = splitname[1]
-                lowershortname = shortname.lower()
-                if shortname and (lowershortname not in self.avsfilterdict or 
-                                  self.avsfilterdict[lowershortname][1] != styleList[3]):
-                    self.avsfilterdict[lowershortname] = (args, styletype, shortname, lowername)
-                    if lowername in avsfilterdict_autocomplete:
-                        value = self.options['autocompletepluginnames'][lowername]
-                        if value != 1:
-                            avsfilterdict_autocomplete[lowershortname] = (args, styletype, shortname, lowername)
-                            if value == 2:
-                                del avsfilterdict_autocomplete[lowername]
+                if is_short:
+                    if self.options['autocompletepluginnames'][is_short] == 1:
+                        del avsfilterdict_autocomplete[lowername]
+                else:
+                    self.options['autocompletepluginnames'].setdefault(lowername, 0)
+                    if self.options['autocompletepluginnames'][lowername] == 2 or \
+                            lowername in self.options['filterremoved']:
+                        del avsfilterdict_autocomplete[lowername]
+            elif lowername in self.options['filterremoved']:
+                del avsfilterdict_autocomplete[lowername]
         self.avsazdict = self.GetAutocompleteDict(avsfilterdict_autocomplete)
         self.avsazdict_all = self.GetAutocompleteDict(self.avsfilterdict)
         self.avssingleletters = [
             s for s in (self.avsfilterdict.keys()+self.avskeywords+self.avsmiscwords)
             if (len(s) == 1 and not s.isalnum() and s != '_')
         ]
-
+    
+    def GetPluginFunctionShortName(self, long_name):
+        """Return the short name from a plugin function's mangled name"""
+        for dllname in sorted(self.dllnameunderscored, reverse=True):
+            if long_name.lower().startswith(dllname):
+                return long_name[len(dllname)+1:]
+        splitname = long_name.split('_', 1)
+        if len(splitname) == 2:
+            return splitname[1]
+        return ''
+    
     @staticmethod
     def GetAutocompleteDict(filter_dict):
         """Create a list for each letter (for autocompletion)"""
-        filternames = [
-            lowername
-            for lowername,(args,style,name,is_short) in filter_dict.items()
-        ]
-        filternames.sort()
-        avsazdict = {}
-        for lowername in filternames:
-            letter = lowername[0]
-            letterlist = avsazdict.setdefault(letter, [])
-            hasSymbol = False
-            if not lowername[0].isalpha() and lowername[0] != '_':
-                hasSymbol = True
-            else:
+        avsazdict = defaultdict(list)
+        for lowername in sorted(filter_dict.keys()):
+            first_letter = lowername[0]
+            if first_letter.isalpha() or first_letter != '_':
                 for char in lowername:
                     if not char.isalnum() and char != '_':
-                        hasSymbol = True
                         break
-            if not hasSymbol:
-                letterlist.append(filter_dict[lowername][2])
+                else:
+                    avsazdict[first_letter].append(filter_dict[lowername][2])
         return avsazdict
     
     def getFilterInfoFromAvisynth(self):
@@ -6209,8 +6240,11 @@ class MainFrame(wxp.Frame):
                             baddllnameList.append(dllname)
                             break
                 pos += len(shortname)
-                extfuncList.append((s[start:pos-1], 2))
-                self.installed_plugins_filternames.add(s[start:pos-1].lower())
+                long_name = s[start:pos-1]
+                if self.options['autoloadedplugins']:
+                    extfuncList.append((long_name, 2))
+                    self.plugin_shortnames[shortname[1:]].append(long_name.lower())
+                self.installed_plugins_filternames.add(long_name.lower())
                 if dllname.count('_'):
                     self.dllnameunderscored.add(dllname.lower())
                 start = pos
@@ -13432,6 +13466,7 @@ class MainFrame(wxp.Frame):
             self.options['filterpresets'],
             self.options['filterremoved'],
             self.options['autocompletepluginnames'],
+            self.plugin_shortnames,
             self.installed_plugins_filternames,
             self.installed_avsi_filternames,
             functionName=functionName,
@@ -13445,6 +13480,7 @@ class MainFrame(wxp.Frame):
             self.options['filterremoved'] = dlg.GetRemovedSet()
             self.options['filterpresets'] = dlg.GetPresetDict()
             self.options['autocompletepluginnames'] = dlg.GetAutocompletePluginNames()
+            self.plugin_shortnames = dlg.GetPluginShortNames()
             with open(self.optionsfilename, mode='wb') as f:
                 cPickle.dump(self.options, f, protocol=0)
             self.defineScriptFilterInfo()
