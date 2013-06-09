@@ -14594,23 +14594,25 @@ class MainFrame(wxp.Frame):
             
             if os.name == 'nt': # default Windows resolution is ~10 ms
                 
-                def playback_timer(id, reserved, data, reserved1, reserved2):
+                def playback_timer(id, reserved, factor, reserved1, reserved2):
                     """"Callback for a Windows Multimedia timer"""
                     if not self.playing_video:
                         return
                     if debug_stats:
                         current_time = time.time()
-                        print (current_time - self.previous_time) * 1000
+                        debug_stats_str = str((current_time - self.previous_time) * 1000)
                         self.previous_time = current_time
                     if self.play_drop and self.play_speed_factor != 'max':
                         frame = self.play_initial_frame
-                        increment = int(round(1000 * (time.time() - self.play_initial_time) / interval))
+                        increment = int(round(1000 * (time.time() - self.play_initial_time) / interval)) * factor
                         if debug_stats:
-                            print 'dropped:', increment - self.increment - 1
+                            debug_stats_str += ' dropped: ' + str(increment - self.increment - 1)
                             self.increment = increment
                     else:
                         frame = self.currentframenum
                         increment = 1
+                    if debug_stats:
+                        print debug_stats_str
                     if not AsyncCall(self.ShowVideoFrame, frame + increment, 
                                      check_playing=True, focus=False).Wait():
                         return
@@ -14619,7 +14621,7 @@ class MainFrame(wxp.Frame):
                     else:
                         wx.Yield()
                 
-                def WindowsTimer(interval, callback, data=0, periodic=True):
+                def WindowsTimer(interval, callback, periodic=True):
                     """High precision timer (1 ms) using Windows Multimedia"""
                     
                     self.timeGetDevCaps = ctypes.windll.winmm.timeGetDevCaps
@@ -14642,15 +14644,20 @@ class MainFrame(wxp.Frame):
                     self.play_timer_resolution = max(1, caps.wPeriodMin)
                     self.timeBeginPeriod(self.play_timer_resolution)
                     
-                    interval = int(round(interval))
+                    interval0 = interval
+                    factor = max(1, int(round(self.play_timer_resolution / interval)))
+                    interval = int(round(interval * factor))
                     self.callback_c = callback_prototype(callback)
                     self.play_initial_frame = self.currentframenum
                     self.play_initial_time = time.time()
                     if debug_stats:
+                        print 'speed_factor: {0}, required_interval: {1} '\
+                              'interval: {2} interval_factor: {3}'.format(
+                              self.play_speed_factor, interval0, interval, factor)
                         self.increment = 0
                         self.previous_time = self.play_initial_time
                     self.play_timer_id = self.timeSetEvent(interval, 
-                        self.play_timer_resolution, self.callback_c, data, periodic)
+                        self.play_timer_resolution, self.callback_c, factor, periodic)
                 
                 WindowsTimer(interval, playback_timer)
             
@@ -14669,28 +14676,37 @@ class MainFrame(wxp.Frame):
                         return
                     if debug_stats:
                         current_time = time.time()
-                        print (current_time - self.previous_time) * 1000
+                        debug_stats_str = str((current_time - self.previous_time) * 1000)
                         self.previous_time = current_time
                     if self.play_drop and self.play_speed_factor != 'max':
                         frame = self.play_initial_frame
-                        increment = int(round((time.time() - self.play_initial_time) / interval))
+                        increment = int(round((time.time() - self.play_initial_time) / interval)) * factor
                         if debug_stats:
-                            print 'dropped:', increment - self.increment - 1
+                            debug_stats_str += ' dropped: ' + str(increment - self.increment - 1)
                             self.increment = increment
                     else:
                         frame = self.currentframenum
                         increment = 1
+                    if debug_stats:
+                        print debug_stats_str
                     if not AsyncCall(self.ShowVideoFrame, frame + increment, 
                                      check_playing=True, focus=False).Wait():
                         return
                     if self.currentframenum == script.AVI.Framecount - 1:
                         self.PlayPauseVideo()
+                    elif not wx.GetApp().Yield(True):
+                        self.parent.PlayPauseVideo()
                 
-                interval /= 1000
+                interval0 = interval
+                factor = max(1, int(round(1 / interval)))
+                interval = interval * factor / 1000
                 self.previous_signal_handler = signal.signal(signal.SIGALRM, playback_timer)
                 self.play_initial_frame = self.currentframenum
                 self.play_initial_time = time.time()
                 if debug_stats:
+                    print 'speed_factor: {0}, required_interval: {1} '\
+                          'interval: {2} interval_factor: {3}'.format(
+                          self.play_speed_factor, interval0, interval * 1000, factor)
                     self.increment = 0
                     self.previous_time = self.play_initial_time
                 signal.setitimer(signal.ITIMER_REAL, interval, interval)
@@ -14699,11 +14715,13 @@ class MainFrame(wxp.Frame):
                 '''
                 
                 class RunVideoTimer(wx.Timer):
-                    def __init__(self, parent):
+                    def __init__(self, parent, factor=1):
                         wx.Timer.__init__(self)
                         self.parent = parent
+                        self.factor = factor
                         self.play_initial_frame = self.parent.currentframenum
                         self.play_initial_time = time.time()
+                        self.Yield = wx.GetApp().Yield
                         if debug_stats:
                             self.increment = 0
                             self.previous_time = self.play_initial_time
@@ -14713,26 +14731,35 @@ class MainFrame(wxp.Frame):
                             return
                         if debug_stats:
                             current_time = time.time()
-                            print (current_time - self.previous_time) * 1000
+                            debug_stats_str = str((current_time - self.previous_time) * 1000)
                             self.previous_time = current_time
                         if self.parent.play_drop and self.parent.play_speed_factor != 'max':
                             frame = self.play_initial_frame
-                            increment = int(round(1000 * (time.time() - self.play_initial_time) / self.GetInterval()))
+                            increment = int(round(1000 * (time.time() - self.play_initial_time) / self.GetInterval())) * self.factor
                             if debug_stats:
-                                print 'dropped:', increment - self.increment - 1
+                                debug_stats_str += ' dropped: ' + str(increment - self.increment - 1)
                                 self.increment = increment
                         else:
                             frame = self.parent.currentframenum
                             increment = 1
+                        if debug_stats:
+                            print debug_stats_str
                         if not self.parent.ShowVideoFrame(frame + increment, 
                                                           check_playing=True, focus=False):
                             return
                         if self.parent.currentframenum == script.AVI.Framecount - 1:
                             self.parent.PlayPauseVideo()
-                        #else:
-                        #    wx.Yield()
+                        elif not self.Yield(True):
+                            self.parent.PlayPauseVideo()
                 
-                self.play_timer = RunVideoTimer(self)
+                interval0 = interval
+                factor = max(1, int(round(1 / interval)))
+                interval = int(round(interval * factor))
+                self.play_timer = RunVideoTimer(self, factor)
+                if debug_stats:
+                    print 'speed_factor: {0}, required_interval: {1} '\
+                          'interval: {2} interval_factor: {3}'.format(
+                          self.play_speed_factor, interval0, interval, factor)
                 self.play_timer.Start(interval)
     
     def RunExternalPlayer(self, path=None, script=None, args=None, prompt=True):
