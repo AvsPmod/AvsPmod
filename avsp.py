@@ -6143,7 +6143,7 @@ class MainFrame(wxp.Frame):
         for lowername, (args, styletype, name, is_short) in self.avsfilterdict.iteritems():
             if styletype == styleList[2]:
                 if is_short:
-                    if self.options['autocompletepluginnames'][is_short] == 1:
+                    if self.options['autocompletepluginnames'].get(is_short) == 1:
                         del avsfilterdict_autocomplete[lowername]
                 else:
                     self.options['autocompletepluginnames'].setdefault(lowername, 0)
@@ -6243,7 +6243,7 @@ class MainFrame(wxp.Frame):
                 long_name = s[start:pos-1]
                 if self.options['autoloadedplugins']:
                     extfuncList.append((long_name, 2))
-                    self.plugin_shortnames[shortname[1:]].append(long_name.lower())
+                    self.plugin_shortnames[shortname[1:-1]].append(long_name.lower())
                 self.installed_plugins_filternames.add(long_name.lower())
                 if dllname.count('_'):
                     self.dllnameunderscored.add(dllname.lower())
