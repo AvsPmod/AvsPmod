@@ -3436,8 +3436,8 @@ class AvsFunctionDialog(wx.Dialog):
         sizer2 = wx.BoxSizer(wx.HORIZONTAL)
         sizer2.Add(staticText2, 0, wx.ALL, 0)
         sizer2.Add((-1,-1), 1, wx.EXPAND|wx.ALL, 0)
-        sizer2.Add(staticText2_4, 0, wx.RIGHT, 20)
-        sizer2.Add(staticText2_5, 0, wx.RIGHT, 10)
+        sizer2.Add(staticText2_4, 0, wx.RIGHT, 10)
+        sizer2.Add(staticText2_5, 0, wx.LEFT|wx.RIGHT, 10)
         sizer3 = wx.BoxSizer(wx.HORIZONTAL)
         sizer3.Add(staticText3, 0, wx.ALL, 0)
         sizer3.Add((-1,-1), 1, wx.EXPAND|wx.ALL, 0)
@@ -3474,6 +3474,7 @@ class AvsFunctionDialog(wx.Dialog):
         dlg.typeBox = choiceBox1
         dlg.argsBox = textCtrl2
         dlg.presetBox = textCtrl3
+        dlg.resetCtrl = staticText2_5
         dlg.autopresetCheckbox = checkBox3
         dlg.cancelButton = cancel
         dlg.defaultArgs = ''
@@ -3900,6 +3901,7 @@ class AvsFunctionDialog(wx.Dialog):
         dlg.typeBox.Enable()
         dlg.argsBox.SetValue(defaultArgs)
         dlg.presetBox.SetValue('')
+        dlg.resetCtrl.Hide()
         dlg.SetAutopreset(True)
         dlg.cancelButton.SetFocus()
         dlg.defaultArgs = defaultArgs
@@ -3993,8 +3995,10 @@ class AvsFunctionDialog(wx.Dialog):
         dlg.presetBox.SetValue(enteredPreset)
         if lowername in self.filterDict:
             dlg.typeBox.Disable()
+            dlg.resetCtrl.Show()
         else:
             dlg.typeBox.Enable()
+            dlg.resetCtrl.Hide()
         dlg.cancelButton.SetFocus()
         dlg.defaultArgs = defaultArgs
         #~ self.defaultPreset = defaultPreset
