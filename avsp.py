@@ -7747,9 +7747,10 @@ class MainFrame(wxp.Frame):
             ('-right', (1,4), (1,5)),
             ('-bottom', (2,2), (2,3)),
         )
+        width = 50 if wx.version() >= '2.9' else 55 # fix for wxPython v2.8
         for name, txtPos, spinPos in spinInfo:
             staticText = wx.StaticText(dlg, wx.ID_ANY, name)
-            spinCtrl = wx.SpinCtrl(dlg, wx.ID_ANY, '', size=(50,-1))
+            spinCtrl = wx.SpinCtrl(dlg, wx.ID_ANY, '', size=(width,-1))
             spinCtrl.Bind(wx.EVT_TEXT, self.OnCropDialogSpinTextChange)
             spinSizer.Add(staticText, txtPos, flag=wx.ALIGN_CENTER|wx.RIGHT, border=5)
             spinSizer.Add(spinCtrl, spinPos, flag=wx.EXPAND|wx.RIGHT, border=0)
