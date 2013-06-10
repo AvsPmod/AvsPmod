@@ -6998,6 +6998,7 @@ class MainFrame(wxp.Frame):
                 (_('Save script'), 'Ctrl+S', self.OnMenuFileSaveScript, _('Save the current script')),
                 (_('Save script as...'), 'Ctrl+Shift+S', self.OnMenuFileSaveScriptAs, _('Choose where to save the current script')),
                 (_('Reload script'), '', self.OnMenuFileReloadScript, _('Reopen the current script file if it has changed')),
+                (_("Open script's directory"), '', self.OnMenuFileOpenScriptDirectory, _('If the current script is saved to a file, open its directory')),
                 (_('Export HTML'), '', self.OnMenuFileExportHTML, _('Save the current script as a HTML document')),
                 (_('&Print script'),
                     (
@@ -7480,6 +7481,7 @@ class MainFrame(wxp.Frame):
             (_('Save'), '', self.OnMenuFileSaveScript),
             (_('Save as...'), '', self.OnMenuFileSaveScriptAs),
             (_('Reload'), '', self.OnMenuFileReloadScript),
+            (_('Open directory'), '', self.OnMenuFileOpenScriptDirectory),
             (''),
             (_('Select all'), '', self.OnMenuEditSelectAll),
             (''),
@@ -7976,6 +7978,15 @@ class MainFrame(wxp.Frame):
                 script.EmptyUndoBuffer()
                 script.SetSavePoint()
                 script.GotoPos(pos)
+    
+    def OnMenuFileOpenScriptDirectory(self, event):
+        dirname, basename = os.path.split(self.currentScript.filename)
+        if basename:
+            if os.path.isdir(dirname):
+                startfile(dirname)
+            else:
+                wx.MessageBox(u'\n\n'.join((_("The script's directory doesn't exist anymore!"), 
+                              dirname)), _('Error'), style=wx.OK|wx.ICON_ERROR)
     
     def OnMenuFileRenameTab(self, index, pos=None):
         if not self.scriptNotebook.dblClicked\
