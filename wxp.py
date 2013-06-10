@@ -207,7 +207,7 @@ class StdoutStderrWindow:
     def CreateOutputWindow(self, st):
         self.frame = wx.Frame(self.parent, -1, self.title, self.pos, self.size,
                               style=wx.DEFAULT_FRAME_STYLE)
-        self.text  = wx.TextCtrl(self.frame, -1, "",
+        self.text  = TextCtrl(self.frame, -1, "",
                                  style=wx.TE_MULTILINE|wx.TE_READONLY)
         self.text.AppendText(st)
         self.frame.Show(True)
@@ -980,6 +980,21 @@ class FindReplaceDialog(wx.Dialog):
     def OnClose(self, event):
         self.Hide()
 
+
+class TextCtrl(wx.TextCtrl):
+    """wx.TextCtrl with Ctrl-A also on multiline"""
+    def __init__(self, *args, **kwargs):
+        wx.TextCtrl.__init__(self, *args, **kwargs)
+        if self.IsMultiLine():
+            self.Bind(wx.EVT_CHAR, self.OnChar)
+        
+    def OnChar(self, event):
+        key = event.GetKeyCode()
+        if key == 1: # wx.WXK_CONTROL_A in wxPython 2.9
+            self.SelectAll()
+        else:
+            event.Skip()
+        
 
 class FloatSpin2(FloatSpin):
     """FloatSpin without some annoyances
@@ -1829,7 +1844,7 @@ class EditStringDictDialog(wx.Dialog):
         self.listCtrl.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.OnListItemEdit)
         self.listCtrl.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.OnListItemEdited)
         # Create the text control
-        self.textCtrl = wx.TextCtrl(self, wx.ID_ANY, style=wx.TE_MULTILINE|wx.HSCROLL)
+        self.textCtrl = TextCtrl(self, wx.ID_ANY, style=wx.TE_MULTILINE|wx.HSCROLL)
         self.textCtrl.Bind(wx.EVT_TEXT, self.OnValueTextChanged)
         # Create the insert/delete buttons
         if insertable:
@@ -1933,7 +1948,7 @@ class EditStringDictDialog(wx.Dialog):
         dlg = wx.Dialog(self, wx.ID_ANY, _('Insert a new item'))
         sizer = wx.BoxSizer(wx.VERTICAL)
         keyTextCtrl = wx.TextCtrl(dlg, wx.ID_ANY)
-        valueTextCtrl = wx.TextCtrl(dlg, wx.ID_ANY, style=wx.TE_MULTILINE|wx.HSCROLL)
+        valueTextCtrl = TextCtrl(dlg, wx.ID_ANY, style=wx.TE_MULTILINE|wx.HSCROLL)
         sizer.Add(wx.StaticText(dlg, wx.ID_ANY, self.keyTitle.strip()), 0, wx.EXPAND)
         sizer.Add(keyTextCtrl, 0, wx.EXPAND|wx.BOTTOM, 10)
         sizer.Add(wx.StaticText(dlg, wx.ID_ANY, self.valueTitle.strip()), 0, wx.EXPAND)

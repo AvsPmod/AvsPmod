@@ -3374,7 +3374,7 @@ class AvsFunctionDialog(wx.Dialog):
             textCtrl0.SetValue(dlg.defaultName)
             textCtrl2.SetValue(dlg.defaultArgs)
         staticText2_5.Bind(wx.EVT_LEFT_DOWN, OnClickSetToDefault)
-        textCtrl2 = wx.TextCtrl(dlg, wx.ID_ANY, size=(200,200), style=wx.TE_MULTILINE|wx.HSCROLL)
+        textCtrl2 = wxp.TextCtrl(dlg, wx.ID_ANY, size=(200,200), style=wx.TE_MULTILINE|wx.HSCROLL)
         def OnArgsChange(event):
             if checkBox3.IsChecked():
                 name = textCtrl0.GetValue() #dlg.defaultName
@@ -3395,7 +3395,7 @@ class AvsFunctionDialog(wx.Dialog):
                 textCtrl3.SetEditable(True)
                 textCtrl3.SetBackgroundColour(wx.WHITE)
         checkBox3.Bind(wx.EVT_CHECKBOX, OnCheck)
-        textCtrl3 = wx.TextCtrl(dlg, wx.ID_ANY, size=(-1,50), style=wx.TE_MULTILINE|wx.HSCROLL)
+        textCtrl3 = wxp.TextCtrl(dlg, wx.ID_ANY, size=(-1,50), style=wx.TE_MULTILINE|wx.HSCROLL)
         # Standard buttons
         okay  = wx.Button(dlg, wx.ID_OK, _('OK'))
         def OnFilterInfoDialogButtonOK(event):
