@@ -14372,26 +14372,33 @@ class MainFrame(wxp.Frame):
                 pass
         return toggleTags
 
-    def MakePreviewScriptFile(self, script): #, actualsize=None, importname=None):
+    def MakePreviewScriptFile(self, script):
+        txt = self.getCleanText(script.GetText())
+        txt = self.GetEncodedText(txt, bom=True)
         # Construct the filename of the temporary avisynth script
         dirname = self.GetProposedPath(only='dir')
-        if not os.path.isdir(dirname):
+        if os.path.isdir(dirname):
+            altdir_tried = False
+        else:
             dirname = self.programdir
-        previewname = os.path.join(dirname, 'preview.avs')
-        i = 1
-        while os.path.exists(previewname):
-            previewname = os.path.join(dirname, 'preview%i.avs' % i)
-            i = i+1
-        # Make sure directory is not read-only
-        if not os.access(os.path.dirname(previewname), os.W_OK):
-            previewname = os.path.join(self.programdir, 'preview.avs')
-        # Get the text and write it to the file
-        txt = self.getCleanText(script.GetText()) #self.regexp.sub(self.re_replace, script.GetText())
-        txt = self.GetEncodedText(txt, bom=True)
-        with open(previewname, 'w') as f:
-            f.write(txt)
-        return previewname
-        
+            altdir_tried = True
+        while True: # os.access doesn't work properly on Windows, let's just try
+            previewname = os.path.join(dirname, 'preview.avs')
+            i = 1
+            while os.path.exists(previewname):
+                previewname = os.path.join(dirname, 'preview%i.avs' % i)
+                i = i+1
+            try:
+                with open(previewname, 'w') as f:
+                    f.write(txt)
+            except IOError, err: # errno 13 -> permission denied
+                if err.errno != 13 or altdir_tried:
+                    raise
+                dirname = self.programdir
+                altdir_tried = True
+            else:
+                return previewname
+    
     def GetFitWindowSize(self):
         h = w = None
         wA, hA = self.videoWindow.GetSize()
