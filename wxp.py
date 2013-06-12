@@ -781,11 +781,12 @@ class FindReplaceDialog(wx.Dialog):
         self.word_start = wx.CheckBox(self, wx.ID_ANY, label=_('Only on word s&tart'))
         self.whole_word = wx.CheckBox(self, wx.ID_ANY, label=_('Only &whole words'))
         self.only_selection = wx.CheckBox(self, wx.ID_ANY, label=_('Only in &selection'))
+        self.dont_wrap = wx.CheckBox(self, wx.ID_ANY, label=_("&Don't wrap-around"))
         self.match_case = wx.CheckBox(self, wx.ID_ANY, label=_('&Case sensitive'))
         self.find_regexp = wx.CheckBox(self, wx.ID_ANY, label=_('Use regular e&xpressions'))
         re_url = HyperLinkCtrl(self, wx.ID_ANY, label='?', 
                                URL=r'http://www.yellowbrain.com/stc/regexp.html')
-        self.dont_wrap = wx.CheckBox(self, wx.ID_ANY, label=_("&Don't wrap-around"))
+        self.escape_sequences = wx.CheckBox(self, wx.ID_ANY, label=_('&Interpret escape sequences'))
         
         # Bind events
         def OnChar(event):
@@ -807,13 +808,14 @@ class FindReplaceDialog(wx.Dialog):
         check1_sizer.Add(self.word_start, 0, wx.EXPAND|wx.RIGHT|wx.TOP|wx.BOTTOM, 4)
         check1_sizer.Add(self.whole_word, 0, wx.EXPAND|wx.RIGHT|wx.TOP|wx.BOTTOM, 4)
         check1_sizer.Add(self.only_selection, 0, wx.EXPAND|wx.RIGHT|wx.TOP|wx.BOTTOM, 4)
+        check1_sizer.Add(self.dont_wrap, 0, wx.EXPAND|wx.RIGHT|wx.TOP|wx.BOTTOM, 4)
         check2_sizer = wx.BoxSizer(wx.VERTICAL)
         check2_sizer.Add(self.match_case, 0, wx.EXPAND|wx.ALL, 4)
         re_sizer = wx.BoxSizer(wx.HORIZONTAL)
         re_sizer.Add(self.find_regexp, 0)
         re_sizer.Add(re_url, wx.LEFT, 5)
         check2_sizer.Add(re_sizer, 0, wx.EXPAND|wx.ALL, 4)
-        check2_sizer.Add(self.dont_wrap, 0, wx.EXPAND|wx.ALL, 4)
+        check2_sizer.Add(self.escape_sequences, 0, wx.EXPAND|wx.ALL, 4)
         check_sizer = wx.BoxSizer(wx.HORIZONTAL)
         check_sizer.Add(check1_sizer, 0)
         check_sizer.Add(check2_sizer, 0)
@@ -876,6 +878,8 @@ class FindReplaceDialog(wx.Dialog):
             self.find_recent[11:] = []
             self.find_recent.insert(0, text)
             self.find_text_ctrl.Insert(text, 0)
+        if self.escape_sequences.IsChecked():
+            text = self.Unescape(text)
         if self.Find(text, True, range):
             script = self.app.currentScript
             script.EnsureCaretVisible()
@@ -887,16 +891,14 @@ class FindReplaceDialog(wx.Dialog):
             self.find_recent[11:] = []
             self.find_recent.insert(0, text)
             self.find_text_ctrl.Insert(text, 0)
+        if self.escape_sequences.IsChecked():
+            text = self.Unescape(text)
         if self.Find(text, False):
             script = self.app.currentScript
             script.EnsureCaretVisible()
     
     def Find(self, text, top2bottom=True, range=None, wrap=None):
         script = self.app.currentScript
-        text = self.GetFindText()
-        if not text:
-            text = script.GetSelectedText()
-            self.SetFindText(text)
         stcflags = 0
         if self.match_case.IsChecked():
             stcflags = stcflags | stc.STC_FIND_MATCHCASE
@@ -944,6 +946,9 @@ class FindReplaceDialog(wx.Dialog):
             self.replace_recent[11:] = []
             self.replace_recent.insert(0, replace_text)
             self.replace_text_ctrl.Insert(replace_text, 0)
+        if self.escape_sequences.IsChecked():
+            find_text = self.Unescape(find_text)
+            replace_text = self.Unescape(replace_text)
         script = self.app.currentScript
         script.GotoPos(script.GetSelectionStart())
         if self.Replace(find_text, replace_text):
@@ -967,6 +972,9 @@ class FindReplaceDialog(wx.Dialog):
             self.replace_recent[11:] = []
             self.replace_recent.insert(0, replace_text)
             self.replace_text_ctrl.Insert(replace_text, 0)
+        if self.escape_sequences.IsChecked():
+            find_text = self.Unescape(find_text)
+            replace_text = self.Unescape(replace_text)
         offset = len(replace_text.encode('utf8')) - len(find_text.encode('utf8'))
         script = self.app.currentScript
         if self.only_selection.IsChecked():
@@ -975,6 +983,7 @@ class FindReplaceDialog(wx.Dialog):
             start, end = 0, script.GetLineEndPosition(script.GetLineCount() - 1)
         pos = script.GetCurrentPos()
         count = pos_count = 0
+        script.BeginUndoAction()
         while True:
             if not self.Replace(find_text, replace_text, (start, end), False):
                 break
@@ -983,11 +992,17 @@ class FindReplaceDialog(wx.Dialog):
             count += 1
             if script.GetSelectionEnd() < pos:
                 pos_count += 1
+        script.EndUndoAction()
         script.GotoPos(pos + offset * pos_count)
         self.app.GetStatusBar().SetStatusText(_('Replaced %(count)i times') % locals())
     
     def OnClose(self, event):
         self.Hide()
+    
+    @staticmethod
+    def Unescape(text):
+        """Unescape backslashes on a Unicode string"""
+        return text.encode('utf8').decode('string-escape').decode('utf8')
 
 
 class TextCtrl(wx.TextCtrl):

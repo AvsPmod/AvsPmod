@@ -578,7 +578,12 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
         elif self.app.replaceDialog.IsShown():
             self.ShowFindReplaceDialog()
         else:
-            self.ShowQuickFindDialog()
+            text = self.GetSelectedText()
+            if text:
+                self.app.findDialog.UpdateText(text)
+                self.app.replaceDialog.OnFindNext()
+            else:
+                self.ShowQuickFindDialog()
     
     def FindPrevious(self):
         if self.AutoCompActive():
@@ -588,16 +593,28 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
         elif self.app.replaceDialog.IsShown():
             self.ShowFindReplaceDialog()
         else:
-            self.ShowQuickFindDialog()
+            text = self.GetSelectedText()
+            if text:
+                self.app.findDialog.UpdateText(text)
+                self.app.replaceDialog.OnFindPrevious()
+            else:
+                self.ShowQuickFindDialog()
     
     def ReplaceNext(self):
         if self.AutoCompActive():
             self.AutoCompCancel()
-        if (self.app.replaceDialog.GetFindText() and 
-            self.app.replaceDialog.GetReplaceText()):
+        if self.app.replaceDialog.GetReplaceText():
+            if self.app.replaceDialog.GetFindText():
                 self.app.replaceDialog.OnReplace()
+            else:
+                text = self.GetSelectedText()
+                if text:
+                    self.app.replaceDialog.UpdateText(text, 'find')
+                    self.app.replaceDialog.OnReplace()
+                else:
+                    self.ShowFindReplaceDialog()
         else:
-                self.ShowFindReplaceDialog()
+            self.ShowFindReplaceDialog()
     
     def IndentSelection(self):
         self.CmdKeyExecute(stc.STC_CMD_TAB)
