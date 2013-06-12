@@ -563,12 +563,18 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
         if self.app.replaceDialog.IsShown():
             self.app.replaceDialog.SetFocus()
             if text:
-                ctrl = 'find' if find else 'replace'
-                self.app.replaceDialog.UpdateText(text, ctrl)
+                if '\n' in text.strip():
+                    self.app.replaceDialog.only_selection.SetValue(True)
+                else:
+                    ctrl = 'find' if find else 'replace'
+                    self.app.replaceDialog.UpdateText(text, ctrl)
         else:
             self.app.replaceDialog.Show()
             if text:
-                self.app.replaceDialog.UpdateText(text, 'find')
+                if '\n' in text.strip():
+                    self.app.replaceDialog.only_selection.SetValue(True)
+                else:
+                    self.app.replaceDialog.UpdateText(text, 'find')
     
     def FindNext(self):
         if self.AutoCompActive():
