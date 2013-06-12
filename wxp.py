@@ -764,27 +764,27 @@ class FindReplaceDialog(wx.Dialog):
         self.replace_recent = self.app.options['replace_recent']
         
         # Set controls
-        find_text = wx.StaticText(self, wx.ID_ANY, _('Search for'))
+        find_text = wx.StaticText(self, wx.ID_ANY, _('Search &for'))
         self.find_text_ctrl = wx.ComboBox(self, wx.ID_ANY, style=wx.CB_DROPDOWN, 
                             size=(200,-1), value=text, choices=self.find_recent)
-        replace_text = wx.StaticText(self, wx.ID_ANY, _('Replace with'))
+        replace_text = wx.StaticText(self, wx.ID_ANY, _('R&eplace with'))
         self.replace_text_ctrl = wx.ComboBox(self, wx.ID_ANY, size=(200,-1), 
                                     style=wx.CB_DROPDOWN|wx.TE_PROCESS_ENTER, 
                                     value='', choices=self.replace_recent)
-        self.find_next = wx.Button(self, wx.ID_ANY, label=_('Find next'))
-        self.find_previous = wx.Button(self, wx.ID_ANY, label=_('Find previous'))
-        self.replace_next = wx.Button(self, wx.ID_ANY, label=_('Replace next'))
-        self.replace_all = wx.Button(self, wx.ID_ANY, label=_('Replace all'))
+        self.find_next = wx.Button(self, wx.ID_ANY, label=_('Find &next'))
+        self.find_previous = wx.Button(self, wx.ID_ANY, label=_('Find &previous'))
+        self.replace_next = wx.Button(self, wx.ID_ANY, label=_('&Replace next'))
+        self.replace_all = wx.Button(self, wx.ID_ANY, label=_('Replace &all'))
         id = wx.ID_CLOSE if wx.version() >= '2.9' else wx.ID_OK
         self.close = wx.Button(self, id, label=_('Close'))
-        self.word_start = wx.CheckBox(self, wx.ID_ANY, label=_('Only on word start'))
-        self.whole_word = wx.CheckBox(self, wx.ID_ANY, label=_('Only whole words'))
-        self.only_selection = wx.CheckBox(self, wx.ID_ANY, label=_('Only in selection'))
-        self.match_case = wx.CheckBox(self, wx.ID_ANY, label=_('Case sensitive'))
-        self.find_regexp = wx.CheckBox(self, wx.ID_ANY, label=_('Use regular expressions'))
+        self.word_start = wx.CheckBox(self, wx.ID_ANY, label=_('Only on word s&tart'))
+        self.whole_word = wx.CheckBox(self, wx.ID_ANY, label=_('Only &whole words'))
+        self.only_selection = wx.CheckBox(self, wx.ID_ANY, label=_('Only in &selection'))
+        self.match_case = wx.CheckBox(self, wx.ID_ANY, label=_('&Case sensitive'))
+        self.find_regexp = wx.CheckBox(self, wx.ID_ANY, label=_('Use regular e&xpressions'))
         re_url = HyperLinkCtrl(self, wx.ID_ANY, label='?', 
                                URL=r'http://www.yellowbrain.com/stc/regexp.html')
-        self.dont_wrap = wx.CheckBox(self, wx.ID_ANY, label=_("Don't wrap-around"))
+        self.dont_wrap = wx.CheckBox(self, wx.ID_ANY, label=_("&Don't wrap-around"))
         
         # Bind events
         self.Bind(wx.EVT_TEXT_ENTER, self.OnReplace, self.replace_text_ctrl)
