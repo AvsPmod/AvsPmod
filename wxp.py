@@ -764,6 +764,7 @@ class FindReplaceDialog(wx.Dialog):
         self.replace_recent = self.app.options['replace_recent']
         
         # Set controls
+        panel = wx.Panel(self)
         find_text = wx.StaticText(self, wx.ID_ANY, _('Search &for'))
         self.find_text_ctrl = wx.ComboBox(self, wx.ID_ANY, style=wx.CB_DROPDOWN, 
                             size=(200,-1), value=text, choices=self.find_recent)
@@ -787,6 +788,13 @@ class FindReplaceDialog(wx.Dialog):
         self.dont_wrap = wx.CheckBox(self, wx.ID_ANY, label=_("&Don't wrap-around"))
         
         # Bind events
+        def OnChar(event):
+            key = event.GetKeyCode()
+            if key == wx.WXK_TAB: # wx.TE_PROCESS_ENTER causes wx.EVT_CHAR to also process TAB
+                panel.Navigate(flags = 0 if event.ShiftDown() else wx.NavigationKeyEvent.IsForward)
+            else:
+                event.Skip()
+        self.replace_text_ctrl.Bind(wx.EVT_CHAR, OnChar)
         self.Bind(wx.EVT_TEXT_ENTER, self.OnReplace, self.replace_text_ctrl)
         self.Bind(wx.EVT_BUTTON, self.OnFindNext, self.find_next)
         self.Bind(wx.EVT_BUTTON, self.OnFindPrevious, self.find_previous)
@@ -833,6 +841,7 @@ class FindReplaceDialog(wx.Dialog):
         dlgSizer.SetSizeHints(self)
         dlgSizer.Layout()
         self.find_next.SetDefault()
+        self.find_text_ctrl.SetFocus()
     
     def GetFindText(self):
         return self.find_text_ctrl.GetValue()
