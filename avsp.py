@@ -5161,7 +5161,7 @@ class MainFrame(wxp.Frame):
                 if self.textdata.GetTextLength() > 1:
                     text = self.textdata.GetText()
                     self.textdata.SetText('')
-                    if text == self.win.currentScript.GetText():
+                    if text == self.win.currentScript.GetSelectedText():
                         self.win.NewTab()
                     else:
                         self.win.NewTab(text=text)
