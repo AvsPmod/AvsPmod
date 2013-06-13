@@ -11437,8 +11437,10 @@ class MainFrame(wxp.Frame):
             if ext.lower() == '.ses': # Treat the file as a session file
                 if not self.LoadSession(filename):
                     wx.MessageBox(_('Damaged session file'), _('Error'), wx.OK|wx.ICON_ERROR)
-                    return
-            elif ext.lower() not in ('.avs', '.avsi', '.vpy'): # Treat the file as a source
+                return
+            if os.path.isdir(dirname):
+                self.options['recentdir'] = dirname
+            if ext.lower() not in ('.avs', '.avsi', '.vpy'): # Treat the file as a source
                 self.InsertSource(filename)
                 if self.previewWindowVisible:
                     self.ShowVideoFrame()
@@ -11504,10 +11506,7 @@ class MainFrame(wxp.Frame):
                 self.refreshAVI = True
                 if self.previewWindowVisible:
                     self.ShowVideoFrame()
-            # Misc stuff
-            if os.path.isdir(dirname):
-                self.options['recentdir'] = dirname
-            return index
+                return index
     
     def GetMarkedScriptFromFile(self, filename, returnFull=False):
         txt, f_encoding = self.GetTextFromFile(filename)
@@ -12031,7 +12030,7 @@ class MainFrame(wxp.Frame):
             self.SelectTab(self.scriptNotebook.GetPageCount() - 1)
             #~ for scriptname, boolSelected, scripttext in session['scripts']:
             mapping = session['scripts'] and isinstance(session['scripts'][0], Mapping)
-            for index, item in enumerate(session['scripts']):
+            for item in session['scripts']:
                 self.LoadTab(item, compat=not mapping)
                 if mapping:
                     boolSelected = item['selected']
@@ -12117,7 +12116,10 @@ class MainFrame(wxp.Frame):
                               setSavePoint=setSavePoint, splits=item['splits'], 
                               framenum=item['current_frame'], last_length=item.get('last_length'), 
                               group=item.get('group', -1), group_frame=item.get('group_frame'))
-        if reload:
+        if reload and index is not None: 
+            # index is None -> the script was already loaded, different to this other version 
+            # but the user chose not to replace it.  If that's the case, don't prompt again 
+            # for discarding the current script state.
             self.reloadList.append((index, scriptname, txt))
         return index
     
