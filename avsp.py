@@ -11441,6 +11441,12 @@ class MainFrame(wxp.Frame):
             if os.path.isdir(dirname):
                 self.options['recentdir'] = dirname
             if ext.lower() not in ('.avs', '.avsi', '.vpy'): # Treat the file as a source
+                # Make a new tab if current one is not empty
+                indexCur = self.scriptNotebook.GetSelection()
+                txt = self.scriptNotebook.GetPage(indexCur).GetText()
+                title = self.scriptNotebook.GetPageText(indexCur)
+                if txt or not title.startswith(self.NewFileName):
+                    self.NewTab(copyselected=False)
                 self.InsertSource(filename)
                 if self.previewWindowVisible:
                     self.ShowVideoFrame()
