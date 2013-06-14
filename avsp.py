@@ -6270,7 +6270,7 @@ class MainFrame(wxp.Frame):
                 long_name = s[start:pos-1]
                 if self.options['autoloadedplugins']:
                     extfuncList.append((long_name, 2))
-                    self.plugin_shortnames[shortname[1:-1]].append(long_name.lower())
+                    self.plugin_shortnames[shortname[1:-1].lower()].append(long_name.lower())
                 self.installed_plugins_filternames.add(long_name.lower())
                 if dllname.count('_'):
                     self.dllnameunderscored.add(dllname.lower())
