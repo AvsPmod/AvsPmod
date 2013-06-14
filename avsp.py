@@ -1498,7 +1498,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
             path = path.strip()
             if os.path.isdir(path):
                 docsearchpaths.append(path)
-        extensions = ['.htm', '.html', '.txt', '.lnk']
+        extensions = ['.htm', '.html', '.txt', '.lnk', '']
         
         def get_names(name):
             name = name.lower()
