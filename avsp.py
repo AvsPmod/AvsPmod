@@ -1996,6 +1996,8 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
         self.endstyled = pos = start
         fragment = []
         hexfragment = []
+        # vpy hack, remove when VapourSynth is supported (with a custom Python lexer)
+        string_delimiters = ['"', "'"] if self.filename.endswith('.vpy') else '"'
         self.StartStyling(pos, 31)
         while pos <= end:
             ch = unichr(self.GetCharAt(pos))
@@ -2008,9 +2010,9 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                     pos += 1
                     flag = True
                     state = self.STC_AVS_BLOCKCOMMENT
-                elif ch in ('"', "'"):
+                elif ch in string_delimiters:
                     self.ColourTo(pos-1, state)
-                    if unichr(self.GetCharAt(pos+1)) in ('"', "'") and unichr(self.GetCharAt(pos+2)) in ('"', "'"):
+                    if unichr(self.GetCharAt(pos+1)) in string_delimiters and unichr(self.GetCharAt(pos+2)) in string_delimiters:
                         pos += 2
                         state = self.STC_AVS_TRIPLE                        
                     else:
@@ -2125,10 +2127,10 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                     state = self.STC_AVS_DEFAULT
             elif state == self.STC_AVS_STRING:
                 if self.app.options['usestringeol']:
-                    if unichr(self.GetCharAt(pos-1)) in ('"', "'") and unichr(self.GetCharAt(pos)) in ('"', "'") and unichr(self.GetCharAt(pos+1)) in ('"', "'"):
+                    if unichr(self.GetCharAt(pos-1)) in string_delimiters and unichr(self.GetCharAt(pos)) in string_delimiters and unichr(self.GetCharAt(pos+1)) in string_delimiters:
                         state = self.STC_AVS_TRIPLE
                         pos += 1
-                    elif ch in ('"', "'") or isEOL:
+                    elif ch in string_delimiters or isEOL:
                         if isEOL:
                             if isEOD:
                                 self.ColourTo(pos - 1, self.STC_AVS_STRINGEOL)                                
@@ -2142,10 +2144,10 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                                 isLoadPlugin = False
                         state = self.STC_AVS_DEFAULT
                 else:
-                    if unichr(self.GetCharAt(pos-1)) in ('"', "'") and unichr(self.GetCharAt(pos)) in ('"', "'") and unichr(self.GetCharAt(pos+1)) in ('"', "'"):
+                    if unichr(self.GetCharAt(pos-1)) in string_delimiters and unichr(self.GetCharAt(pos)) in string_delimiters and unichr(self.GetCharAt(pos+1)) in string_delimiters:
                         state = self.STC_AVS_TRIPLE
                         pos += 1
-                    elif ch in ('"', "'"):
+                    elif ch in string_delimiters:
                         self.ColourTo(pos, self.STC_AVS_STRING)                        
                         state = self.STC_AVS_DEFAULT
                         if isLoadPlugin:
@@ -2156,7 +2158,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                         state = self.STC_AVS_DEFAULT
                         isLoadPlugin = False
             elif state == self.STC_AVS_TRIPLE:
-                if isEOD or (ch in ('"', "'") and unichr(self.GetCharAt(pos-1)) in ('"', "'") and unichr(self.GetCharAt(pos-2)) in ('"', "'")):
+                if isEOD or (ch in string_delimiters and unichr(self.GetCharAt(pos-1)) in string_delimiters and unichr(self.GetCharAt(pos-2)) in string_delimiters):
                     self.ColourTo(pos, self.STC_AVS_TRIPLE)
                     state = self.STC_AVS_DEFAULT
                     if isLoadPlugin:
