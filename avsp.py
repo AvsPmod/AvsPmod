@@ -6485,7 +6485,7 @@ class MainFrame(wxp.Frame):
                 ((_('Allow AvsPmod to resize the window'), wxp.OPT_ELEM_CHECK, 'allowresize', _('Allow AvsPmod to resize and/or move the program window when updating the video preview'), dict() ), ),
                 ((_('Separate video preview window')+' *', wxp.OPT_ELEM_CHECK, 'separatevideowindow', _('Use a separate window for the video preview'), dict() ), ),
                 ((_('Keep it on top of the main window')+' *', wxp.OPT_ELEM_CHECK, 'previewontopofmain', _('Keep the video preview window always on top of the main one and link its visibility'), dict(ident=20) ), ),
-                ((_('Min text lines on video preview')+' *', wxp.OPT_ELEM_SPIN, 'mintextlines', _('Minimum number of lines to show when displaying the video preview'), dict(min_val=0) ), ),
+                ((_('Min text lines on video preview'), wxp.OPT_ELEM_SPIN, 'mintextlines', _('Minimum number of lines to show when displaying the video preview'), dict(min_val=0) ), ),
                 ((_('Customize video status bar...'), wxp.OPT_ELEM_BUTTON, 'videostatusbarinfo', _('Customize the video information shown in the program status bar'), dict(handler=self.OnConfigureVideoStatusBarMessage) ), ),
             ),
             (_('User Sliders'),
@@ -6680,7 +6680,7 @@ class MainFrame(wxp.Frame):
             event.Skip()
         #~ self.videoSplitter.Bind(wx.EVT_LEFT_UP, OnVideoSplitterPosChanged)
 
-
+        self.mainSplitter.SetSplitMode(wx.SPLIT_HORIZONTAL)
         self.mainSplitter.SetSashSize(4)
         self.videoSplitter.SetSashSize(4)
         
@@ -6691,8 +6691,8 @@ class MainFrame(wxp.Frame):
 
         self.clicked_on_divider = False
         def OnMainSplitterLeftDown(event):
-            x, y = event.GetPosition()
-            if y > self.mainSplitter.GetMinimumPaneSize():
+            pos = event.GetPosition()[self.mainSplitter.GetSplitMode() == wx.SPLIT_HORIZONTAL]
+            if pos > self.mainSplitter.GetMinimumPaneSize():
                 self.clicked_on_divider = True
             else:
                 self.clicked_on_divider = False
@@ -6704,7 +6704,8 @@ class MainFrame(wxp.Frame):
         def OnMainSplitterPosChanged(event):
             #~ self.lastSplitVideoPos = event.GetSashPosition()
             if self.clicked_on_divider:
-                self.currentScript.lastSplitVideoPos = self.mainSplitter.GetSashPosition() - self.mainSplitter.GetClientSize()[1]
+                self.currentScript.lastSplitVideoPos = self.mainSplitter.GetSashPosition() - \
+                    self.mainSplitter.GetClientSize()[self.mainSplitter.GetSplitMode() == wx.SPLIT_HORIZONTAL]
                 self.clicked_on_divider = False
                 if self.zoomwindow:
                     #~ for index in xrange(self.scriptNotebook.GetPageCount()):
@@ -6778,50 +6779,36 @@ class MainFrame(wxp.Frame):
             self.programSplitter.SplitHorizontally(self.mainSplitter, self.videoControls, -spos)
         
         # Set the minimum pane sizes
-        minpanesize = 23
-        mintextlines = max(0, self.options['mintextlines'])
-        if mintextlines != 0:
-            scrollbarheight = scriptWindow.GetSize().height - scriptWindow.GetClientSize().height
-            minpanesize = minpanesize + mintextlines * self.currentScript.TextHeight(0) + scrollbarheight + 5
-        self.mainSplitter.SetMinimumPaneSize(minpanesize)
-
+        self.SetMinimumScriptPaneSize()
         self.videoSplitter.SetMinimumPaneSize(3)
         #~ self.videoSplitter.SetMinimumPaneSize(300)
         
         # Manually implement splitter gravity (improper size updating with sub-splitters...)
         #~ self.programSplitter.SetSashGravity(1.0)
         #~ self.mainSplitter.SetSashGravity(1.0)
-        #~ self.videoSplitter.SetSashGravity(1.0)
+        self.videoSplitter.SetSashGravity(1.0)
         def OnProgramSplitterSize(event):
             # programSplitter gravity
             if wx.VERSION < (2, 9):
                 self.programSplitter.SetSashPosition(-self.toolbarHeight)
-            
-            
-            # videoSplitter gravity
-            if not self.separatevideowindow:
-                widthSliderWindow = self.videoSplitter.GetSize()[0] - self.videoSplitter.GetSashPosition()
-                #~ widthSliderWindow = self.videoPane.GetSize()[0] - self.videoSplitter.GetSashPosition()
-                #~ self.videoSplitter.SetSize((self.programSplitter.GetSize()[0], -1))
-                self.videoSplitter.SetSize((self.GetClientSize()[0] - self.toggleSliderWindowButton.GetSize()[0], -1))
-                self.videoSplitter.SetSashPosition(-widthSliderWindow)
-            
-            
-            
+                        
             #~ if self.currentScript.sliderWindowShown:
                 #~ self.currentScript.lastSplitSliderPos = -widthSliderWindow
             # mainSplitter gravity
             if self.mainSplitter.IsSplit():
                 #~ heightVideoWindow = self.mainSplitter.GetSize()[1] - self.mainSplitter.GetSashPosition()
                 #~ self.mainSplitter.SetSashPosition(-heightVideoWindow)
-                y = self.GetMainSplitterNegativePosition()
-                self.mainSplitter.SetSashPosition(y)
-                self.currentScript.lastSplitVideoPos = y
+                pos = self.GetMainSplitterNegativePosition()
+                self.mainSplitter.SetSashPosition(pos)
+                self.currentScript.lastSplitVideoPos = pos
             event.Skip()
         self.programSplitter.Bind(wx.EVT_SIZE, OnProgramSplitterSize)
 
         if not self.separatevideowindow:
-            self.mainSplitter.SplitHorizontally(self.scriptNotebook, self.videoPane)
+            if self.mainSplitter.GetSplitMode() == wx.SPLIT_HORIZONTAL:
+                self.mainSplitter.SplitHorizontally(self.scriptNotebook, self.videoPane)
+            else:
+                self.mainSplitter.SplitVertically(self.scriptNotebook, self.videoPane)
         else:
             self.mainSplitter.SplitHorizontally(self.scriptNotebook, wx.Panel(self.mainSplitter, wx.ID_ANY))
             self.mainSplitter.Unsplit()
@@ -6836,8 +6823,6 @@ class MainFrame(wxp.Frame):
             sizer.Add(self.videoStatusBar, 0, wx.EXPAND)
             self.videoDialog.SetSizer(sizer)
             sizer.Layout()
-
-            self.videoSplitter.SetSashGravity(1.0)
         
         #~ self.videoSplitter.SplitVertically(self.videoWindow, self.currentScript.sliderWindow, self.currentScript.lastSplitSliderPos)
         self.videoSplitter.SplitVertically(self.videoWindow, self.currentScript.sliderWindow, 10)
@@ -6858,6 +6843,17 @@ class MainFrame(wxp.Frame):
         scriptWindow.SetFocus()
         self.SetMinSize((320, 240))
 
+    def SetMinimumScriptPaneSize(self):
+        if self.mainSplitter.GetSplitMode() == wx.SPLIT_HORIZONTAL:
+            minpanesize = 23
+            mintextlines = max(0, self.options['mintextlines'])
+            if mintextlines != 0:
+                scrollbarheight = self.currentScript.GetSize().height - self.currentScript.GetClientSize().height
+                minpanesize = minpanesize + mintextlines * self.currentScript.TextHeight(0) + scrollbarheight + 5
+            self.mainSplitter.SetMinimumPaneSize(minpanesize)
+        else:
+            self.mainSplitter.SetMinimumPaneSize(100)
+    
     def bindShortcutsToAllWindows(self):        
         self._shortcutBindWindowDict = {self:[], self.videoWindow:[]}
         self.useEscape = False
@@ -7238,6 +7234,7 @@ class MainFrame(wxp.Frame):
                 (''),
                 (_('Refresh preview'), 'F5', self.OnMenuVideoRefresh, _('Force the script to reload and refresh the video frame')),
                 (_('Show/Hide the preview'), 'Shift+F5', self.OnMenuVideoToggle, _('Toggle the video preview')),
+                (_('Toggle preview placement'), '', self.OnMenuVideoTogglePlacement, _('When not using a separate window for the video preview, toggle between showing it at the bottom (default) or to the right')),
                 (_('Release all videos from memory'), '', self.OnMenuVideoReleaseMemory, _('Release all open videos from memory')),
                 (_('Switch video/text focus'), 'Escape', self.OnMenuVideoSwitchMode, _('Switch focus between the video preview and the text editor')),
                 (_('Toggle the slider sidebar'), 'Alt+F5', self.OnMenuVideoToggleSliderWindow, _('Show/hide the slider sidebar (double-click the divider for the same effect)')),
@@ -7644,7 +7641,6 @@ class MainFrame(wxp.Frame):
         scriptWindow.oldSliderTexts = []
         scriptWindow.oldAutoSliderInfo = []
         scriptWindow.oldToggleTags = []
-        scriptWindow.zoomwindow_actualsize = None
         #~ scriptWindow.lastSplitVideoPos = None
 
         # Event binding
@@ -9066,7 +9062,10 @@ class MainFrame(wxp.Frame):
                 self.ShowVideoFrame()
         else:
             self.ShowVideoFrame()
-
+    
+    def OnMenuVideoTogglePlacement(self, event):
+        self.TogglePreviewPlacement()
+    
     def OnMenuVideoToggleSliderWindow(self, event):
         #~ self.OnLeftDClickVideoSplitter(None)
         self.ToggleSliderWindow(vidrefresh=True)
@@ -9341,6 +9340,7 @@ class MainFrame(wxp.Frame):
             for index in xrange(self.scriptNotebook.GetPageCount()):
                 script = self.scriptNotebook.GetPage(index)
                 script.SetUserOptions()
+            self.SetMinimumScriptPaneSize()
             textCtrl = self.scrapWindow.textCtrl
             textCtrl.StyleSetSpec(stc.STC_STYLE_DEFAULT, self.options['textstyles']['scrapwindow'])
             textCtrl.StyleClearAll()
@@ -10261,13 +10261,19 @@ class MainFrame(wxp.Frame):
     
     def OnLeftDClickWindow(self, event):
         x, y = event.GetPosition()
-        #~ if y < self.mainSplitter.GetMinimumPaneSize():
-        if y < self.currentScript.GetPosition().y: # event not received on wxGTK
+        if self.mainSplitter.GetSplitMode() == wx.SPLIT_HORIZONTAL:
+            new_tab = y < self.currentScript.GetPosition().y
+            pos = y
+        else:
+            new_tab = y < self.currentScript.GetPosition().y and \
+                      x < self.currentScript.GetSize().width
+            pos = x
+        if new_tab: # event not received on wxGTK
             self.NewTab()
         else:
             lo = self.mainSplitter.GetSashPosition()
             hi = lo + self.mainSplitter.GetSashSize()
-            if y > lo and y < hi and self.mainSplitter.IsSplit():
+            if lo <= pos <= hi and self.mainSplitter.IsSplit():
                 #~ self.SplitVideoWindow(forcefit=True)
                 self.currentScript.lastSplitVideoPos = None
                 if not self.zoomwindow:
@@ -10279,8 +10285,13 @@ class MainFrame(wxp.Frame):
 
     def OnMiddleDownWindow(self, event):
         x, y = event.GetPosition()
-        if y < self.currentScript.GetPosition().y: # event not received on wxGTK
-            self.UndoCloseTab()
+        if self.mainSplitter.GetSplitMode() == wx.SPLIT_HORIZONTAL:
+            if y < self.currentScript.GetPosition().y: # event not received on wxGTK
+                self.UndoCloseTab()
+        else:
+            if y < self.currentScript.GetPosition().y and \
+               x < self.currentScript.GetSize().width:
+                self.UndoCloseTab()
         event.Skip()
     
     def OnLeftDClickVideoSplitter(self, event):
@@ -12039,7 +12050,7 @@ class MainFrame(wxp.Frame):
             #~ for scriptname, boolSelected, scripttext in session['scripts']:
             mapping = session['scripts'] and isinstance(session['scripts'][0], Mapping)
             for item in session['scripts']:
-                self.LoadTab(item, compat=not mapping)
+                index = self.LoadTab(item, compat=not mapping)
                 if mapping:
                     boolSelected = item['selected']
                 else:
@@ -12052,6 +12063,10 @@ class MainFrame(wxp.Frame):
             # Select the last selected script
             if selectedIndex is not None:
                 self.scriptNotebook.SetSelection(selectedIndex)
+            # Change preview placement if the session is not empty
+            if not (len(session['scripts']) == 1 and index is not None and not self.scriptNotebook.GetPage(index).GetText()):
+                if session.get('preview_placement', wx.SPLIT_HORIZONTAL) != self.mainSplitter.GetSplitMode():
+                    self.TogglePreviewPlacement()
             # Set the video slider to last shown frame number
             if startup:
                 self.previewWindowVisible = previewWindowVisible
@@ -12090,11 +12105,6 @@ class MainFrame(wxp.Frame):
             defaults = (None, None, None, None, None, 0, 'latin1', '')
             name, selected, text, hash, splits, current_frame, f_encoding, workdir = item + defaults[nItems:]
             item = locals()
-            #~ if len(item) == 4:
-                #~ scriptname, boolSelected, scripttext, hash = item
-            #~ else:
-                #~ scriptname, boolSelected, scripttext = item
-                #~ hash = None
         scriptname = item['name']
         dirname, basename = os.path.split(scriptname)
         reload = False
@@ -12173,6 +12183,7 @@ class MainFrame(wxp.Frame):
                 session['previewWindowVisible'] = self.previewWindowVisible
             else:
                 session['previewWindowVisible'] = previewvisible
+            session['preview_placement'] = self.mainSplitter.GetSplitMode()
             session['scripts'] = scripts
             session['lastclosed'] = self.lastClosed
             session['bookmarks'] = list(self.GetBookmarkFrameList().items())
@@ -13212,11 +13223,7 @@ class MainFrame(wxp.Frame):
         if ar == '1.778:1':
             ar = '16:9'
         zoom = ''
-        if self.zoomwindow and script.zoomwindow_actualsize is not None:
-            width, height = script.zoomwindow_actualsize
-            zoomfactor = script.AVI.Width / float(width)
-            zoom  = '(%.2fx) ' % zoomfactor
-        elif self.zoomfactor != 1:
+        if self.zoomfactor != 1:
             if self.zoomfactor < 1 or self.zoomwindow:
                 zoom = '(%.2fx) ' % self.zoomfactor
             else:
@@ -13295,17 +13302,12 @@ class MainFrame(wxp.Frame):
         totaltime = self.FormatTime(framecount/framerate)
         bookmarktitle = self.bookmarkDict.get(frame, '')
         zoom = ''
-        if self.zoomwindow and script.zoomwindow_actualsize is not None:
-            width, height = script.zoomwindow_actualsize
-            zoomfactor = v.Width / float(width)
-            zoom  = '(%.2fx) ' % zoomfactor
-        else:
-            width, height = v.Width, v.Height
-            if self.zoomfactor != 1:
-                if self.zoomfactor < 1 or self.zoomwindow:
-                    zoom = '(%.2fx) ' % self.zoomfactor
-                else:
-                    zoom = '(%ix) ' % self.zoomfactor
+        width, height = v.Width, v.Height
+        if self.zoomfactor != 1:
+            if self.zoomfactor < 1 or self.zoomwindow:
+                zoom = '(%.2fx) ' % self.zoomfactor
+            else:
+                zoom = '(%ix) ' % self.zoomfactor
         aspectratio = '%.03f:1' % (width / float(height))
         if aspectratio == '1.000:1':
             aspectratio = '1:1'
@@ -13393,10 +13395,6 @@ class MainFrame(wxp.Frame):
         except:
             videoWindow.PrepareDC(dc)
         zoomfactor = self.zoomfactor
-        #~ if self.zoomwindow and script.zoomwindow_actualsize is not None:
-            #~ wOld = w
-            #~ w, h = script.zoomwindow_actualsize
-            #~ zoomfactor = wOld / float(w)
         if zoomfactor != 1:
             dc.SetUserScale(zoomfactor, zoomfactor)
         if event:
@@ -13720,6 +13718,22 @@ class MainFrame(wxp.Frame):
         for index in xrange(self.scriptNotebook.GetPageCount()):
             script = self.scriptNotebook.GetPage(index)
             script.DefineKeywordCalltipInfo(self.optionsFilters, self.optionsFilterPresets, self.optionsFilterDocpaths, self.optionsFilterTypes, self.optionsKeywordLists)
+    
+    def TogglePreviewPlacement(self):
+        if self.separatevideowindow:
+            return
+        if self.previewWindowVisible:
+            self.HidePreviewWindow()
+            show_preview = True
+        else:
+            show_preview = False
+        if self.mainSplitter.GetSplitMode() == wx.SPLIT_HORIZONTAL:
+            self.mainSplitter.SetSplitMode(wx.SPLIT_VERTICAL)
+        else:
+            self.mainSplitter.SetSplitMode(wx.SPLIT_HORIZONTAL)
+        self.SetMinimumScriptPaneSize()
+        if show_preview:
+            self.ShowVideoFrame()
     
     @AsyncCallWrapper
     def HidePreviewWindow(self):
@@ -14049,36 +14063,51 @@ class MainFrame(wxp.Frame):
         #~ if self.lastSplitVideoPos is not None:
             #~ self.lastSplitVideoPos = self.mainSplitter.GetSashPosition()
         # Set the splitter positions
-        self.SplitVideoWindow(h, forcefit=forcefit)
+        if self.mainSplitter.GetSplitMode() == wx.SPLIT_HORIZONTAL:
+            self.SplitVideoWindow(h, forcefit=forcefit)
+        else:
+            self.SplitVideoWindow(w, forcefit=forcefit)
         #~ self.SplitSliderWindow(w)
 
-    def SplitVideoWindow(self, h=None, forcefit=False):
-        y = self.GetMainSplitterNegativePosition(h=h, forcefit=forcefit)
+    def SplitVideoWindow(self, pos=None, forcefit=False):
+        sash_pos = self.GetMainSplitterNegativePosition(pos=pos, forcefit=forcefit)
         if self.mainSplitter.IsSplit():
-            self.mainSplitter.SetSashPosition(y)
+            self.mainSplitter.SetSashPosition(sash_pos)
         else:
-            self.mainSplitter.SplitHorizontally(self.scriptNotebook, self.videoPane, y)
+            if self.mainSplitter.GetSplitMode() == wx.SPLIT_HORIZONTAL:
+                self.mainSplitter.SplitHorizontally(self.scriptNotebook, self.videoPane, sash_pos)
+            else:
+                self.mainSplitter.SplitVertically(self.scriptNotebook, self.videoPane, sash_pos)
 
-    def GetMainSplitterNegativePosition(self, h=None, forcefit=False):
+    def GetMainSplitterNegativePosition(self, pos=None, forcefit=False):
         if not forcefit and self.currentScript.lastSplitVideoPos is not None:
-            y = self.currentScript.lastSplitVideoPos
+            pos = self.currentScript.lastSplitVideoPos
         else:
             script = self.currentScript
-            if self.zoomwindow and script.zoomwindow_actualsize is not None:
-                h = None
-            if h is None:
-                if self.zoomwindow and script.zoomwindow_actualsize is not None:
-                    vidheight = script.zoomwindow_actualsize[1]
-                else:
+            if self.mainSplitter.GetSplitMode() == wx.SPLIT_HORIZONTAL:
+                if pos is None:
                     if script.AVI is None:
                         #~ self.UpdateScriptAVI(script, forceRefresh=True)
                         vidheight = 0
                     else:
                         vidheight = script.AVI.Height
-                h = int(vidheight * self.zoomfactor)
-            #~ y = -(h + 2 * self.yo +5) # + 15)
-            y = -(h + 2 * self.yo + 5 + self.mainSplitter.GetSashSize()/2)
-        return y
+                    h = int(vidheight * self.zoomfactor)
+                else:
+                    h = pos
+                pos = -(h + 2 * self.yo + 5 + self.mainSplitter.GetSashSize()/2)
+            else:
+                if pos is None:
+                    if script.AVI is None:
+                        #~ self.UpdateScriptAVI(script, forceRefresh=True)
+                        vidwidth = 0
+                    else:
+                        vidwidth = script.AVI.Width
+                    w = int(vidwidth * self.zoomfactor)
+                else:
+                    w = pos
+                pos = -(w + 2 * self.xo + 5 + self.mainSplitter.GetSashSize()/2 + 
+                        self.toggleSliderWindowButton.GetSize()[0])
+        return pos
 
     def ToggleSliderWindow(self, vidrefresh=False):
         self.videoPaneSizer.Layout()
@@ -14192,11 +14221,12 @@ class MainFrame(wxp.Frame):
         elif self.zoomwindow:
             try:
                 fitWidth, fitHeight = self.GetFitWindowSize()
+                zoomfactorWidth = float(fitWidth) / script.AVI.Width
                 zoomfactorHeight = float(fitHeight) / script.AVI.Height
                 if self.zoomwindowfill:
-                    self.zoomfactor = zoomfactorHeight
+                    self.zoomfactor = zoomfactorHeight if self.mainSplitter.GetSplitMode() == \
+                                        wx.SPLIT_HORIZONTAL else zoomfactorWidth
                 else:                    
-                    zoomfactorWidth = float(fitWidth) / script.AVI.Width
                     self.zoomfactor = min(zoomfactorWidth, zoomfactorHeight)
             except TypeError:
                 pass
@@ -14275,13 +14305,9 @@ class MainFrame(wxp.Frame):
                         wx.MessageBox('%s\n\n%s' % (s1, s2), _('Error'), style=wx.OK|wx.ICON_ERROR)
                     script.AVI = None
                     return None
-                if not self.zoomwindow:
-                    script.zoomwindow_actualsize = None
-                    if boolOldAVI and (oldWidth, oldHeight) != (script.AVI.Width, script.AVI.Height):
+                if not self.zoomwindow and boolOldAVI and \
+                    (oldWidth, oldHeight) != (script.AVI.Width, script.AVI.Height):
                         script.lastSplitVideoPos = None
-                else:
-                    #~ script.zoomwindow_actualsize = (script.AVI.WidthActual, script.AVI.HeightActual)
-                    script.zoomwindow_actualsize = None
                 # Update the script tag properties
                 self.UpdateScriptTagProperties(script, scripttxt)
                 self.GetAutoSliderInfo(script, scripttxt)
@@ -14433,36 +14459,39 @@ class MainFrame(wxp.Frame):
                 return previewname
     
     def GetFitWindowSize(self):
-        h = w = None
         wA, hA = self.videoWindow.GetSize()
-        w = wA - 2 * self.xo
-        if self.separatevideowindow:
-            h = hA - 2 * self.yo
-        elif self.zoomwindowfit and not self.previewWindowVisible:
-            h = None
-            w = None
-        else:
-            if self.previewWindowVisible:
-                splitpos = self.mainSplitter.GetSashPosition() - self.mainSplitter.GetClientSize()[1]
-            elif self.currentScript.lastSplitVideoPos is not None:
-                splitpos = self.currentScript.lastSplitVideoPos
-            elif self.oldLastSplitVideoPos is not None:
-                splitpos = self.oldLastSplitVideoPos
+        w, h = wA - 2 * self.xo, hA - 2 * self.yo
+        if not self.separatevideowindow:
+            if self.zoomwindowfit and not self.previewWindowVisible:
+                w = h = None
             else:
-                splitpos = self.GetMainSplitterNegativePosition()
-            #~ if self.zoomwindowfit:
-                #~ if self.previewWindowVisible:
+                if self.previewWindowVisible:
+                    splitpos = self.mainSplitter.GetSashPosition() - \
+                               self.mainSplitter.GetClientSize()[
+                                   self.mainSplitter.GetSplitMode() == wx.SPLIT_HORIZONTAL]
+                elif self.currentScript.lastSplitVideoPos is not None:
+                    splitpos = self.currentScript.lastSplitVideoPos
+                elif self.oldLastSplitVideoPos is not None:
+                    splitpos = self.oldLastSplitVideoPos
+                else:
+                    splitpos = self.GetMainSplitterNegativePosition()
+                #~ if self.zoomwindowfit:
+                    #~ if self.previewWindowVisible:
+                        #~ splitpos = self.mainSplitter.GetSashPosition() - self.mainSplitter.GetClientSize()[1]
+                    #~ else:
+                        #~ if self.oldLastSplitVideoPos is not None:
+                            #~ splitpos = self.oldLastSplitVideoPos
+                        #~ else:
+                            #~ splitpos = self.GetMainSplitterNegativePosition()
+                #~ elif self.currentScript.lastSplitVideoPos is None:
                     #~ splitpos = self.mainSplitter.GetSashPosition() - self.mainSplitter.GetClientSize()[1]
                 #~ else:
-                    #~ if self.oldLastSplitVideoPos is not None:
-                        #~ splitpos = self.oldLastSplitVideoPos
-                    #~ else:
-                        #~ splitpos = self.GetMainSplitterNegativePosition()
-            #~ elif self.currentScript.lastSplitVideoPos is None:
-                #~ splitpos = self.mainSplitter.GetSashPosition() - self.mainSplitter.GetClientSize()[1]
-            #~ else:
-                #~ splitpos = self.currentScript.lastSplitVideoPos
-            h = abs(splitpos) - (2 * self.yo + 5 + self.mainSplitter.GetSashSize()/2)
+                    #~ splitpos = self.currentScript.lastSplitVideoPos
+                if self.mainSplitter.GetSplitMode() == wx.SPLIT_HORIZONTAL:
+                    h = abs(splitpos) - (2 * self.yo + 5 + self.mainSplitter.GetSashSize()/2)
+                else:
+                    w = abs(splitpos) - (2 * self.xo + 5 + self.mainSplitter.GetSashSize()/2 + 
+                                         self.toggleSliderWindowButton.GetSize()[0])
         if h < 4:
             h = None
         if w < 4:
@@ -16303,6 +16332,7 @@ class MainFrame(wxp.Frame):
             w, h = self.scriptNotebook.GetSize()
             self.scriptNotebook.SetSize((w, h-1))
             self.scriptNotebook.SetSize((w, h))
+            self.SetMinimumScriptPaneSize()
             if self.options['periodicbackup']:
                 self.backupTimer.Start(self.options['periodicbackup'] * 60000)
             elif self.backupTimer.IsRunning():
