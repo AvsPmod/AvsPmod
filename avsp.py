@@ -3834,6 +3834,13 @@ class AvsFunctionDialog(wx.Dialog):
                             #~ if foundindex != wx.NOT_FOUND:
                                 #~ listbox.SetString(foundindex, newName)
                             #~ break
+            for lowername, (name, args, ftype) in self.overrideDict.iteritems():
+                if ftype == 2 and lowername not in self.filterDict:
+                    shortname = self.parent.GetPluginFunctionShortName(lowername)
+                    if len(self.shortnamesDict[shortname]) == 1:
+                        del self.shortnamesDict[shortname]
+                    else:
+                        self.shortnamesDict[shortname].remove(lowername)
             self.overrideDict = {}
             self.RefreshListNames()
         dlg.Destroy()
