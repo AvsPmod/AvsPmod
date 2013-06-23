@@ -6361,7 +6361,7 @@ class MainFrame(wxp.Frame):
         return functionDict
 
     def ParseAvisynthScript(self, filename, quiet=False):
-        pattern = r'function\s+(\w+)\s*\((.*?)\)\s*\{(.+?)\}'
+        pattern = r'function\s+([^\W_]\w*)\s*\((.*?)\)\s*\{(.+?)\}'
         default = r'default\s*\(\s*%s\s*,\s*(.+?)\s*\)'
         filterInfo, text = [], []
         script_text = self.GetTextFromFile(filename)[0]
