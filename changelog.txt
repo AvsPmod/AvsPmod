@@ -2,6 +2,16 @@ CHANGELOG
 =========
 
 
+Version 2.5.1 [2013-06-25]
+--------------------------
+
+- Add 'toggle preview placement' menu option - the video preview can be placed now to the right of the script
+- Add 'open script's directory' menu option
+- Add 'interpret escape sequences' and accelerator keys to the find/replace dialog
+- Fixes to the handling of function definitions
+- Other minor changes and fixes
+
+
 Version 2.5.0 [2013-06-04]
 --------------------------
 

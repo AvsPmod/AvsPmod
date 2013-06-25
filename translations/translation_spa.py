@@ -18,7 +18,7 @@
 #   zemog v2.0.1
 #   Overdrive80 v2.2.0
 
-version = "2.5.0"
+version = "2.5.1"
 
 messages = {
     "AviSynth script" : u"", # New in v2.3.0
@@ -120,6 +120,7 @@ messages = {
     "Uncheck all in this file" : u"", # New in v2.4.2
     "Uncheck all customized" : u"", # New in v2.4.2
     "Red - a customized function already exists." : u"Rojo - ya existe una función personalizada.",
+    "Invalid plugin function name \"{name}\". Must be \"pluginname_functionname\"." : u"", # New in v2.5.1
     "No customizations to export!" : u"¡No hay personalizaciones para exportar!",
     "Save filter customizations" : u"Guardar personalizaciones de filtros",
     "This will delete all filter customizations. Continue?" : u"Se borraran todas las personalizaciones de filtros. ¿Continuar?",
@@ -443,6 +444,8 @@ messages = {
     "Save script as..." : u"Guardar script como...",
     "Reload script" : u"", # New in v2.4.1
     "Reopen the current script file if it has changed" : u"", # New in v2.4.1
+    "If the current script is saved to a file, open its directory" : u"", # New in v2.5.1
+    "Open script's directory" : u"", # New in v2.5.1
     "Save the current script as a HTML document" : u"", # New in v2.5.0
     "Export HTML" : u"", # New in v2.5.0
     "&Print script" : u"", # New in v2.3.1
@@ -478,14 +481,14 @@ messages = {
     "Paste the selected text" : u"Pegar el texto seleccionado",
     "Open a find text dialog box" : u"Abrir cuadro de diálogo para la búsqueda de una(s) palabra(s)",
     "Find..." : u"Buscar...",
-    "Find the next instance of given text" : u"Buscar la siguiente ocurrencia de una(s) palabra(s)",
     "Find next" : u"Buscar siguiente",
-    "Find the previous instance of given text" : u"", # New in v2.4.0
+    "Find the next instance of given text" : u"Buscar la siguiente ocurrencia de una(s) palabra(s)",
     "Find previous" : u"", # New in v2.4.0
+    "Find the previous instance of given text" : u"", # New in v2.4.0
     "Open a replace text dialog box" : u"Abrir cuadro de diálogo para reemplazar una(s) palabra(s)",
     "Replace..." : u"Reemplazar...",
-    "Replace the next instance of given text" : u"", # New in v2.4.0
     "Replace next" : u"", # New in v2.4.0
+    "Replace the next instance of given text" : u"", # New in v2.4.0
     "Select All" : u"Seleccionar todo",
     "Select all the text" : u"Seleccionar todo el texto del script",
     "&Insert" : u"&Insertar",
@@ -643,6 +646,8 @@ messages = {
     "Refresh preview" : u"Actualizar previsualización",
     "Show/Hide the preview" : u"Mostrar/Ocultar la vista previa",
     "Toggle the video preview" : u"Mostrar/ocultar previsualización",
+    "Toggle preview placement" : u"", # New in v2.5.1
+    "When not using a separate window for the video preview, toggle between showing it at the bottom (default) or to the right" : u"", # New in v2.5.1
     "Release all open videos from memory" : u"Liberar de la memoria todos los vídeos abiertos",
     "Release all videos from memory" : u"Liberar todos los vídeos de la memoria",
     "Switch focus between the video preview and the text editor" : u"Alternar la focalización entre la previsualización del vídeo y la edición del texto",
@@ -712,6 +717,7 @@ messages = {
     "Save" : u"Guardar",
     "Save as..." : u"Guardar como...",
     "Reload" : u"", # New in v2.4.1
+    "Open directory" : u"", # New in v2.5.1
     "Copy to new tab" : u"Copiar en una nueva pestaña",
     "Reposition to" : u"Reposicionar a",
     "Crop editor" : u"Recortar",
@@ -732,6 +738,7 @@ messages = {
     "Insert Trim() commands:" : u"Insertar comando(s) Trim():",
     "Insert Dissolve() commands:" : u"Insertar comando(s) Dissolve()",
     "Use the buttons which appear on the video slider handle to create the frame selections to trim." : u"Usar los botones que aparecen junto al arrastre de la barra de desplazamiento del vídeo para efectuar la selección",
+    "The script's directory doesn't exist anymore!" : u"", # New in v2.5.1
     "Print Preview" : u"", # New in v2.3.1
     "Failed to create print preview" : u"", # New in v2.3.1
     "Print Error" : u"", # New in v2.3.1
@@ -978,15 +985,19 @@ messages = {
     "Error Window" : u"", # New in v2.4.0
     "Quick find" : u"", # New in v2.4.0
     "Find/replace text" : u"", # New in v2.4.0
-    "Search for" : u"", # New in v2.4.0
-    "Replace with" : u"", # New in v2.4.0
-    "Replace all" : u"", # New in v2.4.0
-    "Only on word start" : u"", # New in v2.4.0
-    "Only whole words" : u"", # New in v2.4.0
-    "Only in selection" : u"", # New in v2.4.0
-    "Case sensitive" : u"", # New in v2.4.0
-    "Use regular expressions" : u"", # New in v2.4.0
-    "Don't wrap-around" : u"", # New in v2.4.0
+    "Search &for" : u"", # New in v2.5.1
+    "R&eplace with" : u"", # New in v2.5.1
+    "Find &next" : u"", # New in v2.5.1
+    "Find &previous" : u"", # New in v2.5.1
+    "&Replace next" : u"", # New in v2.5.1
+    "Replace &all" : u"", # New in v2.5.1
+    "Only on word s&tart" : u"", # New in v2.5.1
+    "Only &whole words" : u"", # New in v2.5.1
+    "Only in &selection" : u"", # New in v2.5.1
+    "&Don't wrap-around" : u"", # New in v2.5.1
+    "&Case sensitive" : u"", # New in v2.5.1
+    "Use regular e&xpressions" : u"", # New in v2.5.1
+    "&Interpret escape sequences" : u"", # New in v2.5.1
     "Cannot find \"%(text)s\"" : u"", # New in v2.3.0
     "Replaced %(count)i times" : u"Reemplazada %(count)i veces",
     "Program Settings" : u"Parámetros de este programa",

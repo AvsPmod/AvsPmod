@@ -17,7 +17,7 @@
 # French traslation authors:
 #   André v2.0.2
 
-version = "2.5.0"
+version = "2.5.1"
 
 messages = {
     "AviSynth script" : u"", # New in v2.3.0
@@ -119,6 +119,7 @@ messages = {
     "Uncheck all in this file" : u"", # New in v2.4.2
     "Uncheck all customized" : u"", # New in v2.4.2
     "Red - a customized function already exists." : u"", # New in v2.2.1
+    "Invalid plugin function name \"{name}\". Must be \"pluginname_functionname\"." : u"", # New in v2.5.1
     "No customizations to export!" : u"Aucune personnalisation à exporter !",
     "Save filter customizations" : u"Enregistrer les personnalisations des filtres",
     "This will delete all filter customizations. Continue?" : u"Supprimer toute les personnalisations (*) ?",
@@ -442,6 +443,8 @@ messages = {
     "Save script as..." : u"Enregistrer le script sous...",
     "Reload script" : u"", # New in v2.4.1
     "Reopen the current script file if it has changed" : u"", # New in v2.4.1
+    "If the current script is saved to a file, open its directory" : u"", # New in v2.5.1
+    "Open script's directory" : u"", # New in v2.5.1
     "Save the current script as a HTML document" : u"", # New in v2.5.0
     "Export HTML" : u"", # New in v2.5.0
     "&Print script" : u"", # New in v2.3.1
@@ -477,14 +480,14 @@ messages = {
     "Paste the selected text" : u"Coller la sélection",
     "Open a find text dialog box" : u"Ouvre une boîte de dialogue de recherche",
     "Find..." : u"Chercher...",
-    "Find the next instance of given text" : u"Cherche l'instance suivante d'un texte donné",
     "Find next" : u"Chercher suivant",
-    "Find the previous instance of given text" : u"", # New in v2.4.0
+    "Find the next instance of given text" : u"Cherche l'instance suivante d'un texte donné",
     "Find previous" : u"", # New in v2.4.0
+    "Find the previous instance of given text" : u"", # New in v2.4.0
     "Open a replace text dialog box" : u"Ouvre une boîte de dialogue Remplacer",
     "Replace..." : u"Remplacer...",
-    "Replace the next instance of given text" : u"", # New in v2.4.0
     "Replace next" : u"", # New in v2.4.0
+    "Replace the next instance of given text" : u"", # New in v2.4.0
     "Select All" : u"Sélectionner tout",
     "Select all the text" : u"Sélectionne tout le texte",
     "&Insert" : u"", # New in v2.2.1
@@ -642,6 +645,8 @@ messages = {
     "Refresh preview" : u"Raffraîchir vidéo",
     "Show/Hide the preview" : u"", # New in v2.2.1
     "Toggle the video preview" : u"Active / Désactive la fenêtre vidéo",
+    "Toggle preview placement" : u"", # New in v2.5.1
+    "When not using a separate window for the video preview, toggle between showing it at the bottom (default) or to the right" : u"", # New in v2.5.1
     "Release all open videos from memory" : u"Décharge de la mémoire toutes les vidéos en cours",
     "Release all videos from memory" : u"Décharger toutes les vidéos de la mémoire",
     "Switch focus between the video preview and the text editor" : u"Bascule le focus entre l'éditeur de texte et la fenêtre vidéo",
@@ -711,6 +716,7 @@ messages = {
     "Save" : u"Enregistrer",
     "Save as..." : u"Enregistrer sous...",
     "Reload" : u"", # New in v2.4.1
+    "Open directory" : u"", # New in v2.5.1
     "Copy to new tab" : u"Copier vers un nouvel onglet",
     "Reposition to" : u"", # New in v2.2.1
     "Crop editor" : u"Rognage",
@@ -731,6 +737,7 @@ messages = {
     "Insert Trim() commands:" : u"Insérer une commande Trim() :",
     "Insert Dissolve() commands:" : u"", # New in v2.2.1
     "Use the buttons which appear on the video slider handle to create the frame selections to trim." : u"Utiliser les boutons additionnels sur la barre du curseur de frames pour créer les selections de frames via Trim",
+    "The script's directory doesn't exist anymore!" : u"", # New in v2.5.1
     "Print Preview" : u"", # New in v2.3.1
     "Failed to create print preview" : u"", # New in v2.3.1
     "Print Error" : u"", # New in v2.3.1
@@ -977,15 +984,19 @@ messages = {
     "Error Window" : u"", # New in v2.4.0
     "Quick find" : u"", # New in v2.4.0
     "Find/replace text" : u"", # New in v2.4.0
-    "Search for" : u"", # New in v2.4.0
-    "Replace with" : u"", # New in v2.4.0
-    "Replace all" : u"", # New in v2.4.0
-    "Only on word start" : u"", # New in v2.4.0
-    "Only whole words" : u"", # New in v2.4.0
-    "Only in selection" : u"", # New in v2.4.0
-    "Case sensitive" : u"", # New in v2.4.0
-    "Use regular expressions" : u"", # New in v2.4.0
-    "Don't wrap-around" : u"", # New in v2.4.0
+    "Search &for" : u"", # New in v2.5.1
+    "R&eplace with" : u"", # New in v2.5.1
+    "Find &next" : u"", # New in v2.5.1
+    "Find &previous" : u"", # New in v2.5.1
+    "&Replace next" : u"", # New in v2.5.1
+    "Replace &all" : u"", # New in v2.5.1
+    "Only on word s&tart" : u"", # New in v2.5.1
+    "Only &whole words" : u"", # New in v2.5.1
+    "Only in &selection" : u"", # New in v2.5.1
+    "&Don't wrap-around" : u"", # New in v2.5.1
+    "&Case sensitive" : u"", # New in v2.5.1
+    "Use regular e&xpressions" : u"", # New in v2.5.1
+    "&Interpret escape sequences" : u"", # New in v2.5.1
     "Cannot find \"%(text)s\"" : u"", # New in v2.3.0
     "Replaced %(count)i times" : u"Remplacé %(count)i fois",
     "Program Settings" : u"Paramètres",

@@ -16,7 +16,7 @@
 
 # Übersetzt von Henrik . AvsP 2.0.1  Danke für die Hilfe, besonders LigH ,doxville,Brother John, Selur und Rippraff !
 
-version = "2.5.0"
+version = "2.5.1"
 
 messages = {
     "AviSynth script" : u"", # New in v2.3.0
@@ -118,6 +118,7 @@ messages = {
     "Uncheck all in this file" : u"", # New in v2.4.2
     "Uncheck all customized" : u"", # New in v2.4.2
     "Red - a customized function already exists." : u"", # New in v2.2.1
+    "Invalid plugin function name \"{name}\". Must be \"pluginname_functionname\"." : u"", # New in v2.5.1
     "No customizations to export!" : u"Keine Anpassungen zum exportieren",
     "Save filter customizations" : u"Filteranpassungen speichern",
     "This will delete all filter customizations. Continue?" : u"Das wird alle Filteranpassungen löschen. Fortfahren?",
@@ -441,6 +442,8 @@ messages = {
     "Save script as..." : u"Speichere Script als...",
     "Reload script" : u"", # New in v2.4.1
     "Reopen the current script file if it has changed" : u"", # New in v2.4.1
+    "If the current script is saved to a file, open its directory" : u"", # New in v2.5.1
+    "Open script's directory" : u"", # New in v2.5.1
     "Save the current script as a HTML document" : u"", # New in v2.5.0
     "Export HTML" : u"", # New in v2.5.0
     "&Print script" : u"", # New in v2.3.1
@@ -476,14 +479,14 @@ messages = {
     "Paste the selected text" : u"Ausgewählten Text einfügen",
     "Open a find text dialog box" : u"Öffne Text-Dialogbox Finden",
     "Find..." : u"Suchen...",
-    "Find the next instance of given text" : u"Nächste Instanz in diesem Text suchen",
     "Find next" : u"Weitersuchen",
-    "Find the previous instance of given text" : u"", # New in v2.4.0
+    "Find the next instance of given text" : u"Nächste Instanz in diesem Text suchen",
     "Find previous" : u"", # New in v2.4.0
+    "Find the previous instance of given text" : u"", # New in v2.4.0
     "Open a replace text dialog box" : u"Öffen der Dialogbox Ersetzen",
     "Replace..." : u"Ersetzen...",
-    "Replace the next instance of given text" : u"", # New in v2.4.0
     "Replace next" : u"", # New in v2.4.0
+    "Replace the next instance of given text" : u"", # New in v2.4.0
     "Select All" : u"Alles auswählen",
     "Select all the text" : u"Gesammten Text auswählen",
     "&Insert" : u"", # New in v2.2.1
@@ -641,6 +644,8 @@ messages = {
     "Refresh preview" : u"Erneuere Vorschaufunktion",
     "Show/Hide the preview" : u"", # New in v2.2.1
     "Toggle the video preview" : u"Umschalten Video-Vorschaufunktion",
+    "Toggle preview placement" : u"", # New in v2.5.1
+    "When not using a separate window for the video preview, toggle between showing it at the bottom (default) or to the right" : u"", # New in v2.5.1
     "Release all open videos from memory" : u"Freigabe aller offenen Videos im Speicher", 
     "Release all videos from memory" : u"Freigabe aller Videos im Speicher", 
     "Switch focus between the video preview and the text editor" : u"Schalten des Fokus zwischen der Video-Vorschaufunktion und dem Texteditor",
@@ -710,6 +715,7 @@ messages = {
     "Save" : u"Speichern",
     "Save as..." : u"Speichere als...",
     "Reload" : u"", # New in v2.4.1
+    "Open directory" : u"", # New in v2.5.1
     "Copy to new tab" : u"Zu einem neuen Tab kopieren",
     "Reposition to" : u"", # New in v2.2.1
     "Crop editor" : u"Cropeditor",
@@ -730,6 +736,7 @@ messages = {
     "Insert Trim() commands:" : u"Eingabe Trim() Befehle",
     "Insert Dissolve() commands:" : u"", # New in v2.2.1
     "Use the buttons which appear on the video slider handle to create the frame selections to trim." : u"Video-Schieberegler für die Bildauswahl zum trimmen benutzen ",
+    "The script's directory doesn't exist anymore!" : u"", # New in v2.5.1
     "Print Preview" : u"", # New in v2.3.1
     "Failed to create print preview" : u"", # New in v2.3.1
     "Print Error" : u"", # New in v2.3.1
@@ -976,15 +983,19 @@ messages = {
     "Error Window" : u"", # New in v2.4.0
     "Quick find" : u"", # New in v2.4.0
     "Find/replace text" : u"", # New in v2.4.0
-    "Search for" : u"", # New in v2.4.0
-    "Replace with" : u"", # New in v2.4.0
-    "Replace all" : u"", # New in v2.4.0
-    "Only on word start" : u"", # New in v2.4.0
-    "Only whole words" : u"", # New in v2.4.0
-    "Only in selection" : u"", # New in v2.4.0
-    "Case sensitive" : u"", # New in v2.4.0
-    "Use regular expressions" : u"", # New in v2.4.0
-    "Don't wrap-around" : u"", # New in v2.4.0
+    "Search &for" : u"", # New in v2.5.1
+    "R&eplace with" : u"", # New in v2.5.1
+    "Find &next" : u"", # New in v2.5.1
+    "Find &previous" : u"", # New in v2.5.1
+    "&Replace next" : u"", # New in v2.5.1
+    "Replace &all" : u"", # New in v2.5.1
+    "Only on word s&tart" : u"", # New in v2.5.1
+    "Only &whole words" : u"", # New in v2.5.1
+    "Only in &selection" : u"", # New in v2.5.1
+    "&Don't wrap-around" : u"", # New in v2.5.1
+    "&Case sensitive" : u"", # New in v2.5.1
+    "Use regular e&xpressions" : u"", # New in v2.5.1
+    "&Interpret escape sequences" : u"", # New in v2.5.1
     "Cannot find \"%(text)s\"" : u"", # New in v2.3.0
     "Replaced %(count)i times" : u"Ersetzt %(count)i mal",
     "Program Settings" : u"Programm Einstellungen",

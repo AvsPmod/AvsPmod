@@ -17,7 +17,7 @@
 # Japanese translation authors:
 #   niiyan v2.0.2 - v2.4.1
 
-version = "2.5.0"
+version = "2.5.1"
 
 messages = {
     "AviSynth script" : u"AviSynth スクリプト",
@@ -119,6 +119,7 @@ messages = {
     "Uncheck all in this file" : u"", # New in v2.5.0
     "Uncheck all customized" : u"", # New in v2.5.0
     "Red - a customized function already exists." : u"警告 - カスタマイズされた関数はすでに存在します。",
+    "Invalid plugin function name \"{name}\". Must be \"pluginname_functionname\"." : u"", # New in v2.5.1
     "No customizations to export!" : u"エクスポートするカスタマイズが存在しません！",
     "Save filter customizations" : u"フィルタカスタマイズの保存",
     "This will delete all filter customizations. Continue?" : u"すべてのフィルタカスタマイズを削除します。続行しますか？",
@@ -442,6 +443,8 @@ messages = {
     "Save script as..." : u"名前を付けて保存...",
     "Reload script" : u"スクリプトの再読み込み",
     "Reopen the current script file if it has changed" : u"変更があったら現在のスクリプトファイルを開き直す",
+    "If the current script is saved to a file, open its directory" : u"", # New in v2.5.1
+    "Open script's directory" : u"", # New in v2.5.1
     "Save the current script as a HTML document" : u"", # New in v2.5.0
     "Export HTML" : u"", # New in v2.5.0
     "&Print script" : u"スクリプトの印刷(&P)",
@@ -477,14 +480,14 @@ messages = {
     "Paste the selected text" : u"選択されたテキストの貼り付け",
     "Open a find text dialog box" : u"検索ダイアログボックスを開く",
     "Find..." : u"検索...",
-    "Find the next instance of given text" : u"次の候補を検索",
     "Find next" : u"次を検索",
-    "Find the previous instance of given text" : u"前の候補を検索",
+    "Find the next instance of given text" : u"次の候補を検索",
     "Find previous" : u"前を検索",
+    "Find the previous instance of given text" : u"前の候補を検索",
     "Open a replace text dialog box" : u"置換ダイアログボックスを開く",
     "Replace..." : u"置換...",
-    "Replace the next instance of given text" : u"次の候補を置換",
     "Replace next" : u"次を置換",
+    "Replace the next instance of given text" : u"次の候補を置換",
     "Select All" : u"すべて選択",
     "Select all the text" : u"テキストをすべて選択",
     "&Insert" : u"挿入(&I)",
@@ -642,6 +645,8 @@ messages = {
     "Refresh preview" : u"プレビューの更新",
     "Show/Hide the preview" : u"プレビューの表示/非表示",
     "Toggle the video preview" : u"ビデオプレビューのトグル",
+    "Toggle preview placement" : u"", # New in v2.5.1
+    "When not using a separate window for the video preview, toggle between showing it at the bottom (default) or to the right" : u"", # New in v2.5.1
     "Release all open videos from memory" : u"開いたすべてのビデオをメモリから解放する",
     "Release all videos from memory" : u"すべてのビデオをメモリから解放",
     "Switch focus between the video preview and the text editor" : u"ビデオプレビューとテキストエディタの間でフォーカスを切り替える。",
@@ -711,10 +716,11 @@ messages = {
     "Save" : u"保存",
     "Save as..." : u"名前を付けて保存...",
     "Reload" : u"再読み込み",
+    "Open directory" : u"", # New in v2.5.1
     "Copy to new tab" : u"新しいタブにコピー",
     "Reposition to" : u"位置の変更",
     "Crop editor" : u"クロップエディタ",
-    "You can drag the crop regions with the left mouse button when this dialog is visible, cropping the edge closest to the initial mouse click." : u"ダイアログ表示時、左マウスボタンでクロップ領域をドラッグ可能（最初のマウスクリックに最も近い端をクロップ）。",
+    "You can drag the crop regions with the left mouse button when this dialog is visible, cropping the edge closest to the initial mouse click." : u"ダイアログ表示時、左マウスボタンでクロップ領域をドラッグ可能 （最初のマウスクリックに最も近い端をクロップ）。",
     "Auto-crop" : u"オートクロップ",
     "Samples" : u"サンプル",
     "At script end" : u"スクリプトの最後に",
@@ -731,6 +737,7 @@ messages = {
     "Insert Trim() commands:" : u"Trim() コマンドを挿入:",
     "Insert Dissolve() commands:" : u"Dissolve() コマンドを挿入:",
     "Use the buttons which appear on the video slider handle to create the frame selections to trim." : u"選択範囲の生成にはビデオスライダのつまみの上にあるボタンを使用してください。",
+    "The script's directory doesn't exist anymore!" : u"", # New in v2.5.1
     "Print Preview" : u"印刷プレビュー",
     "Failed to create print preview" : u"印刷プレビューの作成に失敗しました",
     "Print Error" : u"印刷エラー",
@@ -977,15 +984,19 @@ messages = {
     "Error Window" : u"エラーウィンドウ",
     "Quick find" : u"クイック検索",
     "Find/replace text" : u"テキスト検索/置換",
-    "Search for" : u"検索",
-    "Replace with" : u"置換",
-    "Replace all" : u"すべて置換",
-    "Only on word start" : u"文字列の先頭のみ",
-    "Only whole words" : u"文字列全体",
-    "Only in selection" : u"選択範囲のみ",
-    "Case sensitive" : u"大文字と小文字を区別",
-    "Use regular expressions" : u"正規表現を使用",
-    "Don't wrap-around" : u"改行しない",
+    "Search &for" : u"検索",
+    "R&eplace with" : u"置換",
+    "Find &next" : u"次を検索",
+    "Find &previous" : u"前を検索",
+    "&Replace next" : u"次を置換",
+    "Replace &all" : u"すべて置換",
+    "Only on word s&tart" : u"文字列の先頭のみ",
+    "Only &whole words" : u"文字列全体",
+    "Only in &selection" : u"選択範囲のみ",
+    "&Don't wrap-around" : u"改行しない",
+    "&Case sensitive" : u"大文字と小文字を区別",
+    "Use regular e&xpressions" : u"正規表現を使用",
+    "&Interpret escape sequences" : u"", # New in v2.5.1
     "Cannot find \"%(text)s\"" : u"\"%(text)s\" が見つかりません",
     "Replaced %(count)i times" : u"%(count)i 回置換しました",
     "Program Settings" : u"プログラム設定",

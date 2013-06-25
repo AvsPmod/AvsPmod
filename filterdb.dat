@@ -1523,6 +1523,11 @@ bool "tv_range"=True,
 bool "debug_view"=False
 )
 
+avss_DSS2(
+string filename= ("*.*"),
+[float "fps"]
+)
+
 avstp_avstp_set_threads(
 int ignored=0,
 int threads=0
@@ -1772,6 +1777,23 @@ int "info"=0 (0 to 3),
 int "upConv"=0 (0 to 2),
 bool "i420"=false,
 bool "iCC"
+)
+
+DGDecodeNV_DGSource(
+string dgi= ("*.dgi"),
+bool "i420"=False,
+int "deinterlace"=0 (0 to 2),
+bool "use_top_field"=True,
+bool "use_pf"=False,
+bool "use_D3D"=False,
+int "crop_t"=0 (0 to 1280),
+int "crop_b"=0 (0 to 1280),
+int "crop_l"=0 (0 to 1920),
+int "crop_r"=0 (0 to 1920),
+int "resize_w"=0,
+int "resize_h"=0,
+int "fieldop"=0 (0 to 2),
+bool "debug"=False
 )
 
 DirectShowSource_DirectShowSource(
@@ -2156,6 +2178,14 @@ float "T"=6.0 (0 to 10),
 float "Tuv"=2.0 (0 to 10)
 )
 
+GiCoCu_GiCoCu(
+clip,
+string "f"= ("*.cur"/ "*.amp"),
+bool "alpha"=False,
+bool "photoshop"=False,
+[bool "hsv"]
+)
+
 Grid_Grid(
 clip,
 int "sf"=0,
@@ -2345,6 +2375,48 @@ int "stroke_color"=$ffffff,
 string "input_encoding"="UTF-8" ("UTF-8")
 )
 
+LSMASHSource_LSMASHAudioSource(
+string "source"= ("*.*"),
+int "track"=0 (0 to 10),
+bool "skip_priming"=True,
+string "layout"="",
+int "rate"=0
+)
+
+LSMASHSource_LSMASHVideoSource(
+string "source"= ("*.*"),
+int "track"=0 (0 to 10),
+int "threads"=0 (0 to 16),
+int "seek_mode"=0 (0 to 2),
+int "seek_threshold"=10 (0 to 60),
+bool "dr"=False,
+bool "stacked"=False,
+string "format"="" (""/ "YUV420P8"/ "YUV422P8"/ "YUV444P8"/ "YUV410P8"/ "YUV411P8"/ "YUV422P9"/ "YUV444P9"/ "YUV420P10"/ "YUV422P10"/ "YUV444P10"/ "YUV420P12"/ "YUV422P12"/ "YUV444P12"/ "YUV420P14"/ "YUV422P14"/ "YUV444P14"/ "YUV420P16"/ "YUV422P16"/ "YUV444P16"/ "YUY2"/ "RGB24")
+)
+
+LSMASHSource_LWLibavAudioSource(
+string "source"= ("*.*"),
+int "stream_index"=-1 (-1 to 10),
+bool "cache"=True,
+bool "av_sync"=False,
+string "layout"="",
+int "rate"=0
+)
+
+LSMASHSource_LWLibavVideoSource(
+string "source"= ("*.*"),
+int "stream_index"=-1 (-1 to 10),
+int "threads"=0 (0 to 16),
+bool "cache"=True,
+int "seek_mode"=0 (0 to 2),
+int "seek_threshold"=10 (0 to 60),
+bool "dr"=False,
+bool "repeat"=False,
+int "dominance"=0 (0 to 2),
+bool "stacked"=False,
+string "format"="" (""/ "YUV420P8"/ "YUV422P8"/ "YUV444P8"/ "YUV410P8"/ "YUV411P8"/ "YUV422P9"/ "YUV444P9"/ "YUV420P10"/ "YUV422P10"/ "YUV444P10"/ "YUV420P12"/ "YUV422P12"/ "YUV444P12"/ "YUV420P14"/ "YUV422P14"/ "YUV444P14"/ "YUV420P16"/ "YUV422P16"/ "YUV444P16"/ "YUY2"/ "RGB24")
+)
+
 nnedi_nnedi(
 clip,
 int "field"=-1 (-2 to 3),
@@ -2381,7 +2453,7 @@ int "nns"=3 (0 to 4),
 int "qual"=1 (1 to 2),
 int "etype"=0 (0 to 1),
 int "pscrn"=2 (0 to 4),
-[string "cshift"="spline36resize" ("point"/ "bilinear"/ "bicubic"/ "lanczos"/ "lanczos4"/ "blackman"/ "spline16"/ "spline36"/ "spline64"/ "gauss"/ "sinc")],
+[string "cshift"="spline36resize" ("pointresize"/ "bilinearresize"/ "bicubicresize"/ "lanczosresize"/ "lanczos4resize"/ "blackmanresize"/ "spline16resize"/ "spline36resize"/ "spline64resize"/ "gaussresize"/ "sincresize")],
 [int "fwidth"],
 [int "fheight"],
 [float "ep0"],
@@ -2463,6 +2535,30 @@ SangNom_SangNom(
 clip,
 int "order"=1 (0 to 2),
 int "aa"=48 (0 to 255)
+)
+
+Sashimi_RawReader(
+string "filename"= ("*.*"),
+string "format"= ("RGB"/ "BGR"/ "RGBA"/ "ARGB"/ "BGRA"/ "ABGR"/ "Y8"),
+int "width",
+int "height",
+int "numframes"=-1,
+string "packing"="",
+int "filehead"=0,
+int "framehead"=0,
+bool "flip"=False
+)
+
+Sashimi_RawWriter(
+clip "clip",
+string "filename"= ("*.*"),
+string "format"= ("RGB"/ "BGR"/ "RGBA"/ "ARGB"/ "BGRA"/ "ABGR"/ "Y8"),
+string "packing"="",
+int "filehead"=0,
+int "framehead"=0,
+bool "flip"=False,
+bool "overwrite"=False,
+bool "truncate"=True
 )
 
 SmoothAdjust_SmoothCurve(
@@ -3910,6 +4006,66 @@ bool "ShowSettings"=False,
 [int "ForceTR"=0 (0 to 3)]
 )
 
+RawReadInterleaved(
+string filename= ("*.*"),
+string format= ("YUV"/ "AYUV"/ "YUY2"/ "UYVY"),
+int width,
+int height,
+string "packing"="",
+int "filehead"=0,
+int "framehead"=0,
+bool "flip"=False
+)
+
+RawReadPlanar(
+string filename= ("*.*"),
+string format= ("RGB"/ "ARGB"/ "YUV444"/ "YUV422"/ "YUV420"),
+int width,
+int height,
+string "packing"="",
+int "filehead"=0,
+int "framehead"=0,
+bool "flip"=False
+)
+
+RawWriteInterleaved(
+clip c,
+string filename= ("*.*"),
+string format= ("YUV"/ "AYUV"/ "YUY2"/ "UYVY"),
+string "packing"="",
+int "filehead"=0,
+int "framehead"=0,
+bool "flip"=False,
+bool "overwrite"=False,
+bool "truncate"=False
+)
+
+RawWritePlanar(
+clip c,
+string filename= ("*.*"),
+string format= ("RGB"/ "ARGB"/ "YUV444"/ "YUV422"/ "YUV420"),
+string "packing"="",
+int "filehead"=0,
+int "framehead"=0,
+bool "flip"=False,
+bool "overwrite"=False,
+bool "truncate"=False
+)
+
+ReadV210(
+string filename= ("*.*"),
+int width,
+int height,
+[int "fh"=0]
+)
+
+Readv210Stack16(
+string filename= ("*.*"),
+int width,
+int height,
+[int "fh"=0]
+)
+
 ReBlend(
 clip clip,
 int "start"=0,
@@ -3980,6 +4136,57 @@ clip clip,
 float "threshold"=0.4,
 bool "dgm"=false,
 bool "show"=false
+)
+
+SMDegrain(
+clip input,
+int "tr"=3 (0 to 6),
+int "thSAD"=400 (0 to 1000),
+[int "thSADC"=200 (0 to 1000)],
+bool "RefineMotion"=False,
+bool "contrasharp"=False,
+[clip "CClip"],
+bool "interlaced"=False,
+int "plane"=4 (0 to 4),
+[int "Globals"=0 (0 to 3)],
+[int "pel"=2 (1 to 4)],
+[int "subpixel"=2 (0 to 3)],
+int "prefilter"=0 (0 to 3),
+[int "blksize"=8 (4 to 16)],
+[int "overlap"=4 (2 to 16)],
+[int "search"=4 (0 to 7)],
+[bool "truemotion"=True],
+[int "limit"=255 (1 to 255)],
+[int "limitc"=255 (1 to 255)],
+[int "thSCD1"=400 (0 to 1600)],
+[int "thSCD2"=130 (0 to 255)],
+bool "chroma"=True,
+[int "hpad"= (0 to 64)],
+[int "vpad"= (0 to 64)],
+bool "lsb"=False,
+bool "lsb_in"=False,
+bool "lsb_out"=False,
+[int "mode"=0 (-1 to 8)],
+bool "Show"=False,
+[float "Str"=1.0 (0.0 to 8.0)],
+[float "Amp"=0.0625 (0.0000 to 1.0000)]
+)
+
+Soothe(
+clip sharp,
+clip orig,
+int "keep"=24 (0 to 100)
+)
+
+srestore(
+clip source,
+[float "frate"],
+int "omode"=6 (0 to 6),
+float "speed"=9 (-25 to 25),
+int "mode"=2 (1 to 3),
+float "thresh"=22 (12 to 44),
+int "cache"=-1 (-1 to 10),
+[clip "dclip"]
 )
 
 Stab(
