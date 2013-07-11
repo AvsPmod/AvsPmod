@@ -34,3 +34,7 @@ version = '2.5.1'
 
 # Used to pass the shared library location to avisynth.py, don't touch
 avisynth_library_dir = ''
+
+# This will be improved on the future refactoring for wxPython Phoenix 
+# and VapourSynth
+options = {}

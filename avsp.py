@@ -5621,7 +5621,8 @@ class MainFrame(wxp.Frame):
         }
         textstylesDict = self.defaulttextstylesDict.copy()
         # Create the options dict
-        self.options = {
+        self.options = global_vars.options
+        self.options.update({
             # INTERNAL OPTIONS
             'templates': templateDict,
             'snippets': snippetsDict,
@@ -5763,7 +5764,7 @@ class MainFrame(wxp.Frame):
             'paranoiamode': False,
             'periodicbackup': 0,
             'autoupdatevideo': False,
-        }
+        })
         # Import certain options from older version if necessary
         if oldOptions is not None:
             # Update the new options dictionnary with the old options
@@ -16311,7 +16312,7 @@ class MainFrame(wxp.Frame):
         # Set the data
         if ID == wx.ID_OK:
             oldpluginsdirectory = self.ExpandVars(self.options['pluginsdir'])
-            self.options = dlg.GetDict()
+            self.options.update(dlg.GetDict())
             if self.options['pluginsdir'] != oldpluginsdirectory:
                 self.SetPluginsDirectory(oldpluginsdirectory)
             for key in ['altdir', 'workdir', 'pluginsdir', 'avisynthhelpfile', 
