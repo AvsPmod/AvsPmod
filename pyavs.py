@@ -33,6 +33,7 @@ import ctypes
 import re
 
 import avisynth
+import global_vars
 
 try: _
 except NameError:
@@ -130,13 +131,14 @@ class AvsClipBase:
                 avsfile=self.env.Invoke("eval",args,0) #use eval to load it
                 self.clip=avsfile.AsClip(self.env)
             except avisynth.AvisynthError, err:
-                fontSize=24
+                fontFace, fontSize = global_vars.options['errormessagefont'][:2]
                 self.error_message = str(err)
                 lineList = []
                 yLine = 0
                 nChars = 0
                 for errLine in str(err).split('\n'):
-                    lineList.append('Subtitle("""%s""",y=%i,size=%i,text_color=$FF0000,align=8)' % (errLine, yLine, fontSize))
+                    lineList.append('Subtitle("""%s""",y=%i,font="%s",size=%i,text_color=$FF0000,align=8)' % 
+                        (errLine, yLine, fontFace, fontSize))
                     yLine += fontSize
                     nChars = max(nChars, len(errLine))
                 eLength = oldFramecount

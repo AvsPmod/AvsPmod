@@ -1366,26 +1366,33 @@ class OptionsDialog(wx.Dialog):
                         itemSizer.Add(staticText, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
                         itemSizer.Add(ctrl, 0)
                     
-                    elif flag == OPT_ELEM_FONT: #  Currently not used
-                        #~ staticText = wx.StaticText(tabPanel, wx.ID_ANY, label)
-                        ctrl = wxButtons.GenButton(tabPanel, wx.ID_ANY, label=label)
-                        ctrl.SetUseFocusIndicator(False)
-                        self.Bind(wx.EVT_BUTTON, self.OnButtonFont, ctrl)
-                        fontFace, fontSize, fontWeight, fontStyle, fontColorTuple = optionsValue
-                        weight = wx.FONTWEIGHT_NORMAL
-                        if fontWeight == 'bold':
-                            weight = wx.FONTWEIGHT_BOLD
-                        style = wx.FONTSTYLE_NORMAL
-                        if fontStyle == 'italic':
-                            style = wx.FONTSTYLE_ITALIC
-                        font = wx.Font(fontSize, wx.FONTFAMILY_DEFAULT, style, weight, faceName=fontFace)
-                        ctrl.SetFont(font)
-                        ctrl.SetForegroundColour(wx.Colour(*fontColorTuple))
+                    elif flag == OPT_ELEM_FONT:
+                        # button for choosing font
+                        # misc: {width}
+                        width = misc['width'] if 'width' in misc else -1
+                        staticText = wx.StaticText(tabPanel, wx.ID_ANY, label)
+                        if optionsValue is not None:
+                            (fontFace, fontSize, fontWeight, fontStyle, 
+                                fontColorTuple) = optionsValue
+                            weight = wx.FONTWEIGHT_NORMAL
+                            if fontWeight == 'bold':
+                                weight = wx.FONTWEIGHT_BOLD
+                            style = wx.FONTSTYLE_NORMAL
+                            if fontStyle == 'italic':
+                                style = wx.FONTSTYLE_ITALIC
+                            font = wx.Font(fontSize, wx.FONTFAMILY_DEFAULT, 
+                                           style, weight, faceName=fontFace)
+                        else:
+                            font = wx.NullFont
+                        ctrl = wx.FontPickerCtrl(tabPanel, wx.ID_ANY, font, 
+                                                 size=(width,-1), name=label, 
+                                                 style=wx.FNTP_FONTDESC_AS_LABEL)
                         if tip:
+                            staticText.SetToolTipString(tip)
                             ctrl.SetToolTipString(tip)
                         itemSizer = wx.BoxSizer(wx.HORIZONTAL)
-                        #~ itemSizer.Add(staticText, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
-                        itemSizer.Add(ctrl, 0)
+                        itemSizer.Add(staticText, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 6)
+                        itemSizer.Add(ctrl, 0, wx.ALIGN_CENTER_VERTICAL|wx.EXPAND|wx.TOP|wx.BOTTOM, 2)
                     
                     else: #elif flag == OPT_ELEM_STRING:
                         # regular text field
@@ -1496,7 +1503,7 @@ class OptionsDialog(wx.Dialog):
         button.SetForegroundColour(colour)
         button.SetBestSize()
         button.Refresh()
-        self.sizer.Fit(self)
+        self.GetSizer().Fit(self)
         dlg2.Destroy()
         dlg.Destroy()
         
@@ -1530,14 +1537,14 @@ class OptionsDialog(wx.Dialog):
                 #~ newValue = ctrl.GetBackgroundColour().Get()
                 newValue = ctrl.GetColour().Get()
             elif flag == OPT_ELEM_FONT:
-                font = ctrl.GetFont()
+                font = ctrl.GetSelectedFont() # ctrl.GetFont()
                 bold = ''
                 if font.GetWeight() == wx.FONTWEIGHT_BOLD:
                     bold = 'bold'
                 italic = ''
                 if font.GetStyle() == wx.FONTSTYLE_ITALIC:
                     italic = 'italic'
-                color = ctrl.GetForegroundColour()
+                color = ctrl.GetChildren()[0].GetForegroundColour() # ctrl.GetForegroundColour()
                 newValue = (font.GetFaceName(), font.GetPointSize(), bold, italic, color.Get())
             elif flag == OPT_ELEM_CHECK:
                 newValue = ctrl.GetValue()
