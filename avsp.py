@@ -5728,6 +5728,7 @@ class MainFrame(wxp.Frame):
             'enableframepertab': True,
             'enableframepertab_same': True,
             'applygroupoffsets': True,
+            'offsetbookmarks': False,
             # AUTOSLIDER OPTIONS
             'keepsliderwindowhidden': False,
             'autoslideron': True,
@@ -7151,6 +7152,9 @@ class MainFrame(wxp.Frame):
                     (_('Apply offsets'), '', self.OnMenuVideoGroupApplyOffsets, 
                         _('Use the difference between showed frames when the tabs were added to the group as offsets'), 
                         wx.ITEM_CHECK, self.options['applygroupoffsets']),
+                    (_('Offset also bookmarks'), '', self.OnMenuVideoGroupOffsetBookmarks, 
+                        _('Apply the offset also to the currently set bookmarks'), 
+                        wx.ITEM_CHECK, self.options['offsetbookmarks']),
                     ),
                 ),
                 (_('&Navigate'),
@@ -7507,6 +7511,9 @@ class MainFrame(wxp.Frame):
                 (_('Apply offsets'), '', self.OnGroupApplyOffsets, 
                     _('Use the difference between showed frames when the tabs were added to the group as offsets'), 
                     wx.ITEM_CHECK, self.options['applygroupoffsets']),
+                (_('Offset also bookmarks'), '', self.OnGroupOffsetBookmarks, 
+                    _('Apply the offset also to the currently set bookmarks'), 
+                    wx.ITEM_CHECK, self.options['offsetbookmarks']),
                 ),
             ),
             (''),
@@ -7975,6 +7982,8 @@ class MainFrame(wxp.Frame):
         tab_group_menu.Check(id, True)
         id = tab_group_menu.FindItem(_('Apply offsets'))
         tab_group_menu.Check(id, self.options['applygroupoffsets'])
+        id = tab_group_menu.FindItem(_('Offset also bookmarks'))
+        tab_group_menu.Check(id, self.options['offsetbookmarks'])
         event.Skip()
     
     def OnMenuFileNew(self, event):
@@ -8677,6 +8686,9 @@ class MainFrame(wxp.Frame):
     
     def OnMenuVideoGroupApplyOffsets(self, event):
         self.OnGroupApplyOffsets(event)
+    
+    def OnMenuVideoGroupOffsetBookmarks(self, event):
+        self.OnGroupOffsetBookmarks(event)
     
     def OnMenuVideoGroupClearTabGroup(self, event):
         self.OnGroupClearTabGroup(event)
@@ -10030,7 +10042,10 @@ class MainFrame(wxp.Frame):
                     script.lastFramenum = None
             if script.group is not None and script.group == self.oldGroup:
                 if self.options['applygroupoffsets']:
-                    script.lastFramenum = max(0, self.oldLastFramenum + script.group_frame - self.oldGroupFrame)
+                    offset = script.group_frame - self.oldGroupFrame
+                    script.lastFramenum = max(0, self.oldLastFramenum + offset)
+                    if self.options['offsetbookmarks']:
+                        self.OffsetBookmarks(offset)
                 else:
                     script.lastFramenum = None
             elif script.group == self.oldGroup is None and self.options['enableframepertab'] and not self.options['enableframepertab_same']:
@@ -10190,6 +10205,8 @@ class MainFrame(wxp.Frame):
                 group_menu.Check(id, True)
                 id = group_menu.FindItem(_('Apply offsets'))
                 group_menu.Check(id, self.options['applygroupoffsets'])
+                id = group_menu.FindItem(_('Offset also bookmarks'))
+                group_menu.Check(id, self.options['offsetbookmarks'])
                 # reposition
                 menuItem = menu.FindItemByPosition(menu.GetMenuItemCount()-1)
                 menu = menuItem.GetSubMenu()
@@ -10208,6 +10225,9 @@ class MainFrame(wxp.Frame):
     
     def OnGroupApplyOffsets(self, event):
         self.options['applygroupoffsets'] = not self.options['applygroupoffsets']
+    
+    def OnGroupOffsetBookmarks(self, event):
+        self.options['offsetbookmarks'] = not self.options['offsetbookmarks']
     
     def OnGroupClearTabGroup(self, event=None, group=None):
         if group is None:
@@ -11086,6 +11106,8 @@ class MainFrame(wxp.Frame):
             group_menu.Check(id, True)
             id = group_menu.FindItem(_('Apply offsets'))
             group_menu.Check(id, self.options['applygroupoffsets'])
+            id = group_menu.FindItem(_('Offset also bookmarks'))
+            group_menu.Check(id, self.options['offsetbookmarks'])
         try:
             win.PopupMenu(win.contextMenu, pos)
         except AttributeError:
@@ -13045,7 +13067,15 @@ class MainFrame(wxp.Frame):
             self.UpdateBookmarkMenu()
             if refreshVideo and self.trimDialog.IsShown():
                 self.ShowVideoFrame()
-
+    
+    def OffsetBookmarks(self, offset):
+        if not offset:
+            return
+        bookmarkList = [frame + offset for frame, bmtype in 
+                         self.GetBookmarkFrameList().iteritems() if bmtype == 0]
+        self.DeleteAllFrameBookmarks(bmtype=0)
+        self.MacroSetBookmark(frame for frame in bookmarkList if frame >= 0)
+    
     def GetVideoSliderList(self):
         sliderList = [self.videoSlider]
         if self.separatevideowindow:
