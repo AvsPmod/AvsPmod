@@ -223,7 +223,6 @@ class PIScriptEnvironment:
             for x in range(len(arg_names)):
                 a[x]=arg_names[x]
             arg_names=ctypes.cast(ctypes.byref(a), ctypes.POINTER(ctypes.c_char_p))
-            print arg_names
         retval=avs_invoke(self,name,args,arg_names)
         if retval.type==101: #'e'rror
             raise AvisynthError(retval.d.s)
@@ -235,9 +234,12 @@ class PIScriptEnvironment:
     def GetCPUFlags(self):return avs_get_cpu_flags(self)
     def CheckVersion(self,version):return avs_check_version(self,version)
     def SaveString(self,string):return avs_save_string(self,string,len(string))
-    def AddFunction(self,name,params,py_function,userdata):
-        avs_add_function(self,name,params,APPLYFUNC(py_function),
-                         ctypes.ByRef(userdata))
+    def AddFunction(self,name,params,py_function,userdata=None):
+        # it won't work, see http://bugs.python.org/issue5710
+        if userdata is None:
+            userdata = ctypes.c_void_p()
+        return avs_add_function(self,name,params,APPLYFUNC(py_function),
+                                ctypes.byref(userdata))
     def FunctionExists(self,name):return avs_function_exists(self,name)
     def GetVar(self,name):
         retval=avs_get_var(self,name)
@@ -829,7 +831,7 @@ avs_vsprintf=avidll.avs_sprintf
 avs_vsprintf.restype = ctypes.c_char_p
 avs_vsprintf.argtypes=[PIScriptEnvironment,ctypes.c_char_p,ctypes.c_void_p]
 
-APPLYFUNC = FUNCTYPE(ctypes.POINTER(AVS_Value), PIScriptEnvironment, AVS_Value, 
+APPLYFUNC = FUNCTYPE(AVS_Value, PIScriptEnvironment, AVS_Value, 
                      ctypes.c_void_p)
 
 avs_add_function=avidll.avs_add_function
