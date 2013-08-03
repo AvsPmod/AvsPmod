@@ -7616,6 +7616,7 @@ class MainFrame(wxp.Frame):
         scriptWindow.workdir = ""
         scriptWindow.encoding = 'latin1'
         scriptWindow.AVI = None
+        scriptWindow.display_clip_refresh_needed = False
         scriptWindow.previewtxt = []
         scriptWindow.sliderTexts = []
         scriptWindow.sliderProperties = []
@@ -9032,6 +9033,7 @@ class MainFrame(wxp.Frame):
             else:
                 menuItem.Check(not self.swapuv)
             value = self.yuv2rgbDict[menuItem.GetLabel()]
+        refresh = False
         AVI = self.currentScript.AVI
         if value == 'swapuv':
             self.swapuv = not self.swapuv
@@ -9048,8 +9050,12 @@ class MainFrame(wxp.Frame):
                 self.matrix[0] = value
             if AVI:
                 refresh = AVI.IsYUV
-        if self.previewWindowVisible and refresh:
-            self.OnMenuVideoRefresh(event)
+        if refresh:
+            for index in xrange(self.scriptNotebook.GetPageCount()):
+                script = self.scriptNotebook.GetPage(index)
+                script.display_clip_refresh_needed = True
+            if self.previewWindowVisible:
+                self.ShowVideoFrame(forceRefresh=False, focus=self.options['focusonrefresh'])
 
     def OnMenuVideoReuseEnvironment(self, event):
         self.reuse_environment = not self.reuse_environment
@@ -13816,6 +13822,7 @@ class MainFrame(wxp.Frame):
             script = self.currentScript
         if script.AVI is None:
             forceRefresh = True
+        display_clip_refresh_needed = script.display_clip_refresh_needed
         if self.UpdateScriptAVI(script, forceRefresh, keep_env=keep_env) is None:
             #~ wx.MessageBox(_('Error loading the script'), _('Error'), style=wx.OK|wx.ICON_ERROR)
             return False
@@ -13929,7 +13936,8 @@ class MainFrame(wxp.Frame):
                         resize = False
                     else:
                         resize = True
-                self.LayoutVideoWindows(w, h, resize, forceRefresh=forceRefresh)
+                self.LayoutVideoWindows(w, h, resize, forceRefresh=forceRefresh or 
+                                                      display_clip_refresh_needed)
 
                 self.toggleButton.SetBitmapLabel(self.bmpVidDown)
                 self.toggleButton.Refresh()
@@ -14290,6 +14298,7 @@ class MainFrame(wxp.Frame):
                 if self.playing_video:
                     self.PlayPauseVideo()
                     self.playing_video = ''
+                script.display_clip_refresh_needed = False
                 scripttxt = script.GetText()
                 # Replace any user-inserted sliders (defined with self.regexp)
                 #~ script.SetFocus()
@@ -14345,21 +14354,35 @@ class MainFrame(wxp.Frame):
                         wx.MessageBox('%s\n\n%s' % (s1, s2), _('Error'), style=wx.OK|wx.ICON_ERROR)
                     script.AVI = None
                     return None
-                if not self.zoomwindow and boolOldAVI and \
-                    (oldWidth, oldHeight) != (script.AVI.Width, script.AVI.Height):
-                        script.lastSplitVideoPos = None
                 # Update the script tag properties
                 self.UpdateScriptTagProperties(script, scripttxt)
                 self.GetAutoSliderInfo(script, scripttxt)
                 script.previewtxt = self.ScriptChanged(script, return_styledtext=True)[1]
-                script.autocrop_values = None
-                if self.cropDialog.IsShown():
-                    self.PaintCropWarnings()
                 boolNewAVI = True
-                if self.playing_video == '':
-                    self.PlayPauseVideo()
             if script == self.currentScript:
                 self.refreshAVI = False
+        if script.display_clip_refresh_needed and not boolNewAVI:
+            script.display_clip_refresh_needed = False
+            oldWidth, oldHeight = script.AVI.Width, script.AVI.Height
+            boolOldAVI = True
+            wx.BeginBusyCursor()
+            ok = script.AVI.CreateDisplayClip(matrix=self.matrix, 
+                        interlaced=self.interlaced, swapuv=self.swapuv)
+            wx.EndBusyCursor()
+            if ok:
+                boolNewAVI = True
+            else:
+                return None
+        if boolNewAVI:
+            if not self.zoomwindow and boolOldAVI and \
+                    (oldWidth, oldHeight) != (script.AVI.Width, script.AVI.Height):
+                script.lastSplitVideoPos = None
+            script.autocrop_values = None
+            if self.cropDialog.IsShown():
+                self.PaintCropWarnings()
+            if self.playing_video == '':
+                self.PlayPauseVideo()
+
         return boolNewAVI
     
     def ScriptChanged(self, script=None, return_styledtext=False):

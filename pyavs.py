@@ -218,7 +218,24 @@ class AvsClipBase:
         self.GetParity = avisynth.avs_get_parity(self.clip,0)#self.vi.image_type
         self.HasAudio = self.vi.HasAudio()
         
-        # Initialize display-related variables
+        self.interlaced = interlaced
+        if display_clip and not self.CreateDisplayClip(matrix, interlaced, swapuv):
+            return
+        if self.IsRGB and reorder_rgb:
+            self.clip = self.BGR2RGB(self.clip)
+        self.initialized = True
+        if __debug__:
+            print "AviSynth clip created successfully: '{0}'".format(self.name)
+    
+    def __del__(self):
+        if self.initialized:
+            self.clip = None
+            self.display_clip = None
+            if __debug__:
+                print "Deleting allocated video memory for '{0}'".format(self.name)
+    
+    def CreateDisplayClip(self, matrix=['auto', 'tv'], interlaced=None, swapuv=False):
+        self.current_frame = -1
         if isinstance(matrix, basestring):
             self.matrix = matrix
         else:
@@ -230,29 +247,20 @@ class AvsClipBase:
                     matrix[0] = '601'
             matrix[1] = 'Rec' if matrix[1] == 'tv' else 'PC.'
             self.matrix = matrix[1] + matrix[0]
-        self.interlaced = interlaced if self.IsYV12 else False
-        if display_clip:
-            self.display_clip = self.clip
-            if swapuv and self.IsYUV and not self.IsY8:
-                try:
-                    arg = avisynth.AVS_Value(self.display_clip)
-                    avsfile = self.env.Invoke("swapuv", arg, 0)
-                    arg.Release()
-                    self.display_clip = avsfile.AsClip(self.env)
-                except avisynth.AvisynthError, err:
-                    return
-            if not self._ConvertToRGB():
+        if interlaced is not None:
+            self.interlaced = interlaced
+        self.display_clip = self.clip
+        if swapuv and self.IsYUV and not self.IsY8:
+            try:
+                arg = avisynth.AVS_Value(self.display_clip)
+                avsfile = self.env.Invoke("swapuv", arg, 0)
+                arg.Release()
+                self.display_clip = avsfile.AsClip(self.env)
+            except avisynth.AvisynthError, err:
                 return
-        elif self.IsRGB and reorder_rgb:
-            self.clip = self.BGR2RGB(self.clip)
+        if not self._ConvertToRGB():
+            return
         return True
-    
-    def __del__(self):
-        if self.initialized:
-            self.clip = None
-            self.display_clip = None
-            if __debug__:
-                print "Deleting allocated video memory for '{0}'".format(self.name)
     
     def _ConvertToRGB(self):
         '''Convert to RGB for display. Return True if successful'''
@@ -679,22 +687,16 @@ if os.name == 'nt':
     
     class AvsClip(AvsClipBase):
         
-        def __init__(self, *args, **kwargs):
-            
-            if not AvsClipBase.__init__(self, *args, **kwargs):
+        def CreateDisplayClip(self, *args, **kwargs):
+            if not AvsClipBase.CreateDisplayClip(self, *args, **kwargs):
                 return
-            
-            if self.display_clip:
-                # Prepare info header for displaying
-                self.bmih = BITMAPINFOHEADER()
-                avisynth.CreateBitmapInfoHeader(self.display_clip, self.bmih)
-                self.pInfo = ctypes.pointer(self.bmih)
-                #~ self.BUF=ctypes.c_ubyte*self.bmih.biSizeImage
-                #~ self.pBits=self.BUF()
-            
-            self.initialized = True
-            if __debug__:
-                print "AviSynth clip created successfully: '{0}'".format(self.name)
+            # Prepare info header for displaying
+            self.bmih = BITMAPINFOHEADER()
+            avisynth.CreateBitmapInfoHeader(self.display_clip, self.bmih)
+            self.pInfo = ctypes.pointer(self.bmih)
+            #~ self.BUF=ctypes.c_ubyte*self.bmih.biSizeImage
+            #~ self.pBits=self.BUF()
+            return True
         
         def _ConvertToRGB(self):
             if not self.IsRGB:
@@ -748,16 +750,7 @@ else:
     
     
     class AvsClip(AvsClipBase):
-        
-        def __init__(self, *args, **kwargs):
-            
-            if not AvsClipBase.__init__(self, *args, **kwargs):
-                return
-            
-            self.initialized = True
-            if __debug__:
-                print "AviSynth clip created successfully: '{0}'".format(self.name)
-        
+                
         def _ConvertToRGB(self):
             # There's issues with RGB32, we convert to RGB24 
             # AviSynth uses BGR ordering but we need RGB
