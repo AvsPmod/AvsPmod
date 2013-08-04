@@ -5339,7 +5339,7 @@ class MainFrame(wxp.Frame):
         self.foldAllSliders = True
         self.reuse_environment = False
         self.matrix = ['auto', 'tv']
-        self.interlaced = self.swapuv = False
+        self.interlaced = self.swapuv = self.bit_depth = False
         self.flip = []
         self.titleEntry = None
         # Events
@@ -7240,6 +7240,16 @@ class MainFrame(wxp.Frame):
                     (reverseMatrixDict['Interlaced'], '', self.OnMenuVideoYUV2RGB, _('For YV12 only, assume it is interlaced'), wx.ITEM_RADIO, False),
                     ),
                 ),
+                (_('Bith &depth'),
+                    (
+                    (_('8-bit'), '', self.OnMenuVideoBitDepth, _('Regular 8-bit depth (default)'), wx.ITEM_RADIO, True),
+                    (_('Stacked yuv420p10 or yuv444p10'), '', self.OnMenuVideoBitDepth, _('Stacked 16-bit, MSB on top, range reduced to 10-bit. Requires MaskTools v2 loaded'), wx.ITEM_RADIO, False),
+                    (_('Stacked yuv420p16 or yuv444p16'), '', self.OnMenuVideoBitDepth, _('Stacked 16-bit, MSB on top'), wx.ITEM_RADIO, False),
+                    (_('Interleaved yuv420p10 or yuv444p10'), '', self.OnMenuVideoBitDepth, _('Interleaved 16-bit (little-endian), range reduced to 10-bit. Requires MaskTools v2 loaded'), wx.ITEM_RADIO, False),
+                    (_('Interleaved yuv420p16 or yuv444p16'), '', self.OnMenuVideoBitDepth, _('Interleaved 16-bit (little-endian)'), wx.ITEM_RADIO, False),
+                    #(_('Interleaved RGB48'), '', self.OnMenuVideoBitDepth, _('16-bit RGB conveyed on YV12'), wx.ITEM_RADIO, False),
+                    ),
+                ),
                 (_('Keep variables on refreshing'), '', self.OnMenuVideoReuseEnvironment, _('Create the new AviSynth clip on the same environment. Useful for tweaking parameters'), wx.ITEM_CHECK, False),
                 (''),
                 (_('Save image as...'), '', self.OnMenuVideoSaveImage, _('Save the current frame as a bitmap')),
@@ -8798,8 +8808,8 @@ class MainFrame(wxp.Frame):
             wx.MessageBox(_('No image to save'), _('Error'), 
                           style=wx.OK|wx.ICON_ERROR)
             return False
-        w = script.AVI.Width
-        h = script.AVI.Height
+        w = script.AVI.DisplayWidth
+        h = script.AVI.DisplayHeight
         bmp = wx.EmptyBitmap(w, h)
         mdc = wx.MemoryDC()
         mdc.SelectObject(bmp)
@@ -8819,8 +8829,12 @@ class MainFrame(wxp.Frame):
     
     def OnMenuVideoCropEditor(self, event):
         script = self.currentScript
+        if script.AVI.DisplayWidth != script.AVI.Width or \
+                script.AVI.DisplayHeight != script.AVI.Height:
+            wx.MessageBox(_('Cannot use crop editor unless bit depth is set to 8'), 
+                          _('Error'), style=wx.OK|wx.ICON_ERROR)
+            return False
         dlg = self.cropDialog
-        dlg.boolInvalidCrop = False
         if dlg.IsShown():
             return
         # Show the video preview
@@ -8854,7 +8868,7 @@ class MainFrame(wxp.Frame):
         ws, hs = dlg.GetSizeTuple()
         #~ dlg.SetPosition((min(xp+wp-20, wd-ws),-1))
         xSplitter = self.videoSplitter.GetSashPosition()
-        wVideo = self.currentScript.AVI.Width
+        wVideo = self.currentScript.AVI.DisplayWidth
         xpos = min(xp+wVideo+30, xp+xSplitter+20)
         dlg.SetPosition((min(xpos, wd-ws), yp+hp-hs-self.mainSplitter.GetMinimumPaneSize()-50))
 
@@ -9057,6 +9071,45 @@ class MainFrame(wxp.Frame):
             if self.previewWindowVisible:
                 self.ShowVideoFrame(forceRefresh=False, focus=self.options['focusonrefresh'])
 
+    def OnMenuVideoBitDepth(self, event):
+        if self.cropDialog.IsShown():
+            wx.MessageBox(_('Cannot change bit depth while crop editor is open!'), 
+                          _('Error'), style=wx.OK|wx.ICON_ERROR)
+            return False
+        vidmenus = [self.videoWindow.contextMenu, self.GetMenuBar().GetMenu(2)]
+        id = event.GetId()
+        for vidmenu in vidmenus:
+            menu = vidmenu.FindItemById(vidmenu.FindItem(_('Bith &depth'))).GetSubMenu()
+            menuItem = menu.FindItemById(id)
+            if menuItem:
+                menuItem.Check()
+                label = menuItem.GetLabel()
+                if label == _('Stacked yuv420p10 or yuv444p10'):
+                    self.bit_depth = 's10'
+                elif label == _('Stacked yuv420p16 or yuv444p16'):
+                    self.bit_depth = 's16'
+                elif label == _('Interleaved yuv420p10 or yuv444p10'):
+                    self.bit_depth = 'i10'
+                elif label == _('Interleaved yuv420p16 or yuv444p16'):
+                    self.bit_depth = 'i16'
+                elif label == _('Interleaved RGB48'):
+                    self.bit_depth = 'rgb48'
+                else:
+                    self.bit_depth = None
+                for index in xrange(self.scriptNotebook.GetPageCount()):
+                    script = self.scriptNotebook.GetPage(index)
+                    script.display_clip_refresh_needed = True
+                if self.previewWindowVisible:
+                    self.ShowVideoFrame(forceRefresh=False, focus=self.options['focusonrefresh'])
+            else:
+                updateMenu = menu
+        id = updateMenu.FindItem(label)
+        menuItem = updateMenu.FindItemById(id)
+        if not menuItem:
+            print>>sys.stderr, _('Error'), 'OnMenuVideoBitDepth(): cannot find menu item by id'
+            return
+        menuItem.Check()
+    
     def OnMenuVideoReuseEnvironment(self, event):
         self.reuse_environment = not self.reuse_environment
     
@@ -10451,9 +10504,6 @@ class MainFrame(wxp.Frame):
                     r.insert(0,j)
             # Loop through r to find next suitable tab
             curframe = self.videoSlider.GetValue()
-            oldWidth = self.oldWidth
-            oldHeight = self.oldHeight
-            oldFramecount = self.oldFramecount
             oldInfo = (self.oldWidth, self.oldHeight, self.oldFramecount)
             for index in r:
                 script = self.scriptNotebook.GetPage(index)
@@ -10471,12 +10521,11 @@ class MainFrame(wxp.Frame):
                     except AttributeError:
                         return False
                 newInfo = (
-                    int(script.AVI.Width * self.zoomfactor),
-                    int(script.AVI.Height * self.zoomfactor),
+                    int(script.AVI.DisplayWidth * self.zoomfactor),
+                    int(script.AVI.DisplayHeight * self.zoomfactor),
                     script.AVI.Framecount
                 )
                 if newInfo == oldInfo:
-                #~ if script.AVI and script.AVI.Width == oldWidth and script.AVI.Height == oldHeight and script.AVI.Framecount == oldFramecount:
                     self.SelectTab(index)
                     break
         # Scroll video preview
@@ -10487,10 +10536,10 @@ class MainFrame(wxp.Frame):
             if wx.version() >= '2.9':
                 horizontal = horizontal or event.GetWheelAxis() == wx.MOUSE_WHEEL_HORIZONTAL
             if horizontal:
-                scrolls = int(round(self.currentScript.AVI.Width * scrolls_by_pixel))
+                scrolls = int(round(self.currentScript.AVI.DisplayWidth * scrolls_by_pixel))
                 self.videoWindow.Scroll(x0 + scrolls, -1)
             else:
-                scrolls = int(round(self.currentScript.AVI.Height * scrolls_by_pixel))
+                scrolls = int(round(self.currentScript.AVI.DisplayHeight * scrolls_by_pixel))
                 self.videoWindow.Scroll(-1, y0 - scrolls)
     
     def OnMiddleDownVideoWindow(self, event):
@@ -11194,7 +11243,7 @@ class MainFrame(wxp.Frame):
                     dc.Clear()
                     dc.DestroyClippingRegion()
                 if h_dc == h_scrolled:
-                    bottom = h_dc - int(script.AVI.Height * self.zoomfactor) - self.yo
+                    bottom = h_dc - int(script.AVI.DisplayHeight * self.zoomfactor) - self.yo
                 else:
                     bottom = h_dc - (h_scrolled - y0) + 2
                 if bottom > 0:
@@ -11202,7 +11251,7 @@ class MainFrame(wxp.Frame):
                     dc.Clear()
                     dc.DestroyClippingRegion()
                 if w_dc == w_scrolled:
-                    right = w_dc - int(script.AVI.Width * self.zoomfactor) - self.xo
+                    right = w_dc - int(script.AVI.DisplayWidth * self.zoomfactor) - self.xo
                 else:
                     right = w_dc - (w_scrolled - x0) + 2
                 if right > 0:
@@ -12341,8 +12390,8 @@ class MainFrame(wxp.Frame):
                     self.SavePNG(filename, ret, avs_clip.Height / 2)
                     return filename
             else:
-                w = avs_clip.Width
-                h = avs_clip.Height
+                w = avs_clip.DisplayWidth
+                h = avs_clip.DisplayHeight
                 bmp = wx.EmptyBitmap(w, h)
                 mdc = wx.MemoryDC()
                 mdc.SelectObject(bmp)
@@ -13348,7 +13397,7 @@ class MainFrame(wxp.Frame):
         totaltime = self.FormatTime(framecount/framerate)
         bookmarktitle = self.bookmarkDict.get(frame, '')
         zoom = ''
-        width, height = v.Width, v.Height
+        width, height = v.DisplayWidth, v.DisplayHeight
         if self.zoomfactor != 1:
             if self.zoomfactor < 1 or self.zoomwindow:
                 zoom = '(%.2fx) ' % self.zoomfactor
@@ -13433,7 +13482,7 @@ class MainFrame(wxp.Frame):
         script = self.currentScript
         if script.AVI is None:
             self.UpdateScriptAVI(script, forceRefresh=True)
-        w, h = script.AVI.Width, script.AVI.Height
+        w, h = script.AVI.DisplayWidth, script.AVI.DisplayHeight
         dc = wx.ClientDC(videoWindow)
         dc.SetDeviceOrigin(self.xo, self.yo)
         try: # DoPrepareDC causes NameError in wx2.9.1 and fixed in wx2.9.2
@@ -13471,24 +13520,25 @@ class MainFrame(wxp.Frame):
             U = -0.148*R - 0.291*G + 0.439*B + 128
             V = 0.439*R - 0.368*G - 0.071*B + 128
             if 'flipvertical' in self.flip:
-                y = script.AVI.Height - 1 - y
+                y = script.AVI.DisplayHeight - 1 - y
             if 'fliphorizontal' in self.flip:
-                x = script.AVI.Width - 1 - x
+                x = script.AVI.DisplayWidth - 1 - x
             # Get color from AviSynth
-            try:
-                avsYUV = script.AVI.GetPixelYUV(x, y)
-                if avsYUV != (-1,-1,-1):
-                    Y,U,V = avsYUV
-                if script.AVI.IsRGB32:
-                    avsRGBA = script.AVI.GetPixelRGBA(x, y)
-                    if avsRGBA != (-1,-1,-1,-1):
-                        R,G,B,A = avsRGBA
-                else:
-                    avsRGB = script.AVI.GetPixelRGB(x, y)
-                    if avsRGB != (-1,-1,-1):
-                        R,G,B = avsRGB
-            except:
-                pass
+            if not self.bit_depth:
+                try:
+                    avsYUV = script.AVI.GetPixelYUV(x, y)
+                    if avsYUV != (-1,-1,-1):
+                        Y,U,V = avsYUV
+                    if script.AVI.IsRGB32:
+                        avsRGBA = script.AVI.GetPixelRGBA(x, y)
+                        if avsRGBA != (-1,-1,-1,-1):
+                            R,G,B,A = avsRGBA
+                    else:
+                        avsRGB = script.AVI.GetPixelRGB(x, y)
+                        if avsRGB != (-1,-1,-1):
+                            R,G,B = avsRGB
+                except:
+                    pass
             if not string_:
                 return (x, y), hexcolor.upper()[1:], (R, G, B), (R, G, B, A), (Y, U, V)
             xystring = '%s=(%i,%i)' % (_('pos'),x,y)
@@ -13503,9 +13553,9 @@ class MainFrame(wxp.Frame):
             if not 0 <= y < h:
                 y = 0 if y < 0 else h - 1
             if 'flipvertical' in self.flip:
-                y = script.AVI.Height - 1 - y
+                y = script.AVI.DisplayHeight - 1 - y
             if 'fliphorizontal' in self.flip:
-                x = script.AVI.Width - 1 - x
+                x = script.AVI.DisplayWidth - 1 - x
             xystring = '%s=(%i,%i)' % (_('pos'),x,y)
             return xystring if string_ else (x, y), None, None, None, None
     
@@ -13924,8 +13974,8 @@ class MainFrame(wxp.Frame):
 
         # Resize the video window as necessary
         oldSize = self.videoWindow.GetVirtualSize()
-        videoWidth = w = int(script.AVI.Width * self.zoomfactor)
-        videoHeight = h = int(script.AVI.Height * self.zoomfactor)
+        videoWidth = w = int(script.AVI.DisplayWidth * self.zoomfactor)
+        videoHeight = h = int(script.AVI.DisplayHeight * self.zoomfactor)
         if self.zoomwindowfit:
             self.videoWindow.SetVirtualSize((0, 0))
         if doLayout:
@@ -14014,9 +14064,9 @@ class MainFrame(wxp.Frame):
 
     def LayoutVideoWindows(self, w=None, h=None, resize=True, forcefit=False, forceRefresh=False):
         if w is None:
-            w = int(self.currentScript.AVI.Width * self.zoomfactor)
+            w = int(self.currentScript.AVI.DisplayWidth * self.zoomfactor)
         if h is None:
-            h = int(self.currentScript.AVI.Height * self.zoomfactor)
+            h = int(self.currentScript.AVI.DisplayHeight * self.zoomfactor)
         # Show or hide slider window
         #~ if not self.zoomwindowfit or self.separatevideowindow:
         if True:
@@ -14138,7 +14188,7 @@ class MainFrame(wxp.Frame):
                         #~ self.UpdateScriptAVI(script, forceRefresh=True)
                         vidheight = 0
                     else:
-                        vidheight = script.AVI.Height
+                        vidheight = script.AVI.DisplayHeight
                     h = int(vidheight * self.zoomfactor)
                 else:
                     h = pos
@@ -14149,7 +14199,7 @@ class MainFrame(wxp.Frame):
                         #~ self.UpdateScriptAVI(script, forceRefresh=True)
                         vidwidth = 0
                     else:
-                        vidwidth = script.AVI.Width
+                        vidwidth = script.AVI.DisplayWidth
                     w = int(vidwidth * self.zoomfactor)
                 else:
                     w = pos
@@ -14269,8 +14319,8 @@ class MainFrame(wxp.Frame):
         elif self.zoomwindow:
             try:
                 fitWidth, fitHeight = self.GetFitWindowSize()
-                zoomfactorWidth = float(fitWidth) / script.AVI.Width
-                zoomfactorHeight = float(fitHeight) / script.AVI.Height
+                zoomfactorWidth = float(fitWidth) / script.AVI.DisplayWidth
+                zoomfactorHeight = float(fitHeight) / script.AVI.DisplayHeight
                 if self.zoomwindowfill:
                     self.zoomfactor = zoomfactorHeight if self.mainSplitter.GetSplitMode() == \
                                         wx.SPLIT_HORIZONTAL else zoomfactorWidth
@@ -14317,7 +14367,7 @@ class MainFrame(wxp.Frame):
                     env = None
                 else:
                     oldFramecount = script.AVI.Framecount
-                    oldWidth, oldHeight = script.AVI.Width, script.AVI.Height
+                    oldWidth, oldHeight = script.AVI.DisplayWidth, script.AVI.DisplayHeight
                     boolOldAVI = True
                     env = script.AVI.env if keep_env or self.reuse_environment else None
                 if updateDisplayClip and False:
@@ -14337,7 +14387,8 @@ class MainFrame(wxp.Frame):
                     script.AVI = pyavs.AvsClip(
                         self.getCleanText(scripttxt), filename, workdir=workdir, env=env, 
                         fitHeight=fitHeight, fitWidth=fitWidth, oldFramecount=oldFramecount, 
-                        matrix=self.matrix, interlaced=self.interlaced, swapuv=self.swapuv)
+                        matrix=self.matrix, interlaced=self.interlaced, swapuv=self.swapuv, 
+                        bit_depth=self.bit_depth)
                     wx.EndBusyCursor()
                 if not script.AVI.initialized:
                     if prompt:
@@ -14363,11 +14414,11 @@ class MainFrame(wxp.Frame):
                 self.refreshAVI = False
         if script.display_clip_refresh_needed and not boolNewAVI:
             script.display_clip_refresh_needed = False
-            oldWidth, oldHeight = script.AVI.Width, script.AVI.Height
+            oldWidth, oldHeight = script.AVI.DisplayWidth, script.AVI.DisplayHeight
             boolOldAVI = True
             wx.BeginBusyCursor()
-            ok = script.AVI.CreateDisplayClip(matrix=self.matrix, 
-                        interlaced=self.interlaced, swapuv=self.swapuv)
+            ok = script.AVI.CreateDisplayClip(matrix=self.matrix, interlaced=self.interlaced, 
+                                              swapuv=self.swapuv, bit_depth=self.bit_depth)
             wx.EndBusyCursor()
             if ok:
                 boolNewAVI = True
@@ -14375,7 +14426,7 @@ class MainFrame(wxp.Frame):
                 return None
         if boolNewAVI:
             if not self.zoomwindow and boolOldAVI and \
-                    (oldWidth, oldHeight) != (script.AVI.Width, script.AVI.Height):
+                    (oldWidth, oldHeight) != (script.AVI.DisplayWidth, script.AVI.DisplayHeight):
                 script.lastSplitVideoPos = None
             script.autocrop_values = None
             if self.cropDialog.IsShown():
@@ -14581,8 +14632,8 @@ class MainFrame(wxp.Frame):
         else:
             inputdc.SetDeviceOrigin(0, 0)
         if self.zoomfactor == 1 and not self.flip and not self.zoomwindow:            
-            w = script.AVI.Width
-            h = script.AVI.Height
+            w = script.AVI.DisplayWidth
+            h = script.AVI.DisplayHeight
             if self.cropDialog.IsShown() or self.trimDialog.IsShown():
                 dc = wx.MemoryDC()
                 bmp = wx.EmptyBitmap(w,h)
@@ -14610,8 +14661,8 @@ class MainFrame(wxp.Frame):
                     return
         else:
             dc = wx.MemoryDC()
-            w = script.AVI.Width
-            h = script.AVI.Height
+            w = script.AVI.DisplayWidth
+            h = script.AVI.DisplayHeight
             if isPaintEvent and self.bmpVideo:
                 dc.SelectObject(self.bmpVideo)                    
             else:
@@ -17373,9 +17424,9 @@ class MainFrame(wxp.Frame):
                                 dc.SetPen(wx.Pen(wx.Colour(*((component + 128) % 256 for component in pen_color)), 
                                                  round(pen_width / self.zoomfactor)))
                                 if old_flip_h:
-                                    x = self.currentScript.AVI.Width - 1 - x
+                                    x = self.currentScript.AVI.DisplayWidth - 1 - x
                                 if old_flip_v:
-                                    y = self.currentScript.AVI.Height - 1 - y
+                                    y = self.currentScript.AVI.DisplayHeight - 1 - y
                                 x = dc.LogicalToDeviceX(x) - self.xo
                                 y = dc.LogicalToDeviceY(y) - self.yo
                                 p2 = [float(c) / self.zoomfactor for c in self.videoWindow.CalcScrolledPosition(x, y)]
@@ -17401,18 +17452,18 @@ class MainFrame(wxp.Frame):
                         dc.SetPen(wx.Pen(wx.Colour(*((component + 128) % 256 for component in pen_color)), 
                                          round(pen_width / self.zoomfactor)))
                         if old_flip_h:
-                            x = self.currentScript.AVI.Width - 1 - x
+                            x = self.currentScript.AVI.DisplayWidth - 1 - x
                         if old_flip_v:
-                            y = self.currentScript.AVI.Height - 1 - y
+                            y = self.currentScript.AVI.DisplayHeight - 1 - y
                         x = dc.LogicalToDeviceX(x) - self.xo
                         y = dc.LogicalToDeviceY(y) - self.yo
                         p2 = [float(c) / self.zoomfactor for c in self.videoWindow.CalcScrolledPosition(x, y)]
                         if lines and len(pixelInfo_list) > 1:
                             x0, y0 = pixelInfo_list[-2][0] if i else pixelInfo_list[-2]
                             if old_flip_h:
-                                x0 = self.currentScript.AVI.Width - 1 - x0
+                                x0 = self.currentScript.AVI.DisplayWidth - 1 - x0
                             if old_flip_v:
-                                y0 = self.currentScript.AVI.Height - 1 - y0
+                                y0 = self.currentScript.AVI.DisplayHeight - 1 - y0
                             x0 = dc.LogicalToDeviceX(x0) - self.xo
                             y0 = dc.LogicalToDeviceY(y0) - self.yo
                             p1 = [float(c) / self.zoomfactor for c in self.videoWindow.CalcScrolledPosition(x0, y0)]

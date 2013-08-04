@@ -43,7 +43,7 @@ class AvsClipBase:
     
     def __init__(self, script, filename='', workdir='', env=None, fitHeight=None, 
                  fitWidth=None, oldFramecount=240, display_clip=True, reorder_rgb=False, 
-                 matrix=['auto', 'tv'], interlaced=False, swapuv=False):
+                 matrix=['auto', 'tv'], interlaced=False, swapuv=False, bit_depth=None):
         # Internal variables
         self.initialized = False
         self.error_message = None
@@ -156,6 +156,7 @@ class AvsClipBase:
                 os.chdir(curdir)
             if not self.env.GetVar("last").IsClip():#.AsClip(self.env)
                 self.env.SetVar("last",avisynth.AVS_Value(self.clip))
+            self.env.SetVar("avsp_raw_clip", avisynth.AVS_Value(self.clip))
         
         # Set the video properties
         self.vi=self.clip.GetVideoInfo()
@@ -179,6 +180,7 @@ class AvsClipBase:
         if self.vi.IsYUV() and not self.vi.IsY8():
             self.WidthSubsampling = self.vi.GetPlaneWidthSubsampling(avisynth.PLANAR_U)
             self.HeightSubsampling = self.vi.GetPlaneHeightSubsampling(avisynth.PLANAR_U)
+        self.DisplayWidth, self.DisplayHeight = self.Width, self.Height
         self.FramerateNumerator = self.vi.fps_numerator 
         self.FramerateDenominator = self.vi.fps_denominator
         try:
@@ -219,7 +221,7 @@ class AvsClipBase:
         self.HasAudio = self.vi.HasAudio()
         
         self.interlaced = interlaced
-        if display_clip and not self.CreateDisplayClip(matrix, interlaced, swapuv):
+        if display_clip and not self.CreateDisplayClip(matrix, interlaced, swapuv, bit_depth):
             return
         if self.IsRGB and reorder_rgb:
             self.clip = self.BGR2RGB(self.clip)
@@ -234,8 +236,49 @@ class AvsClipBase:
             if __debug__:
                 print "Deleting allocated video memory for '{0}'".format(self.name)
     
-    def CreateDisplayClip(self, matrix=['auto', 'tv'], interlaced=None, swapuv=False):
+    def CreateDisplayClip(self, matrix=['auto', 'tv'], interlaced=None, swapuv=False, bit_depth=None):
         self.current_frame = -1
+        self.display_clip = self.clip
+        self.RGB48 = False
+        if bit_depth:
+            try:
+                if bit_depth == 'rgb48': # TODO
+                    if self.IsYV12:
+                        self.RGB48 = True
+                        self.DisplayWidth /= 2
+                        self.DisplayHeight /= 2
+                        return True
+                elif self.IsYV12 or self.IsYV24 or self.IsY8:
+                    if bit_depth == 's16':
+                        args = avisynth.AVS_Value([self.display_clip, 0, 0, 0, self.Height / 2])
+                        avsfile = self.env.Invoke('Crop', args)
+                        self.display_clip = avsfile.AsClip(self.env)
+                    elif bit_depth == 's10':
+                        if self.env.FunctionExists('mt_lutxy'):
+                            args = avisynth.AVS_Value(
+                            'avsp_raw_clip\n'
+                            'msb = Crop(0, 0, Width(), Height() / 2)\n'
+                            'lsb = Crop(0, Height() / 2, Width(), Height() / 2)\n'
+                            'mt_lutxy(msb, lsb, "x 8 << y + 2 >>", chroma="process")')
+                            avsfile = self.env.Invoke('Eval', args)
+                            self.display_clip = avsfile.AsClip(self.env)
+                    elif bit_depth == 'i16':
+                        args = avisynth.AVS_Value('avsp_raw_clip.AssumeBFF().TurnLeft().SeparateFields().'
+                                                  'TurnRight().AssumeFrameBased().SelectOdd()')
+                        avsfile = self.env.Invoke('Eval', args)
+                        self.display_clip = avsfile.AsClip(self.env)
+                    elif bit_depth == 'i10':
+                        if self.env.FunctionExists('mt_lutxy'):
+                            args = avisynth.AVS_Value(
+                            'avsp_raw_clip.AssumeBFF().TurnLeft().SeparateFields().TurnRight().AssumeFrameBased()\n'
+                            'StackVertical(SelectOdd(), SelectEven())\n'
+                            'msb = Crop(0, 0, Width(), Height() / 2)\n'
+                            'lsb = Crop(0, Height() / 2, Width(), Height() / 2)\n'
+                            'mt_lutxy(msb, lsb, "x 8 << y + 2 >>", chroma="process")')
+                            avsfile = self.env.Invoke('Eval', args)
+                            self.display_clip = avsfile.AsClip(self.env)
+            except avisynth.AvisynthError, err:
+                return
         if isinstance(matrix, basestring):
             self.matrix = matrix
         else:
@@ -249,7 +292,6 @@ class AvsClipBase:
             self.matrix = matrix[1] + matrix[0]
         if interlaced is not None:
             self.interlaced = interlaced
-        self.display_clip = self.clip
         if swapuv and self.IsYUV and not self.IsY8:
             try:
                 arg = avisynth.AVS_Value(self.display_clip)
@@ -258,6 +300,9 @@ class AvsClipBase:
                 self.display_clip = avsfile.AsClip(self.env)
             except avisynth.AvisynthError, err:
                 return
+        vi = self.display_clip.GetVideoInfo()
+        self.DisplayWidth = vi.width
+        self.DisplayHeight = vi.height
         if not self._ConvertToRGB():
             return
         return True
@@ -291,6 +336,8 @@ class AvsClipBase:
                     return False
                 self.display_pitch = display_frame.GetPitch()
                 self.pBits = display_frame.GetReadPtr()
+                if self.RGB48: ## -> RGB24
+                    pass
             self.current_frame = frame
             return True
         return False
@@ -728,8 +775,8 @@ if os.name == 'nt':
             if dc:
                 hdc = dc.GetHDC()
                 if size is None:
-                    w = self.Width
-                    h = self.Height
+                    w = self.DisplayWidth
+                    h = self.DisplayHeight
                 else:
                     w, h = size 
                 DrawDibDraw(handleDib[0], hdc, offset[0], offset[1], w, h, 
@@ -778,8 +825,8 @@ else:
                 return
             if dc:
                 if size is None:
-                    w = self.Width
-                    h = self.Height
+                    w = self.DisplayWidth
+                    h = self.DisplayHeight
                 else:
                     w, h = size
                 buf = ctypes.create_string_buffer(h * w * 3)
