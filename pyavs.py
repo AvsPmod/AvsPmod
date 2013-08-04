@@ -277,6 +277,9 @@ class AvsClipBase:
                             'mt_lutxy(msb, lsb, "x 8 << y + 2 >>", chroma="process")')
                             avsfile = self.env.Invoke('Eval', args)
                             self.display_clip = avsfile.AsClip(self.env)
+                    vi = self.display_clip.GetVideoInfo()
+                    self.DisplayWidth = vi.width
+                    self.DisplayHeight = vi.height
             except avisynth.AvisynthError, err:
                 return
         if isinstance(matrix, basestring):
@@ -284,7 +287,7 @@ class AvsClipBase:
         else:
             matrix = matrix[:]
             if matrix[0] == 'auto':
-                if self.Width > 1024 or self.Height > 576:
+                if self.DisplayWidth > 1024 or self.DisplayHeight > 576:
                     matrix[0] = '709'
                 else:
                     matrix[0] = '601'
