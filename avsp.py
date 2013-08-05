@@ -9368,16 +9368,22 @@ class MainFrame(wxp.Frame):
 
     def OnMenuOptionsFontsAndColors(self, event):
         dlgInfo = (
-            (_('Basic'),
+            (_('Basic (1)'),
                 (
+                    (_('Monospaced font:'), 'monospaced'),
                     (_('Default:'), 'default'),
                     (_('Comment:'), 'comment'),
                     (_('Block Comment:'), 'blockcomment'),
                     (_('__END__ Comment:'), 'endcomment'),
                     (_('Number:'), 'number'),
-                    (_('Operator:'), 'operator'),
                     (_('String:'), 'string'),
                     (_('Triple-quoted string:'), 'stringtriple'),
+                    (_('Assignment:'), 'assignment'),
+                    (_('Operator:'), 'operator'),
+                ),
+            ),
+            (_('Basic (2)'),
+                (
                     (_('Internal filter:'), 'internalfilter'),
                     (_('External filter:'), 'externalfilter'),
                     (_('Internal function:'), 'internalfunction'),
@@ -9385,11 +9391,9 @@ class MainFrame(wxp.Frame):
                     (_('Unknown function:'), 'unknownfunction'),
                     (_('Clip property:'), 'clipproperty'),
                     (_('Parameter:'), 'parameter'),
-                    (_('Assignment:'), 'assignment'),
-                    (_('AviSynth keyword:'), 'keyword'),
                     (_('AviSynth data type:'), 'datatype'),
+                    (_('AviSynth keyword:'), 'keyword'),
                     (_('AvsP user slider:'), 'userslider'),
-                    (_('Monospaced font:'), 'monospaced'),
                 ),
             ),
             (_('Advanced'),
