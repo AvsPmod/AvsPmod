@@ -131,26 +131,8 @@ class AvsClipBase:
                 avsfile=self.env.Invoke("eval",args,0) #use eval to load it
                 self.clip=avsfile.AsClip(self.env)
             except avisynth.AvisynthError, err:
-                fontFace, fontSize = global_vars.options['errormessagefont'][:2]
-                self.error_message = str(err)
-                lineList = []
-                yLine = 0
-                nChars = 0
-                for errLine in str(err).split('\n'):
-                    lineList.append('Subtitle("""%s""",y=%i,font="%s",size=%i,text_color=$FF0000,align=8)' % 
-                        (errLine, yLine, fontFace, fontSize))
-                    yLine += fontSize
-                    nChars = max(nChars, len(errLine))
-                eLength = oldFramecount
-                eWidth = nChars * fontSize / 2
-                eHeight = yLine + fontSize/4
-                firstLine = 'BlankClip(length=%(eLength)i,width=%(eWidth)i,height=%(eHeight)i)' % locals()
-                errText = firstLine + '.'.join(lineList)
-                arg = avisynth.AVS_Value(errText)
-                try:
-                    avsfile=self.env.Invoke("eval",arg,0) #use eval to load it
-                    self.clip=avsfile.AsClip(self.env)
-                except avisynth.AvisynthError, err:
+                self.Framecount = oldFramecount
+                if not self.CreateErrorClip(err):
                     return
             finally:
                 os.chdir(curdir)
@@ -231,15 +213,53 @@ class AvsClipBase:
     
     def __del__(self):
         if self.initialized:
-            self.clip = None
             self.display_clip = None
+            self.clip = None
             if __debug__:
                 print "Deleting allocated video memory for '{0}'".format(self.name)
+    
+    def CreateErrorClip(self, err='', display_clip_error=False):
+        fontFace, fontSize = global_vars.options['errormessagefont'][:2]
+        if display_clip_error:
+            if not err:
+                err = _('Error trying to display the clip')
+                if self.bit_depth:
+                    err += '\n' + _('Is bit-depth set correctly?')
+        else:
+            err = str(err)
+            self.error_message = err
+        lineList = []
+        yLine = 0
+        nChars = 0
+        for errLine in err.split('\n'):
+            lineList.append('Subtitle("""%s""",y=%i,font="%s",size=%i,text_color=$FF0000,align=8)' % 
+                (errLine, yLine, fontFace, fontSize))
+            yLine += fontSize
+            nChars = max(nChars, len(errLine))
+        eLength = self.Framecount
+        eWidth = nChars * fontSize / 2
+        eHeight = yLine + fontSize/4
+        firstLine = 'BlankClip(length=%(eLength)i,width=%(eWidth)i,height=%(eHeight)i)' % locals()
+        errText = firstLine + '.'.join(lineList)
+        arg = avisynth.AVS_Value(errText)
+        try:
+            avsfile=self.env.Invoke("eval",arg,0) #use eval to load it
+            if display_clip_error:
+                self.display_clip = avsfile.AsClip(self.env)
+                vi = self.display_clip.GetVideoInfo()
+                self.DisplayWidth = vi.width
+                self.DisplayHeight = vi.height
+            else:
+                self.clip = avsfile.AsClip(self.env)
+        except avisynth.AvisynthError, err:
+            return
+        return True
     
     def CreateDisplayClip(self, matrix=['auto', 'tv'], interlaced=None, swapuv=False, bit_depth=None):
         self.current_frame = -1
         self.display_clip = self.clip
         self.RGB48 = False
+        self.bit_depth = bit_depth
         if bit_depth:
             try:
                 if bit_depth == 'rgb48': # TODO
@@ -271,17 +291,14 @@ class AvsClipBase:
                         if self.env.FunctionExists('mt_lutxy'):
                             args = avisynth.AVS_Value(
                             'avsp_raw_clip.AssumeBFF().TurnLeft().SeparateFields().TurnRight().AssumeFrameBased()\n'
-                            'StackVertical(SelectOdd(), SelectEven())\n'
-                            'msb = Crop(0, 0, Width(), Height() / 2)\n'
-                            'lsb = Crop(0, Height() / 2, Width(), Height() / 2)\n'
-                            'mt_lutxy(msb, lsb, "x 8 << y + 2 >>", chroma="process")')
+                            'mt_lutxy(SelectOdd(), SelectEven(), "x 8 << y + 2 >>", chroma="process")')
                             avsfile = self.env.Invoke('Eval', args)
                             self.display_clip = avsfile.AsClip(self.env)
                     vi = self.display_clip.GetVideoInfo()
                     self.DisplayWidth = vi.width
                     self.DisplayHeight = vi.height
             except avisynth.AvisynthError, err:
-                return
+                return self.CreateErrorClip(display_clip_error=True)
         if isinstance(matrix, basestring):
             self.matrix = matrix
         else:
@@ -302,12 +319,12 @@ class AvsClipBase:
                 arg.Release()
                 self.display_clip = avsfile.AsClip(self.env)
             except avisynth.AvisynthError, err:
-                return
+                return self.CreateErrorClip(display_clip_error=True)
         vi = self.display_clip.GetVideoInfo()
         self.DisplayWidth = vi.width
         self.DisplayHeight = vi.height
         if not self._ConvertToRGB():
-            return
+            return self.CreateErrorClip(display_clip_error=True)
         return True
     
     def _ConvertToRGB(self):
