@@ -155,6 +155,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
 
             self.STC_AVS_DATATYPE: ('datatype', ''),
         }
+        self.styling_refresh_needed = False
         self.SetUserOptions()
         self.SetEOLMode(stc.STC_EOL_LF)
         #~ self.CmdKeyClear(stc.STC_KEY_TAB,0)
@@ -262,6 +263,9 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
             #~ keywordLists = (keywords, datatypes, operators, miscwords)
         if self.app.options['syntaxhighlight']:
             self.SetTextStyles(self.app.options['textstyles'], self.app.options['usemonospacedfont'])
+            if self.styling_refresh_needed:
+                self.styling_refresh_needed = False
+                self.Colourise(0, 0) # set self.GetEndStyled() to 0
         else:
             self.setStylesNoColor()
         if self.app.options['autocompleteicons']:            
@@ -2014,7 +2018,10 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                     self.ColourTo(pos-1, state)
                     if unichr(self.GetCharAt(pos+1)) in string_delimiters and unichr(self.GetCharAt(pos+2)) in string_delimiters:
                         pos += 2
-                        state = self.STC_AVS_TRIPLE                        
+                        if self.app.options['syntaxhighlight_styleinsidetriplequotes']:
+                            self.ColourTo(pos, self.STC_AVS_TRIPLE)
+                        else:
+                            state = self.STC_AVS_TRIPLE                        
                     else:
                         state = self.STC_AVS_STRING
                     if isLoadPlugin:
@@ -5685,6 +5692,7 @@ class MainFrame(wxp.Frame):
             'frequentcalltips': False,
             'syntaxhighlight': True,
             'syntaxhighlight_preferfunctions': False,
+            'syntaxhighlight_styleinsidetriplequotes': False,
             'usestringeol': True,
             'autocomplete': True,
             'autocompletelength': 1,
@@ -6457,6 +6465,7 @@ class MainFrame(wxp.Frame):
                 ((_('Frequent calltips'), wxp.OPT_ELEM_CHECK, 'frequentcalltips', _("Always show calltips any time the cursor is within the filter's arguments"), dict(ident=20) ), ),
                 ((_('Syntax highlighting'), wxp.OPT_ELEM_CHECK, 'syntaxhighlight', _('Turn on/off avisynth-specific text colors and fonts'), dict() ), ),
                 ((_('Prefer functions over variables'), wxp.OPT_ELEM_CHECK, 'syntaxhighlight_preferfunctions', _('When a word could be either a function or a variable, highlight it as function'), dict(ident=20) ), ),
+                ((_('Style inside triple-quoted strings'), wxp.OPT_ELEM_CHECK, 'syntaxhighlight_styleinsidetriplequotes', _("Highlight the text as if it wasn't enclosed by triple quotes"), dict(ident=20) ), ),
                 #~((_('Syntax highlight incomplete strings'), wxp.OPT_ELEM_CHECK, 'usestringeol', _('Syntax highlight strings which are not completed in a single line differently'), dict() ), ),
                 #~((_('Highlight current line'), wxp.OPT_ELEM_CHECK, 'highlightline', _('Highlight the line that the caret is currently in'), dict() ), ),
                 #~(('       '+_('Highlight line color'), wxp.OPT_ELEM_COLOR, 'highlightlinecolor', _('Change the the highlight line color'), dict() ), ),
@@ -16421,10 +16430,12 @@ class MainFrame(wxp.Frame):
         ID = dlg.ShowModal()
         # Set the data
         if ID == wx.ID_OK:
-            oldpluginsdirectory = self.ExpandVars(self.options['pluginsdir'])
+            old_plugins_directory = self.ExpandVars(self.options['pluginsdir'])
+            old_prefer_functions = self.options['syntaxhighlight_preferfunctions']
+            old_style_triple_quotes = self.options['syntaxhighlight_styleinsidetriplequotes']
             self.options.update(dlg.GetDict())
-            if self.options['pluginsdir'] != oldpluginsdirectory:
-                self.SetPluginsDirectory(oldpluginsdirectory)
+            if self.options['pluginsdir'] != old_plugins_directory:
+                self.SetPluginsDirectory(old_plugins_directory)
             for key in ['altdir', 'workdir', 'pluginsdir', 'avisynthhelpfile', 
                         'externalplayer', 'docsearchpaths']:
                 self.options[key] = self.ExpandVars(self.options[key], False, '%' + key + '%')
@@ -16436,6 +16447,10 @@ class MainFrame(wxp.Frame):
                 os.chdir(self.initialworkdir)
             for i in xrange(self.scriptNotebook.GetPageCount()):
                 script = self.scriptNotebook.GetPage(i)
+                if self.options['syntaxhighlight'] and (
+                   self.options['syntaxhighlight_preferfunctions'] != old_prefer_functions or 
+                   self.options['syntaxhighlight_styleinsidetriplequotes'] != old_style_triple_quotes):
+                        script.styling_refresh_needed = True
                 script.SetUserOptions()
                 if not self.options['usetabimages']:
                     self.scriptNotebook.SetPageImage(i, -1)            
