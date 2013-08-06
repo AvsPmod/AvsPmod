@@ -11161,6 +11161,8 @@ class MainFrame(wxp.Frame):
 
     def OnContextMenu(self, event):
         win = event.GetEventObject()
+        if isinstance(win, wx.ListCtrl): # autocomplete list
+            return
         self.lastContextMenuWin = win
         pos = win.ScreenToClient(event.GetPosition())
         # update 'video -> add tab to group' submenu
