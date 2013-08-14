@@ -64,7 +64,7 @@ if os.name == 'nt':
     import _winreg
 from hashlib import md5
 import __builtin__
-from collections import Iterable, Sequence, MutableSequence, Mapping, defaultdict
+import collections
 
 if hasattr(sys,'frozen'):
     programdir = os.path.dirname(sys.executable)
@@ -91,6 +91,34 @@ import wxp
 from icons import AvsP_icon, next_icon, play_icon, pause_icon, external_icon, \
                   skip_icon, spin_icon, ok_icon, smile_icon, question_icon, \
                   rectangle_icon, dragdrop_cursor
+
+
+# Filter database for each tab
+class AvsFilterDict(collections.MutableMapping):
+    
+    def __init__(self, shared_dict=None, own_dict=None):
+        self.shared_dict = shared_dict or {}
+        self.own_dict = own_dict or {}
+    
+    def __getitem__(self, key):
+        if key in self.own_dict:
+            return self.own_dict[key]
+        return self.shared_dict[key]
+    
+    def __setitem__(self, key, value):
+        return self.own_dict.__setitem__(key, value)
+    
+    def __delitem__(self, key):
+        return self.own_dict.__delitem__(key)
+        
+    def __len__(self, key):
+        return len(self.shared_dict) + len(self.own_dict)
+    
+    def __iter__(self):
+        for item in self.own_dict:
+            yield item
+        for item in self.shared_dict:
+            yield item
 
 
 # Custom styled text control for avisynth language
@@ -155,6 +183,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
 
             self.STC_AVS_DATATYPE: ('datatype', ''),
         }
+        self.avsfilterdict = AvsFilterDict(self.app.avsfilterdict)
         self.styling_refresh_needed = False
         self.SetUserOptions()
         self.SetEOLMode(stc.STC_EOL_LF)
@@ -445,7 +474,22 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                                      #~ 'isrgb', 'isrgb24', 'isrgb32', 'isyuy2', 'isyuv',
                                      #~ 'isplanar', 'isinterleaved', 'isfieldbased', 'isframebased', 'getparity']
         #~ self.KeyWords = tuple(' '.join(self.FilterNames).lower().split(' '))
-
+    
+    def ParseFunctions(self, text=None, refresh_highlighting=False):
+        if text is None:
+            text = self.GetText()
+        filterInfo = self.app.ParseAvisynthScript(script_text=text, quiet=True)
+        self.avsfilterdict.clear()
+        self.avsfilterdict.update(dict(
+            [
+            (filtername.lower(), (filterargs, self.STC_AVS_USERFUNCTION, filtername, None))
+            for filename, filtername, filterargs, ftype in filterInfo
+            ]
+        ))
+        self.avsazdict = self.app.GetAutocompleteDict(self.avsfilterdict.own_dict)
+        if refresh_highlighting:
+            self.Colourise(0, 0)
+    
     def SetTextStyles(self, textstyles, monospaced=False):
         self.SetLexer(stc.STC_LEX_CONTAINER)
         #~ self.commentStyle = [self.STC_AVS_COMMENT, self.STC_AVS_BLOCKCOMMENT, self.STC_AVS_ENDCOMMENT]
@@ -721,11 +765,10 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
         keywords = []
         wordlower = word.lower()
         avsazdict = self.app.avsazdict_all if all else self.app.avsazdict
-        keywordSublist = avsazdict.get(word[0].lower())
-        if keywordSublist is not None:
-            for keyword in keywordSublist:
-                if keyword.lower().startswith(wordlower):
-                    keywords.append(keyword)
+        first_chr = word[0].lower()
+        for keyword in set(avsazdict[first_chr] + self.avsazdict[first_chr]):
+            if keyword.lower().startswith(wordlower):
+                keywords.append(keyword)
         if self.app.options['autocompletevariables']:
             lineCount = self.LineFromPosition(pos)
             line = 0
@@ -773,10 +816,10 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                 if self.app.options['autocompleteicons']:
                     for i in range(len(keywords)):
                         keyword = keywords[i].lower()
-                        if keyword not in self.app.avsfilterdict:
+                        if keyword not in self.avsfilterdict:
                             keywords[i] += '?4'
                             continue
-                        keyword = self.app.avsfilterdict[keyword][3] or keyword
+                        keyword = self.avsfilterdict[keyword][3] or keyword
                         preset = self.app.options['filterpresets'].get(keyword)
                         if preset is None:
                             preset = self.CreateDefaultPreset(keywords[i])
@@ -806,7 +849,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
         pos = self.GetCurrentPos()
         startwordpos = self.WordStartPosition(pos,1)
         filtername = self.GetTextRange(startwordpos,pos)
-        if filtername.lower() not in self.app.avsfilterdict:
+        if filtername.lower() not in self.avsfilterdict:
             return
         boolActivatePreset = (
             self.app.options['presetactivatekey'] == 'tab' and key == wx.WXK_TAB or
@@ -814,7 +857,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
             self.app.options['presetactivatekey'] == 'both')
         if boolActivatePreset:
             keyword = filtername.lower()
-            keyword = self.app.avsfilterdict[keyword][3] or keyword
+            keyword = self.avsfilterdict[keyword][3] or keyword
             preset = self.app.options['filterpresets'].get(keyword)
             boolHighlightQuestionMarks = True
             if preset is not None:
@@ -852,7 +895,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                 if findpos != -1:
                     self.SetSelection(findpos, findpos+1)
             return
-        args = self.app.avsfilterdict[filtername.lower()][0]
+        args = self.avsfilterdict[filtername.lower()][0]
         if not args:
             return
         if args == '()':
@@ -1023,7 +1066,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
             spaceWidth = self.TextWidth(stc.STC_STYLE_DEFAULT, ' ')
             spaces = ' ' * int(round(wordWidth / float(spaceWidth)))
             #~ args = self.FilterNameArgs[word.lower()]
-            args = self.app.avsfilterdict[word.lower()][0]
+            args = self.avsfilterdict[word.lower()][0]
             if args  in ('', '()'):
                 self.CallTipCancelCustom()
                 self.calltipFilter = word
@@ -1159,7 +1202,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
     def GetFilterMatchedArgs(self, startwordpos, calltip=None):
         if calltip is None:
             filterName = self.GetTextRange(startwordpos, self.WordEndPosition(startwordpos, 1))
-            calltip = self.app.avsfilterdict[filterName.lower()][0].split('\n\n')[0]
+            calltip = self.avsfilterdict[filterName.lower()][0].split('\n\n')[0]
         # Get both argument lists
         filterCalltipArgInfo = self.GetFilterCalltipArgInfo(calltip=calltip)
         filterScriptArgInfo = self.GetFilterScriptArgInfo(startwordpos, calltip=calltip)
@@ -1299,7 +1342,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
         if calltip is None:
             # Get the user slider info from the filter's calltip
             try:
-                calltip = self.app.avsfilterdict[word.lower()][0].split('\n\n')[0]
+                calltip = self.avsfilterdict[word.lower()][0].split('\n\n')[0]
             except KeyError:
                 return
         # Delete open and close parentheses
@@ -1358,7 +1401,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
 
     def CreateDefaultPreset(self, filtername, calltip=None):
         if calltip is None:
-            calltip = self.app.avsfilterdict[filtername.lower()][0].split('\n\n')[0]
+            calltip = self.avsfilterdict[filtername.lower()][0].split('\n\n')[0]
         if calltip == '':
             return filtername
         argList = []
@@ -1491,8 +1534,6 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
     def ShowFilterDocumentation(self, name=None):
         if name is None:
             name = self.calltipFilter
-        #~ if not name.lower() in self.app.avsfilterdict:
-            #~ return True
         if not name:
             return
         docsearchpaths = []
@@ -1506,12 +1547,12 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
         
         def get_names(name):
             name = name.lower()
-            if name in self.app.avsfilterdict:
-                display_name = self.app.avsfilterdict[name][2]
-                if self.app.avsfilterdict[name][1] == AvsStyledTextCtrl.STC_AVS_PLUGIN:
-                    is_short = self.app.avsfilterdict[name][3]
+            if name in self.avsfilterdict:
+                display_name = self.avsfilterdict[name][2]
+                if self.avsfilterdict[name][1] == AvsStyledTextCtrl.STC_AVS_PLUGIN:
+                    is_short = self.avsfilterdict[name][3]
                     if is_short:
-                        long_name = self.app.avsfilterdict[is_short][2]
+                        long_name = self.avsfilterdict[is_short][2]
                         short_name = display_name
                     else:
                         long_name = display_name
@@ -2111,9 +2152,9 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                             self.ColourTo(end, self.STC_AVS_ENDCOMMENT)
                             break
                     elif ch2 == u'(':
-                        if word in self.app.avsfilterdict:
+                        if word in self.avsfilterdict:
                             #~ self.ColourTo(pos, self.keywordstyles[word])
-                            self.ColourTo(pos, self.app.avsfilterdict[word][1])
+                            self.ColourTo(pos, self.avsfilterdict[word][1])
                             if word == 'loadplugin':
                                 isLoadPlugin = True
                         else:
@@ -2125,9 +2166,9 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                             self.ColourTo(pos, self.STC_AVS_ASSIGN)
                     else:
                         if self.app.options['syntaxhighlight_preferfunctions'] and \
-                                word in self.app.avsfilterdict:
+                                word in self.avsfilterdict:
                             #~ self.ColourTo(pos, self.keywordstyles[word])
-                            self.ColourTo(pos, self.app.avsfilterdict[word][1])
+                            self.ColourTo(pos, self.avsfilterdict[word][1])
                         else:
                             self.ColourTo(pos, self.STC_AVS_DEFAULT)
                     fragment = []
@@ -3177,8 +3218,8 @@ class AvsFunctionDialog(wx.Dialog):
                        presetDict, removedSet, pluginDict, shortnamesDict, 
                        installed_plugins_filternames, 
                        installed_avsi_filternames, functionName=None, 
-                       CreateDefaultPreset=None, ExportFilterData=None, 
-                       nag=True):
+                       functionArgs=None, CreateDefaultPreset=None, 
+                       ExportFilterData=None, nag=True):
         wx.Dialog.__init__(
             self, parent, wx.ID_ANY,
             _('Add or override AviSynth functions in the database'),
@@ -3199,26 +3240,25 @@ class AvsFunctionDialog(wx.Dialog):
         self.nag = nag
         self.CreateWindowElements()
         self.CreateFilterInfoDialog()
-        wx.FutureCall(100, self.HighlightFunction, functionName)
-
-    def HighlightFunction(self, functionName):
-        # Highlight the function if specified
         if functionName is not None:
-            lowername = functionName.lower()
-            if lowername in self.avsfilterdict:
-                lowername = self.avsfilterdict[lowername][3] or lowername
-                for index in xrange(self.notebook.GetPageCount()):
-                    panel = self.notebook.GetPage(index)
-                    listbox = panel.listbox
-                    for i in xrange(listbox.GetCount()):
-                        label = listbox.GetString(i)
-                        if label.split()[0].lower() == lowername:
-                            self.notebook.SetSelection(index)
-                            listbox.SetSelection(i)
-                            self.EditFunctionInfo()
-                            return
-            else: # functionName was not found, show dialog to define new function
-                self.AddNewFunction(functionName)
+            wx.FutureCall(100, self.HighlightFunction, functionName, functionArgs)
+
+    def HighlightFunction(self, functionName, functionArgs):
+        lowername = functionName.lower()
+        if lowername in self.avsfilterdict:
+            lowername = self.avsfilterdict[lowername][3] or lowername
+            for index in xrange(self.notebook.GetPageCount()):
+                panel = self.notebook.GetPage(index)
+                listbox = panel.listbox
+                for i in xrange(listbox.GetCount()):
+                    label = listbox.GetString(i)
+                    if label.split()[0].lower() == lowername:
+                        self.notebook.SetSelection(index)
+                        listbox.SetSelection(i)
+                        self.EditFunctionInfo(arg=functionArgs, prompt=True)
+                        return
+        else: # functionName was not found, show dialog to define new function
+            self.AddNewFunction(functionName, arg=functionArgs, prompt=True)
 
     def CreateWindowElements(self):
         self.notebook = wxp.Notebook(self, wx.ID_ANY, style=wx.NO_BORDER, 
@@ -3253,7 +3293,7 @@ class AvsFunctionDialog(wx.Dialog):
             (_('Script functions'), 4),
             (_('Clip properties'), 1),
         )
-        pageDict = defaultdict(list)
+        pageDict = collections.defaultdict(list)
         for key in set(self.filterDict.keys()+self.overrideDict.keys()):
             name, args, ftype = self.overrideDict.get(key, (None, None, None))
             extra = ' '
@@ -3738,8 +3778,8 @@ class AvsFunctionDialog(wx.Dialog):
                 del filterInfo[i]
         dlg.Destroy()
     
-    def ParseAvisynthScript(self, filename):
-        return self.GetParent().ParseAvisynthScript(filename)
+    def ParseAvisynthScript(self, *args, **kwargs):
+        return self.GetParent().ParseAvisynthScript(*args, **kwargs)
     
     def ParseCustomizations(self, filename):
         if filename.startswith('http'):
@@ -3904,7 +3944,7 @@ class AvsFunctionDialog(wx.Dialog):
             for i in deleteIndices:
                 listbox.Delete(i)
 
-    def AddNewFunction(self, name='', ftype=3, arg=None):
+    def AddNewFunction(self, name='', ftype=3, arg=None, prompt=None):
         dlg = self.FilterInfoDialog
         if ftype == -1:
             index = self.notebook.GetSelection()
@@ -3946,7 +3986,9 @@ class AvsFunctionDialog(wx.Dialog):
         dlg.defaultArgs = defaultArgs
         dlg.defaultName = defaultName
         dlg.enteredName = None
-        if arg: ID = wx.ID_OK
+        if prompt is None:
+            prompt = not bool(arg)
+        if not prompt: ID = wx.ID_OK
         else: ID = dlg.ShowModal()
         if ID == wx.ID_OK:
             newName = dlg.nameBox.GetValue()
@@ -3989,9 +4031,9 @@ class AvsFunctionDialog(wx.Dialog):
             listbox.SetSelection(index)
             listbox.SetFirstItem(index)
 
-    def EditFunctionInfo(self, name=None, arg=None, ftype=None):
+    def EditFunctionInfo(self, name=None, arg=None, ftype=None, prompt=None):
         dlg = self.FilterInfoDialog
-        if arg:
+        if arg and ftype is not None:
             arg = arg.strip()
             name = unicode(name)
             for index in xrange(self.notebook.GetPageCount()):
@@ -4043,7 +4085,9 @@ class AvsFunctionDialog(wx.Dialog):
         #~ self.defaultPreset = defaultPreset
         dlg.defaultName = defaultName
         dlg.enteredName = enteredName
-        if arg: ID = wx.ID_OK
+        if prompt is None:
+            prompt = not bool(arg)
+        if not prompt: ID = wx.ID_OK
         else: ID = dlg.ShowModal()
         if ID == wx.ID_OK:
             newName = dlg.nameBox.GetValue()
@@ -4067,7 +4111,7 @@ class AvsFunctionDialog(wx.Dialog):
                 self.presetDict[lowername] = newPreset
                 extra += '~'
             if newType == enteredType:
-                if arg:
+                if arg and ftype is not None:
                     for i in xrange(listbox.GetCount()):
                         if newName == listbox.GetString(i).split()[0]:
                             listbox.SetSelection(i)
@@ -5943,7 +5987,7 @@ class MainFrame(wxp.Frame):
         pyavs.InitRoutines()
     
     def defineFilterInfo(self):
-        self.plugin_shortnames = defaultdict(list)
+        self.plugin_shortnames = collections.defaultdict(list)
         self.optionsFilters = self.getFilterInfoFromAvisynth()
         
         self.installed_avsi_filternames = set()
@@ -6087,6 +6131,7 @@ class MainFrame(wxp.Frame):
             if key not in self.optionsFilters:
                 self.options['filteroverrides'][key] = value
         # Define data structures that are used by each script
+        self.avsfilterdict = {}
         self.defineScriptFilterInfo()
 
     def ExportFilterData(self, filterDict, filename, onlylongnames=False):
@@ -6147,12 +6192,13 @@ class MainFrame(wxp.Frame):
                ftype in (2, 3)
             ]
         )
-        self.avsfilterdict = dict(
+        self.avsfilterdict.clear()
+        self.avsfilterdict.update(dict(
             [
             (lowername, (args, styleList[ftype], name, None))
             for lowername,(name,args,ftype) in self.optionsFilters.items()
             ]
-        )
+        ))
         overridedict = dict()
         for lowername, (name, args, ftype) in self.options['filteroverrides'].iteritems():
             overridedict[lowername] = args, styleList[ftype], name, None
@@ -6219,7 +6265,7 @@ class MainFrame(wxp.Frame):
     @staticmethod
     def GetAutocompleteDict(filter_dict):
         """Create a list for each letter (for autocompletion)"""
-        avsazdict = defaultdict(list)
+        avsazdict = collections.defaultdict(list)
         for lowername in sorted(filter_dict.keys()):
             first_letter = lowername[0]
             if first_letter.isalpha() or first_letter != '_':
@@ -6371,11 +6417,12 @@ class MainFrame(wxp.Frame):
         env.Release()
         return functionDict
 
-    def ParseAvisynthScript(self, filename, quiet=False):
+    def ParseAvisynthScript(self, filename='', script_text=None, quiet=False):
         pattern = r'function\s+([^\W_]\w*)\s*\((.*?)\)\s*\{(.+?)\}'
         default = r'default\s*\(\s*%s\s*,\s*(.+?)\s*\)'
         filterInfo, text = [], []
-        script_text = self.GetTextFromFile(filename)[0]
+        if script_text is None:
+            script_text = self.GetTextFromFile(filename)[0]
         for line in script_text.splitlines():
             line = line.strip().strip('\\')
             if not line.startswith('#'):
@@ -7038,7 +7085,7 @@ class MainFrame(wxp.Frame):
                 (_('Rename tab'), '', self.OnMenuFileRenameTab, _('Rename the current tab. If script file is existing, also rename it')),
                 (_('Save script'), 'Ctrl+S', self.OnMenuFileSaveScript, _('Save the current script')),
                 (_('Save script as...'), 'Ctrl+Shift+S', self.OnMenuFileSaveScriptAs, _('Choose where to save the current script')),
-                (_('Reload script'), '', self.OnMenuFileReloadScript, _('Reopen the current script file if it has changed')),
+                (_('Reload script'), 'Ctrl+F5', self.OnMenuFileReloadScript, _('Reopen the current script file if it has changed')),
                 (_("Open script's directory"), '', self.OnMenuFileOpenScriptDirectory, _('If the current script is saved to a file, open its directory')),
                 (_('Export HTML'), '', self.OnMenuFileExportHTML, _('Save the current script as a HTML document')),
                 (_('&Print script'),
@@ -7116,6 +7163,7 @@ class MainFrame(wxp.Frame):
                     (_('Show calltip'), 'Ctrl+Shift+Space', self.OnMenuEditShowCalltip, _('Show the calltip for the filter (only works if cursor within the arguments)')),
                     (_('Show function definition'), 'Ctrl+Shift+D', self.OnMenuEditShowFunctionDefinition, _('Show the AviSynth function definition dialog for the filter')),
                     (_('Filter help file'), 'Shift+F1', self.OnMenuEditFilterHelp, _("Run the help file for the filter (only works if cursor within the arguments or name is highlighted)")),
+                    (_('Parse script for function definitions'), 'Ctrl+Alt+F5', self.OnMenuEditParseFunctions, _('Include functions defined in the current script in the filter database, only for this tab')),
                     ),
                 ),
                 (''),
@@ -8034,6 +8082,7 @@ class MainFrame(wxp.Frame):
         if os.path.isfile(script.filename):
             txt, script.encoding = self.GetMarkedScriptFromFile(script.filename)
             if txt != script.GetText():
+                script.ParseFunctions(txt)
                 pos = script.GetCurrentPos()
                 script.SetText(txt)
                 script.EmptyUndoBuffer()
@@ -8478,8 +8527,13 @@ class MainFrame(wxp.Frame):
             self.currentScript.UpdateCalltip(force=True)
 
     def OnMenuEditShowFunctionDefinition(self, event):
-        name = self.currentScript.GetFilterNameAtCursor()
-        self.ShowFunctionDefinitionDialog(functionName=name)
+        script = self.currentScript
+        name = script.GetFilterNameAtCursor()
+        if name in script.avsfilterdict.own_dict:
+            args = script.avsfilterdict[name][0]
+        else:
+            args = None
+        self.ShowFunctionDefinitionDialog(functionName=name, functionArgs=args)
 
     def OnMenuEditFilterHelp(self, event):
         script = self.currentScript
@@ -8495,6 +8549,9 @@ class MainFrame(wxp.Frame):
             if word.lower() not in self.avskeywords and selected:
                 word = selected
             script.ShowFilterDocumentation(word)
+    
+    def OnMenuEditParseFunctions(self, event):
+        self.currentScript.ParseFunctions(refresh_highlighting=True)
     
     def OnMenuEditCopyToNewTab(self, event):
         self.NewTab(copytab=True)
@@ -10820,7 +10877,7 @@ class MainFrame(wxp.Frame):
     def GetAutocropValue(seq):
         """Get the most repeated value on a sequence if it repeats more than 50%, 
         the minimum value otherwise"""
-        d = defaultdict(int)
+        d = collections.defaultdict(int)
         for i in seq:
             d[i] += 1
         max = sorted(d.keys(), key=lambda x:-d[x])[0]
@@ -11117,15 +11174,16 @@ class MainFrame(wxp.Frame):
         self.foldAllSliders = not self.foldAllSliders
 
     def OnSliderLabelEditDatabase(self, event):
+        script = self.currentScript
         ctrl = self.lastContextMenuWin
         name = ctrl.GetLabel().lstrip(' -+').split()[0]
         lowername = name.lower()
-        is_short = self.avsfilterdict[lowername][3]
+        is_short = script.avsfilterdict[lowername][3]
         if is_short:
             lowername = is_short
-            name = self.avsfilterdict[lowername][2]
+            name = script.avsfilterdict[lowername][2]
         #~ calltip = self.currentScript.FilterNameArgs[name.lower()]
-        calltip = self.avsfilterdict[lowername][0]
+        calltip = script.avsfilterdict[lowername][0]
         dlg = AvsFilterAutoSliderInfo(self, self, name, calltip)
         ID = dlg.ShowModal()
         # Set the data
@@ -11143,8 +11201,10 @@ class MainFrame(wxp.Frame):
                     #~ break
             if lowername in self.options['filteroverrides']:
                 ftype = self.options['filteroverrides'][lowername][2]
-            else:
+            elif lowername in self.optionsFilters:
                 ftype = self.optionsFilters[lowername][2]
+            else: # add a new user function definition for functions defined in the current script
+                ftype = 3
             self.options['filteroverrides'][lowername] = (name, newCalltip, ftype)
             with open(self.optionsfilename, mode='wb') as f:
                 cPickle.dump(self.options, f, protocol=0)
@@ -11481,6 +11541,7 @@ class MainFrame(wxp.Frame):
                 scriptWindow.lastFramenum = self.currentScript.lastFramenum
                 scriptWindow.lastLength = self.currentScript.lastLength
             self.scriptNotebook.AddPage(scriptWindow,'%s (%s)' % (self.NewFileName, iMax+1), select=False)
+            scriptWindow.ParseFunctions(text)
             scriptWindow.SetText(text)
             scriptWindow.SelectAll()
             if select:
@@ -11580,6 +11641,7 @@ class MainFrame(wxp.Frame):
                             dlg.Destroy()
                             if ID != wx.ID_YES:
                                 return
+                            script.ParseFunctions(scripttext)
                             pos = script.GetCurrentPos()
                             script.SetText(scripttext)
                             script.GotoPos(pos)
@@ -11601,6 +11663,7 @@ class MainFrame(wxp.Frame):
                         script.workdir = dirname
                     elif not root.startswith(self.NewFileName):
                         self.SetScriptTabname(root, script)
+                    script.ParseFunctions(scripttext)
                     script.SetText(scripttext)
                     self.UpdateRecentFilesList(filename)
                 if f_encoding is not None:
@@ -12150,7 +12213,7 @@ class MainFrame(wxp.Frame):
             selectedIndex = None
             self.SelectTab(self.scriptNotebook.GetPageCount() - 1)
             #~ for scriptname, boolSelected, scripttext in session['scripts']:
-            mapping = session['scripts'] and isinstance(session['scripts'][0], Mapping)
+            mapping = session['scripts'] and isinstance(session['scripts'][0], collections.Mapping)
             for item in session['scripts']:
                 index = self.LoadTab(item, compat=not mapping)
                 if mapping:
@@ -13615,7 +13678,7 @@ class MainFrame(wxp.Frame):
             self.IdleCall.append((self.OnMouseMotionVideoWindow, tuple(), {}))
         return True
 
-    def ShowFunctionDefinitionDialog(self, functionName=None):
+    def ShowFunctionDefinitionDialog(self, functionName=None, functionArgs=None):
         dlg = AvsFunctionDialog(
             self,
             self.optionsFilters,
@@ -13628,6 +13691,7 @@ class MainFrame(wxp.Frame):
             self.installed_plugins_filternames,
             self.installed_avsi_filternames,
             functionName=functionName,
+            functionArgs=functionArgs,
             CreateDefaultPreset=self.currentScript.CreateDefaultPreset,
             ExportFilterData=self.ExportFilterData,
             
@@ -17066,21 +17130,21 @@ class MainFrame(wxp.Frame):
         optionsDlgInfo = [['']]
         options = dict()
         key = 0
-        if not isinstance(message, MutableSequence): message = [message]
-        if not isinstance(default, MutableSequence): default = [default] 
-        if not isinstance(types, MutableSequence): types = [types] 
+        if not isinstance(message, collections.MutableSequence): message = [message]
+        if not isinstance(default, collections.MutableSequence): default = [default] 
+        if not isinstance(types, collections.MutableSequence): types = [types] 
         default += [''] * (len(message) - len(default))
         types +=  [''] * (len(message) - len(types))
         for eachMessageLine, eachDefaultLine, eachTypeLine in zip(message, default, types):
-            if not isinstance(eachMessageLine, MutableSequence): eachMessageLine = [eachMessageLine] 
-            if not isinstance(eachDefaultLine, MutableSequence): eachDefaultLine = [eachDefaultLine] 
-            if not isinstance(eachTypeLine, MutableSequence): eachTypeLine = [eachTypeLine] 
+            if not isinstance(eachMessageLine, collections.MutableSequence): eachMessageLine = [eachMessageLine] 
+            if not isinstance(eachDefaultLine, collections.MutableSequence): eachDefaultLine = [eachDefaultLine] 
+            if not isinstance(eachTypeLine, collections.MutableSequence): eachTypeLine = [eachTypeLine] 
             lineLen=len(eachMessageLine)
             eachDefaultLine += [''] * (lineLen - len(eachDefaultLine))
             eachTypeLine +=  [''] * (lineLen - len(eachTypeLine))
             rowOptions = []
             for eachMessage, eachDefault, eachType in zip(eachMessageLine, eachDefaultLine, eachTypeLine):
-                if not isinstance(eachDefault, Sequence) or isinstance(eachDefault, basestring):
+                if not isinstance(eachDefault, collections.Sequence) or isinstance(eachDefault, basestring):
                     eachDefault = (eachDefault,)
 
                 #  Set 'optionsDlgInfo' and 'options' from the kind of more user friendly 'message', 'default' and 'types'
@@ -17763,7 +17827,7 @@ class MainFrame(wxp.Frame):
             self.AddFrameBookmark(value, bmtype)
             return True
         except (TypeError, ValueError):
-            if not isinstance(input, Iterable):
+            if not isinstance(input, collections.Iterable):
                 return False
             try:
                 items = [(int(value), title.strip()) for value, title in input 
