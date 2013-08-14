@@ -1415,7 +1415,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
             if defaultValue or defaultValue == 0:
                 if guitype == 'color':
                     argList.append('%s$%s' % (namedarg, defaultValue))
-                elif argtype in ('float', 'int') and other is not None:
+                elif argtype in ('float', 'int') and guitype == 'slider' and other is not None:
                     nDecimal = other[2]
                     strTemplate = '%.'+str(nDecimal)+'f'
                     try:
@@ -4231,7 +4231,7 @@ class AvsFilterAutoSliderInfo(wx.Dialog):
                 argLabel = wx.StaticText(argWindow, wx.ID_ANY, '%(argtype)s %(argname)s' % locals())
                 argLabel.controls = []
                 argSizer.Add(argLabel, (row,0), wx.DefaultSpan, wx.ALIGN_RIGHT|wx.ALIGN_BOTTOM|wx.BOTTOM|wx.RIGHT, 5)
-                if argtype in ('int', 'float'):
+                if argtype in ('int', 'float') and guitype != 'intlist':
                     strDefaultValue = strMinValue = strMaxValue = strMod = ''
                     if other is not None:
                         minValue, maxValue, nDecimal, mod = other
@@ -4290,11 +4290,14 @@ class AvsFilterAutoSliderInfo(wx.Dialog):
                     vsizer.Add(itemTextCtrl, 0, wx.ALL, 0)
                     argLabel.controls.append(itemTextCtrl)
                     argSizer.Add(vsizer, (row,1), wx.DefaultSpan, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 0)
-                elif argtype == 'string':
+                elif argtype == 'string' or argtype == 'int' and guitype == 'intlist':
                     strDefaultValue = strValuesList = ''
                     if defaultValue is not None:
                         if defaultValue:
-                            strDefaultValue = '"%s"' % defaultValue.strip('"')
+                            if argtype == 'string':
+                                strDefaultValue = '"%s"' % defaultValue.strip('"')
+                            else:
+                                strDefaultValue = str(defaultValue)
                     if other is not None:
                         strValuesList = ', '.join(other)
                     hsizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -4368,8 +4371,9 @@ class AvsFilterAutoSliderInfo(wx.Dialog):
             else:
                 
                 strDef = argLabel.controls[0].GetValue().strip()
+                is_list = argLabel.controls[1].GetValue().count(',')
                 #~ strList.append('%(strBase)s=%(strDefaultValue)s' % locals())
-                if argtype in ('int', 'float'):
+                if argtype in ('int', 'float') and not is_list:
                     strMin = argLabel.controls[1].GetValue().strip()
                     strMax = argLabel.controls[2].GetValue().strip()
                     strMod = argLabel.controls[3].GetValue().strip()
@@ -4396,7 +4400,7 @@ class AvsFilterAutoSliderInfo(wx.Dialog):
                             self.ShowWarning(argLabel.controls[0], '%s %s: %s' % (argtype, argname, _('Value must be True or False!')), comboBox=True)
                             return
                         strInfoNew = '%(strBase)s=%(strDef)s' % locals()
-                elif argtype == 'string':
+                elif argtype == 'string' or argtype == 'int' and is_list:
                     strValues = argLabel.controls[1].GetValue().strip()
                     if strDef or strValues:
                         if not strValues:
@@ -4406,8 +4410,11 @@ class AvsFilterAutoSliderInfo(wx.Dialog):
                             #~ return
                             pass
                         else:
-                            strValuesNew = ' (%s)' % '/ '.join(['"%s"' % s.strip(' "') for s in strValues.split(',')])
-                        if strDef:
+                            if argtype == 'int':
+                                strValuesNew = ' (%s)' % ' / '.join([s.strip() for s in strValues.split(',')])
+                            else:
+                                strValuesNew = ' (%s)' % '/ '.join(['"%s"' % s.strip(' "') for s in strValues.split(',')])
+                        if strDef and argtype == 'string':
                             strDef = '"%s"' % strDef.strip('"')
                         strInfoNew = '%(strBase)s=%(strDef)s%(strValuesNew)s' % locals()
             strRepeatArg = ''
@@ -5786,6 +5793,7 @@ class MainFrame(wxp.Frame):
             'autoslideron': True,
             'autosliderstartfold': 0, #1,
             'autoslidermakeintfloat': True,
+            'autoslidermakeintlist': True,
             'autoslidermakecolor': True,
             'autoslidermakebool': True,
             'autoslidermakestringlist': True,
@@ -6559,6 +6567,7 @@ class MainFrame(wxp.Frame):
                 ((_('Hide slider window by default'), wxp.OPT_ELEM_CHECK, 'keepsliderwindowhidden', _('Keep the slider window hidden by default when previewing a video'), dict() ), ),
                 ((_('Create user sliders automatically'), wxp.OPT_ELEM_CHECK, 'autoslideron', _('Create user sliders automatically using the filter database'), dict() ), ),
                 ((_('type int/float (numerical slider)'), wxp.OPT_ELEM_CHECK, 'autoslidermakeintfloat', _('Create user sliders for int and float arguments'), dict(ident=20) ), ),
+                ((_('type int (list)'), wxp.OPT_ELEM_CHECK, 'autoslidermakeintlist', _('Create listboxes for int list arguments'), dict(ident=20) ), ),
                 ((_('type int (hex color)'), wxp.OPT_ELEM_CHECK, 'autoslidermakecolor', _('Create color pickers for hex color arguments'), dict(ident=20) ), ),
                 ((_('type bool'), wxp.OPT_ELEM_CHECK, 'autoslidermakebool', _('Create radio boxes for bool arguments'), dict(ident=20) ), ),
                 ((_('type string (list)'), wxp.OPT_ELEM_CHECK, 'autoslidermakestringlist', _('Create listboxes for string list arguments'), dict(ident=20) ), ),
@@ -15245,21 +15254,25 @@ class MainFrame(wxp.Frame):
                     else:
                         self.addAvsBooleanRadio(script, argname, value, defaultValue, row, separator, filterName, argIndex)
                     row += 1
-                elif guitype == 'stringlist':
-                    if not self.options['autoslidermakestringlist']:
-                        continue
-                    choices = other
-                    if not strValue.startswith('"') or not strValue.endswith('"'):
-                        boolException = True
+                elif guitype in ('intlist', 'stringlist'):
+                    if guitype == 'intlist':
+                        if not self.options['autoslidermakeintlist']:
+                            continue
                     else:
-                        value = strValue.strip('"')
+                        if not self.options['autoslidermakestringlist']:
+                            continue
+                        if not strValue.startswith('"') or not strValue.endswith('"'):
+                            boolException = True
+                        else:
+                            strValue = strValue.strip('"')
+                    choices = other
                     if separator is None:
                         separator = self.addAvsSliderSeparatorNew(script, label=filterName, menu=menuGeneral, row=row, sizer=script.sliderSizerNew)
                         row += 1
                     if boolException:
                         self.addAvsGenericArg(script, argname, strValue, row, separator, filterName, argIndex)
                     else:
-                        self.addAvsStringChoice(script, argname, value, choices, defaultValue, row, separator, filterName, argIndex)
+                        self.addAvsChoice(script, argname, strValue, choices, defaultValue, guitype, row, separator, filterName, argIndex)
                     row += 1
                 elif guitype == 'stringfilename':
                     if not self.options['autoslidermakestringfilename']:
@@ -15446,6 +15459,12 @@ class MainFrame(wxp.Frame):
                                 #~ return (argtype, argname, 'error', None, None)
                                 #~ return (argtype, argname, 'error', strDefaultValue, (strMinValue, strMaxValue, 0, strStepSize))
                                 boolValueError = True
+                    else:
+                        choices = rangeInfo.split('/')
+                        if len(choices) > 1: # list of integers
+                            defaultValue = int(defaultValue)
+                            choices = [choice.strip() for choice in choices]
+                            return (argtype, argname, 'intlist', defaultValue, choices)
                     if boolValueError:
                         return (argtype, argname, 'error', strDefaultValue, (strMinValue, strMaxValue, 0, strStepSize))
                 errType, errMsg, sliderValues = self.ValidateAvsSliderInputs(strDefaultValue, strMinValue, strMaxValue, strStepSize)
@@ -16082,29 +16101,46 @@ class MainFrame(wxp.Frame):
         separator.controls += [labelTxtCtrl, colorSizer]
         #~ separator.controls += [labelTxtCtrl]
 
-    def addAvsStringChoice(self, script, argname, value, choices, defaultValue, row, separator, filterName, argIndex):
+    def addAvsChoice(self, script, argname, value, choices, defaultValue, guitype, row, separator, filterName, argIndex):
         parent = script.sliderWindow
         sizer = script.sliderSizerNew
         # Create window elements
-        choices2 = [s.strip('"') for s in choices]
-        try:
-            #~ index = choices.index(defaultValue)
-            index = [s.lower() for s in choices2].index(defaultValue.strip('"').lower())
-            choices2[index] = choices2[index] + ' *'
-        except ValueError:
-            pass
-        #~ labelTxtCtrl = wx.StaticText(parent, wx.ID_ANY, argname)
         labelTxtCtrl = self.MakeArgNameStaticText(parent, argname, filterName, script, argIndex)
-        choiceBox = wx.Choice(parent, wx.ID_ANY, choices=choices2)
-        try:
-            index = [s.strip('"').lower() for s in choices].index(value.strip('"').lower())
-            choiceBox.SetSelection(index)
-        except ValueError:
-            pass
-        def OnChoice(event):
-            newVal = '"%s"' % choices[choiceBox.GetCurrentSelection()].strip('"')
-            self.SetNewAvsValue(choiceBox, newVal)
-            event.Skip()
+        if guitype == 'stringlist':
+            choices2 = [s.strip('"') for s in choices]
+            try:
+                #~ index = choices.index(defaultValue)
+                index = [s.lower() for s in choices2].index(defaultValue.strip('"').lower())
+                choices2[index] = choices2[index] + ' *'
+            except ValueError:
+                pass
+            choiceBox = wx.Choice(parent, wx.ID_ANY, choices=choices2)
+            try:
+                index = [s.strip('"').lower() for s in choices].index(value.strip('"').lower())
+                choiceBox.SetSelection(index)
+            except ValueError:
+                pass
+            def OnChoice(event):
+                newVal = '"%s"' % choices[choiceBox.GetCurrentSelection()].strip('"')
+                self.SetNewAvsValue(choiceBox, newVal)
+                event.Skip()
+        else:
+            try:
+                #~ index = choices.index(defaultValue)
+                index = choices.index(defaultValue)
+                choices2 = [str(i) for i in choices]
+                choices2[index] = choices2[index] + ' *'
+            except ValueError:
+                pass
+            choiceBox = wx.Choice(parent, wx.ID_ANY, choices=choices)
+            try:
+                choiceBox.SetSelection(choices.index(value))
+            except ValueError:
+                pass
+            def OnChoice(event):
+                newVal = choices[choiceBox.GetCurrentSelection()]
+                self.SetNewAvsValue(choiceBox, newVal)
+                event.Skip()
         choiceBox.filterName = filterName
         choiceBox.argName = argname
         choiceBox.script = script
