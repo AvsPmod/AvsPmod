@@ -967,7 +967,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                 self.AutocompleteFilename()
             wx.CallAfter(autocomplete_again)
     
-    def AutocompleteParameter(self):
+    def AutocompleteParameterName(self):
         """Autocomplete parameter name in a function call"""
         pos = self.GetCurrentPos()
         openpos = self.GetOpenParenthesesPos(pos - 1)
@@ -977,32 +977,76 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
         if openpos == wordstartpos:
             wordstartpos = self.WordStartPosition(self.WordStartPosition(openpos, 0), 1)
         if wordstartpos != -1:
-            matched_args = []
+            matched_args = {}
             arg_start_pos = self.WordStartPosition(pos, 1)
             chrs = self.GetTextRange(arg_start_pos, pos).lower()
             function_name = self.GetTextRange(wordstartpos, openpos).strip()
             args_script = [arg[0].lower() for arg in self.GetFilterScriptArgInfo(openpos) or []]
-            for arg_name in (arg[2].strip('"') for arg in self.GetFilterCalltipArgInfo(function_name) or []
+            for arg_type, arg_name, arg_info in ((arg[1], arg[2].strip('"'), arg[5]) for arg in 
+                             self.GetFilterCalltipArgInfo(function_name) or []
                              if arg[2].startswith('"') and arg[2].endswith('"')):
                 arg_name_lower = arg_name.lower()
                 if arg_name_lower.startswith(chrs) and arg_name_lower not in args_script:
-                    matched_args.append(arg_name)
+                    matched_args[arg_name] = arg_type, arg_info
             if matched_args:
                 if len(matched_args) == 1:
+                    arg_name, (arg_type, arg_info) = matched_args.items()[0]
                     if unichr(self.GetCharAt(pos)) == '=':
-                        new_text = matched_args[0]
+                        new_text = arg_name
                     else:
-                        new_text = matched_args[0] + '='
+                        new_text = arg_name + '='
                     self.SetTargetStart(arg_start_pos)
                     self.SetTargetEnd(self.WordEndPosition(pos, 1))
                     self.GotoPos(arg_start_pos + self.ReplaceTarget(new_text))
+                    self.AutocompleteParameterValue(arg_type, arg_info)
                 else:
-                    matched_args.sort(key=lambda s: s.upper())
-                    self.autocomplete_case = 'parameter'
+                    args = matched_args.keys()
+                    args.sort(key=lambda s: s.upper())
+                    self.autocomplete_case = 'parameter name'
+                    self.autocomplete_params = matched_args
                     self.AutoCompStops(self.AutoCompStops_chars)
-                    self.AutoCompShow(len(chrs), '\n'.join(matched_args))
+                    self.AutoCompShow(len(chrs), '\n'.join(args))
                     if self.CallTipActive():
                         self.CallTipCancelCustom()
+    
+    def AutocompleteParameterValue(self, arg_type=None, arg_info=None):
+        """Autocomplete parameter name in a function call"""
+        if arg_type is None or arg_info is None:
+            pos = self.GetCurrentPos()
+            openpos = self.GetOpenParenthesesPos(pos - 1)
+            if openpos is None:
+                return
+            wordstartpos = self.WordStartPosition(openpos, 1)
+            if openpos == wordstartpos:
+                wordstartpos = self.WordStartPosition(self.WordStartPosition(openpos, 0), 1)
+            if wordstartpos != -1:
+                matched_args = self.GetFilterMatchedArgs(wordstartpos)[self.cursorFilterScriptArgIndex][1]
+                arg_info = self.GetFilterCalltipArgInfo(calltip=matched_args)[0]
+                arg_type, arg_info = arg_info[1], arg_info[-1]
+        if arg_type is not None and arg_info is not None:
+            value_list = self.GetParameterValues(arg_type, arg_info)
+            if value_list:
+                value_list.sort(key=lambda s: s.upper())
+                self.autocomplete_case = 'parameter value'
+                self.AutoCompStops('')
+                self.AutoCompShow(0, '\n'.join(value_list))
+                if self.CallTipActive():
+                    self.CallTipCancelCustom()
+    
+    @staticmethod
+    def GetParameterValues(arg_type, arg_info):
+        if arg_type == 'bool':
+            return ['true', 'false']
+        elif arg_type in ('int', 'string'):
+            if arg_type == 'string' and arg_info.startswith('"'):
+                arg_info = arg_info[arg_info[1:].index('"'):]
+            split_info = arg_info.split(' ', 1)
+            if len(split_info) == 1:
+                return
+            value_list = [value.strip() for value in 
+                          split_info[1].strip(' ()').split('/')]
+            if len(value_list) > 1:
+                return value_list
     
     def InsertSnippet(self):
         pos = self.GetCurrentPos()
@@ -1969,15 +2013,32 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
     def OnAutocompleteSelection(self, event):
         if self.autocomplete_case == 'function':
             event.Skip() # processing on EVT_KEY_DOWN, because we need event.GetKeyCode()
-        elif self.autocomplete_case == 'parameter':
+        elif self.autocomplete_case == 'parameter name':
+            self.BeginUndoAction()
             event.Skip()
-            def add_equal_sign():
+            def post_autocomplete(arg_name):
+                # add a plus sign
                 pos = self.GetCurrentPos()
                 if unichr(self.GetCharAt(pos)) == '=':
                     self.GotoPos(pos + 1)
                 else:
                     self.AddText('=')
-            wx.CallAfter(add_equal_sign)
+                self.EndUndoAction()
+                # autocomplete parameter value
+                matched_args = self.autocomplete_params
+                self.AutocompleteParameterValue(*matched_args[arg_name])
+            wx.CallAfter(post_autocomplete, event.GetText())
+        elif self.autocomplete_case == 'parameter value':
+            # AutoCompSetDropRestOfWord doesn't include quotes
+            pos = self.GetCurrentPos()
+            self.SetTargetStart(pos)
+            while unichr(self.GetCharAt(pos)) == ' ' or self.IsString(pos):
+                pos += 1
+            self.SetTargetEnd(pos)
+            self.BeginUndoAction()
+            self.ReplaceTarget('')
+            event.Skip()
+            wx.CallAfter(self.EndUndoAction)
         elif self.autocomplete_case == 'filename':
             self.AutoCompCancel()
             pos0, start, end0, prefix, dir = self.autocomplete_params
@@ -8515,7 +8576,7 @@ class MainFrame(wxp.Frame):
     
     def OnMenuEditAutocompleteParameterFilename(self, event):
         script = self.currentScript
-        pos = script.GetCurrentPos()
+        pos = script.GetCurrentPos() - 1
         if script.IsString(pos):
             if script.AutoCompActive():
                 script.CmdKeyExecute(wx.stc.STC_CMD_CANCEL)
@@ -8525,9 +8586,17 @@ class MainFrame(wxp.Frame):
         else:
             if script.AutoCompActive():
                 script.CmdKeyExecute(wx.stc.STC_CMD_CANCEL)
-                if script.autocomplete_case == 'parameter':
+                if script.autocomplete_case in ('parameter name', 
+                                                'parameter value'):
                     return
-            script.AutocompleteParameter()
+            # prefer name over value
+            while pos >= 0:
+                chr = unichr(script.GetCharAt(pos))
+                if chr == '=':
+                    return script.AutocompleteParameterValue()
+                elif not (chr.isspace() or chr == '\\'):
+                    return script.AutocompleteParameterName()
+                pos -= 1
     
     def OnMenuEditShowCalltip(self, event):
         if self.currentScript.CallTipActive():
