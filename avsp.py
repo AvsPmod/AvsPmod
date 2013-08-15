@@ -184,6 +184,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
             self.STC_AVS_DATATYPE: ('datatype', ''),
         }
         self.avsfilterdict = AvsFilterDict(self.app.avsfilterdict)
+        self.avsazdict = collections.defaultdict(list)
         self.styling_refresh_needed = False
         self.SetUserOptions()
         self.SetEOLMode(stc.STC_EOL_LF)
