@@ -136,7 +136,12 @@ class AvsClipBase:
                     return
             finally:
                 os.chdir(curdir)
-            if not self.env.GetVar("last").IsClip():#.AsClip(self.env)
+            try:
+                if not self.env.GetVar("last").IsClip():#.AsClip(self.env)
+                    self.env.SetVar("last",avisynth.AVS_Value(self.clip))
+            except avisynth.AvisynthError as err:
+                if str(err) != 'NotFound':
+                    raise
                 self.env.SetVar("last",avisynth.AVS_Value(self.clip))
             self.env.SetVar("avsp_raw_clip", avisynth.AVS_Value(self.clip))
         
@@ -152,7 +157,12 @@ class AvsClipBase:
                 self.clip = avsfile.AsClip(self.env)
             except avisynth.AvisynthError, err:
                 return
-            if not self.env.GetVar("last").IsClip():#.AsClip(self.env)
+            try:
+                if not self.env.GetVar("last").IsClip():#.AsClip(self.env)
+                    self.env.SetVar("last",avisynth.AVS_Value(self.clip))
+            except avisynth.AvisynthError as err:
+                if str(err) != 'NotFound':
+                    raise
                 self.env.SetVar("last",avisynth.AVS_Value(self.clip))
             self.vi=self.clip.GetVideoInfo()
             self.HasVideo = self.vi.HasVideo()
