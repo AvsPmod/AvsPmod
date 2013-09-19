@@ -112,7 +112,10 @@ class AvsClipBase:
                 f = script
             # vpy hack, remove when VapourSynth is supported
             if os.name == 'nt' and filename.endswith('.vpy'):
-                f = ur'AviSource("{0}")'.format(filename)
+                if self.env.FunctionExists('VSImport'):
+                    f = ur'VSImport("{0}", stacked=true)'.format(filename)
+                else:
+                    f = ur'AviSource("{0}")'.format(filename)
             arg=avisynth.AVS_Value(f)           #assign to AVSValue
             scriptdirname, scriptbasename = os.path.split(filename)
             curdir = os.getcwdu()
