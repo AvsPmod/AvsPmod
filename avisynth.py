@@ -713,7 +713,7 @@ class AVS_Value(ctypes.Structure,object):
         
 class U(ctypes.Union):
        _fields_ = [("c",ctypes.c_void_p),
-                   ("b",ctypes.c_long),
+                   ("b",ctypes.c_bool),
                    ("i",ctypes.c_int),
                    ("f",ctypes.c_float),
                    ("s",ctypes.c_char_p),
