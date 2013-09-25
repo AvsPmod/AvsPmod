@@ -6063,7 +6063,15 @@ class MainFrame(wxp.Frame):
         self.installed_avsi_filternames = set()
         parse_avsi = self.options['parseavsi']
         pluginsdir = self.ExpandVars(self.options['pluginsdir'])
-        filenames = glob.iglob(os.path.join(pluginsdir, '*.avsi'))
+        
+        def escape_fnmatch(path):
+            """Taken from http://bugs.python.org/issue8402"""
+            pattern_chrs = re.compile('([*?[])')
+            drive, path = os.path.splitdrive(path)
+            path = pattern_chrs.sub(r'[\1]', path)
+            return drive + path
+        
+        filenames = glob.iglob(os.path.join(escape_fnmatch(pluginsdir), '*.avsi'))
         filterInfo = []
         for filename in filenames:
             try:
