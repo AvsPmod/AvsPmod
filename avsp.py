@@ -6378,7 +6378,10 @@ class MainFrame(wxp.Frame):
                                 env.Invoke('VersionNumber'),
                                 env.Invoke('Version').AsClip(env).GetVersion())
         intfunc = avisynth.avs_get_var(env,"$InternalFunctions$")
-        funclist = [(name, 0) for name in intfunc.d.s.split()]
+        if intfunc.d.s is not None:
+            funclist = [(name, 0) for name in intfunc.d.s.split()]
+        else:
+            funclist = []
         intfunc.Release()
         extfunc = avisynth.avs_get_var(env,"$PluginFunctions$")
         if extfunc.d.s is not None:
