@@ -5870,6 +5870,7 @@ class MainFrame(wxp.Frame):
             'closeneversaved': False,
             'promptexitsave': True,
             'savemarkedavs': True,
+            'eol': 'auto',
             'loadstartupbookmarks': True,
             'nrecentfiles': 5,
             'allowresize': True,
@@ -6659,6 +6660,7 @@ class MainFrame(wxp.Frame):
                 ((_('Preview scripts with unsaved changes'), wxp.OPT_ELEM_CHECK, 'previewunsavedchanges', _('Create a temporary preview script with unsaved changes when previewing the video'), dict() ), ),
                 ((_("Don't prompt to save scripts without file"), wxp.OPT_ELEM_CHECK, 'closeneversaved', _("When closing a tab, don't prompt to save the script if it doesn't already exist on the filesystem"), dict() ), ),
                 ((_('Prompt to save scripts on program exit'), wxp.OPT_ELEM_CHECK, 'promptexitsave', _('Prompt to save each script with unsaved changes when exiting the program'), dict() ), ),
+                ((_('Line endings'), wxp.OPT_ELEM_LIST, 'eol', _('Auto: CRLF on Windows and LF on *nix for new scripts, existing scripts keep their current line endings'), dict(choices=[(_('Auto'), 'auto'), (_('Force CRLF'), 'force crlf'), (_('Force LF'), 'force lf')]) ), ),
                 ((_('Save *.avs scripts with AvsPmod markings'), wxp.OPT_ELEM_CHECK, 'savemarkedavs', _('Save AvsPmod-specific markings (user sliders, toggle tags, etc) as a commented section in the *.avs file'), dict() ), ),
                 ((_('Start dialogs on the last used directory'), wxp.OPT_ELEM_CHECK, 'userecentdir', _("If unchecked, the script's directory is used"), dict() ), ),
                 ((_('Start save image dialogs on the last used directory'), wxp.OPT_ELEM_CHECK, 'useimagesavedir', _("If unchecked, the script's directory is used"), dict() ), ),
@@ -7764,6 +7766,7 @@ class MainFrame(wxp.Frame):
         scriptWindow.filename = ""
         scriptWindow.workdir = ""
         scriptWindow.encoding = 'latin1'
+        scriptWindow.eol = None
         scriptWindow.AVI = None
         scriptWindow.display_clip_refresh_needed = False
         scriptWindow.previewtxt = []
@@ -8162,7 +8165,7 @@ class MainFrame(wxp.Frame):
     def OnMenuFileReloadScript(self, event):
         script = self.currentScript
         if os.path.isfile(script.filename):
-            txt, script.encoding = self.GetMarkedScriptFromFile(script.filename)
+            txt, script.encoding, script.eol = self.GetMarkedScriptFromFile(script.filename)
             if txt != script.GetText():
                 script.ParseFunctions(txt)
                 pos = script.GetCurrentPos()
@@ -11626,6 +11629,7 @@ class MainFrame(wxp.Frame):
             if copytab:
                 scriptWindow.workdir = self.currentScript.workdir
                 scriptWindow.encoding = self.currentScript.encoding
+                scriptWindow.eol = self.currentScript.eol
                 scriptWindow.group = self.currentScript.group # must be before scriptWindow.SetText (or just call UpdateScriptTabname here)
                 scriptWindow.group_frame = self.currentScript.group_frame
                 scriptWindow.lastFramenum = self.currentScript.lastFramenum
@@ -11655,7 +11659,7 @@ class MainFrame(wxp.Frame):
         self.Thaw()
     
     @AsyncCallWrapper
-    def OpenFile(self, filename='', default='', f_encoding=None, workdir=None, 
+    def OpenFile(self, filename='', default='', f_encoding=None, eol=-1, workdir=None, 
                  scripttext=None, setSavePoint=True, splits=None, framenum=None, 
                  last_length=None, group=-1, group_frame=None):
         r'''OpenFile(filename='', default='')
@@ -11718,7 +11722,7 @@ class MainFrame(wxp.Frame):
                     self.ShowVideoFrame()
             else: # Treat the file as an avisynth script
                 if scripttext is None:
-                    scripttext, f_encoding = self.GetMarkedScriptFromFile(filename)
+                    scripttext, f_encoding, eol = self.GetMarkedScriptFromFile(filename)
                 # If script already exists in a tab, select it
                 for index in xrange(self.scriptNotebook.GetPageCount()):
                     script = self.scriptNotebook.GetPage(index)
@@ -11758,6 +11762,8 @@ class MainFrame(wxp.Frame):
                     self.UpdateRecentFilesList(filename)
                 if f_encoding is not None:
                     script.encoding = f_encoding
+                if eol != -1:
+                    script.eol = eol
                 if workdir is not None:
                     script.workdir = workdir
                 if framenum is not None:
@@ -11768,7 +11774,7 @@ class MainFrame(wxp.Frame):
                     script.lastSplitVideoPos = splits[0]
                     script.lastSplitSliderPos = splits[1]
                     script.sliderWindowShown = splits[2]
-                if group is not -1 and script.group != group:
+                if group != -1 and script.group != group:
                     script.group = group
                     self.UpdateScriptTabname(index=index)
                 if group_frame is not None:
@@ -11783,7 +11789,7 @@ class MainFrame(wxp.Frame):
                 return index
     
     def GetMarkedScriptFromFile(self, filename, returnFull=False):
-        txt, f_encoding = self.GetTextFromFile(filename)
+        txt, f_encoding, eol = self.GetTextFromFile(filename)
         lines = txt.rstrip().split('\n')
         lines.reverse()
         header = '### AvsP marked script ###'
@@ -11796,19 +11802,19 @@ class MainFrame(wxp.Frame):
                     newlines.append(line[2:])
                 else:
                     if returnFull:
-                        return (txt, txt), f_encoding
+                        return (txt, txt), f_encoding, eol
                     else:
-                        return txt, f_encoding
+                        return txt, f_encoding, eol
             newlines.reverse()
             if returnFull:
-                return ('\n'.join(newlines), txt), f_encoding
+                return ('\n'.join(newlines), txt), f_encoding, eol
             else:
-                return '\n'.join(newlines), f_encoding
+                return '\n'.join(newlines), f_encoding, eol
         else:
             if returnFull:
-                return (txt, txt), f_encoding
+                return (txt, txt), f_encoding, eol
             else:
-                return txt, f_encoding
+                return txt, f_encoding, eol
     
     def GetTextFromFile(self, filename):
         '''Return text and encoding from a file'''
@@ -11831,8 +11837,14 @@ class MainFrame(wxp.Frame):
         except UnicodeDecodeError:
             f_encoding = encoding
             txt = raw_txt.decode(f_encoding)
-        txt = txt.replace('\r\n', '\n')
-        return txt, f_encoding
+        if '\r' in txt:
+            eol = 'crlf'
+            txt = txt.replace('\r\n', '\n') # to simplify text handling on macros and avoid mixing line endings
+        elif '\n' in txt:
+            eol = 'lf'
+        else:
+            eol = None
+        return txt, f_encoding, eol
     
     def UpdateRecentFilesList(self, filename=None):
         # Update the persistent internal list
@@ -12025,7 +12037,7 @@ class MainFrame(wxp.Frame):
             
             # Encode text and save it to the specified file
             txt = self.GetEncodedText(txt, bom=True)
-            with open(filename, 'w') as f:
+            with open(filename, 'wb') as f:
                 f.write(txt)
             
             # Misc stuff
@@ -12074,40 +12086,47 @@ class MainFrame(wxp.Frame):
         If bom == True, insert the BOM at the beginning (except for UTF-8 
         without BOM on the original file)
         '''
+        script = self.currentScript
+        
+        # convert line endings to CRLF if necessary
+        if self.options['eol'] == 'force crlf' or self.options['eol'] == 'auto' and (
+                script.eol == 'crlf' or script.eol is None and os.name == 'nt'):
+            txt = txt.replace('\n', '\r\n')
+        
         # try current encoding, else filesystem's
         try:
-            encoded_txt = txt.encode(self.currentScript.encoding)
+            encoded_txt = txt.encode(script.encoding)
             encoded = True
         except UnicodeEncodeError:
             sys_encoding = sys.getfilesystemencoding()
-            if sys_encoding != self.currentScript.encoding:
+            if sys_encoding != script.encoding:
                 try:
-                    self.currentScript.encoding = sys_encoding
-                    encoded_txt = txt.encode(self.currentScript.encoding)
+                    script.encoding = sys_encoding
+                    encoded_txt = txt.encode(script.encoding)
                     encoded = True
                 except UnicodeEncodeError:
                     encoded = False
         # mbcs just replaces invalid characters
-        if encoded and self.currentScript.encoding.lower() == 'mbcs':
-            txt2 = encoded_txt.decode(self.currentScript.encoding)
+        if encoded and script.encoding.lower() == 'mbcs':
+            txt2 = encoded_txt.decode(script.encoding)
             if txt != txt2:
                 encoded = False
         # fallback to utf-8
         if not encoded:       
-            self.currentScript.encoding = 'utf8'
-            encoded_txt = txt.encode(self.currentScript.encoding)
+            script.encoding = 'utf8'
+            encoded_txt = txt.encode(script.encoding)
         
         # Add BOM
         if bom:
-            if self.currentScript.encoding == 'utf-8-sig':
+            if script.encoding == 'utf-8-sig':
                 encoded_txt = codecs.BOM_UTF8 + encoded_txt
-            elif self.currentScript.encoding == 'utf-16-le':
+            elif script.encoding == 'utf-16-le':
                 encoded_txt = codecs.BOM_UTF16_LE + encoded_txt
-            elif self.currentScript.encoding == 'utf-16-be':
+            elif script.encoding == 'utf-16-be':
                 encoded_txt = codecs.BOM_UTF16_BE + encoded_txt
-            elif self.currentScript.encoding == 'utf-32-le':
+            elif script.encoding == 'utf-32-le':
                 encoded_txt = codecs.BOM_UTF32_LE + encoded_txt
-            elif self.currentScript.encoding == 'utf-32-be':
+            elif script.encoding == 'utf-32-be':
                 encoded_txt = codecs.BOM_UTF32_BE + encoded_txt
         
         return encoded_txt
@@ -12385,7 +12404,7 @@ class MainFrame(wxp.Frame):
                     if item['hash'] != hash:
                         reload = True
         index = self.OpenFile(filename=scriptname, f_encoding=item['f_encoding'], 
-                              workdir=item['workdir'], scripttext=item['text'], 
+                              eol=item.get('eol'), workdir=item['workdir'], scripttext=item['text'], 
                               setSavePoint=setSavePoint, splits=item['splits'], 
                               framenum=item['current_frame'], last_length=item.get('last_length'), 
                               group=item.get('group', -1), group_frame=item.get('group_frame'))
@@ -12472,7 +12491,7 @@ class MainFrame(wxp.Frame):
         splits = (script.lastSplitVideoPos, script.lastSplitSliderPos, script.sliderWindowShown)
         return dict(name=scriptname, selected=boolSelected, text=script.GetText(), 
                     hash=hash, splits=splits, current_frame=script.lastFramenum, 
-                    last_length=script.lastLength, f_encoding=script.encoding, 
+                    last_length=script.lastLength, f_encoding=script.encoding, eol=script.eol,
                     workdir=script.workdir, group=script.group, group_frame=script.group_frame)
     
     def SaveImage(self, filename='', frame=None, silent=False, index=None, avs_clip=None, default='', quality=None, depth=None):
@@ -14731,7 +14750,7 @@ class MainFrame(wxp.Frame):
                 previewname = os.path.join(dirname, 'preview%i.avs' % i)
                 i = i+1
             try:
-                with open(previewname, 'w') as f:
+                with open(previewname, 'wb') as f:
                     f.write(txt)
             except IOError, err: # errno 13 -> permission denied
                 if err.errno != 13 or altdir_tried:
