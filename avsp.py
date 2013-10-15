@@ -6378,15 +6378,17 @@ class MainFrame(wxp.Frame):
         self.avisynthVersion = (env.Invoke('VersionString'),
                                 env.Invoke('VersionNumber'),
                                 env.Invoke('Version').AsClip(env).GetVersion())
+        if env.FunctionExists('AutoloadPlugins'): # AviSynth+
+            env.Invoke('AutoloadPlugins')
         intfunc = avisynth.avs_get_var(env,"$InternalFunctions$")
-        if intfunc.d.s is not None:
+        if intfunc.d.s:
             funclist = [(name, 0) for name in intfunc.d.s.split()]
         else:
             funclist = []
         intfunc.Release()
         extfunc = avisynth.avs_get_var(env,"$PluginFunctions$")
-        if extfunc.d.s is not None:
-            s = extfunc.d.s + ' '
+        if extfunc.d.s:
+            s = extfunc.d.s.lstrip() + ' '
             extfunc.Release()
             extfuncList = []
             baddllnameList = []
