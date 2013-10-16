@@ -5825,7 +5825,7 @@ class MainFrame(wxp.Frame):
             'fdb_plugins': True,
             'fdb_userscriptfunctions': True,
             'autoloadedplugins': True,
-            'parseavsi': True,
+            'autoloadedavsi': True,
             # VIDEO OPTIONS
             'dragupdate': True,
             'focusonrefresh': True,
@@ -5926,6 +5926,8 @@ class MainFrame(wxp.Frame):
         if oldOptions and 'autocompleteexclusions' in oldOptions:
             for name in oldOptions['autocompleteexclusions']:
                 self.options['filterremoved'].add(name.lower())
+        if oldOptions and 'parseavsi' in oldOptions:
+            self.options['autoloadedavsi'] = oldOptions['parseavsi']
     
     def SetPaths(self):
         '''Set configurable paths'''
@@ -6061,31 +6063,32 @@ class MainFrame(wxp.Frame):
         self.plugin_shortnames = collections.defaultdict(list)
         self.optionsFilters = self.getFilterInfoFromAvisynth()
         
-        self.installed_avsi_filternames = set()
-        parse_avsi = self.options['parseavsi']
-        pluginsdir = self.ExpandVars(self.options['pluginsdir'])
-        
-        def escape_fnmatch(path):
-            """Taken from http://bugs.python.org/issue8402"""
-            pattern_chrs = re.compile('([*?[])')
-            drive, path = os.path.splitdrive(path)
-            path = pattern_chrs.sub(r'[\1]', path)
-            return drive + path
-        
-        filenames = glob.iglob(os.path.join(escape_fnmatch(pluginsdir), '*.avsi'))
-        filterInfo = []
-        for filename in filenames:
-            try:
-                info = self.ParseAvisynthScript(filename, quiet=True)
-            except:
-                info = None
-            if info:
-                filterInfo += info
-        for filename, filtername, filterargs, ftype in filterInfo:
-            filtername_lower = filtername.lower()
-            if parse_avsi:
-                self.optionsFilters[filtername_lower] = (filtername, filterargs, ftype)
-            self.installed_avsi_filternames.add(filtername_lower)
+        if not self.avisynth_p: # parse avsi files for user script functions
+            
+            parse_avsi = self.options['autoloadedavsi']
+            pluginsdir = self.ExpandVars(self.options['pluginsdir'])
+            
+            def escape_fnmatch(path):
+                """Taken from http://bugs.python.org/issue8402"""
+                pattern_chrs = re.compile('([*?[])')
+                drive, path = os.path.splitdrive(path)
+                path = pattern_chrs.sub(r'[\1]', path)
+                return drive + path
+            
+            filenames = glob.iglob(os.path.join(escape_fnmatch(pluginsdir), '*.avsi'))
+            filterInfo = []
+            for filename in filenames:
+                try:
+                    info = self.ParseAvisynthScript(filename, quiet=True)
+                except:
+                    info = None
+                if info:
+                    filterInfo += info
+            for filename, filtername, filterargs, ftype in filterInfo:
+                filtername_lower = filtername.lower()
+                if parse_avsi:
+                    self.optionsFilters[filtername_lower] = (filtername, filterargs, ftype)
+                self.installed_avsi_filternames.add(filtername_lower)
         
         if __debug__:
             self.ExportFilterData(self.optionsFilters, os.path.join(self.programdir, 'tempfilterout.txt'), True)
@@ -6359,6 +6362,7 @@ class MainFrame(wxp.Frame):
         self.avisynthVersion = (None,) * 3
         self.installed_plugins = set()
         self.installed_plugins_filternames = set()
+        self.installed_avsi_filternames = set()
         self.dllnameunderscored = set()
         try:
             env = avisynth.avs_create_script_environment(3)
@@ -6378,7 +6382,8 @@ class MainFrame(wxp.Frame):
         self.avisynthVersion = (env.Invoke('VersionString'),
                                 env.Invoke('VersionNumber'),
                                 env.Invoke('Version').AsClip(env).GetVersion())
-        if env.FunctionExists('AutoloadPlugins'): # AviSynth+
+        self.avisynth_p = env.FunctionExists('AutoloadPlugins') # AviSynth+
+        if self.avisynth_p:
             env.Invoke('AutoloadPlugins')
         intfunc = avisynth.avs_get_var(env,"$InternalFunctions$")
         if intfunc.d.s:
@@ -6388,24 +6393,31 @@ class MainFrame(wxp.Frame):
         intfunc.Release()
         extfunc = avisynth.avs_get_var(env,"$PluginFunctions$")
         if extfunc.d.s:
-            s = extfunc.d.s.lstrip() + ' '
+            functions = extfunc.d.s.split()
             extfunc.Release()
             extfuncList = []
+            userfuncList = []
             baddllnameList = []
-            start = 0
-            end = len(s)            
-            while start < end:
-                pos = s.find(' ', start)
-                if pos == -1 or pos == end-1:
-                    print>>sys.stderr, 'Error parsing plugin string at position %d:\n%s' % (start, s)
-                    break
-                shortname = '_' + s[start:pos+1]
-                start = pos + 1
-                pos = s.find(shortname, start)
+            short_name = None
+            user_functions = False
+            for function_name in functions:
+                if user_functions:
+                    self.installed_avsi_filternames.add(function_name.lower())
+                    if self.options['autoloadedavsi']:
+                        userfuncList.append((function_name, 3))
+                    continue
+                if short_name is None:
+                    short_name = function_name
+                    continue
+                long_name = function_name
+                pos = long_name.find('_' + short_name)
                 if pos == -1:
-                    print>>sys.stderr, 'Error parsing plugin string at position %d:\n%s' % (start, s)
-                    break
-                dllname = s[start:pos]
+                    if self.avisynth_p: # assume that user script functions start here
+                        user_functions = True
+                    else:
+                        print>>sys.stderr, 'Error parsing plugin string at function "%s"\n' % long_name
+                        break
+                dllname = long_name[:pos]
                 self.installed_plugins.add(dllname)
                 if dllname in baddllnameList:
                     pass
@@ -6416,17 +6428,17 @@ class MainFrame(wxp.Frame):
                         if not char.isalnum() and char != '_':
                             baddllnameList.append(dllname)
                             break
-                pos += len(shortname)
-                long_name = s[start:pos-1]
                 if self.options['autoloadedplugins']:
                     extfuncList.append((long_name, 2))
-                    self.plugin_shortnames[shortname[1:-1].lower()].append(long_name.lower())
+                    self.plugin_shortnames[short_name.lower()].append(long_name.lower())
                 self.installed_plugins_filternames.add(long_name.lower())
                 if dllname.count('_'):
                     self.dllnameunderscored.add(dllname.lower())
-                start = pos
+                short_name = None
             if self.options['autoloadedplugins']:
                 funclist += extfuncList
+            if self.options['autoloadedavsi']:
+                funclist += userfuncList
             if baddllnameList and self.options['dllnamewarning']:
                 self.IdleCall.append((self.ShowWarningOnBadNaming, (baddllnameList, ), {}))
         typeDict = {
@@ -6612,7 +6624,7 @@ class MainFrame(wxp.Frame):
             (_('Autocomplete'),
                 ((_('AviSynth user function database'), wxp.OPT_ELEM_SEP, '', _('Select what functions beside internal and user-defined will be included in the database'), dict(adjust_width=True) ), ),
                 ((_('Autoloaded plugin functions')+' *', wxp.OPT_ELEM_CHECK, 'autoloadedplugins', _('Include the functions on autoloaded plugins in the database'), dict() ),
-                 (_('Autoloaded script functions')+' *', wxp.OPT_ELEM_CHECK, 'parseavsi', _('Include the functions on autoloaded avsi files in the database'), dict() ), ),
+                 (_('Autoloaded script functions')+' *', wxp.OPT_ELEM_CHECK, 'autoloadedavsi', _('Include the functions on autoloaded avsi files in the database'), dict() ), ),
                 ((_('Plugin functions from database')+' *', wxp.OPT_ELEM_CHECK, 'fdb_plugins', _("Include plugin functions from the program's database"), dict() ),
                  (_('Script functions from database')+' *', wxp.OPT_ELEM_CHECK, 'fdb_userscriptfunctions', _("Include user script functions from the program's database"), dict() ), ),
                 ((_('Autocomplete'), wxp.OPT_ELEM_SEP, '', '', dict(adjust_width=True) ), ),
