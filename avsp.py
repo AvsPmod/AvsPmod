@@ -6364,6 +6364,8 @@ class MainFrame(wxp.Frame):
         self.installed_plugins_filternames = set()
         self.installed_avsi_filternames = set()
         self.dllnameunderscored = set()
+        
+        # get version info
         try:
             env = avisynth.avs_create_script_environment(3)
         except OSError:
@@ -6382,41 +6384,33 @@ class MainFrame(wxp.Frame):
         self.avisynthVersion = (env.Invoke('VersionString'),
                                 env.Invoke('VersionNumber'),
                                 env.Invoke('Version').AsClip(env).GetVersion())
+        
+        # retrieve existing filters (internal filters, autoloaded plugins and avsi files)
         self.avisynth_p = env.FunctionExists('AutoloadPlugins') # AviSynth+
         if self.avisynth_p:
             env.Invoke('AutoloadPlugins')
+        # internal filters
         intfunc = avisynth.avs_get_var(env,"$InternalFunctions$")
         if intfunc.d.s:
             funclist = [(name, 0) for name in intfunc.d.s.split()]
         else:
             funclist = []
         intfunc.Release()
-        extfunc = avisynth.avs_get_var(env,"$PluginFunctions$")
-        if extfunc.d.s:
-            functions = extfunc.d.s.split()
-            extfunc.Release()
-            extfuncList = []
-            userfuncList = []
+        # autoladed plugins
+        pluginfunc = avisynth.avs_get_var(env,"$PluginFunctions$")
+        if pluginfunc.d.s:
+            pluginfuncList = []
             baddllnameList = []
             short_name = None
-            user_functions = False
-            for function_name in functions:
-                if user_functions:
-                    self.installed_avsi_filternames.add(function_name.lower())
-                    if self.options['autoloadedavsi']:
-                        userfuncList.append((function_name, 3))
-                    continue
+            for name in pluginfunc.d.s.split():
                 if short_name is None:
-                    short_name = function_name
+                    short_name = name
                     continue
-                long_name = function_name
+                long_name = name
                 pos = long_name.find('_' + short_name)
                 if pos == -1:
-                    if self.avisynth_p: # assume that user script functions start here
-                        user_functions = True
-                    else:
-                        print>>sys.stderr, 'Error parsing plugin string at function "%s"\n' % long_name
-                        break
+                    print>>sys.stderr, 'Error parsing plugin string at function "%s"\n' % long_name
+                    break
                 dllname = long_name[:pos]
                 self.installed_plugins.add(dllname)
                 if dllname in baddllnameList:
@@ -6429,18 +6423,29 @@ class MainFrame(wxp.Frame):
                             baddllnameList.append(dllname)
                             break
                 if self.options['autoloadedplugins']:
-                    extfuncList.append((long_name, 2))
+                    pluginfuncList.append((long_name, 2))
                     self.plugin_shortnames[short_name.lower()].append(long_name.lower())
                 self.installed_plugins_filternames.add(long_name.lower())
                 if dllname.count('_'):
                     self.dllnameunderscored.add(dllname.lower())
                 short_name = None
             if self.options['autoloadedplugins']:
-                funclist += extfuncList
-            if self.options['autoloadedavsi']:
-                funclist += userfuncList
+                funclist += pluginfuncList
             if baddllnameList and self.options['dllnamewarning']:
                 self.IdleCall.append((self.ShowWarningOnBadNaming, (baddllnameList, ), {}))
+        pluginfunc.Release()
+        # autoloaded avsi files
+        userfunc = avisynth.avs_get_var(env,"$UserFunctions$")
+        if userfunc.d.s:
+            userfuncList = []
+            for name in userfunc.d.s.split(): # no set comprehensions in python 2.6
+                self.installed_avsi_filternames.add(name.lower())
+                userfuncList.append((name, 3))
+            if self.options['autoloadedavsi']:
+                funclist += userfuncList
+        userfunc.Release()
+        
+        # get parameter info for each filter
         typeDict = {
             'c': 'clip',
             'i': 'int',
