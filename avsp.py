@@ -4433,7 +4433,7 @@ class AvsFilterAutoSliderInfo(wx.Dialog):
             else:
                 
                 strDef = argLabel.controls[0].GetValue().strip()
-                is_list = argLabel.controls[1].GetValue().count(',')
+                is_list = argtype == 'int' and argLabel.controls[1].GetValue().count(',')
                 #~ strList.append('%(strBase)s=%(strDefaultValue)s' % locals())
                 if argtype in ('int', 'float') and not is_list:
                     strMin = argLabel.controls[1].GetValue().strip()
