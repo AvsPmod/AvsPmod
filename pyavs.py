@@ -246,7 +246,7 @@ class AvsClipBase:
         nChars = 0
         for errLine in err.split('\n'):
             lineList.append('Subtitle("""%s""",y=%i,font="%s",size=%i,text_color=$FF0000,align=8)' % 
-                (errLine, yLine, fontFace, fontSize))
+                (errLine, yLine, fontFace.encode(sys.getfilesystemencoding()), fontSize))
             yLine += fontSize
             nChars = max(nChars, len(errLine))
         eLength = self.Framecount
