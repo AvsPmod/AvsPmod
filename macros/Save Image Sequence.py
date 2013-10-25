@@ -83,10 +83,18 @@ avsp.Options['use_subdirs'] = use_subdirs
 avsp.Options['frame_suffix'] = frame_suffix
 
 # Eval the script. Return if error
+workdir_exp = self.ExpandVars(self.options['workdir'])
+if (self.options['useworkdir'] and self.options['alwaysworkdir']
+    and os.path.isdir(workdir_exp)):
+        workdir = workdir_exp
+else:
+    workdir = self.currentScript.workdir
 # vpy hack, remove when VapourSynth is supported
 if os.name == 'nt' and avsp.GetScriptFilename().endswith('.vpy'):
     avsp.SaveScript()
-AVS = pyavs.AvsClip(avsp.GetText(clean=True), matrix=self.matrix, interlaced=self.interlaced, swapuv=self.swapuv)
+AVS = pyavs.AvsClip(avsp.GetText(clean=True), filename=avsp.GetScriptFilename(), 
+                    workdir=workdir, matrix=self.matrix, interlaced=self.interlaced, 
+                    swapuv=self.swapuv)
 if AVS.IsErrorClip():
     avsp.MsgBox(AVS.error_message, _('Error'))
     return
