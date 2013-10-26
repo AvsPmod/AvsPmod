@@ -11915,15 +11915,25 @@ class MainFrame(wxp.Frame):
                 label = name
             newMenuItem = menu.Insert(pos, wx.ID_ANY, label, _("Open this file"))
             self.Bind(wx.EVT_MENU, self.OnMenuFileRecentFile, newMenuItem)
-        # Delete extra menu items
+        # Renumber and delete extra menu items
         nMenuItems = menu.GetMenuItemCount()
         nNameItems = (nMenuItems - 1 - 2) - pos + 1
         nMax = self.options['nrecentfiles']
         if nNameItems > nMax:
-            pos += nMax
+            item_pos = pos + nMax
             for i in range(nNameItems-nMax):
-                badMenuItem = menu.FindItemByPosition(pos)
+                badMenuItem = menu.FindItemByPosition(item_pos)
                 menu.Delete(badMenuItem.GetId())
+            nNameItems = nMax
+        prefix = '{{&{0}}} '
+        prefix_len = len(prefix) - 5
+        for i in range(nNameItems):
+            menuItem = menu.FindItemByPosition(pos + i)
+            menuLabel = menuItem.GetItemLabelText()
+            if menuLabel != menuItem.GetItemLabel(): # GetAccel
+                menuLabel = menuLabel[prefix_len:]
+            accel = prefix.format((i + 1) % 10) if i < 10 else ''
+            menuItem.SetItemLabel(accel + menuLabel)
     
     def UndoCloseTab(self):
         '''Reopen the last closed tab'''
