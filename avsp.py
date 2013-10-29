@@ -273,6 +273,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
         self.Bind(wx.EVT_KILL_FOCUS, self.OnKillFocus)
         self.Bind(wx.EVT_SET_FOCUS, self.OnSetFocus)
         self.Bind(stc.EVT_STC_MARGINCLICK, self.OnMarginClick)
+        self.Bind(stc.EVT_STC_ZOOM, lambda event: self.fitNumberMarginWidth())
         try:
             self.Bind(wx.EVT_MOUSE_CAPTURE_LOST, lambda event: self.ReleaseMouse())
         except AttributeError:
