@@ -1634,10 +1634,6 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
             posA = self.WordStartPosition(pos, 1)
             posB = self.WordEndPosition(pos, 1)
             word = self.GetTextRange(posA, posB)
-            #~ if word.lower() in self.filterDict:
-                #~ self.ShowFilterDocumentation(word)
-            #~ else:
-                #~ self.ShowFilterDocumentation(self.GetSelectedText())
         return word
     
     def IsString(self, pos):
@@ -8640,7 +8636,7 @@ class MainFrame(wxp.Frame):
 
     def OnMenuEditShowFunctionDefinition(self, event):
         script = self.currentScript
-        name = script.GetFilterNameAtCursor()
+        name = script.GetSelectedText() or script.GetFilterNameAtCursor()
         if name in script.avsfilterdict.own_dict:
             args = script.avsfilterdict[name][0]
         else:
@@ -8649,18 +8645,8 @@ class MainFrame(wxp.Frame):
 
     def OnMenuEditFilterHelp(self, event):
         script = self.currentScript
-        if script.calltipFilter is not None:
-            script.ShowFilterDocumentation()
-        else:
-            pos = script.GetCurrentPos()
-            posA = script.WordStartPosition(pos, 1)
-            posB = script.WordEndPosition(pos, 1)
-            word = script.GetTextRange(posA, posB)
-            #~ if word.lower() in script.keywords:
-            selected = script.GetSelectedText()
-            if word.lower() not in self.avskeywords and selected:
-                word = selected
-            script.ShowFilterDocumentation(word)
+        word = script.GetSelectedText() or script.GetFilterNameAtCursor()
+        script.ShowFilterDocumentation(word)
     
     def OnMenuEditParseFunctions(self, event):
         self.currentScript.ParseFunctions(refresh_highlighting=True)
