@@ -187,6 +187,9 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
         self.avsazdict = collections.defaultdict(list)
         self.styling_refresh_needed = False
         self.SetUserOptions()
+        if wx.VERSION > (2, 9):
+            self.SetScrollWidth(1)
+            self.SetScrollWidthTracking(True)
         self.SetEOLMode(stc.STC_EOL_LF)
         #~ self.CmdKeyClear(stc.STC_KEY_TAB,0)
         self.UsePopUp(0)
@@ -2913,11 +2916,15 @@ class ScrapWindow(wx.Dialog):
         self.textCtrl.EmptyUndoBuffer()
         # Set the width for the horizontal scrollbar
         maxWidth = 50
-        for line in txt.split('\n'):
-            width = self.textCtrl.TextWidth(stc.STC_STYLE_DEFAULT, line)
-            if width > maxWidth:
-                maxWidth = width
-        self.textCtrl.SetScrollWidth(maxWidth)
+        if wx.VERSION > (2, 9):
+            self.textCtrl.SetScrollWidth(maxWidth)
+            self.textCtrl.SetScrollWidthTracking(True)
+        else:
+            for line in txt.split('\n'):
+                width = self.textCtrl.TextWidth(stc.STC_STYLE_DEFAULT, line)
+                if width > maxWidth:
+                    maxWidth = width
+            self.textCtrl.SetScrollWidth(maxWidth)
         # Event binding
         self.Bind(wx.EVT_CLOSE, self.OnClose)
         # Misc
