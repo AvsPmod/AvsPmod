@@ -11919,8 +11919,8 @@ class MainFrame(wxp.Frame):
                 badMenuItem = menu.FindItemByPosition(item_pos)
                 menu.Delete(badMenuItem.GetId())
             nNameItems = nMax
-        prefix = '{{&{0}}} '
-        prefix_len = len(prefix) - 5
+        prefix = '&{0}  '
+        prefix_len = len(prefix) - 3
         for i in range(nNameItems):
             menuItem = menu.FindItemByPosition(pos + i)
             menuLabel = menuItem.GetItemLabelText()
