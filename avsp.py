@@ -2019,7 +2019,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
             self.BeginUndoAction()
             event.Skip()
             def post_autocomplete(arg_name):
-                # add a plus sign
+                # add an equals sign
                 pos = self.GetCurrentPos()
                 if unichr(self.GetCharAt(pos)) == '=':
                     self.GotoPos(pos + 1)
@@ -2034,7 +2034,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
             # AutoCompSetDropRestOfWord doesn't include quotes
             pos = self.GetCurrentPos()
             self.SetTargetStart(pos)
-            while unichr(self.GetCharAt(pos)) == ' ' or self.IsString(pos):
+            while unichr(self.GetCharAt(pos)) in (' ', '?') or self.IsString(pos):
                 pos += 1
             self.SetTargetEnd(pos)
             self.BeginUndoAction()
