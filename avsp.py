@@ -1044,12 +1044,13 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
             return ['true', 'false']
         elif arg_type in ('int', 'string'):
             if arg_type == 'string' and arg_info.startswith('"'):
-                arg_info = arg_info[arg_info[1:].index('"'):]
-            split_info = arg_info.split(' ', 1)
-            if len(split_info) == 1:
+                arg_info = arg_info[arg_info[1:].index('"') + 2:]
+            start = arg_info.find('(')
+            if start == -1:
                 return
+            arg_info = arg_info[start + 1:]
             value_list = [value.strip() for value in 
-                          split_info[1].strip(' ()').split('/')]
+                          arg_info.strip(' )').split('/')]
             if len(value_list) > 1:
                 return value_list
     
