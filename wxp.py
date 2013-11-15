@@ -1357,14 +1357,19 @@ class OptionsDialog(wx.Dialog):
                         #~ itemSizer.Add(staticText, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
                         itemSizer.Add(ctrl, 0, wx.ALIGN_CENTER_VERTICAL|wx.TOP|wx.BOTTOM, 2)
                     
-                    elif flag == OPT_ELEM_COLOR: #  Currently not used
+                    elif flag == OPT_ELEM_COLOR:
+                        # button for selecting a color
+                        # misc: {width}
+                        width = misc['width'] if 'width' in misc else -1
                         staticText = wx.StaticText(tabPanel, wx.ID_ANY, label)
-                        ctrl = colourselect.ColourSelect(tabPanel, wx.ID_ANY, colour=wx.Colour(*optionsValue), size=(50,23))
+                        ctrl = colourselect.ColourSelect(tabPanel, wx.ID_ANY, 
+                            colour=wx.Colour(*optionsValue), size=(width, -1))
                         if tip:
+                            staticText.SetToolTipString(tip)
                             ctrl.SetToolTipString(tip)
                         itemSizer = wx.BoxSizer(wx.HORIZONTAL)
-                        itemSizer.Add(staticText, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
-                        itemSizer.Add(ctrl, 0)
+                        itemSizer.Add(staticText, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 6)
+                        itemSizer.Add(ctrl, 0, wx.ALIGN_CENTER_VERTICAL|wx.TOP|wx.BOTTOM, 2)
                     
                     elif flag == OPT_ELEM_FONT:
                         # button for choosing font

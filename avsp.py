@@ -5593,6 +5593,8 @@ class MainFrame(wxp.Frame):
         menuItem = menu.FindItemByPosition(self.options['zoomindex'])
         if menuItem is not None:
             self.OnMenuVideoZoom(None, menuItem=menuItem, show=False)
+        if self.options['use_customvideobackground']:
+            self.OnMenuVideoBackgroundColor(color=self.options['videobackground'])
         if self.need_to_show_preview:
             #~ self.ShowVideoFrame(self.startupframe, forceRefresh=False)
             self.IdleCall.append((self.ShowVideoFrame, (self.startupframe,), {'forceRefresh':False}))
@@ -5843,6 +5845,9 @@ class MainFrame(wxp.Frame):
             #~ 'showvideopixelinfo': True,
             #~ 'pixelcolorformat': 'hex',
             'videostatusbarinfo': None,
+            'use_customvideobackground': False,
+            'videobackground': (0, 0, 0),
+            'customvideobackground': (0, 0, 0),
             'errormessagefont': ('Arial', 24, '', '', (0, 0, 0)),
             'cropminx': 16,
             'cropminy': 16,
@@ -7183,6 +7188,14 @@ class MainFrame(wxp.Frame):
             _('Vertically'): 'flipvertical',
             _('Horizontally'): 'fliphorizontal',
         }
+        self.backgroundLabelDict = {
+            _('Black'): (0, 0, 0),
+            _('Dark grey'): (63, 63, 63),
+            _('Medium grey'): (127, 127, 127),
+            _('Light grey'): (191, 191, 191),
+            _('White'): (255, 255, 255),
+        }
+        self.backgroundColorDict = dict([(v,k) for k,v in self.backgroundLabelDict.items()])
         return (
             (_('&File'),
                 (_('New tab'), 'Ctrl+N', self.OnMenuFileNew, _('Create a new tab')),
@@ -7413,6 +7426,19 @@ class MainFrame(wxp.Frame):
                     (_('Interleaved yuv420p10 or yuv444p10'), '', self.OnMenuVideoBitDepth, _('Interleaved 16-bit (little-endian), range reduced to 10-bit. Requires MaskTools v2 loaded'), wx.ITEM_RADIO, False),
                     (_('Interleaved yuv420p16 or yuv444p16'), '', self.OnMenuVideoBitDepth, _('Interleaved 16-bit (little-endian)'), wx.ITEM_RADIO, False),
                     #(_('Interleaved RGB48'), '', self.OnMenuVideoBitDepth, _('16-bit RGB conveyed on YV12'), wx.ITEM_RADIO, False),
+                    ),
+                ),
+                (_('Background &color'),
+                    (
+                    (_('Default'), '', self.OnMenuVideoBackgroundColor, _("Follow current theme"), wx.ITEM_RADIO, True),
+                    (_('Black'), '', self.OnMenuVideoBackgroundColor, _('Use RGB {hex_value}').format(hex_value='#000000'), wx.ITEM_RADIO, False),
+                    (_('Dark grey'), '', self.OnMenuVideoBackgroundColor, _('Use RGB {hex_value}').format(hex_value='#3F3F3F'), wx.ITEM_RADIO, False),
+                    (_('Medium grey'), '', self.OnMenuVideoBackgroundColor, _('Use RGB {hex_value}').format(hex_value='#7F7F7F'), wx.ITEM_RADIO, False),
+                    (_('Light grey'), '', self.OnMenuVideoBackgroundColor, _('Use RGB {hex_value}').format(hex_value='#BFBFBF'), wx.ITEM_RADIO, False),
+                    (_('White'), '', self.OnMenuVideoBackgroundColor, _('Use RGB {hex_value}').format(hex_value='#FFFFFF'), wx.ITEM_RADIO, False),
+                    (_('Custom'), '', self.OnMenuVideoBackgroundColor, _('Use a custom color'), wx.ITEM_RADIO, False),
+                    (''),
+                    (_('Select custom color'), '', self.OnMenuVideoSetCustomBackgroundColor, _("Choose the color used if 'custom' is selected")),
                     ),
                 ),
                 (_('Keep variables on refreshing'), '', self.OnMenuVideoReuseEnvironment, _('Create the new AviSynth clip on the same environment. Useful for tweaking parameters'), wx.ITEM_CHECK, False),
@@ -9282,6 +9308,51 @@ class MainFrame(wxp.Frame):
             print>>sys.stderr, _('Error'), 'OnMenuVideoBitDepth(): cannot find menu item by id'
             return
         menuItem.Check()
+    
+    def OnMenuVideoBackgroundColor(self, event=None, color=None, label=None):
+        vidmenus = [self.videoWindow.contextMenu, self.GetMenuBar().GetMenu(2)]
+        if event is not None:
+            id = event.GetId()
+            label = None
+        elif color is not None:
+            label = self.backgroundColorDict.get(color, _('Custom'))
+        elif label is None:
+            print>>sys.stderr, _('Error'), 'OnMenuVideoBackgroundColor(): a color or menuItem label is needed'
+        updateMenu = None
+        for vidmenu in vidmenus:
+            menu = vidmenu.FindItemById(vidmenu.FindItem(_('Background &color'))).GetSubMenu()
+            if label:
+                id = menu.FindItem(label)
+            menuItem = menu.FindItemById(id)
+            if menuItem:
+                menuItem.Check()
+                label = menuItem.GetLabel()
+                if label == _('Default'):
+                    self.options['use_customvideobackground'] = False
+                else:
+                    self.options['use_customvideobackground'] = True
+                    self.options['videobackground'] = self.backgroundLabelDict.get(
+                        label, self.options['customvideobackground'])
+                self.OnEraseBackground()
+            else:
+                updateMenu = menu
+        if updateMenu is None:
+            return
+        id = updateMenu.FindItem(label)
+        menuItem = updateMenu.FindItemById(id)
+        if not menuItem:
+            print>>sys.stderr, _('Error'), 'OnMenuVideoBackgroundColor(): cannot find menu item by id'
+            return
+        menuItem.Check()
+    
+    def OnMenuVideoSetCustomBackgroundColor(self, event):
+        dialog = wx.ColourDialog(None)
+        dialog.GetColourData().SetChooseFull(True)
+        if dialog.ShowModal() == wx.ID_OK:
+            data = dialog.GetColourData()
+            self.options['customvideobackground'] = data.GetColour()
+            self.OnMenuVideoBackgroundColor(label=_('Custom'))
+        dialog.Destroy()
     
     def OnMenuVideoReuseEnvironment(self, event):
         self.reuse_environment = not self.reuse_environment
@@ -11404,15 +11475,20 @@ class MainFrame(wxp.Frame):
             script = self.currentScript
             self.PaintAVIFrame(dc, script, self.currentframenum, isPaintEvent=True)
     
-    def OnEraseBackground(self, event):
-        dc = event.GetDC()
+    def OnEraseBackground(self, event=None):
+        if event is not None:
+            dc = event.GetDC()
+        else:
+            dc = wx.ClientDC(self.videoWindow)
         if dc is not None:
             script = self.currentScript
             if script.AVI is not None:
-                try: # using a custom handler for EVT_ERASE_BACKGROUND causes the 
-                     # background to lose the theme's color on Windows
-                    dc.SetBackground(wx.Brush(self.videoWindow.GetBackgroundColour()))
-                except: pass
+                if self.options['use_customvideobackground']:
+                    background_color = self.options['videobackground']
+                else: # using a custom handler for EVT_ERASE_BACKGROUND causes 
+                      # the background to lose the theme's color on Windows
+                    background_color = self.videoWindow.GetBackgroundColour()
+                dc.SetBackground(wx.Brush(background_color))
                 w_dc, h_dc = dc.GetSize()
                 w_scrolled, h_scrolled = self.videoWindow.GetVirtualSize()
                 x0, y0 = self.videoWindow.GetViewStart()
@@ -11441,7 +11517,8 @@ class MainFrame(wxp.Frame):
                     dc.Clear()
                     dc.DestroyClippingRegion()
                 return
-        event.Skip()
+        if event is not None:
+            event.Skip()
     
     def OnZoomInOut(self, event):
         id = event.GetId()
@@ -16659,6 +16736,8 @@ class MainFrame(wxp.Frame):
             old_plugins_directory = self.ExpandVars(self.options['pluginsdir'])
             old_prefer_functions = self.options['syntaxhighlight_preferfunctions']
             old_style_triple_quotes = self.options['syntaxhighlight_styleinsidetriplequotes']
+            old_use_custom_video_background = self.options['use_customvideobackground']
+            old_custom_video_background = self.options['customvideobackground']
             self.options.update(dlg.GetDict())
             if self.options['pluginsdir'] != old_plugins_directory:
                 self.SetPluginsDirectory(old_plugins_directory)
@@ -16696,6 +16775,10 @@ class MainFrame(wxp.Frame):
                 self.backupTimer.Start(self.options['periodicbackup'] * 60000)
             elif self.backupTimer.IsRunning():
                 self.backupTimer.Stop()
+            if (old_use_custom_video_background != self.options['use_customvideobackground'] or 
+                self.options['use_customvideobackground'] and
+                old_custom_video_background != self.options['customvideobackground']):
+                    self.OnEraseBackground()
         dlg.Destroy()
     
     def SetPluginsDirectory(self, oldpluginsdirectory):
