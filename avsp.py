@@ -2446,7 +2446,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
 # Dialog for choosing AviSynth specific fonts and colors
 class AvsStyleDialog(wx.Dialog):
     # TODO: add export and import styles, macros to import...
-    def __init__(self, parent, dlgInfo, options, defaults, extra, title=_('AviSynth fonts and colors')):
+    def __init__(self, parent, dlgInfo, options, defaults, extra=None, title=_('AviSynth fonts and colors')):
         wx.Dialog.__init__(self, parent, wx.ID_ANY, title)
         self.dlgInfo = dlgInfo
         self.options = options.copy()
@@ -2529,21 +2529,24 @@ class AvsStyleDialog(wx.Dialog):
             tabSizer.Add(sizer, 0, wx.ALL, 10)
             tabPanel.SetSizerAndFit(tabSizer)
         self.notebook.SetSelection(0)
-        # Miscellaneous options
-        label, optKey, tip = extra
-        checkbox = wx.CheckBox(self, wx.ID_ANY, label)
-        checkbox.SetValue(parent.options[optKey])
-        checkbox.SetToolTipString(tip)
-        self.controls2[optKey] = checkbox
-        # Standard buttons
-        reset  = wx.Button(self, wx.ID_NO, _('Reset'))
-        self.Bind(wx.EVT_BUTTON, self.OnButtonReset, reset)
+        # Standard (and not standard) buttons
+        reset_light  = wx.Button(self, -1, _('Light theme'))
+        self.Bind(wx.EVT_BUTTON, self.OnButtonResetLightTheme, reset_light)
+        reset_dark  = wx.Button(self, -1, _('Dark theme'))
+        self.Bind(wx.EVT_BUTTON, self.OnButtonResetDarkTheme, reset_dark)
         okay  = wx.Button(self, wx.ID_OK, _('OK'))
         self.Bind(wx.EVT_BUTTON, self.OnButtonOK, okay)
         cancel = wx.Button(self, wx.ID_CANCEL, _('Cancel'))
         btns = wx.StdDialogButtonSizer()
-        btns.Add(checkbox)
-        btns.AddButton(reset)
+        if extra: # single CheckBox
+            label, optKey, tip = extra
+            checkbox = wx.CheckBox(self, wx.ID_ANY, label)
+            checkbox.SetValue(parent.options[optKey])
+            checkbox.SetToolTipString(tip)
+            self.controls2[optKey] = checkbox
+            btns.Add(checkbox)
+        btns.Add(reset_light, 0, wx.LEFT | wx.RIGHT, 3)
+        btns.Add(reset_dark, 0, wx.LEFT | wx.RIGHT, 3)
         btns.AddButton(okay)
         btns.AddButton(cancel)
         btns.Realize()
@@ -2592,12 +2595,18 @@ class AvsStyleDialog(wx.Dialog):
         return (fontSize, fontStyle, fontWeight, fontUnderline,
                 fontFace, fontFore, fontBack)
     
-    def OnButtonReset(self, event):
+    def OnButtonResetLightTheme(self, event):
+        return self.ResetTheme('light')
+    
+    def OnButtonResetDarkTheme(self, event):
+        return self.ResetTheme('dark')
+    
+    def ResetTheme(self, theme):
         for tabLabel, tabInfo in self.dlgInfo:
             for label, key in tabInfo:
                 fontButton, foreButton, backButton = self.controls[key]
                 (fontSize, fontStyle, fontWeight, fontUnderline,
-                fontFace, fontFore, fontBack) = self.ParseStyleInfo(self.defaults[key].split(','))
+                fontFace, fontFore, fontBack) = self.ParseStyleInfo(self.defaults[theme][key].split(','))
                 if fontButton is not None and fontFace is not None:
                     font = wx.Font(fontSize, wx.FONTFAMILY_DEFAULT, fontStyle, 
                                    fontWeight, fontUnderline, faceName=fontFace)
@@ -5712,41 +5721,78 @@ class MainFrame(wxp.Frame):
         rgb = tuple(map(lambda x: (x+255)/2, 
                        wx.SystemSettings.GetColour(wx.SYS_COLOUR_3DFACE).Get()))
         self.defaulttextstylesDict = {
-            'default': 'face:Verdana,size:10,fore:#000000,back:#FFFFFF',
-            'comment': 'face:Comic Sans MS,size:9,fore:#007F00,back:#FFFFFF',
-            'number': 'face:Verdana,size:10,fore:#007F7F,back:#FFFFFF',
-            'operator': 'face:Verdana,size:10,fore:#000000,back:#FFFFFF,bold',
-            'string': 'face:Courier New,size:10,fore:#7F007F,back:#FFFFFF',
-            'stringtriple': 'face:Courier New,size:10,fore:#7F0000,back:#FFFFFF',
-            'stringeol': 'face:Courier New,size:10,fore:#000000,back:#E0C0E0',
-            'assignment': 'face:Verdana,size:10,fore:#000000,back:#FFFFFF,bold',
-            'internalfilter': 'face:Verdana,size:10,fore:#00007F,back:#FFFFFF,bold',
-            'externalfilter': 'face:Verdana,size:10,fore:#0080C0,back:#FFFFFF,bold',
-            'clipproperty': 'face:Verdana,size:10,fore:#00007F,back:#FFFFFF',
-            'userdefined': 'face:Verdana,size:10,fore:#8000FF,back:#FFFFFF,bold',
-            'unknownfunction': 'face:Verdana,size:10,fore:#E10000,back:#FFFFFF',
-            'parameter': 'face:Verdana,size:10,fore:#555555,back:#FFFFFF',
-            'userslider': 'face:Arial,size:10,fore:#00007F,back:#FFFFFF',
-            'monospaced': 'face:Courier New,size:10',
-            'internalfunction': 'face:Verdana,size:10,fore:#007F7F,back:#FFFFFF',
-            'keyword': 'face:Verdana,size:10,fore:#400080,back:#FFFFFF,bold',
-            'miscword': 'face:Verdana,size:10,fore:#00007F,back:#FFFFFF,bold',
-            'calltip': 'fore:#808080,back:#FFFFFF',
-            'calltiphighlight': 'fore:#000000',
-            'bracelight': 'face:Verdana,size:10,fore:#0000FF,back:#FFFFFF,bold',
-            'badbrace': 'face:Verdana,size:10,fore:#FF0000,back:#FFFFFF,bold',
-            'badnumber': 'face:Verdana,size:10,fore:#FF0000,back:#FFFFFF',
-            'linenumber': 'face:Verdana,fore:#555555,back:#C0C0C0',
-            'datatype': 'face:Verdana,size:10,fore:#0000FF,back:#FFFFFF',
-            'cursor': 'fore:#000000',
-            'highlight': 'back:#C0C0C0',                
-            'highlightline': 'back:#E8E8FF',
-            'scrapwindow': 'face:Comic Sans MS,size:10,fore:#0000AA,back:#F5EF90',
-            'endcomment': 'face:Verdana,size:10,fore:#C0C0C0,back:#FFFFFF',
-            'blockcomment': 'face:Comic Sans MS,size:9,fore:#007F00,back:#FFFFFF',
-            'foldmargin': 'back:#%02X%02X%02X' % rgb,
+            'light': {
+                'default': 'face:Verdana,size:10,fore:#000000,back:#FFFFFF',
+                'comment': 'face:Comic Sans MS,size:9,fore:#007F00,back:#FFFFFF',
+                'number': 'face:Verdana,size:10,fore:#007F7F,back:#FFFFFF',
+                'operator': 'face:Verdana,size:10,fore:#000000,back:#FFFFFF,bold',
+                'string': 'face:Courier New,size:10,fore:#7F007F,back:#FFFFFF',
+                'stringtriple': 'face:Courier New,size:10,fore:#7F0000,back:#FFFFFF',
+                'stringeol': 'face:Courier New,size:10,fore:#000000,back:#E0C0E0',
+                'assignment': 'face:Verdana,size:10,fore:#000000,back:#FFFFFF,bold',
+                'internalfilter': 'face:Verdana,size:10,fore:#00007F,back:#FFFFFF,bold',
+                'externalfilter': 'face:Verdana,size:10,fore:#0080C0,back:#FFFFFF,bold',
+                'clipproperty': 'face:Verdana,size:10,fore:#00007F,back:#FFFFFF',
+                'userdefined': 'face:Verdana,size:10,fore:#8000FF,back:#FFFFFF,bold',
+                'unknownfunction': 'face:Verdana,size:10,fore:#E10000,back:#FFFFFF',
+                'parameter': 'face:Verdana,size:10,fore:#555555,back:#FFFFFF',
+                'userslider': 'face:Arial,size:10,fore:#00007F,back:#FFFFFF',
+                'monospaced': 'face:Courier New,size:10',
+                'internalfunction': 'face:Verdana,size:10,fore:#007F7F,back:#FFFFFF',
+                'keyword': 'face:Verdana,size:10,fore:#400080,back:#FFFFFF,bold',
+                'miscword': 'face:Verdana,size:10,fore:#00007F,back:#FFFFFF,bold',
+                'calltip': 'fore:#808080,back:#FFFFFF',
+                'calltiphighlight': 'fore:#000000',
+                'bracelight': 'face:Verdana,size:10,fore:#0000FF,back:#FFFFFF,bold',
+                'badbrace': 'face:Verdana,size:10,fore:#FF0000,back:#FFFFFF,bold',
+                'badnumber': 'face:Verdana,size:10,fore:#FF0000,back:#FFFFFF',
+                'linenumber': 'face:Verdana,fore:#555555,back:#C0C0C0',
+                'datatype': 'face:Verdana,size:10,fore:#0000FF,back:#FFFFFF',
+                'cursor': 'fore:#000000',
+                'highlight': 'back:#C0C0C0',                
+                'highlightline': 'back:#E8E8FF',
+                'scrapwindow': 'face:Comic Sans MS,size:10,fore:#0000AA,back:#F5EF90',
+                'endcomment': 'face:Verdana,size:10,fore:#C0C0C0,back:#FFFFFF',
+                'blockcomment': 'face:Comic Sans MS,size:9,fore:#007F00,back:#FFFFFF',
+                'foldmargin': 'back:#%02X%02X%02X' % rgb,
+            },
+            'dark': {
+                'default': 'face:Verdana,size:10,fore:#000000,back:#3F3F3F',
+                'comment': 'face:Comic Sans MS,size:9,fore:#007F00,back:#3F3F3F',
+                'number': 'face:Verdana,size:10,fore:#007F7F,back:#3F3F3F',
+                'operator': 'face:Verdana,size:10,fore:#000000,back:#3F3F3F,bold',
+                'string': 'face:Courier New,size:10,fore:#7F007F,back:#3F3F3F',
+                'stringtriple': 'face:Courier New,size:10,fore:#7F0000,back:#3F3F3F',
+                'stringeol': 'face:Courier New,size:10,fore:#000000,back:#E0C0E0',
+                'assignment': 'face:Verdana,size:10,fore:#000000,back:#FFFFFF,bold',
+                'internalfilter': 'face:Verdana,size:10,fore:#00007F,back:#FFFFFF,bold',
+                'externalfilter': 'face:Verdana,size:10,fore:#0080C0,back:#FFFFFF,bold',
+                'clipproperty': 'face:Verdana,size:10,fore:#00007F,back:#FFFFFF',
+                'userdefined': 'face:Verdana,size:10,fore:#8000FF,back:#FFFFFF,bold',
+                'unknownfunction': 'face:Verdana,size:10,fore:#E10000,back:#FFFFFF',
+                'parameter': 'face:Verdana,size:10,fore:#555555,back:#FFFFFF',
+                'userslider': 'face:Arial,size:10,fore:#00007F,back:#FFFFFF',
+                'monospaced': 'face:Courier New,size:10',
+                'internalfunction': 'face:Verdana,size:10,fore:#007F7F,back:#FFFFFF',
+                'keyword': 'face:Verdana,size:10,fore:#400080,back:#FFFFFF,bold',
+                'miscword': 'face:Verdana,size:10,fore:#00007F,back:#FFFFFF,bold',
+                'calltip': 'fore:#808080,back:#FFFFFF',
+                'calltiphighlight': 'fore:#000000',
+                'bracelight': 'face:Verdana,size:10,fore:#0000FF,back:#FFFFFF,bold',
+                'badbrace': 'face:Verdana,size:10,fore:#FF0000,back:#FFFFFF,bold',
+                'badnumber': 'face:Verdana,size:10,fore:#FF0000,back:#FFFFFF',
+                'linenumber': 'face:Verdana,fore:#555555,back:#C0C0C0',
+                'datatype': 'face:Verdana,size:10,fore:#0000FF,back:#FFFFFF',
+                'cursor': 'fore:#000000',
+                'highlight': 'back:#C0C0C0',                
+                'highlightline': 'back:#E8E8FF',
+                'scrapwindow': 'face:Comic Sans MS,size:10,fore:#0000AA,back:#F5EF90',
+                'endcomment': 'face:Verdana,size:10,fore:#C0C0C0,back:#FFFFFF',
+                'blockcomment': 'face:Comic Sans MS,size:9,fore:#007F00,back:#FFFFFF',
+                'foldmargin': 'back:#%02X%02X%02X' % rgb,
+            },
         }
-        textstylesDict = self.defaulttextstylesDict.copy()
+        textstylesDict = self.defaulttextstylesDict['light'].copy()
         # Create the options dict
         self.options = global_vars.options
         self.options.update({
@@ -9614,7 +9660,7 @@ class MainFrame(wxp.Frame):
         dlgInfo = (
             (_('Basic (1)'),
                 (
-                    (_('Monospaced font:'), 'monospaced'),
+                    ((_('Use monospaced font:'), 'usemonospacedfont', _('Override all fonts to use a specified monospace font (no effect on scrap window)')), 'monospaced'),
                     (_('Default:'), 'default'),
                     (_('Comment:'), 'comment'),
                     (_('Block Comment:'), 'blockcomment'),
@@ -9658,7 +9704,7 @@ class MainFrame(wxp.Frame):
                 ),
             )
         )
-        extra = (_('Use monospaced font'), 'usemonospacedfont', _('Override all fonts to use a specified monospace font(no effect on scrap window)'))
+        extra = None # adds a single CheckBox, (label, options_dict_key, tooltip)
         dlg = AvsStyleDialog(self, dlgInfo, self.options['textstyles'], self.defaulttextstylesDict, extra)
         ID = dlg.ShowModal()
         if ID == wx.ID_OK:

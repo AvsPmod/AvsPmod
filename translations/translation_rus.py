@@ -828,8 +828,8 @@ messages = {
     "Highlight the line that the caret is currently in" : u"Подсвечивать строку, на которой сейчас каретка", 
     "Fold margin:" : u"", # New in v2.2.1
     "Scrap window" : u"", # New in v2.2.1
-    "Override all fonts to use a specified monospace font(no effect on scrap window)" : u"", # New in v2.2.1
-    "Use monospaced font" : u"", # New in v2.2.1
+    "Override all fonts to use a specified monospace font (no effect on scrap window)" : u"", # New in v2.2.1
+    "Use monospaced font:" : u"", # New in v2.2.1
     "No dot required in file extension!" : u"Точка не требуется в раcширении файла!",
     "Insert aborted:" : u"Вставка прервана:",
     "Edit extension-based templates" : u"Редактировать основанные на расширении шаблоны",

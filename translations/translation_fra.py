@@ -817,8 +817,8 @@ messages = {
     "Highlight the line that the caret is currently in" : u"Surligne la ligne où se situe le curseur",
     "Fold margin:" : u"", # New in v2.2.1
     "Scrap window" : u"", # New in v2.2.1
-    "Override all fonts to use a specified monospace font(no effect on scrap window)" : u"", # New in v2.2.1
-    "Use monospaced font" : u"", # New in v2.2.1
+    "Override all fonts to use a specified monospace font (no effect on scrap window)" : u"", # New in v2.2.1
+    "Use monospaced font:" : u"", # New in v2.2.1
     "No dot required in file extension!" : u"Entrer l'extention sans . !",
     "Insert aborted:" : u"Insertion annulée",
     "Edit extension-based templates" : u"Editer le remplissages automatique pour les extentions de fichiers",
