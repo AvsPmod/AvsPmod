@@ -779,13 +779,13 @@ if os.name == 'nt':
             return True
         
         def _ConvertToRGB(self):
-            if not self.IsRGB:
+            if not self.IsRGB32: # bug in avisynth v2.6 alphas with ConvertToRGB24
                 arg = avisynth.AVS_Value(self.display_clip)
                 arg1 = avisynth.AVS_Value(self.matrix)
                 arg2 = avisynth.AVS_Value(self.interlaced)
                 args = avisynth.AVS_Value([arg, arg1, arg2])
                 try:
-                    avsfile = self.env.Invoke("ConvertToRGB24", args, 0)
+                    avsfile = self.env.Invoke("ConvertToRGB32", args, 0)
                     arg.Release()
                     self.display_clip = avsfile.AsClip(self.env)
                 except avisynth.AvisynthError, err:
