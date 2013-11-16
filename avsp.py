@@ -2531,10 +2531,14 @@ class AvsStyleDialog(wx.Dialog):
             tabPanel.SetSizerAndFit(tabSizer)
         self.notebook.SetSelection(0)
         # Standard (and not standard) buttons
-        reset_light  = wx.Button(self, -1, _('Light theme'))
-        self.Bind(wx.EVT_BUTTON, self.OnButtonResetLightTheme, reset_light)
-        reset_dark  = wx.Button(self, -1, _('Dark theme'))
-        self.Bind(wx.EVT_BUTTON, self.OnButtonResetDarkTheme, reset_dark)
+        themes = [_('Select a predefined theme')] + parent.defaulttextstylesDict.keys()
+        theme_choice = wx.Choice(self, choices=themes)
+        theme_choice.SetSelection(0)
+        self.Bind(wx.EVT_CHOICE, self.OnSelectTheme, theme_choice)
+        only_colors_checkbox = wx.CheckBox(self, wx.ID_ANY, _('Only change colours'))
+        only_colors_checkbox.SetValue(parent.options['theme_set_only_colors'])
+        only_colors_checkbox.SetToolTipString(_("When selecting a theme, don't change current fonts"))
+        self.controls2['theme_set_only_colors'] = only_colors_checkbox
         okay  = wx.Button(self, wx.ID_OK, _('OK'))
         self.Bind(wx.EVT_BUTTON, self.OnButtonOK, okay)
         cancel = wx.Button(self, wx.ID_CANCEL, _('Cancel'))
@@ -2545,9 +2549,9 @@ class AvsStyleDialog(wx.Dialog):
             checkbox.SetValue(parent.options[optKey])
             checkbox.SetToolTipString(tip)
             self.controls2[optKey] = checkbox
-            btns.Add(checkbox)
-        btns.Add(reset_light, 0, wx.LEFT | wx.RIGHT, 3)
-        btns.Add(reset_dark, 0, wx.LEFT | wx.RIGHT, 3)
+            btns.Add(checkbox, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 3)
+        btns.Add(theme_choice, 0, wx.LEFT | wx.RIGHT, 3)
+        btns.Add(only_colors_checkbox, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 3)
         btns.AddButton(okay)
         btns.AddButton(cancel)
         btns.Realize()
@@ -2596,19 +2600,19 @@ class AvsStyleDialog(wx.Dialog):
         return (fontSize, fontStyle, fontWeight, fontUnderline,
                 fontFace, fontFore, fontBack)
     
-    def OnButtonResetLightTheme(self, event):
-        return self.ResetTheme('light')
+    def OnSelectTheme(self, event):
+        theme = event.GetEventObject().GetStringSelection()
+        if theme != _('Select a predefined theme'):
+            return self.SetTheme(theme, only_colors=
+                            self.controls2['theme_set_only_colors'].GetValue())
     
-    def OnButtonResetDarkTheme(self, event):
-        return self.ResetTheme('dark')
-    
-    def ResetTheme(self, theme):
+    def SetTheme(self, theme, only_colors=False):
         for tabLabel, tabInfo in self.dlgInfo:
             for label, key in tabInfo:
                 fontButton, foreButton, backButton = self.controls[key]
                 (fontSize, fontStyle, fontWeight, fontUnderline,
                 fontFace, fontFore, fontBack) = self.ParseStyleInfo(self.defaults[theme][key].split(','))
-                if fontButton is not None and fontFace is not None:
+                if not only_colors and fontButton is not None and fontFace is not None:
                     font = wx.Font(fontSize, wx.FONTFAMILY_DEFAULT, fontStyle, 
                                    fontWeight, fontUnderline, faceName=fontFace)
                     fontButton.SetLabel('%s, %d' % (fontFace, fontSize))
@@ -5724,7 +5728,7 @@ class MainFrame(wxp.Frame):
         rgb = tuple(map(lambda x: (x+255)/2, 
                        wx.SystemSettings.GetColour(wx.SYS_COLOUR_3DFACE).Get()))
         self.defaulttextstylesDict = {
-            'light': {
+            _('Light'): {
                 'default': 'face:Verdana,size:10,fore:#000000,back:#FFFFFF',
                 'comment': 'face:Comic Sans MS,size:9,fore:#007F00,back:#FFFFFF',
                 'number': 'face:Verdana,size:10,fore:#007F7F,back:#FFFFFF',
@@ -5759,7 +5763,7 @@ class MainFrame(wxp.Frame):
                 'blockcomment': 'face:Comic Sans MS,size:9,fore:#007F00,back:#FFFFFF',
                 'foldmargin': 'back:#%02X%02X%02X' % rgb,
             },
-            'dark': {
+            _('Dark'): {
                 'default': 'face:Verdana,size:10,fore:#000000,back:#3F3F3F',
                 'comment': 'face:Comic Sans MS,size:9,fore:#007F00,back:#3F3F3F',
                 'number': 'face:Verdana,size:10,fore:#007F7F,back:#3F3F3F',
@@ -5795,7 +5799,7 @@ class MainFrame(wxp.Frame):
                 'foldmargin': 'back:#%02X%02X%02X' % rgb,
             },
         }
-        textstylesDict = self.defaulttextstylesDict['light'].copy()
+        textstylesDict = self.defaulttextstylesDict[_('Light')].copy()
         # Create the options dict
         self.options = global_vars.options
         self.options.update({
@@ -5803,6 +5807,7 @@ class MainFrame(wxp.Frame):
             'templates': templateDict,
             'snippets': snippetsDict,
             'textstyles': textstylesDict,
+            'theme_set_only_colors': True,
             #~ 'avskeywords': avsKeywords,
             #~ 'avsoperators': avsOperators,
             #~ 'avsdatatypes': avsDatatypes,
