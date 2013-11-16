@@ -1047,6 +1047,66 @@ class FloatSpin2(FloatSpin):
             wx.PostEvent(top_level, default_event)
 
 
+class ColourSelect(colourselect.ColourSelect):
+    """Subclass of ColourSelect accepting a ColourData instance
+    
+    This allows using and changing custom colours
+    
+    All in all is still better than wx.ColourPickerCtrl
+    """
+    
+    def __init__(self, *args, **kwargs):
+        self.colour_data = kwargs.pop('colour_data', None)
+        colourselect.ColourSelect.__init__(self, *args, **kwargs)
+    
+    def OnClick(self, event):
+        data = self.colour_data or wx.ColourData()
+        data.SetChooseFull(True)
+        data.SetColour(self.colour)
+        dlg = wx.ColourDialog(wx.GetTopLevelParent(self), data)
+        changed = dlg.ShowModal() == wx.ID_OK
+        
+        if changed:
+            data = dlg.GetColourData()
+            self.SetColour(data.GetColour())
+            if self.colour_data is not None:
+                for i in range(self.colour_data.NUM_CUSTOM):
+                    self.colour_data.SetCustomColour(i, data.GetCustomColour(i))
+        dlg.Destroy()
+        
+        # moved after dlg.Destroy, since who knows what the callback will do...
+        if changed:
+            self.OnChange() 
+
+
+if hasattr(wx.ColourData, 'FromString'):
+    ColourData = wx.ColourData
+else:
+    class ColourData(wx.ColourData):
+        """Backport of ToString and FromString methods"""
+        NUM_CUSTOM = 16
+        
+        def ToString(self):
+            colour_data_str = str(int(self.GetChooseFull()))
+            for i in range(self.NUM_CUSTOM):
+                colour_data_str += ','
+                colour = self.GetCustomColour(i)
+                if colour.IsOk():
+                    colour_data_str += colour.GetAsString(wx.C2S_HTML_SYNTAX)
+            return colour_data_str
+        
+        def FromString(self, colour_data_str):
+            colour_data = colour_data_str.split(',')
+            if colour_data[0] not in ('0', '1'):
+                return False
+            self.SetChooseFull(colour_data[0] == '1')
+            for i, colour in enumerate(colour_data[1:self.NUM_CUSTOM + 1]):
+                try:
+                    self.SetCustomColour(i, colour or wx.Colour())
+                except: 
+                    return False
+
+
 class OptionsDialog(wx.Dialog):
     def __init__(self, parent, dlgInfo, options, title=None, startPageIndex=0, 
                 starText=True, invert_scroll=False):
@@ -1359,11 +1419,13 @@ class OptionsDialog(wx.Dialog):
                     
                     elif flag == OPT_ELEM_COLOR:
                         # button for selecting a color
-                        # misc: {width}
+                        # misc: {width, colour_data}
                         width = misc['width'] if 'width' in misc else -1
+                        colour_data = misc.get('colour_data')
+                        colour = wx.Colour(*optionsValue)
                         staticText = wx.StaticText(tabPanel, wx.ID_ANY, label)
-                        ctrl = colourselect.ColourSelect(tabPanel, wx.ID_ANY, 
-                            colour=wx.Colour(*optionsValue), size=(width, -1))
+                        ctrl = ColourSelect(tabPanel, wx.ID_ANY, colour=colour, 
+                                            size=(width, -1), colour_data=colour_data)
                         if tip:
                             staticText.SetToolTipString(tip)
                             ctrl.SetToolTipString(tip)

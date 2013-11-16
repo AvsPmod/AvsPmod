@@ -2446,11 +2446,12 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
 # Dialog for choosing AviSynth specific fonts and colors
 class AvsStyleDialog(wx.Dialog):
     # TODO: add export and import styles, macros to import...
-    def __init__(self, parent, dlgInfo, options, defaults, extra=None, title=_('AviSynth fonts and colors')):
+    def __init__(self, parent, dlgInfo, options, defaults, colour_data=None, extra=None, title=_('AviSynth fonts and colors')):
         wx.Dialog.__init__(self, parent, wx.ID_ANY, title)
         self.dlgInfo = dlgInfo
         self.options = options.copy()
         self.defaults = defaults
+        self.colour_data = colour_data
         # Create the font buttons
         self.controls = {}
         self.controls2 = {}
@@ -2500,7 +2501,7 @@ class AvsStyleDialog(wx.Dialog):
                     #~ foreButton.SetBackgroundColour(wx.Colour(*fontFore))
                     #~ foreButton.SetCursor(wx.StockCursor(wx.CURSOR_HAND))
                     #~ foreButton.Bind(wx.EVT_LEFT_UP, self.OnButtonColor)
-                    foreButton = colourselect.ColourSelect(tabPanel, wx.ID_ANY, colour=wx.Colour(*fontFore), size=(50,23))
+                    foreButton = wxp.ColourSelect(tabPanel, wx.ID_ANY, colour=wx.Colour(*fontFore), size=(50,23), colour_data=self.colour_data)
                 else:
                     foreButton = None
                 if fontBack is not None:
@@ -2508,7 +2509,7 @@ class AvsStyleDialog(wx.Dialog):
                     #~ backButton.SetBackgroundColour(wx.Colour(*fontBack))
                     #~ backButton.SetCursor(wx.StockCursor(wx.CURSOR_HAND))
                     #~ backButton.Bind(wx.EVT_LEFT_UP, self.OnButtonColor)
-                    backButton = colourselect.ColourSelect(tabPanel, wx.ID_ANY, colour=wx.Colour(*fontBack), size=(50,23))
+                    backButton = wxp.ColourSelect(tabPanel, wx.ID_ANY, colour=wx.Colour(*fontBack), size=(50,23), colour_data=self.colour_data)
                 else:
                     backButton = None
                 sizer.Add(staticText, flag=wx.ALIGN_CENTER)
@@ -5235,6 +5236,7 @@ class MainFrame(wxp.Frame):
             finally:
                 sys.dont_write_bytecode = False
         
+        self.colour_data = wxp.ColourData() # needed before the following
         self.optionsDlgInfo = self.getOptionsDlgInfo()
         
         # single-instance socket
@@ -5476,6 +5478,7 @@ class MainFrame(wxp.Frame):
         self.interlaced = self.swapuv = self.bit_depth = False
         self.flip = []
         self.titleEntry = None
+        self.colour_data.FromString(self.options['colourdata'])
         # Events
         self.Bind(wx.EVT_CLOSE, self.OnClose)
         self.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.OnNotebookPageChanged)
@@ -5834,6 +5837,7 @@ class MainFrame(wxp.Frame):
             'imagenameformat': '%s%06d',
             'imagesavedir': '',
             'useimagesavedir': True,
+            'colourdata': '1',
             'zoomindex': 2,
             'exitstatus': 0,
             'reservedshortcuts': ['Tab', 'Shift+Tab', 'Ctrl+Z', 'Ctrl+Y', 'Ctrl+X', 'Ctrl+C', 'Ctrl+V', 'Ctrl+A'],
@@ -9392,12 +9396,17 @@ class MainFrame(wxp.Frame):
         menuItem.Check()
     
     def OnMenuVideoSetCustomBackgroundColor(self, event):
-        dialog = wx.ColourDialog(None)
-        dialog.GetColourData().SetChooseFull(True)
+        self.colour_data.SetColour(self.options['customvideobackground'])
+        dialog = wx.ColourDialog(self, self.colour_data)
         if dialog.ShowModal() == wx.ID_OK:
             data = dialog.GetColourData()
             self.options['customvideobackground'] = data.GetColour()
             self.OnMenuVideoBackgroundColor(label=_('Custom'))
+            for i in range(self.colour_data.NUM_CUSTOM):
+                self.colour_data.SetCustomColour(i, data.GetCustomColour(i))
+            self.options['colourdata'] = self.colour_data.ToString()
+            with open(self.optionsfilename, mode='wb') as f:
+                cPickle.dump(self.options, f, protocol=0)
         dialog.Destroy()
     
     def OnMenuVideoReuseEnvironment(self, event):
@@ -9705,11 +9714,12 @@ class MainFrame(wxp.Frame):
             )
         )
         extra = None # adds a single CheckBox, (label, options_dict_key, tooltip)
-        dlg = AvsStyleDialog(self, dlgInfo, self.options['textstyles'], self.defaulttextstylesDict, extra)
+        dlg = AvsStyleDialog(self, dlgInfo, self.options['textstyles'], self.defaulttextstylesDict, self.colour_data, extra)
         ID = dlg.ShowModal()
         if ID == wx.ID_OK:
             self.options['textstyles'] = dlg.GetDict()
             self.options.update(dlg.GetDict2())
+            self.options['colourdata'] = self.colour_data.ToString()
             with open(self.optionsfilename, mode='wb') as f:
                 cPickle.dump(self.options, f, protocol=0)
             for index in xrange(self.scriptNotebook.GetPageCount()):
@@ -16320,8 +16330,11 @@ class MainFrame(wxp.Frame):
             b = int(value[4:6],16)
         except:
             r=g=b=0
-        colorButton = colourselect.ColourSelect(parent, wx.ID_ANY, colour=wx.Colour(r,g,b), size=(50,23))
+        colorButton = wxp.ColourSelect(parent, wx.ID_ANY, colour=wx.Colour(r,g,b), size=(50,23), colour_data=self.colour_data)
         def OnSelectColour(event):
+            self.options['colourdata'] = self.colour_data.ToString()
+            with open(self.optionsfilename, mode='wb') as f:
+                cPickle.dump(self.options, f, protocol=0)
             strColor = '$%02x%02x%02x' % colorButton.GetColour().Get()
             self.SetNewAvsValue(colorButton, strColor.upper())
         colorButton.Bind(colourselect.EVT_COLOURSELECT, OnSelectColour)
@@ -16790,6 +16803,7 @@ class MainFrame(wxp.Frame):
             for key in ['altdir', 'workdir', 'pluginsdir', 'avisynthhelpfile', 
                         'externalplayer', 'docsearchpaths']:
                 self.options[key] = self.ExpandVars(self.options[key], False, '%' + key + '%')
+            self.options['colourdata'] = self.colour_data.ToString()
             with open(self.optionsfilename, mode='wb') as f:
                 cPickle.dump(self.options, f, protocol=0)
             if self.options['useworkdir'] and self.options['workdir']:
