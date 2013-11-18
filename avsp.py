@@ -5778,42 +5778,51 @@ class MainFrame(wxp.Frame):
             }
         snippetsDict = {
         }
+        index = os.name == 'nt'
+        sans = ('sans', 'Verdana')[index]
+        sans2 = ('sans', 'Arial')[index]
+        serif = ('serif', 'Georgia')[index]
+        serif2 = ('serif', 'Times New Roman')[index]
+        mono = ('monospace', 'Courier New')[index]
+        mono2 = ('monospace', 'Fixedsys')[index]
+        other = ('sans', 'Comic Sans MS')[index]
         rgb = tuple(map(lambda x: (x+255)/2, 
                        wx.SystemSettings.GetColour(wx.SYS_COLOUR_3DFACE).Get()))
+        locals_dict = locals()
         self.defaulttextstylesDict = {
-            _('Light'): {
-                'default': 'face:Verdana,size:10,fore:#000000,back:#FFFFFF',
-                'comment': 'face:Comic Sans MS,size:9,fore:#007F00,back:#FFFFFF',
-                'number': 'face:Verdana,size:10,fore:#007F7F,back:#FFFFFF',
-                'operator': 'face:Verdana,size:10,fore:#000000,back:#FFFFFF,bold',
-                'string': 'face:Courier New,size:10,fore:#7F007F,back:#FFFFFF',
-                'stringtriple': 'face:Courier New,size:10,fore:#7F0000,back:#FFFFFF',
-                'stringeol': 'face:Courier New,size:10,fore:#000000,back:#E0C0E0',
-                'assignment': 'face:Verdana,size:10,fore:#000000,back:#FFFFFF,bold',
-                'internalfilter': 'face:Verdana,size:10,fore:#00007F,back:#FFFFFF,bold',
-                'externalfilter': 'face:Verdana,size:10,fore:#0080C0,back:#FFFFFF,bold',
-                'clipproperty': 'face:Verdana,size:10,fore:#00007F,back:#FFFFFF',
-                'userdefined': 'face:Verdana,size:10,fore:#8000FF,back:#FFFFFF,bold',
-                'unknownfunction': 'face:Verdana,size:10,fore:#E10000,back:#FFFFFF',
-                'parameter': 'face:Verdana,size:10,fore:#555555,back:#FFFFFF',
-                'userslider': 'face:Arial,size:10,fore:#00007F,back:#FFFFFF',
-                'monospaced': 'face:Courier New,size:10',
-                'internalfunction': 'face:Verdana,size:10,fore:#007F7F,back:#FFFFFF',
-                'keyword': 'face:Verdana,size:10,fore:#400080,back:#FFFFFF,bold',
-                'miscword': 'face:Verdana,size:10,fore:#00007F,back:#FFFFFF,bold',
+            _('Default'): {
+                'default': 'face:{sans},size:10,fore:#000000,back:#FFFFFF',
+                'comment': 'face:{serif},size:9,fore:#007F00,back:#FFFFFF',
+                'number': 'face:{mono},size:10,fore:#007F7F,back:#FFFFFF',
+                'operator': 'face:{sans},size:10,fore:#000000,back:#FFFFFF,bold',
+                'string': 'face:{mono},size:10,fore:#7F007F,back:#FFFFFF',
+                'stringtriple': 'face:{mono},size:10,fore:#7F0000,back:#FFFFFF',
+                'stringeol': 'face:{mono},size:10,fore:#000000,back:#E0C0E0',
+                'assignment': 'face:{sans},size:10,fore:#000000,back:#FFFFFF,bold',
+                'internalfilter': 'face:{sans},size:10,fore:#00007F,back:#FFFFFF,bold',
+                'externalfilter': 'face:{sans},size:10,fore:#0080C0,back:#FFFFFF,bold',
+                'clipproperty': 'face:{sans},size:10,fore:#00007F,back:#FFFFFF,bold',
+                'userdefined': 'face:{sans},size:10,fore:#8000FF,back:#FFFFFF,bold',
+                'unknownfunction': 'face:{sans},size:10,fore:#E10000,back:#FFFFFF,bold',
+                'parameter': 'face:{sans},size:10,fore:#555555,back:#FFFFFF',
+                'userslider': 'face:{sans},size:10,fore:#00007F,back:#FFFFFF',
+                'monospaced': 'face:{mono},size:10',
+                'internalfunction': 'face:{sans},size:10,fore:#007F7F,back:#FFFFFF',
+                'keyword': 'face:{sans},size:10,fore:#400080,back:#FFFFFF,bold',
+                'miscword': 'face:{sans},size:10,fore:#00007F,back:#FFFFFF,bold',
                 'calltip': 'fore:#808080,back:#FFFFFF',
                 'calltiphighlight': 'fore:#000000',
-                'bracelight': 'face:Verdana,size:10,fore:#0000FF,back:#FFFFFF,bold',
-                'badbrace': 'face:Verdana,size:10,fore:#FF0000,back:#FFFFFF,bold',
-                'badnumber': 'face:Verdana,size:10,fore:#FF0000,back:#FFFFFF',
-                'linenumber': 'face:Verdana,fore:#555555,back:#C0C0C0',
-                'datatype': 'face:Verdana,size:10,fore:#0000FF,back:#FFFFFF',
+                'bracelight': 'face:{sans},size:10,fore:#0000FF,back:#FFFFFF,bold',
+                'badbrace': 'face:{sans},size:10,fore:#FF0000,back:#FFFFFF,bold',
+                'badnumber': 'face:{mono},size:10,fore:#FF0000,back:#FFFFFF',
+                'linenumber': 'face:{mono},fore:#555555,back:#C0C0C0',
+                'datatype': 'face:{sans},size:10,fore:#0000FF,back:#FFFFFF',
                 'cursor': 'fore:#000000',
                 'highlight': 'fore:#000000,back:#C0C0C0',                
                 'highlightline': 'back:#E8E8FF',
-                'scrapwindow': 'face:Comic Sans MS,size:10,fore:#0000AA,back:#F5EF90',
-                'endcomment': 'face:Verdana,size:10,fore:#C0C0C0,back:#FFFFFF',
-                'blockcomment': 'face:Comic Sans MS,size:9,fore:#007F00,back:#FFFFFF',
+                'scrapwindow': 'face:{mono},size:10,fore:#0000AA,back:#F5EF90',
+                'endcomment': 'face:{sans},size:10,fore:#C0C0C0,back:#FFFFFF',
+                'blockcomment': 'face:{serif},size:9,fore:#007F00,back:#FFFFFF',
                 'foldmargin': 'fore:#555555,back:#%02X%02X%02X' % rgb,
             },
             _('Dark'): {
@@ -5852,7 +5861,10 @@ class MainFrame(wxp.Frame):
                 'foldmargin': 'fore:#555555,back:#%02X%02X%02X' % rgb,
             },
         }
-        textstylesDict = self.defaulttextstylesDict[_('Light')].copy()
+        for values in self.defaulttextstylesDict.itervalues():
+            for key, value in values.items():
+                values[key] = value.format(**locals_dict)
+        textstylesDict = self.defaulttextstylesDict[_('Default')].copy()
         # Create the options dict
         self.options = global_vars.options
         self.options.update({
