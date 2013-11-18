@@ -541,8 +541,14 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                 if elem.startswith('back:'):
                     self.CallTipSetBackground(elem.split(':')[1].strip())
         self.SetCaretForeground(textstyles['cursor'].split(':')[1])
-        #~ self.SetSelForeground(True, '#00FF00')
-        self.SetSelBackground(True, textstyles['highlight'].split(':')[1])
+        for elem in textstyles['highlight'].split(','):
+            if elem.startswith('fore:'):
+                if self.app.options['highlight_fore']:
+                    self.SetSelForeground(True, elem.split(':')[1].strip())
+                else:
+                    self.SetSelForeground(False, None)
+            elif elem.startswith('back:'):
+                self.SetSelBackground(True, elem.split(':')[1].strip())
         fore = back = None
         for elem in textstyles['foldmargin'].split(','):
             if elem.startswith('fore:'):
@@ -5789,7 +5795,7 @@ class MainFrame(wxp.Frame):
                 'linenumber': 'face:Verdana,fore:#555555,back:#C0C0C0',
                 'datatype': 'face:Verdana,size:10,fore:#0000FF,back:#FFFFFF',
                 'cursor': 'fore:#000000',
-                'highlight': 'back:#C0C0C0',                
+                'highlight': 'fore:#000000,back:#C0C0C0',                
                 'highlightline': 'back:#E8E8FF',
                 'scrapwindow': 'face:Comic Sans MS,size:10,fore:#0000AA,back:#F5EF90',
                 'endcomment': 'face:Verdana,size:10,fore:#C0C0C0,back:#FFFFFF',
@@ -5908,6 +5914,7 @@ class MainFrame(wxp.Frame):
             'autoparentheses': 1,
             'presetactivatekey': 'return',
             'wrap': False,
+            'highlight_fore': False,
             'highlightline': True,
             'usetabs': False,
             'tabwidth': 4,
@@ -6018,6 +6025,8 @@ class MainFrame(wxp.Frame):
             pass
                 
         # check new key to make options.dat compatible for all 2.x version
+        if len(self.options['textstyles']['highlight'].split(':')) == 2:
+            self.options['textstyles']['highlight'] += ',fore:#000000'
         if len(self.options['textstyles']['foldmargin'].split(':')) == 2:
             self.options['textstyles']['foldmargin'] += ',fore:#555555'
         self.options['cropminx'] = self.options['cropminy'] = 1
@@ -9745,7 +9754,7 @@ class MainFrame(wxp.Frame):
                     (_('Calltip:'), 'calltip'),
                     (_('Calltip highlight:'), 'calltiphighlight'),
                     (_('Cursor:'), 'cursor'),
-                    (_('Selection highlight:'), 'highlight'),
+                    ((_('Selection highlight:'), 'highlight_fore', _('If checked, highlight also foreground')), 'highlight'),
                     ((_('Current line highlight:'), 'highlightline', _('Highlight the line that the caret is currently in')), 'highlightline'),
                     (_('Fold margin:'), 'foldmargin'),
                     (_('Scrap window'), 'scrapwindow'),
