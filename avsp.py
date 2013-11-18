@@ -2958,6 +2958,7 @@ class ScrapWindow(wx.Dialog):
         self.parent = parent
         # Create the stc control
         self.textCtrl = self.createTextCtrl()        
+        self.Style()        
         self.textCtrl.nInserted = 0
         # Define keyboard shortcuts
         #~ self.BindShortcuts()
@@ -2989,11 +2990,6 @@ class ScrapWindow(wx.Dialog):
 
     def createTextCtrl(self):
         textCtrl = stc.StyledTextCtrl(self, wx.ID_ANY, size=(250,250), style=wx.SIMPLE_BORDER)
-        # Define the default style
-        textCtrl.StyleSetSpec(stc.STC_STYLE_DEFAULT, self.parent.options['textstyles']['scrapwindow'])
-        textCtrl.StyleClearAll()
-        # Set a style to use for text flashing upon insertion
-        textCtrl.StyleSetSpec(stc.STC_P_WORD, "fore:#FF0000,bold")
         # Define the context menu
         textCtrl.UsePopUp(0)
         self.idInsertFrame = wx.NewId()
@@ -3034,6 +3030,24 @@ class ScrapWindow(wx.Dialog):
         textCtrl.SetEOLMode(stc.STC_EOL_LF)
         return textCtrl
 
+    def Style(self):
+        textstyles = self.parent.options['textstyles']
+        # Define the default style
+        self.textCtrl.StyleSetSpec(stc.STC_STYLE_DEFAULT, textstyles['scrapwindow'])
+        self.textCtrl.StyleClearAll()
+        # Set a style to use for text flashing upon insertion
+        self.textCtrl.StyleSetSpec(stc.STC_P_WORD, "fore:#FF0000,bold")
+        # Set a style for selected text
+        self.textCtrl.SetCaretForeground(textstyles['cursor'].split(':')[1])
+        for elem in textstyles['highlight'].split(','):
+            if elem.startswith('fore:'):
+                if self.parent.options['highlight_fore']:
+                    self.textCtrl.SetSelForeground(True, elem.split(':')[1].strip())
+                else:
+                    self.textCtrl.SetSelForeground(False, None)
+            elif elem.startswith('back:'):
+                self.textCtrl.SetSelBackground(True, elem.split(':')[1].strip())
+    
     def BindShortcuts(self):
         menuInfo = (
             (_('Insert frame #'), self.idInsertFrame),
@@ -9774,10 +9788,7 @@ class MainFrame(wxp.Frame):
                 script = self.scriptNotebook.GetPage(index)
                 script.SetUserOptions()
             self.SetMinimumScriptPaneSize()
-            textCtrl = self.scrapWindow.textCtrl
-            textCtrl.StyleSetSpec(stc.STC_STYLE_DEFAULT, self.options['textstyles']['scrapwindow'])
-            textCtrl.StyleClearAll()
-            textCtrl.StyleSetSpec(stc.STC_P_WORD, "fore:#FF0000,bold")
+            self.scrapWindow.Style()
         dlg.Destroy()
 
     def OnMenuOptionsTemplates(self, event):
