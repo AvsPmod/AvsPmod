@@ -251,16 +251,13 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
         self.SetMarginMask(2, stc.STC_MASK_FOLDERS)
         self.SetMarginSensitive(2, True)        
         self.SetMarginWidth(2, 13)
-        self.MarkerDefine(stc.STC_MARKNUM_FOLDEROPEN,    stc.STC_MARK_MINUS, "white", "black")
-        self.MarkerDefine(stc.STC_MARKNUM_FOLDER,        stc.STC_MARK_PLUS,  "white", "black")
-        self.MarkerDefine(stc.STC_MARKNUM_FOLDERSUB,     stc.STC_MARK_EMPTY, "white", "black")
-        self.MarkerDefine(stc.STC_MARKNUM_FOLDERTAIL,    stc.STC_MARK_EMPTY, "white", "black")
-        self.MarkerDefine(stc.STC_MARKNUM_FOLDEREND,     stc.STC_MARK_EMPTY, "white", "black")
-        self.MarkerDefine(stc.STC_MARKNUM_FOLDEROPENMID, stc.STC_MARK_EMPTY, "white", "black")
-        self.MarkerDefine(stc.STC_MARKNUM_FOLDERMIDTAIL, stc.STC_MARK_EMPTY, "white", "black")
-        #~ self.SetMarginWidth(2, 0)
-        if self.app.options['numlinechars']:
-            self.fitNumberMarginWidth()
+        self.MarkerDefine(stc.STC_MARKNUM_FOLDEROPEN,    stc.STC_MARK_MINUS)
+        self.MarkerDefine(stc.STC_MARKNUM_FOLDER,        stc.STC_MARK_PLUS)
+        self.MarkerDefine(stc.STC_MARKNUM_FOLDERSUB,     stc.STC_MARK_EMPTY)
+        self.MarkerDefine(stc.STC_MARKNUM_FOLDERTAIL,    stc.STC_MARK_EMPTY)
+        self.MarkerDefine(stc.STC_MARKNUM_FOLDEREND,     stc.STC_MARK_EMPTY)
+        self.MarkerDefine(stc.STC_MARKNUM_FOLDEROPENMID, stc.STC_MARK_EMPTY)
+        self.MarkerDefine(stc.STC_MARKNUM_FOLDERMIDTAIL, stc.STC_MARK_EMPTY)
         self.SetSavePoint()
         # Event handling
         self.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdateUI)
@@ -546,11 +543,31 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
         self.SetCaretForeground(textstyles['cursor'].split(':')[1])
         #~ self.SetSelForeground(True, '#00FF00')
         self.SetSelBackground(True, textstyles['highlight'].split(':')[1])
-        clr = textstyles['foldmargin'].split(':')[1]
-        self.SetFoldMarginColour(True, clr)
-        self.SetFoldMarginHiColour(True, clr)
-        
-
+        fore = back = None
+        for elem in textstyles['foldmargin'].split(','):
+            if elem.startswith('fore:'):
+                fore = elem.split(':')[1].strip()
+            elif elem.startswith('back:'):
+                back = elem.split(':')[1].strip()
+                self.SetFoldMarginColour(True, back)
+                self.SetFoldMarginHiColour(True, back)
+        fore = fore or 'white'
+        back = back or 'black'
+        self.MarkerSetForeground(stc.STC_MARKNUM_FOLDEROPEN, fore)
+        self.MarkerSetBackground(stc.STC_MARKNUM_FOLDEROPEN, back)
+        self.MarkerSetForeground(stc.STC_MARKNUM_FOLDER, fore)
+        self.MarkerSetBackground(stc.STC_MARKNUM_FOLDER, back)
+        self.MarkerSetForeground(stc.STC_MARKNUM_FOLDERSUB, fore)
+        self.MarkerSetBackground(stc.STC_MARKNUM_FOLDERSUB, back)
+        self.MarkerSetForeground(stc.STC_MARKNUM_FOLDERTAIL, fore)
+        self.MarkerSetBackground(stc.STC_MARKNUM_FOLDERTAIL, back)
+        self.MarkerSetForeground(stc.STC_MARKNUM_FOLDEREND, fore)
+        self.MarkerSetBackground(stc.STC_MARKNUM_FOLDEREND, back)
+        self.MarkerSetForeground(stc.STC_MARKNUM_FOLDEROPENMID, fore)
+        self.MarkerSetBackground(stc.STC_MARKNUM_FOLDEROPENMID, back)
+        self.MarkerSetForeground(stc.STC_MARKNUM_FOLDERMIDTAIL, fore)
+        self.MarkerSetBackground(stc.STC_MARKNUM_FOLDERMIDTAIL, back)
+    
     def setStylesNoColor(self):
         # unfold and remove fold points if script is already existing
         for lineNum in range(self.GetLineCount()):
@@ -571,6 +588,22 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
         #~ s_string = {'font': 'Times New Roman', 'size': mainsize, 'color': '#7F007F'}
         #~ s_filter = {'font': mainfont, 'size': mainsize, 'color': '#00007F'}
         #~ s_function = {'font': mainfont, 'size': mainsize, 'color': '#0000AA'}
+
+        # Set markers
+        self.MarkerSetForeground(stc.STC_MARKNUM_FOLDEROPEN, 'white')
+        self.MarkerSetBackground(stc.STC_MARKNUM_FOLDEROPEN, 'black')
+        self.MarkerSetForeground(stc.STC_MARKNUM_FOLDER, 'white')
+        self.MarkerSetBackground(stc.STC_MARKNUM_FOLDER, 'black')
+        self.MarkerSetForeground(stc.STC_MARKNUM_FOLDERSUB, 'white')
+        self.MarkerSetBackground(stc.STC_MARKNUM_FOLDERSUB, 'black')
+        self.MarkerSetForeground(stc.STC_MARKNUM_FOLDERTAIL, 'white')
+        self.MarkerSetBackground(stc.STC_MARKNUM_FOLDERTAIL, 'black')
+        self.MarkerSetForeground(stc.STC_MARKNUM_FOLDEREND, 'white')
+        self.MarkerSetBackground(stc.STC_MARKNUM_FOLDEREND, 'black')
+        self.MarkerSetForeground(stc.STC_MARKNUM_FOLDEROPENMID, 'white')
+        self.MarkerSetBackground(stc.STC_MARKNUM_FOLDEROPENMID, 'black')
+        self.MarkerSetForeground(stc.STC_MARKNUM_FOLDERMIDTAIL, 'white')
+        self.MarkerSetBackground(stc.STC_MARKNUM_FOLDERMIDTAIL, 'black')
 
         # Global default styles for all languages
         default = 'font:Arial, size:10, fore:#000000, back:#FFFFFF'
@@ -5761,7 +5794,7 @@ class MainFrame(wxp.Frame):
                 'scrapwindow': 'face:Comic Sans MS,size:10,fore:#0000AA,back:#F5EF90',
                 'endcomment': 'face:Verdana,size:10,fore:#C0C0C0,back:#FFFFFF',
                 'blockcomment': 'face:Comic Sans MS,size:9,fore:#007F00,back:#FFFFFF',
-                'foldmargin': 'back:#%02X%02X%02X' % rgb,
+                'foldmargin': 'fore:#555555,back:#%02X%02X%02X' % rgb,
             },
             _('Dark'): {
                 'default': 'face:Verdana,size:10,fore:#000000,back:#3F3F3F',
@@ -5796,7 +5829,7 @@ class MainFrame(wxp.Frame):
                 'scrapwindow': 'face:Comic Sans MS,size:10,fore:#0000AA,back:#F5EF90',
                 'endcomment': 'face:Verdana,size:10,fore:#C0C0C0,back:#FFFFFF',
                 'blockcomment': 'face:Comic Sans MS,size:9,fore:#007F00,back:#FFFFFF',
-                'foldmargin': 'back:#%02X%02X%02X' % rgb,
+                'foldmargin': 'fore:#555555,back:#%02X%02X%02X' % rgb,
             },
         }
         textstylesDict = self.defaulttextstylesDict[_('Light')].copy()
@@ -5985,7 +6018,8 @@ class MainFrame(wxp.Frame):
             pass
                 
         # check new key to make options.dat compatible for all 2.x version
-        self.options['textstyles']['foldmargin'] = self.options['textstyles']['foldmargin'].split(',')[-1]
+        if len(self.options['textstyles']['foldmargin'].split(':')) == 2:
+            self.options['textstyles']['foldmargin'] += ',fore:#555555'
         self.options['cropminx'] = self.options['cropminy'] = 1
         self.options['loadstartupbookmarks'] = True
         if oldOptions and 'autocompleteexclusions' in oldOptions:
