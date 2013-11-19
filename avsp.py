@@ -480,7 +480,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
     def ParseFunctions(self, text=None, refresh_highlighting=False):
         if text is None:
             text = self.GetText()
-        filterInfo = self.app.ParseAvisynthScript(script_text=text, quiet=True)
+        filterInfo = self.app.ParseAvisynthScript(script_text=text, quiet=True) or []
         self.avsfilterdict.clear()
         self.avsfilterdict.update(dict(
             [
