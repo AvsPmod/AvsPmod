@@ -5806,6 +5806,32 @@ class MainFrame(wxp.Frame):
         solarized_green = '#859900'
         solarized_base021 = '#c1c5bb' # added
         solarized_base21 = '#2f525b' # added
+        zenburn_normal_fore = '#dcdccc'
+        zenburn_normal_back = '#3f3f3f'
+        zenburn_low_fore = '#a0a094' # added
+        zenburn_comment = '#7f9f7f'
+        zenburn_string = '#cc9393'
+        zenburn_stringeol_fore = '#ecbcbc'
+        zenburn_stringeol_back = '#41363c'
+        zenburn_number = '#8cd0d3'
+        zenburn_operator = '#f0efd0'
+        zenburn_clipproperty = '#9fafaf'
+        zenburn_internalfunction = '#c0bed1'
+        zenburn_internalfilter = '#6c6c9c'
+        zenburn_externalfilter = '#bc6c9c'
+        zenburn_userdefined = '#efef8f'
+        zenburn_datatype = '#dfdfbf'
+        zenburn_keyword = '#f0dfaf'
+        zenburn_define = '#ffcfaf'
+        zenburn_bad = '#e89393'
+        zenburn_cursor_fore = '#000d18'
+        zenburn_cursor_back = '#8faf9f'
+        zenburn_select_back = '#2f2f2f'
+        zenburn_linenumber_fore = '#9fafaf'
+        zenburn_linenumber_back = '#262626'
+        zenburn_currentline_back = '#434443'
+        zenburn_fold_fore = '#93b3a3'
+        zenburn_fold_back = '#333333'
         locals_dict = locals()
         self.defaulttextstylesDict = {
             _('Default'): {
@@ -5813,7 +5839,7 @@ class MainFrame(wxp.Frame):
                 'default': 'face:{sans},size:10,fore:#000000,back:#FFFFFF',
                 'comment': 'face:{serif},size:9,fore:#007F00,back:#FFFFFF',
                 'blockcomment': 'face:{serif},size:9,fore:#007F00,back:#FFFFFF',
-                'endcomment': 'face:{serif},size:10,fore:#C0C0C0,back:#FFFFFF',
+                'endcomment': 'face:{sans},size:10,fore:#C0C0C0,back:#FFFFFF',
                 'number': 'face:{mono},size:10,fore:#007F7F,back:#FFFFFF',
                 'badnumber': 'face:{mono},size:10,fore:#FF0000,back:#FFFFFF',
                 'string': 'face:{mono},size:10,fore:#7F007F,back:#FFFFFF',
@@ -5849,7 +5875,7 @@ class MainFrame(wxp.Frame):
                 'default': 'face:{sans},size:10,fore:{solarized_base00},back:{solarized_base3}',
                 'comment': 'face:{serif},size:9,fore:{solarized_base1},back:{solarized_base3}',
                 'blockcomment': 'face:{serif},size:9,fore:{solarized_base1},back:{solarized_base3}',
-                'endcomment': 'face:{serif},size:10,fore:{solarized_base1},back:{solarized_base3}',
+                'endcomment': 'face:{sans},size:10,fore:{solarized_base1},back:{solarized_base3}',
                 'number': 'face:{mono},size:10,fore:{solarized_cyan},back:{solarized_base3}',
                 'badnumber': 'face:{mono},size:10,fore:{solarized_red},back:{solarized_base3}',
                 'string': 'face:{mono},size:10,fore:{solarized_cyan},back:{solarized_base3}',
@@ -5884,7 +5910,7 @@ class MainFrame(wxp.Frame):
                 'default': 'face:{sans},size:10,fore:{solarized_base0},back:{solarized_base03}',
                 'comment': 'face:{serif},size:9,fore:{solarized_base01},back:{solarized_base03}',
                 'blockcomment': 'face:{serif},size:9,fore:{solarized_base01},back:{solarized_base03}',
-                'endcomment': 'face:{serif},size:10,fore:{solarized_base01},back:{solarized_base03}',
+                'endcomment': 'face:{sans},size:10,fore:{solarized_base01},back:{solarized_base03}',
                 'number': 'face:{mono},size:10,fore:{solarized_cyan},back:{solarized_base03}',
                 'badnumber': 'face:{mono},size:10,fore:{solarized_red},back:{solarized_base03}',
                 'string': 'face:{mono},size:10,fore:{solarized_cyan},back:{solarized_base03}',
@@ -5913,6 +5939,42 @@ class MainFrame(wxp.Frame):
                 'linenumber': 'face:{mono},fore:{solarized_base01},back:{solarized_base02}',
                 'foldmargin': 'fore:{solarized_base01},back:{solarized_base02}',
                 'scrapwindow': 'face:{mono},size:10,fore:{solarized_base1},back:{solarized_base02}',
+            },
+            # Based on Zenburn <http://slinky.imukuppi.org/zenburnpage/>
+            _('Zenburn'): {
+                'monospaced': 'face:{mono},size:10',
+                'default': 'face:{sans},size:10,fore:{zenburn_normal_fore},back:{zenburn_normal_back}',
+                'comment': 'face:{serif},size:9,fore:{zenburn_comment},back:{zenburn_normal_back},italic',
+                'blockcomment': 'face:{serif},size:9,fore:{zenburn_comment},back:{zenburn_normal_back},italic',
+                'endcomment': 'face:{sans},size:10,fore:{zenburn_comment},back:{zenburn_normal_back}',
+                'number': 'face:{mono},size:10,fore:{zenburn_number},back:{zenburn_normal_back}',
+                'badnumber': 'face:{mono},size:10,fore:{zenburn_bad},back:{zenburn_normal_back}',
+                'string': 'face:{mono},size:10,fore:{zenburn_string},back:{zenburn_normal_back}',
+                'stringtriple': 'face:{mono},size:10,fore:{zenburn_string},back:{zenburn_normal_back}',
+                'stringeol': 'face:{mono},size:10,fore:{zenburn_stringeol_fore},back:{zenburn_stringeol_back}',
+                'operator': 'face:{sans},size:10,fore:{zenburn_operator},back:{zenburn_normal_back},bold',
+                'assignment': 'face:{sans},size:10,fore:{zenburn_normal_fore},back:{zenburn_normal_back},bold',
+                'clipproperty': 'face:{sans},size:10,fore:{zenburn_clipproperty},back:{zenburn_normal_back},bold',
+                'internalfunction': 'face:{sans},size:10,fore:{zenburn_internalfunction},back:{zenburn_normal_back},bold',
+                'internalfilter': 'face:{sans},size:10,fore:{zenburn_internalfilter},back:{zenburn_normal_back},bold',
+                'externalfilter': 'face:{sans},size:10,fore:{zenburn_externalfilter},back:{zenburn_normal_back},bold',
+                'userdefined': 'face:{sans},size:10,fore:{zenburn_userdefined},back:{zenburn_normal_back},bold',
+                'unknownfunction': 'face:{sans},size:10,fore:{zenburn_bad},back:{zenburn_normal_back},bold',
+                'parameter': 'face:{sans},size:10,fore:{zenburn_low_fore},back:{zenburn_normal_back}',
+                'datatype': 'face:{sans},size:10,fore:{zenburn_datatype},back:{zenburn_normal_back}',
+                'calltip': 'fore:{zenburn_low_fore},back:{zenburn_currentline_back}',
+                'calltiphighlight': 'fore:{zenburn_normal_fore}',
+                'keyword': 'face:{sans},size:10,fore:{zenburn_keyword},back:{zenburn_normal_back},bold',
+                'miscword': 'face:{sans},size:10,fore:{zenburn_keyword},back:{zenburn_normal_back},bold',
+                'userslider': 'face:{sans},size:10,fore:{zenburn_define},back:{zenburn_normal_back}',
+                'cursor': 'fore:{zenburn_cursor_back}',
+                'bracelight': 'face:{sans},size:10,fore:{zenburn_fold_fore},back:{zenburn_normal_back},bold',
+                'badbrace': 'face:{sans},size:10,fore:{zenburn_bad},back:{zenburn_normal_back},bold',
+                'highlight': 'fore:{zenburn_normal_fore},back:{zenburn_select_back}',             
+                'highlightline': 'back:{zenburn_currentline_back}',
+                'linenumber': 'face:{mono},fore:{zenburn_linenumber_fore},back:{zenburn_linenumber_back}',
+                'foldmargin': 'fore:{zenburn_fold_fore},back:{zenburn_fold_back}',
+                'scrapwindow': 'face:{mono},size:10,fore:{zenburn_normal_fore},back:{zenburn_currentline_back}',
             },
         }
         for values in self.defaulttextstylesDict.itervalues():
