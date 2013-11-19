@@ -546,7 +546,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                 if self.app.options['highlight_fore']:
                     self.SetSelForeground(True, elem.split(':')[1].strip())
                 else:
-                    self.SetSelForeground(False, None)
+                    self.SetSelForeground(False, wx.WHITE)
             elif elem.startswith('back:'):
                 self.SetSelBackground(True, elem.split(':')[1].strip())
         fore = back = None
@@ -3044,7 +3044,7 @@ class ScrapWindow(wx.Dialog):
                 if self.parent.options['highlight_fore']:
                     self.textCtrl.SetSelForeground(True, elem.split(':')[1].strip())
                 else:
-                    self.textCtrl.SetSelForeground(False, None)
+                    self.textCtrl.SetSelForeground(False, wx.WHITE)
             elif elem.startswith('back:'):
                 self.textCtrl.SetSelBackground(True, elem.split(':')[1].strip())
     
