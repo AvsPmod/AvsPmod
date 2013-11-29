@@ -256,6 +256,8 @@ def UpdateTranslationFile(dir, lang=None, version=global_vars.version):
         f = open(filename, 'w')
         f.write('\n'.join(newlines))
         f.close()
+    else:
+        allMessagesMatched = True
     return not allMessagesMatched
 
 def display_name(code):
