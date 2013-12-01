@@ -1,7 +1,7 @@
 # AvsP - an AviSynth editor
 # 
 # Copyright 2007 Peter Jang <http://www.avisynth.org/qwerpoi>
-#           2010-2013 the AvsPmod authors <https://github.com/avspmod/avspmod>
+#           2010-2014 the AvsPmod authors <https://github.com/avspmod/avspmod>
 #
 # Printing support based on stcprint.py from Peppy/Editra (wxWidgets license)
 # Copyright 2007 Cody Precord <staff@editra.org>
@@ -25,9 +25,15 @@
 # Dependencies:
 #     Python (tested on v2.6 and 2.7)
 #     wxPython (tested on v2.8 Unicode and 2.9)
+#     cffi and its dependencies (only for x86-64, tested on v0.8.1)
+#         pycparser
+#         Visual Studio 2008
+#     avisynth_c.h (only for x86-64, interface 5, or at least 3 + colorspaces 
+#                   from 5, tested with the header used by x264)
 # Scripts:
 #     wxp.py (general wxPython framework classes)
-#     avisynth.py (Python AviSynth/AvxSynth wrapper)
+#     avisynth.py (Python AviSynth/AvxSynth wrapper, only for x86-32)
+#     avisynth_cffi.py (Python AviSynth wrapper, only for x86-64)
 #     pyavs.py (AvsP AviSynth support by loading AviSynth directly as a library)
 #     pyavs_avifile.py (AvsP AviSynth support through Windows AVIFile routines)
 #     icon.py (icons embedded in a Python script)
@@ -5191,6 +5197,7 @@ class MainFrame(wxp.Frame):
         self.name = title
         self.version = global_vars.version
         self.firsttime = False
+        self.x86_64 = sys.maxsize > 2**32
         # Define program directories
         if hasattr(sys,'frozen'):
             self.programdir = os.path.dirname(sys.executable)
@@ -6216,7 +6223,10 @@ class MainFrame(wxp.Frame):
         exception = path_used = altdir_used = False
         while True:
             try:
-                import avisynth
+                if self.x86_64:
+                    import avisynth_cffi as avisynth
+                else:
+                    import avisynth
                 break
             except OSError, err:
                 if __debug__:
@@ -6572,42 +6582,46 @@ class MainFrame(wxp.Frame):
         
         # get version info
         try:
-            env = avisynth.avs_create_script_environment(3)
+            env = avisynth.AVS_ScriptEnvironment(3)
         except OSError:
             error = _('Make sure you have AviSynth installed and that there are no '
                       'unstable plugins or avsi files in the AviSynth plugins directory.')
             error = '\n'.join(textwrap.wrap(error, 70))
         else:
-            if hasattr(env, 'GetError'):
-                error = env.GetError()
+            if hasattr(env, 'get_error'):
+                error = env.get_error()
             else:
                 error = None
         if error:
             wx.SafeShowMessage(' '.join((self.name, self.version)), 
                               '\n\n'.join((_('Error loading AviSynth!'), error)))
             sys.exit(0)
-        self.avisynthVersion = (env.Invoke('VersionString'),
-                                env.Invoke('VersionNumber'),
-                                env.Invoke('Version').AsClip(env).GetVersion())
+        self.avisynthVersion = (env.invoke('VersionString'),
+                                env.invoke('VersionNumber'),
+                                env.invoke('Version').get_version())
         
         # retrieve existing filters (internal filters, autoloaded plugins and avsi files)
-        self.avisynth_p = env.FunctionExists('AutoloadPlugins') # AviSynth+
+        self.avisynth_p = env.function_exists('AutoloadPlugins') # AviSynth+
         if self.avisynth_p:
-            env.Invoke('AutoloadPlugins')
+            env.invoke('AutoloadPlugins')
         # internal filters
-        intfunc = avisynth.avs_get_var(env,"$InternalFunctions$")
-        if intfunc.d.s:
-            funclist = [(name, 0) for name in intfunc.d.s.split()]
-        else:
+        try:
+            intfunc = env.get_var("$InternalFunctions$")
+        except avisynth.AvisynthError as err:
+            if str(err) != "NotFound": raise
             funclist = []
-        intfunc.Release()
+        else:
+            funclist = [(name, 0) for name in intfunc.split()]
         # autoladed plugins
-        pluginfunc = avisynth.avs_get_var(env,"$PluginFunctions$")
-        if pluginfunc.d.s:
+        try:
+            pluginfunc = env.get_var("$PluginFunctions$")
+        except avisynth.AvisynthError as err:
+            if str(err) != "NotFound": raise
+        else:
             pluginfuncList = []
             baddllnameList = []
             short_name = None
-            for name in pluginfunc.d.s.split():
+            for name in pluginfunc.split():
                 if short_name is None:
                     short_name = name
                     continue
@@ -6638,17 +6652,18 @@ class MainFrame(wxp.Frame):
                 funclist += pluginfuncList
             if baddllnameList and self.options['dllnamewarning']:
                 self.IdleCall.append((self.ShowWarningOnBadNaming, (baddllnameList, ), {}))
-        pluginfunc.Release()
         # autoloaded avsi files
-        userfunc = avisynth.avs_get_var(env,"$UserFunctions$")
-        if userfunc.d.s:
+        try:
+            userfunc = env.get_var("$UserFunctions$")
+        except avisynth.AvisynthError as err:
+            if str(err) != "NotFound": raise
+        else:
             userfuncList = []
-            for name in userfunc.d.s.split(): # no set comprehensions in python 2.6
+            for name in userfunc.split():
                 self.installed_avsi_filternames.add(name.lower())
                 userfuncList.append((name, 3))
             if self.options['autoloadedavsi']:
                 funclist += userfuncList
-        userfunc.Release()
         
         # get parameter info for each filter
         typeDict = {
@@ -6664,12 +6679,15 @@ class MainFrame(wxp.Frame):
         for name, functionType in funclist:
             if name.strip() == '':
                 continue
-            t = avisynth.avs_get_var(env,"$Plugin!"+name+"!Param$")
-            if t.d.c is not None:
+            try:
+                t = env.get_var("$Plugin!"+name+"!Param$")
+            except avisynth.AvisynthError as err:
+                if str(err) != "NotFound": raise
+            else:
                 argList = []
                 namedarg = False
                 namedargname = []
-                for i, c in enumerate(t.d.s):
+                for i, c in enumerate(t):
                     if c == '[':
                         namedarg = True
                     elif c == ']':
@@ -6680,7 +6698,7 @@ class MainFrame(wxp.Frame):
                         namedargindex = len(argList)
                         if c in ('+', '*'):
                             try:
-                                typeDict[t.d.s[i-1]] # Helps ensure previous arg is valid
+                                typeDict[t[i-1]] # Helps ensure previous arg is valid
                                 argList[-1] += ' [, ...]'
                             except (IndexError, KeyError):
                                 print>>sys.stderr, (
@@ -6705,7 +6723,6 @@ class MainFrame(wxp.Frame):
                                 argList.append(''.join(namedargname))
                             namedargname = []
                 argstring = '(%s)' % (', '.join(argList))
-            t.Release()
             if functionType == 0:
                 if name.islower():
                     if argstring.startswith('(clip'):
@@ -6720,7 +6737,6 @@ class MainFrame(wxp.Frame):
                         functionType = 1
             key = name.lower()
             functionDict[key] = (name, argstring, functionType)
-        env.Release()
         return functionDict
 
     def ParseAvisynthScript(self, filename='', script_text=None, quiet=False):
@@ -8887,7 +8903,7 @@ class MainFrame(wxp.Frame):
 
     def OnMenuCopyAvisynthError(self, event):
         if self.currentScript.AVI:           
-            error_message = self.currentScript.AVI.error_message or self.currentScript.AVI.clip.GetError()
+            error_message = self.currentScript.AVI.error_message or self.currentScript.AVI.clip.get_error()
             if error_message and not wx.TheClipboard.IsOpened(): 
                 text_data = wx.TextDataObject(error_message)
                 wx.TheClipboard.Open()
@@ -9203,7 +9219,7 @@ class MainFrame(wxp.Frame):
         mdc.SelectObject(bmp)
         if not script.AVI.DrawFrame(self.currentframenum, mdc):
             wx.MessageBox(u'\n\n'.join((_('Error requesting frame {number}').format(number=self.currentframenum), 
-                          script.AVI.clip.GetError())), _('Error'), style=wx.OK|wx.ICON_ERROR)
+                          script.AVI.clip.get_error())), _('Error'), style=wx.OK|wx.ICON_ERROR)
             return False
         bmp_data = wx.BitmapDataObject(bmp)
         if wx.TheClipboard.Open():
@@ -9606,8 +9622,8 @@ class MainFrame(wxp.Frame):
         initial_time = previous_time = time.time()
         previous_frame = -1
         for frame in range(frame_count):
-            script.AVI.clip.GetFrame(frame)
-            error = script.AVI.clip.GetError()
+            script.AVI.clip.get_frame(frame)
+            error = script.AVI.clip.get_error()
             if error:
                 progress.Destroy()
                 wx.MessageBox(u'\n\n'.join((_('Error requesting frame {number}').format(number=frame), 
@@ -12872,7 +12888,7 @@ class MainFrame(wxp.Frame):
                 ret = avs_clip.DrawFrame(frame, mdc)
             if not ret:
                 wx.MessageBox(u'\n\n'.join((_('Error requesting frame {number}').format(number=frame), 
-                              avs_clip.clip.GetError())), _('Error'), style=wx.OK|wx.ICON_ERROR)
+                              avs_clip.clip.get_error())), _('Error'), style=wx.OK|wx.ICON_ERROR)
                 return
             #~ bmp.SaveFile(filename, self.imageFormats[ext][1])
             img = bmp.ConvertToImage()
@@ -13844,22 +13860,19 @@ class MainFrame(wxp.Frame):
             ffms_encodedframetype, ffms_sourcetime = v.ffms_info_cache[self.currentframenum]
         except KeyError:
             try:
-                var = script.AVI.env.GetVar('FFSARFFVAR_PREFIX')
-                ffms_prefix = var.GetValue()
+                ffms_prefix = script.AVI.env.get_var('FFSARFFVAR_PREFIX')
             except avisynth.AvisynthError as err:
                 if str(err) != "NotFound":
                     raise
                 ffms_prefix = ''
             try:
-                var = script.AVI.env.GetVar(ffms_prefix + 'FFPICT_TYPE')
-                ffms_encodedframetype = chr(var.GetValue())
+                ffms_encodedframetype = chr(script.AVI.env.get_var(ffms_prefix + 'FFPICT_TYPE'))
             except avisynth.AvisynthError as err:
                 if str(err) != "NotFound":
                     raise
                 ffms_encodedframetype = ''
             try:
-                var = script.AVI.env.GetVar(ffms_prefix + 'FFVFR_TIME')
-                ffms_sourcetime = self.FormatTime(var.GetValue() / 1000.0)
+                ffms_sourcetime = self.FormatTime(script.AVI.env.get_var(ffms_prefix + 'FFVFR_TIME') / 1000.0)
             except avisynth.AvisynthError as err:
                 if str(err) != "NotFound":
                     raise
@@ -14417,8 +14430,8 @@ class MainFrame(wxp.Frame):
             self.frameTextCtrl2.Replace(0, -1, str(framenum))
         
         # Check for errors when retrieving the frame before updating the gui
-        script.AVI.display_clip.GetFrame(framenum)
-        error = script.AVI.display_clip.GetError()
+        script.AVI.display_clip.get_frame(framenum)
+        error = script.AVI.display_clip.get_error()
         if error is not None:
             self.HidePreviewWindow()
             wx.MessageBox(u'\n\n'.join((_('Error requesting frame {number}').format(number=framenum), 
@@ -15115,7 +15128,7 @@ class MainFrame(wxp.Frame):
                 dc.SelectObject(bmp)
                 if not script.AVI.DrawFrame(frame, dc):
                     wx.MessageBox(u'\n\n'.join((_('Error requesting frame {number}').format(number=frame), 
-                                  script.AVI.clip.GetError())), _('Error'), style=wx.OK|wx.ICON_ERROR)
+                                  script.AVI.clip.get_error())), _('Error'), style=wx.OK|wx.ICON_ERROR)
                     return
                 self.PaintCropRectangles(dc, script)
                 self.PaintTrimSelectionMark(dc, script, frame)
@@ -15132,7 +15145,7 @@ class MainFrame(wxp.Frame):
                     self.videoWindow.PrepareDC(dc)
                 if not script.AVI.DrawFrame(frame, dc):
                     wx.MessageBox(u'\n\n'.join((_('Error requesting frame {number}').format(number=frame), 
-                                  script.AVI.clip.GetError())), _('Error'), style=wx.OK|wx.ICON_ERROR)
+                                  script.AVI.clip.get_error())), _('Error'), style=wx.OK|wx.ICON_ERROR)
                     return
         else:
             dc = wx.MemoryDC()
@@ -15145,7 +15158,7 @@ class MainFrame(wxp.Frame):
                 dc.SelectObject(bmp)
                 if not script.AVI.DrawFrame(frame, dc):
                     wx.MessageBox(u'\n\n'.join((_('Error requesting frame {number}').format(number=frame), 
-                                  script.AVI.clip.GetError())), _('Error'), style=wx.OK|wx.ICON_ERROR)
+                                  script.AVI.clip.get_error())), _('Error'), style=wx.OK|wx.ICON_ERROR)
                     return
                 if self.flip:
                     img = bmp.ConvertToImage()
@@ -18031,8 +18044,7 @@ class MainFrame(wxp.Frame):
             wx.MessageBox(_('Error loading the script'), _('Error'), style=wx.OK|wx.ICON_ERROR)
             return False
         try:
-            with script.AVI.env.GetVar(var) as avs_var:
-                return avs_var.GetValue(script.AVI.env)
+            return script.AVI.env.get_var(var)
         except avisynth.AvisynthError as err:
             if str(err) != "NotFound":
                 raise
@@ -18169,7 +18181,7 @@ class MainFrame(wxp.Frame):
             for i, frame in enumerate(frames):
                 if not callback or callback(i, frame, total_frames):
                     buf = clip.RawFrame(frame, y4m_frame)
-                    error = clip.clip.GetError()
+                    error = clip.clip.get_error()
                     if not error:
                         cmd.stdin.write(buf)
                         continue

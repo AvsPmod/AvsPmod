@@ -1,7 +1,7 @@
 # AvsP - an AviSynth editor
 # 
 # Copyright 2007 Peter Jang <http://www.avisynth.org/qwerpoi>
-#           2010-2013 the AvsPmod authors <https://github.com/avspmod/avspmod>
+#           2010-2014 the AvsPmod authors <https://github.com/avspmod/avspmod>
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -24,20 +24,31 @@
 # Dependencies:
 #     Python (tested on v2.6 and v2.7)
 #     wxPython (for *nix, tested on v2.8 and v2.9)
+#     cffi and its dependencies (only for x86-64, tested on v0.8.1)
+#         pycparser
+#         Visual Studio 2008
+#     avisynth_c.h (only for x86-64, interface 5, or at least 3 + colorspaces 
+#                   from 5, tested with the header used by x264)
 # Scripts:
-#     avisynth.py (Python AviSynth/AvxSynth wrapper)
+#     avisynth.py (Python AviSynth/AvxSynth wrapper, only for x86-32)
+#     avisynth_cffi.py (Python AviSynth wrapper, only for x86-64)
 
 import sys
 import os
 import ctypes
 import re
 
-import avisynth
+x86_64 = sys.maxsize > 2**32
+if x86_64:
+    import avisynth_cffi as avisynth
+else:
+    import avisynth
 import global_vars
 
 try: _
 except NameError:
     def _(s): return s
+
 
 class AvsClipBase:
     
@@ -46,6 +57,7 @@ class AvsClipBase:
                  matrix=['auto', 'tv'], interlaced=False, swapuv=False, bit_depth=None):
         # Internal variables
         self.initialized = False
+        self.name = filename
         self.error_message = None
         self.current_frame = -1
         self.pBits = None
@@ -89,52 +101,41 @@ class AvsClipBase:
         
         # Create the Avisynth script clip
         if env is not None:
-            if isinstance(env,avisynth.PIScriptEnvironment):
+            if isinstance(env, avisynth.AVS_ScriptEnvironment):
                 self.env = env
             else:
                 raise TypeError("env must be a PIScriptEnvironment or None")
         else:
-            if isinstance(script,avisynth.PClip):
+            if isinstance(script, avisynth.AVS_Clip):
                 raise ValueError("env must be defined when providing a clip") 
             try:
-                self.env=avisynth.avs_create_script_environment(3)
+                self.env = avisynth.AVS_ScriptEnvironment(3)
             except OSError:
                 return
-            if hasattr(self.env, 'GetError'):
-                self.error_message = self.env.GetError()
+            if hasattr(self.env, 'get_error'):
+                self.error_message = self.env.get_error()
                 if self.error_message: return
-        if isinstance(script,avisynth.PClip):
-            self.clip=script
+        if isinstance(script, avisynth.AVS_Clip):
+            self.clip = script
         else:
-            if type(script) != unicode:
-                f=unicode(script)
-            else:
-                f = script
             # vpy hack, remove when VapourSynth is supported
             if os.name == 'nt' and filename.endswith('.vpy'):
-                if self.env.FunctionExists('AutoloadPlugins'): # AviSynth+
-                    self.env.Invoke('AutoloadPlugins')    
-                if self.env.FunctionExists('VSImport'):
-                    f = ur'VSImport("{0}", stacked=true)'.format(filename)
+                if self.env.function_exists('AutoloadPlugins'): # AviSynth+
+                    self.env.invoke('AutoloadPlugins')    
+                if self.env.function_exists('VSImport'):
+                    script = ur'VSImport("{0}", stacked=true)'.format(filename)
                 else:
-                    f = ur'AviSource("{0}")'.format(filename)
-            arg=avisynth.AVS_Value(f)           #assign to AVSValue
+                    script = ur'AviSource("{0}")'.format(filename)
             scriptdirname, scriptbasename = os.path.split(filename)
             curdir = os.getcwdu()
             workdir = os.path.isdir(workdir) and workdir or scriptdirname
             if os.path.isdir(workdir):
-                self.env.SetWorkingDir(workdir)
-            self.file = avisynth.AVS_Value(scriptbasename)
-            self.name = avisynth.AVS_Value(filename)
-            self.dir = avisynth.AVS_Value(scriptdirname)
-            self.env.SetGlobalVar("$ScriptFile$", self.file)
-            self.env.SetGlobalVar("$ScriptName$", self.name)
-            self.env.SetGlobalVar("$ScriptDir$", self.dir)
-            arg2=avisynth.AVS_Value(filename)
-            args=avisynth.AVS_Value([arg,arg2])
+                self.env.set_working_dir(workdir)
+            self.env.set_global_var("$ScriptFile$", scriptbasename)
+            self.env.set_global_var("$ScriptName$", filename)
+            self.env.set_global_var("$ScriptDir$", scriptdirname)
             try:
-                avsfile=self.env.Invoke("eval",args,0) #use eval to load it
-                self.clip=avsfile.AsClip(self.env)
+                self.clip = self.env.invoke('Eval', [script, filename])
             except avisynth.AvisynthError, err:
                 self.Framecount = oldFramecount
                 if not self.CreateErrorClip(err):
@@ -142,43 +143,41 @@ class AvsClipBase:
             finally:
                 os.chdir(curdir)
             try:
-                if not self.env.GetVar("last").IsClip():#.AsClip(self.env)
-                    self.env.SetVar("last",avisynth.AVS_Value(self.clip))
+                if not isinstance(self.env.get_var("last"), avisynth.AVS_Clip):
+                    self.env.set_var("last", self.clip)
             except avisynth.AvisynthError as err:
                 if str(err) != 'NotFound':
                     raise
-                self.env.SetVar("last",avisynth.AVS_Value(self.clip))
-            self.env.SetVar("avsp_raw_clip", avisynth.AVS_Value(self.clip))
-            if self.env.FunctionExists('AutoloadPlugins'): # AviSynth+
-                self.env.Invoke('AutoloadPlugins')    
+                self.env.set_var("last", self.clip)
+            self.env.set_var("avsp_raw_clip", self.clip)
+            if self.env.function_exists('AutoloadPlugins'): # AviSynth+
+                self.env.invoke('AutoloadPlugins')    
         
         # Set the video properties
-        self.vi=self.clip.GetVideoInfo()
-        self.HasVideo = self.vi.HasVideo()
+        self.vi = self.clip.get_video_info()
+        self.HasVideo = self.vi.has_video()
         if not self.HasVideo:
             self.clip = None
             errText = 'MessageClip("No video")'
-            arg = avisynth.AVS_Value(errText)
             try:
-                avsfile = self.env.Invoke("eval", arg, 0)
-                self.clip = avsfile.AsClip(self.env)
+                self.clip = self.env.invoke('Eval', errText)
             except avisynth.AvisynthError, err:
                 return
             try:
-                if not self.env.GetVar("last").IsClip():#.AsClip(self.env)
-                    self.env.SetVar("last",avisynth.AVS_Value(self.clip))
+                if not isinstance(self.env.get_var('last'), avisynth.AVS_Clip):
+                    self.env.set_var('last', self.clip)
             except avisynth.AvisynthError as err:
                 if str(err) != 'NotFound':
                     raise
-                self.env.SetVar("last",avisynth.AVS_Value(self.clip))
-            self.vi=self.clip.GetVideoInfo()
-            self.HasVideo = self.vi.HasVideo()
+                self.env.set_var('last', self.clip)
+            self.vi=self.clip.get_video_info()
+            self.HasVideo = self.vi.has_video()
         self.Framecount = self.vi.num_frames
         self.Width = self.vi.width
         self.Height = self.vi.height
-        if self.vi.IsYUV() and not self.vi.IsY8():
-            self.WidthSubsampling = self.vi.GetPlaneWidthSubsampling(avisynth.PLANAR_U)
-            self.HeightSubsampling = self.vi.GetPlaneHeightSubsampling(avisynth.PLANAR_U)
+        if self.vi.is_yuv() and not self.vi.is_y8():
+            self.WidthSubsampling = self.vi.get_plane_width_subsampling(avisynth.avs.AVS_PLANAR_U)
+            self.HeightSubsampling = self.vi.get_plane_height_subsampling(avisynth.avs.AVS_PLANAR_U)
         self.DisplayWidth, self.DisplayHeight = self.Width, self.Height
         self.FramerateNumerator = self.vi.fps_numerator 
         self.FramerateDenominator = self.vi.fps_denominator
@@ -187,37 +186,37 @@ class AvsClipBase:
         except ZeroDivisionError:
             pass
         self.sample_type_dict = {
-            avisynth.SAMPLE_INT8: 8,
-            avisynth.SAMPLE_INT16: 16,
-            avisynth.SAMPLE_INT24: 24,
-            avisynth.SAMPLE_INT32: 32,
-            avisynth.SAMPLE_FLOAT: 32,
+            avisynth.avs.AVS_SAMPLE_INT8: 8,
+            avisynth.avs.AVS_SAMPLE_INT16: 16,
+            avisynth.avs.AVS_SAMPLE_INT24: 24,
+            avisynth.avs.AVS_SAMPLE_INT32: 32,
+            avisynth.avs.AVS_SAMPLE_FLOAT: 32,
         }
         self.Audiorate = self.vi.audio_samples_per_second
         self.Audiolength = self.vi.num_audio_samples
         #~ self.AudiolengthF = None
         self.Audiochannels = self.vi.nchannels
         self.Audiobits = self.sample_type_dict.get(self.vi.sample_type, 0)
-        self.IsAudioFloat = self.vi.sample_type == avisynth.SAMPLE_FLOAT
+        self.IsAudioFloat = self.vi.sample_type == avisynth.avs.AVS_SAMPLE_FLOAT
         self.IsAudioInt = not self.IsAudioFloat
-        self.IsRGB = self.vi.IsRGB()
-        self.IsRGB24 = self.vi.IsRGB24()
-        self.IsRGB32 = self.vi.IsRGB32()
-        self.IsYUV = self.vi.IsYUV()
-        self.IsYUY2 = self.vi.IsYUY2()
-        self.IsYV24 = self.vi.IsYV24()
-        self.IsYV16 = self.vi.IsYV16()
-        self.IsYV12 = self.vi.IsYV12()
-        self.IsYV411 = self.vi.IsYV411()
-        self.IsY8 = self.vi.IsY8()
+        self.IsRGB = self.vi.is_rgb()
+        self.IsRGB24 = self.vi.is_rgb24()
+        self.IsRGB32 = self.vi.is_rgb32()
+        self.IsYUV = self.vi.is_yuv()
+        self.IsYUY2 = self.vi.is_yuy2()
+        self.IsYV24 = self.vi.is_yv24()
+        self.IsYV16 = self.vi.is_yv16()
+        self.IsYV12 = self.vi.is_yv12()
+        self.IsYV411 = self.vi.is_yv411()
+        self.IsY8 = self.vi.is_y8()
         self.Colorspace = ('RGB24'*self.IsRGB24 + 'RGB32'*self.IsRGB32 + 'YUY2'*self.IsYUY2 + 'YV12'*self.IsYV12 + 
                            'YV24'*self.IsYV24 + 'YV16'*self.IsYV16 + 'YV411'*self.IsYV411 + 'Y8'*self.IsY8)
-        self.IsPlanar = self.vi.IsPlanar()
-        self.IsInterleaved = self.vi.IsInterleaved()
-        self.IsFieldBased = self.vi.IsFieldBased()
+        self.IsPlanar = self.vi.is_planar()
+#        self.IsInterleaved = self.vi.is_interleaved()
+        self.IsFieldBased = self.vi.is_field_based()
         self.IsFrameBased = not self.IsFieldBased
-        self.GetParity = avisynth.avs_get_parity(self.clip,0)#self.vi.image_type
-        self.HasAudio = self.vi.HasAudio()
+        self.GetParity = self.clip.get_parity(0) #self.vi.image_type
+        self.HasAudio = self.vi.has_audio()
         
         self.interlaced = interlaced
         if display_clip and not self.CreateDisplayClip(matrix, interlaced, swapuv, bit_depth):
@@ -226,7 +225,7 @@ class AvsClipBase:
             self.clip = self.BGR2RGB(self.clip)
         self.initialized = True
         if __debug__:
-            print "AviSynth clip created successfully: '{0}'".format(self.name)
+            print u"AviSynth clip created successfully: '{0}'".format(self.name)
     
     def __del__(self):
         if self.initialized:
@@ -235,7 +234,7 @@ class AvsClipBase:
             self.display_clip = None
             self.clip = None
             if __debug__:
-                print "Deleting allocated video memory for '{0}'".format(self.name)
+                print u"Deleting allocated video memory for '{0}'".format(self.name)
     
     def CreateErrorClip(self, err='', display_clip_error=False):
         fontFace, fontSize = global_vars.options['errormessagefont'][:2]
@@ -260,16 +259,15 @@ class AvsClipBase:
         eHeight = yLine + fontSize/4
         firstLine = 'BlankClip(length=%(eLength)i,width=%(eWidth)i,height=%(eHeight)i)' % locals()
         errText = firstLine + '.'.join(lineList)
-        arg = avisynth.AVS_Value(errText)
         try:
-            avsfile=self.env.Invoke("eval",arg,0) #use eval to load it
+            clip = self.env.invoke('Eval', errText)
             if display_clip_error:
-                self.display_clip = avsfile.AsClip(self.env)
-                vi = self.display_clip.GetVideoInfo()
+                self.display_clip = clip
+                vi = self.display_clip.get_video_info()
                 self.DisplayWidth = vi.width
                 self.DisplayHeight = vi.height
             else:
-                self.clip = avsfile.AsClip(self.env)
+                self.clip = clip
         except avisynth.AvisynthError, err:
             return
         return True
@@ -289,31 +287,27 @@ class AvsClipBase:
                         return True
                 elif self.IsYV12 or self.IsYV24 or self.IsY8:
                     if bit_depth == 's16':
-                        args = avisynth.AVS_Value([self.display_clip, 0, 0, 0, self.Height / 2])
-                        avsfile = self.env.Invoke('Crop', args)
-                        self.display_clip = avsfile.AsClip(self.env)
+                        args = [self.display_clip, 0, 0, 0, self.Height / 2]
+                        self.display_clip = self.env.invoke('Crop', args)
                     elif bit_depth == 's10':
-                        if self.env.FunctionExists('mt_lutxy'):
-                            args = avisynth.AVS_Value(
+                        if self.env.function_exists('mt_lutxy'):
+                            args = (
                             'avsp_raw_clip\n'
                             'msb = Crop(0, 0, Width(), Height() / 2)\n'
                             'lsb = Crop(0, Height() / 2, Width(), Height() / 2)\n'
                             'mt_lutxy(msb, lsb, "x 8 << y + 2 >>", chroma="process")')
-                            avsfile = self.env.Invoke('Eval', args)
-                            self.display_clip = avsfile.AsClip(self.env)
+                            self.display_clip = self.env.invoke('Eval', args)
                     elif bit_depth == 'i16':
-                        args = avisynth.AVS_Value('avsp_raw_clip.AssumeBFF().TurnLeft().SeparateFields().'
-                                                  'TurnRight().AssumeFrameBased().SelectOdd()')
-                        avsfile = self.env.Invoke('Eval', args)
-                        self.display_clip = avsfile.AsClip(self.env)
+                        args = ('avsp_raw_clip.AssumeBFF().TurnLeft().SeparateFields().'
+                                'TurnRight().AssumeFrameBased().SelectOdd()')
+                        self.display_clip = self.env.invoke('Eval', args)
                     elif bit_depth == 'i10':
-                        if self.env.FunctionExists('mt_lutxy'):
-                            args = avisynth.AVS_Value(
+                        if self.env.function_exists('mt_lutxy'):
+                            args = (
                             'avsp_raw_clip.AssumeBFF().TurnLeft().SeparateFields().TurnRight().AssumeFrameBased()\n'
                             'mt_lutxy(SelectOdd(), SelectEven(), "x 8 << y + 2 >>", chroma="process")')
-                            avsfile = self.env.Invoke('Eval', args)
-                            self.display_clip = avsfile.AsClip(self.env)
-                    vi = self.display_clip.GetVideoInfo()
+                            self.display_clip = self.env.invoke('Eval', args)
+                    vi = self.display_clip.get_video_info()
                     self.DisplayWidth = vi.width
                     self.DisplayHeight = vi.height
             except avisynth.AvisynthError, err:
@@ -333,13 +327,10 @@ class AvsClipBase:
             self.interlaced = interlaced
         if swapuv and self.IsYUV and not self.IsY8:
             try:
-                arg = avisynth.AVS_Value(self.display_clip)
-                avsfile = self.env.Invoke("swapuv", arg, 0)
-                arg.Release()
-                self.display_clip = avsfile.AsClip(self.env)
+                self.display_clip = self.env.invoke('SwapUV', self.display_clip)
             except avisynth.AvisynthError, err:
                 return self.CreateErrorClip(display_clip_error=True)
-        vi = self.display_clip.GetVideoInfo()
+        vi = self.display_clip.get_video_info()
         self.DisplayWidth = vi.width
         self.DisplayHeight = vi.height
         if not self._ConvertToRGB():
@@ -359,27 +350,39 @@ class AvsClipBase:
             if frame >= self.Framecount:
                 frame = self.Framecount - 1
             # Original clip
-            self.src_frame = self.clip.GetFrame(frame)
-            if self.clip.GetError():
+            self.src_frame = self.clip.get_frame(frame)
+            if self.clip.get_error():
                 return False
-            self.pitch = self.src_frame.GetPitch()
-            self.pitchUV = self.src_frame.GetPitch(avisynth.PLANAR_U)
-            self.ptrY = self.src_frame.GetReadPtr()
+            self.pitch = self.src_frame.get_pitch()
+            self.pitchUV = self.src_frame.get_pitch(avisynth.avs.AVS_PLANAR_U)
+            self.ptrY = self.src_frame.get_read_ptr()
+            if x86_64:
+                self.ptrY = self._cffi2ctypes_ptr(self.ptrY)
             if not self.IsY8:
-                self.ptrU = self.src_frame.GetReadPtr(plane=avisynth.PLANAR_U)
-                self.ptrV = self.src_frame.GetReadPtr(plane=avisynth.PLANAR_V)
+                self.ptrU = self.src_frame.get_read_ptr(avisynth.avs.AVS_PLANAR_U)
+                self.ptrV = self.src_frame.get_read_ptr(avisynth.avs.AVS_PLANAR_V)
+                if x86_64:
+                    self.ptrU = self._cffi2ctypes_ptr(self.ptrU)
+                    self.ptrV = self._cffi2ctypes_ptr(self.ptrV)
             # Display clip
             if self.display_clip:
-                self.display_frame = self.display_clip.GetFrame(frame)
-                if self.display_clip.GetError():
+                self.display_frame = self.display_clip.get_frame(frame)
+                if self.display_clip.get_error():
                     return False
-                self.display_pitch = self.display_frame.GetPitch()
-                self.pBits = self.display_frame.GetReadPtr()
+                self.display_pitch = self.display_frame.get_pitch()
+                self.pBits = self.display_frame.get_read_ptr()
+                if x86_64:
+                    self.pBits = self._cffi2ctypes_ptr(self.pBits)
                 if self.RGB48: ## -> RGB24
                     pass
             self.current_frame = frame
             return True
         return False
+    
+    def _cffi2ctypes_ptr(self, ptr):
+        return ctypes.cast(
+                    int(avisynth.ffi.cast('unsigned long long', ptr)), 
+                    ctypes.POINTER(ctypes.c_ubyte))
     
     def GetPixelYUV(self, x, y):
         if self.IsPlanar:
@@ -399,7 +402,7 @@ class AvsClipBase:
     
     def GetPixelRGB(self, x, y, BGR=True):
         if self.IsRGB:
-            bytes = self.vi.BytesFromPixels(1)
+            bytes = self.vi.bytes_from_pixels(1)
             if BGR:
                 indexB = (x * bytes) + (self.Height - 1 - y) * self.pitch
                 indexG = indexB + 1
@@ -414,7 +417,7 @@ class AvsClipBase:
     
     def GetPixelRGBA(self, x, y, BGR=True):
         if self.IsRGB32:
-            bytes = self.vi.BytesFromPixels(1)
+            bytes = self.vi.bytes_from_pixels(1)
             if BGR:
                 indexB = (x * bytes) + (self.Height - 1 - y) * self.pitch
                 indexG = indexB + 1
@@ -429,30 +432,12 @@ class AvsClipBase:
         else:
             return (-1,-1,-1,-1)
     
-    def GetVarType(self, strVar):
+    def GetVarType(self, str_var):
         try:
-            arg = self.env.GetVar(strVar)
+            return self.env.get_var(str_var, type=True)[1]
         except avisynth.AvisynthError:
-            return 'unknown'
-        #~ print strVar, arg
-        argtype = 'unknown'
-        if arg.IsInt():
-            argtype = 'int'
-        elif arg.IsString():
-            argtype = 'string'
-        elif arg.IsBool():
-            argtype = 'bool'
-        elif arg.IsClip():
-            argtype = 'clip'
-        elif arg.IsFloat():
-            argtype = 'float'
-        elif arg.IsArray():
-            argtype = 'array'
-        elif arg.IsError():
-            argtype = 'error'
-        arg.Release()
-        return argtype
-        
+            return None
+    
     def IsErrorClip(self):
         return self.error_message is not None
     
@@ -463,16 +448,13 @@ class AvsClipBase:
         BGRA -> RGBA
         '''
         if self.IsRGB:
-            clip = avisynth.AVS_Value(clip)
-            clip = self.env.Invoke("FlipVertical", clip, 0)
-            r = self.env.Invoke("ShowRed", clip, 0)
-            b = self.env.Invoke("ShowBlue", clip, 0)
+            clip = self.env.invoke("FlipVertical", clip)
+            r = self.env.invoke("ShowRed", clip)
+            b = self.env.invoke("ShowBlue", clip)
             if self.IsRGB24:
-                merge_args = avisynth.AVS_Value([b, clip, r, avisynth.AVS_Value("RGB24")])
-                return self.env.Invoke("MergeRGB", merge_args, 0).AsClip(self.env)
+                return self.env.invoke("MergeRGB", [b, clip, r, 'RGB24'])
             else:
-                merge_args = avisynth.AVS_Value([clip, b, clip, r])
-                return self.env.Invoke("MergeARGB", merge_args, 0).AsClip(self.env)
+                return self.env.invoke("MergeARGB", [clip, b, clip, r])
     
     def Y4MHeader(self, colorspace=None, depth=None, width=None, height=None, sar='0:0', X=None): 
         '''Return a header for a yuv4mpeg2 stream'''
@@ -500,7 +482,7 @@ class AvsClipBase:
             else:
                 raise Exception(_('Invalid string: ') + height)
         if self.interlaced:
-            interlaced = 'b' if self.vi.IsBFF() else 't'
+            interlaced = 'b' if self.vi.is_bff() else 't'
         else:
             interlaced = 'p'
         colorspace_dict = {'YV24': '444', 
@@ -528,10 +510,10 @@ class AvsClipBase:
                 frame = 0
             if frame >= self.Framecount:
                 frame = self.Framecount - 1
-            frame = self.clip.GetFrame(frame)
-            if self.clip.GetError():
+            frame = self.clip.get_frame(frame)
+            if self.clip.get_error():
                 return
-            total_bytes = self.Width * self.Height * self.vi.BitsPerPixel() >> 3
+            total_bytes = self.Width * self.Height * self.vi.bits_per_pixel() >> 3
             if y4m_header is not False:
                 X = ' X' + y4m_header if isinstance(y4m_header, basestring) else ''
                 y4m_header = 'FRAME{0}\n'.format(X)
@@ -539,23 +521,29 @@ class AvsClipBase:
                 y4m_header = ''
             y4m_header_len = len(y4m_header)
             buf = ctypes.create_string_buffer(total_bytes + y4m_header_len)
-            buf[:y4m_header_len] = y4m_header
+            buf[0:y4m_header_len] = y4m_header
             write_addr = ctypes.addressof(buf) + y4m_header_len
             P_UBYTE = ctypes.POINTER(ctypes.c_ubyte)
             if self.IsPlanar and not self.IsY8:
-                for plane in (avisynth.PLANAR_Y, avisynth.PLANAR_U, avisynth.PLANAR_V):
-                    write_ptr = ctypes.cast(write_addr, P_UBYTE)
-                    # using GetRowSize(plane) and GetHeight(plane) breaks v2.5.8
-                    width = frame.GetRowSize() >> self.vi.GetPlaneWidthSubsampling(plane)
-                    height = frame.GetHeight() >> self.vi.GetPlaneHeightSubsampling(plane)
-                    self.env.BitBlt(write_ptr, width, frame.GetReadPtr(plane), 
-                                    frame.GetPitch(plane), width, height)
+                for plane in (avisynth.avs.AVS_PLANAR_Y, avisynth.avs.AVS_PLANAR_U, avisynth.avs.AVS_PLANAR_V):
+                    if x86_64:
+                        write_ptr = avisynth.ffi.cast('unsigned char *', write_addr)
+                    else:
+                        write_ptr = ctypes.cast(write_addr, P_UBYTE)
+                    # using get_row_size(plane) and get_height(plane) breaks v2.5.8
+                    width = frame.get_row_size() >> self.vi.get_plane_width_subsampling(plane)
+                    height = frame.get_height() >> self.vi.get_plane_height_subsampling(plane)
+                    self.env.bit_blt(write_ptr, width, frame.get_read_ptr(plane), 
+                                     frame.get_pitch(plane), width, height)
                     write_addr += width * height
             else:
                 # Note that AviSynth uses BGR
-                write_ptr = ctypes.cast(write_addr, P_UBYTE)
-                self.env.BitBlt(write_ptr, frame.GetRowSize(), frame.GetReadPtr(), 
-                            frame.GetPitch(), frame.GetRowSize(), frame.GetHeight())
+                if x86_64:
+                    write_ptr = avisynth.ffi.cast('unsigned char *', write_addr)
+                else:
+                    write_ptr = ctypes.cast(write_addr, P_UBYTE)
+                self.env.bit_blt(write_ptr, frame.get_row_size(), frame.get_read_ptr(), 
+                            frame.get_pitch(), frame.get_row_size(), frame.get_height())
             return buf
     
     def AutocropFrame(self, frame, tol=70):
@@ -614,97 +602,6 @@ class AvsClipBase:
             break
         
         return left, top, right, bottom
-    
-    def _x_SaveFrame(self, filename, frame=None):
-        # Get the frame to display
-        if frame == None:
-            if self.pInfo == None or self.pBits == None:
-                self._GetFrame(0)
-        else:
-            self._GetFrame(frame)
-        if isinstance(filename, unicode):
-            filename = filename.encode(sys.getfilesystemencoding())
-        buffer = ctypes.create_string_buffer(filename)
-        hFile = CreateFile(
-                ctypes.byref(buffer),
-                #filename,
-                GENERIC_WRITE,
-                0,
-                NULL,
-                CREATE_ALWAYS,
-                FILE_ATTRIBUTE_NORMAL,
-                NULL
-                )
-        # Write the bitmap file header
-        fileheadersize = 14
-        bmpheadersize = 40
-        #~ extrabytes = (4 - self.bmih.biWidth % 4) % 4
-        #~ widthPadded = self.bmih.biWidth + extrabytes
-        #~ bitmapsize = (widthPadded * self.bmih.biHeight * self.bmih.biBitCount) / 8
-        widthPadded = self.bmih.biWidth
-        self.bmih.biWidth = self.Width
-        src_pitch = widthPadded * self.bmih.biBitCount / 8
-        dst_pitch = self.bmih.biWidth * self.bmih.biBitCount / 8
-        bfType = WORD(0x4d42)
-        bfSize = DWORD(fileheadersize + bmpheadersize + self.bmih.biSizeImage)
-        bfReserved1 = WORD(0)
-        bfReserved2 = WORD(0)
-        bfOffBits = DWORD(fileheadersize + bmpheadersize)
-        dwBytesWritten = DWORD()
-        WriteFile(
-                hFile,
-                ctypes.byref(bfType),
-                2,
-                ctypes.byref(dwBytesWritten),
-                NULL
-                )
-        WriteFile(
-                hFile,
-                ctypes.byref(bfSize),
-                4,
-                ctypes.byref(dwBytesWritten),
-                NULL
-                )
-        WriteFile(
-                hFile,
-                ctypes.byref(bfReserved1),
-                2,
-                ctypes.byref(dwBytesWritten),
-                NULL
-                )
-        WriteFile(
-                hFile,
-                ctypes.byref(bfReserved2),
-                2,
-                ctypes.byref(dwBytesWritten),
-                NULL
-                )
-        WriteFile(
-                hFile,
-                ctypes.byref(bfOffBits),
-                4,
-                ctypes.byref(dwBytesWritten),
-                NULL
-                )
-        # Write the bitmap info header and (unused) color table
-        WriteFile(
-                hFile,
-                self.pInfo,
-                bmpheadersize, #(self.bmih.biSize + self.bmih.biClrUsed * ctypes.sizeof(RGBQUAD)), # + bitmapsize),
-                ctypes.byref(dwBytesWritten),
-                NULL
-                )
-        # Write the bitmap bits
-        for i in range(self.bmih.biHeight):
-            WriteFile(
-                    hFile,
-                    avisynth.ByRefAt(self.pBits, src_pitch*i),
-                    dst_pitch,
-                    ctypes.byref(dwBytesWritten),
-                    NULL
-                    )
-        CloseHandle(hFile)
-        self.bmih.biWidth = widthPadded
 
 
 # on Windows is faster to use DrawDib (VFW)
@@ -753,6 +650,28 @@ if os.name == 'nt':
             ("bfReserved2",    WORD),
             ("bfOffBits",   DWORD)]
                         
+    def CreateBitmapInfoHeader(clip, bmih=None):
+        vi = clip.get_video_info()
+        if bmih is None:
+            bmih = BITMAPINFOHEADER()
+        bmih.biSize = ctypes.sizeof(BITMAPINFOHEADER)
+        bmih.biWidth = vi.width
+        bmih.biHeight = vi.height
+        bmih.biPlanes = 1
+        if vi.is_rgb32():
+            bmih.biBitCount = 32
+        elif vi.is_rgb24():
+            bmih.biBitCount = 24
+        else: raise AvisynthError("Input colorspace is not RGB24 or RGB32")
+        bmih.biCompression = BI_RGB
+        bmih.biSizeImage=vi.width * vi.height * bmih.biBitCount / 8
+        bmih.biXPelsPerMeter = 0
+        bmih.biYPelsPerMeter = 0
+        bmih.biClrUsed = 0
+        bmih.biClrImportant = 0
+        return bmih
+    
+    
     # Define C functions
     
     CreateFile = ctypes.windll.kernel32.CreateFileA
@@ -778,7 +697,7 @@ if os.name == 'nt':
                 return
             # Prepare info header for displaying
             self.bmih = BITMAPINFOHEADER()
-            avisynth.CreateBitmapInfoHeader(self.display_clip, self.bmih)
+            CreateBitmapInfoHeader(self.display_clip, self.bmih)
             self.pInfo = ctypes.pointer(self.bmih)
             #~ self.BUF=ctypes.c_ubyte*self.bmih.biSizeImage
             #~ self.pBits=self.BUF()
@@ -786,14 +705,9 @@ if os.name == 'nt':
         
         def _ConvertToRGB(self):
             if not self.IsRGB32: # bug in avisynth v2.6 alphas with ConvertToRGB24
-                arg = avisynth.AVS_Value(self.display_clip)
-                arg1 = avisynth.AVS_Value(self.matrix)
-                arg2 = avisynth.AVS_Value(self.interlaced)
-                args = avisynth.AVS_Value([arg, arg1, arg2])
+                args = [self.display_clip, self.matrix, self.interlaced]
                 try:
-                    avsfile = self.env.Invoke("ConvertToRGB32", args, 0)
-                    arg.Release()
-                    self.display_clip = avsfile.AsClip(self.env)
+                    self.display_clip = self.env.invoke("ConvertToRGB32", args)
                 except avisynth.AvisynthError, err:
                     return False
             return True
@@ -841,20 +755,14 @@ else:
             # There's issues with RGB32, we convert to RGB24 
             # AviSynth uses BGR ordering but we need RGB
             try:
-                clip = avisynth.AVS_Value(self.display_clip)
+                clip = self.display_clip
                 if not self.IsRGB24:
-                    arg1 = avisynth.AVS_Value(self.matrix)
-                    arg2 = avisynth.AVS_Value(self.interlaced)
-                    args = avisynth.AVS_Value([clip, arg1, arg2])
-                    clip(self.env.Invoke("ConvertToRGB24", args, 0))
-                r = self.env.Invoke("ShowRed", clip, 0)
-                b = self.env.Invoke("ShowBlue", clip, 0)
-                merge_args = avisynth.AVS_Value([b, clip, r, avisynth.AVS_Value("RGB24")])
-                avsfile = self.env.Invoke("MergeRGB", merge_args, 0)
-                r.Release()
-                b.Release()
-                clip.Release()
-                self.display_clip = avsfile.AsClip(self.env)
+                    args = [clip, self.matrix, self.interlaced]
+                    clip = self.env.invoke("ConvertToRGB24", args)
+                r = self.env.invoke("ShowRed", clip)
+                b = self.env.invoke("ShowBlue", clip)
+                merge_args = [b, clip, r, "RGB24"]
+                self.display_clip = self.env.invoke("MergeRGB", merge_args)
                 return True
             except avisynth.AvisynthError, err:
                 return False
@@ -918,7 +826,6 @@ if __name__ == '__main__':
         print 'GetParity =', AVI.GetParity 
         print 'HasAudio =', AVI.HasAudio
         print 'HasVideo =', AVI.HasVideo
-        #AVI._x_SaveFrame("C:\\workspace\\test_file.bmp", 100)
     else:
         print AVI.error_message
     AVI = None
@@ -930,17 +837,15 @@ if __name__ == '__main__':
         print AVI.error_message
     AVI = None
     
-    s="""    Version().ConvertToYV12()
+    script = """Version().ConvertToYV12()
     Sharpen(1.0)
     FlipVertical()
     """
-    env = avisynth.avs_create_script_environment(3)
-    r=env.Invoke("eval",avisynth.AVS_Value(s),0)
-    AVI = AvsClip(r.AsClip(env),env=env)
-    #AVI._x_SaveFrame("C:\\workspace\\test_file2.bmp", 100)
+    env = avisynth.AVS_ScriptEnvironment(3)
+    clip = env.invoke('Eval', script)
+    AVI = AvsClip(clip, env=env)
     AVI._GetFrame(100)
     AVI = None
-    env.Release()
     env = None
     
     print "Exit program."
