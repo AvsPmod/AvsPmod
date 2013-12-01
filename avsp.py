@@ -42,6 +42,7 @@
 
 import os
 import sys
+import platform
 import traceback
 import cPickle
 import shutil
@@ -10207,11 +10208,13 @@ class MainFrame(wxp.Frame):
             wx.MessageBox(_('Could not find %(changelog)s!') % locals(), _('Error'), style=wx.OK|wx.ICON_ERROR)
     
     def OnMenuHelpAbout(self, event):
+        prog_name = global_vars.name
         version = self.version
+        arch = u'{0} {1}'.format(platform.system(), 'x86-64' if self.x86_64 else 'x86-32')
         dlg = wx.Dialog(self, wx.ID_ANY, _('About AvsPmod'), size=(220,180))
         bmp = AvsP_icon.getBitmap()
         logo = wx.StaticBitmap(dlg, wx.ID_ANY, bmp)
-        title = wx.StaticText(dlg, wx.ID_ANY, _('AvsPmod version %(version)s ') % locals())
+        title = wx.StaticText(dlg, wx.ID_ANY, _('{prog_name} v{version} ({arch})').format(**locals()))
         font = title.GetFont()
         font.SetPointSize(12)
         font.SetWeight(wx.FONTWEIGHT_BOLD)
@@ -10229,7 +10232,7 @@ class MainFrame(wxp.Frame):
         link.SetToolTip(wx.ToolTip(url))
         link.Bind(wx.EVT_LEFT_DOWN, OnClick)
         
-        link0 = wx.StaticText(dlg, wx.ID_ANY, _("AvsPmod repository"))
+        link0 = wx.StaticText(dlg, wx.ID_ANY, _("AvsPmod Website"))
         font = link0.GetFont()
         font.SetUnderlined(True)
         link0.SetFont(font)
@@ -10268,17 +10271,17 @@ class MainFrame(wxp.Frame):
 
         button = wx.Button(dlg, wx.ID_OK, _('OK'))
         inner = wx.BoxSizer(wx.HORIZONTAL)
-        inner.Add(logo, 0, wx.LEFT, 15)
-        inner.Add(title, 0, wx.ALIGN_CENTER|wx.LEFT, 10)
+        inner.Add(logo, 0, wx.LEFT, 10)
+        inner.Add(title, 0, wx.ALIGN_CENTER|wx.LEFT|wx.RIGHT, 10)
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(inner, 0, wx.TOP, 20)
         sizer.Add(description, 0, wx.ALIGN_CENTER|wx.ALL, 10)
-        sizer.Add(link, 0, wx.ALIGN_CENTER|wx.ALL, 5)
         sizer.Add(link0, 0, wx.ALIGN_CENTER|wx.ALL, 5)
         sizer.Add(link1, 0, wx.ALIGN_CENTER|wx.ALL, 5)
+        sizer.Add(link, 0, wx.ALIGN_CENTER|wx.ALL, 5)
         sizer.Add((0,5), 0, wx.EXPAND)
         sizer.Add(wx.StaticLine(dlg), 0, wx.EXPAND|wx.TOP, 10)
-        sizer.Add(staticText, 0, wx.EXPAND|wx.ALIGN_CENTER|wx.ALL, 5)
+        sizer.Add(staticText, 0, wx.ALIGN_CENTER|wx.ALL, 5)
         sizer.Add(link2, 0, wx.ALIGN_CENTER|wx.ALL, 5)
         sizer.Add(button, 0, wx.ALIGN_CENTER|wx.ALL, 5)
         dlg.SetSizer(sizer)
