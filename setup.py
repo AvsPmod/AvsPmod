@@ -24,6 +24,16 @@
 #     Python (tested on v2.6 and v2.7)
 #     wxPython (tested on v2.8 Unicode and v2.9)
 #     py2exe (tested on v0.6.9)
+# Additional dependencies for x86-64:
+#     cffi (tested on v0.8.1)
+#     pycparser (tested on v2.10)
+#     Visual Studio 2008 
+#     avisynth_c.h (interface 5, or at least 3 + colorspaces from 5,
+#                   tested with the header used by x264)
+#
+# Note: 
+# py2exe v0.6.10a1 (to be exact p2exe r687+) always includes w9xpopen.exe 
+# (even if excluded with 'dll_excludes')
 
 from distutils.core import setup
 import os, sys
@@ -35,16 +45,29 @@ import wx
 
 import global_vars
 
-MANIFEST_TEMPLATE = """
+
+x86_64 = sys.maxsize > 2**32
+if x86_64:
+    import avisynth_cffi
+    ext_modules = [avisynth_cffi.ffi.verifier.get_extension()]
+    arch = 'AMD64'
+    crt_version = 'amd64_microsoft.vc90.crt_1fc8b3b9a1e18e3b_9.0.21022.8_none_750b37ff97f4f68b'
+else:
+    ext_modules = []
+    arch = 'x86'
+    crt_version = 'x86_microsoft.vc90.crt_1fc8b3b9a1e18e3b_9.0.21022.8_none_bcb86ed6ac711f91'
+
+
+manifest = """
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
   <assemblyIdentity
     version="5.0.0.0"
-    processorArchitecture="x86"
-    name="%(prog)s"
+    processorArchitecture="{arch}"
+    name="{prog}"
     type="win32"
   />
-  <description>%(prog)s</description>
+  <description>{prog}</description>
   <trustInfo xmlns="urn:schemas-microsoft-com:asm.v3">
     <security>
       <requestedPrivileges>
@@ -57,34 +80,33 @@ MANIFEST_TEMPLATE = """
   </trustInfo>%(extra)s
   <dependency>
     <dependentAssembly>
+      <assemblyIdentity
+            type="win32"
+            name="Microsoft.VC90.CRT"
+            version="9.0.21022.8"
+            processorArchitecture="{arch}"
+            publicKeyToken="1fc8b3b9a1e18e3b">
+      </assemblyIdentity>
+    </dependentAssembly>
+  </dependency>
+  <dependency>
+    <dependentAssembly>
         <assemblyIdentity
             type="win32"
             name="Microsoft.Windows.Common-Controls"
             version="6.0.0.0"
-            processorArchitecture="X86"
+            processorArchitecture="{arch}"
             publicKeyToken="6595b64144ccf1df"
             language="*"
         />
     </dependentAssembly>
   </dependency>
 </assembly>
-"""
+""".format(prog=global_vars.name, arch=arch)
 
-manifest_extra = """\
-  <dependency>
-    <dependentAssembly>
-      <assemblyIdentity
-            type="win32"
-            name="Microsoft.VC90.CRT"
-            version="9.0.21022.8"
-            processorArchitecture="x86"
-            publicKeyToken="1fc8b3b9a1e18e3b">
-      </assemblyIdentity>
-    </dependentAssembly>
-  </dependency>
-"""
-
-lib_extra = [os.path.join(os.path.dirname(wx.__file__), 'gdiplus.dll')]
+lib_extra = []
+if not x86_64:
+    lib_extra.append(os.path.join(os.path.dirname(wx.__file__), 'gdiplus.dll'))
 
 data_files = [
         ('', [
@@ -100,6 +122,7 @@ data_files = [
             'avsp.py',
             'wxp.py',
             'avisynth.py',
+            'avisynth_cffi.py',
             'pyavs.py',
             'pyavs_avifile.py',
             'build.py',
@@ -113,10 +136,10 @@ data_files = [
     ]
 
 # Include the Microsoft Visual C runtime DLLs for Python 2.6+
-# v9.0.21022.8, available in the Microsoft Visual C++ 2008 Redistributable Package (x86)
-# <https://www.microsoft.com/en-us/download/details.aspx?id=29>
+# v9.0.21022.8, available in the Microsoft Visual C++ 2008 Redistributable Package
+# 32-bit: <https://www.microsoft.com/en-us/download/details.aspx?id=29>
+# 64-bit: <https://www.microsoft.com/en-us/download/details.aspx?id=15336>
 crt_dst_dir = 'Microsoft.VC90.CRT'
-crt_version = 'x86_microsoft.vc90.crt_1fc8b3b9a1e18e3b_9.0.21022.8_none_bcb86ed6ac711f91'
 crt_files = ('msvcm90.dll', 'msvcp90.dll', 'msvcr90.dll')
 crt_dirs = (os.path.expandvars(os.path.join('%windir%', 'winsxs', crt_version)), 
             sys.prefix, os.path.join(sys.prefix, 'DLLs'))
@@ -168,7 +191,22 @@ for dir, ext_filter, include in dirs:
                     include and file in include)]
          ) for root, dirs, files in os.walk(dir)])
 
+# Add also the C extension that will be generated on the same setup()
+if x86_64:
+    data_files.append(('', # XXX: this path shouldn't be hard-coded
+        [os.path.join('build', 'lib.win-amd64-{0}.{1}'.format(*sys.version_info[:2]), 
+         'avisynth_cffi_ext.pyd')]))
+
 # Generate the dist files
+packages = []
+includes = ['glob', 'shutil']
+excludes = ["translation", "Tkconstants", "Tkinter", "tcl", 'pyreadline', 
+            'win32api', 'win32con', 'win32pipe', 'pywintypes', 'pyexpat']
+dll_excludes = ['MSVCP90.dll', 'w9xpopen.exe', 'mswsock.dll', 'powrprof.dll']
+if x86_64: # otherwise lextab and yacctab are generated on the working
+    packages.extend(('pycparser',))  # directory on every start
+else:
+    excludes.extend(('avisynth_cffi',))
 setup(
     name = global_vars.name,
     description = global_vars.description,
@@ -178,20 +216,20 @@ setup(
     options = {"py2exe":{
         "compressed": True,
         "optimize": 1,
-        "includes": ['glob', 'shutil'],
-        "excludes": ["translation", "Tkconstants", "Tkinter", "tcl", 'pyreadline'],
-        "dll_excludes": ['MSVCP90.dll', 'w9xpopen.exe', 'mswsock.dll', 'powrprof.dll'],
+        "packages": packages,
+        "includes": includes,
+        "excludes": excludes,
+        "dll_excludes": dll_excludes,
     }},
     zipfile = 'lib/library.zip',
     data_files = data_files,
+    ext_modules= ext_modules,
     windows = [
         {  
             'copyright' : global_vars.license,
             "script": "run.py",
             "icon_resources": [(1, "AvsP.ico")],
-            "other_resources" : [(24, 1, MANIFEST_TEMPLATE % 
-                dict(prog=global_vars.name, extra=manifest_extra)
-            )],
+            "other_resources" : [(24, 1, manifest)],
         }
     ],
 )
@@ -205,11 +243,11 @@ manifest = '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
         type="win32"
         name="Microsoft.VC90.CRT"
         version="9.0.21022.8"
-        processorArchitecture="x86"
+        processorArchitecture="{arch}"
         publicKeyToken="1fc8b3b9a1e18e3b"
     />
     <file name="msvcr90.dll" /> <file name="msvcp90.dll" /> <file name="msvcm90.dll" />
-</assembly>'''
+</assembly>'''.format(arch=arch)
 for i, arg in enumerate(sys.argv):
     if arg.lower() == '-d':
         dist_dir = sys.argv[i+1].strip('"')

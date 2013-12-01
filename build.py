@@ -24,13 +24,30 @@
 #     Python (tested on v2.6 and v2.7)
 #     wxPython (tested on v2.8 Unicode and v2.9)
 #     py2exe (tested on v0.6.9)
+# Additional dependencies for x86-64:
+#     cffi (tested on v0.8.1)
+#     pycparser (tested on v2.10)
+#     Visual Studio 2008 
+#     avisynth_c.h (interface 5, or at least 3 + colorspaces from 5,
+#                   tested with the header used by x264)
+# Optional:
+#    editbin (only for x86-32)
+#    UPX (only for x86-32)
+#    7-zip
+#
+# Note: 
+# py2exe v0.6.10a1 (to be exact p2exe r687+) always includes w9xpopen.exe 
+# (even if excluded with 'dll_excludes')
 
 import os
 import sys
+import platform
+import atexit
 import shutil
 import tempfile
 import zipfile
 import subprocess
+import re
 
 import avsp
 import i18n
@@ -50,12 +67,16 @@ def isinpath(path):
 def main():
     # Define names and paths
     pythonexe = sys.executable
-    zipname = '{0}_v{1}.zip'.format(global_vars.name, global_vars.version)
+    x86_64 = sys.maxsize > 2**32
+    zipname = '{0}_v{1}_({2}_{3}).zip'.format(global_vars.name, 
+        global_vars.version, platform.system(), 'x86-64' if x86_64 else 'x86-32')
     upx = os.path.join(os.environ['PROGRAMFILES'], 'upx', 'upx.exe')
     exe7z = os.path.join(os.environ['PROGRAMFILES'], '7-Zip', '7z.exe')
     editbin = os.path.join(os.environ['PROGRAMFILES'], 'Microsoft Visual Studio 10.0', 
                           'VC', 'bin', 'editbin.exe')
+    
     tempdir = tempfile.mkdtemp()
+    atexit.register(shutil.rmtree, tempdir)
     programdirname = os.path.join(tempdir, global_vars.name)
     
     # Create/update the master translation file
@@ -64,7 +85,7 @@ def main():
         return
     
     # Create the program executable using py2exe
-    if os.system('""%s" -OO setup.py py2exe -d %s"' % (pythonexe, programdirname)):
+    if os.system('""%s" -O setup.py py2exe -d %s"' % (pythonexe, programdirname)):
         return
     
     # Update the translation files in the temporal subdirectory
@@ -74,38 +95,44 @@ def main():
     avsp.GenerateMacroReadme(os.path.join(programdirname, 'macros', 'macros_readme.txt'))
     
     # Set the large address aware flag in the executable
-    if not os.path.isfile(editbin):
-        editbin = isinpath('editbin.exe')
-    if editbin:
-        mspdb100_dir = os.path.join(os.environ['PROGRAMFILES'], 'Microsoft Visual Studio 10.0', 
-                                    'Common7', 'IDE')
-        if os.path.isdir(mspdb100_dir):
-            os.environ['PATH'] += os.pathsep + mspdb100_dir
-        print '\nSetting large address aware flag...'
-        if os.system('""%s" /LARGEADDRESSAWARE "%s""' % (editbin, os.path.join(programdirname, 'run.exe'))):
-            print 'Failed'
-    else:
-        print "\neditbin not found.  Large address aware flag not set"
+    if not x86_64:
+        if not os.path.isfile(editbin):
+            editbin = isinpath('editbin.exe')
+        if editbin:
+            mspdb100_dir = os.path.join(os.environ['PROGRAMFILES'], 'Microsoft Visual Studio 10.0', 
+                                        'Common7', 'IDE')
+            if os.path.isdir(mspdb100_dir):
+                os.environ['PATH'] += os.pathsep + mspdb100_dir
+            print '\nSetting large address aware flag...'
+            if os.system('""%s" /LARGEADDRESSAWARE "%s""' % (editbin, os.path.join(programdirname, 'run.exe'))):
+                print 'Failed'
+        else:
+            print "\neditbin not found.  Large address aware flag not set"
     
     # Compress the files with UPX, if available
-    if not os.path.isfile(upx):
-        upx = isinpath('upx.exe')
-    if upx and not __debug__:
-        for root, dirs, files in os.walk(programdirname):
-            for file in files:
-                if os.path.splitext(file)[1] in ('.exe','.dll','.pyd'):
-                    print '\nCompressing '+file+'...'
-                    #~ os.spawnl(os.P_WAIT,upx,'0',os.path.join(dir,name),'--lzma','--best')
-                    subprocess.call([upx, os.path.join(root, file), '--lzma', '--best', '--no-progress'], shell=True)
+    if x86_64:
+        print "\nSkipping UPX'ing on x86-64 builds"
+    elif  __debug__:
+        print "\nDebug mode, skipping UPX'ing"
     else:
-        print "\nUPX not found"
+        if not os.path.isfile(upx):
+            upx = isinpath('upx.exe')
+        if upx:
+            args = [upx, '--best', '--no-progress']
+            for root, dirs, files in os.walk(programdirname):
+                for file in files:
+                    if os.path.splitext(file)[1] in ('.exe','.dll','.pyd'):
+                        args.append(os.path.join(root, file))
+            subprocess.call(args)
+        else:
+            print "\nUPX not found"
     
     # Manage the files
     os.rename(os.path.join(programdirname, 'run.exe'), 
               os.path.join(programdirname, '{0}.exe'.format(global_vars.name)))
     os.rename(os.path.join(programdirname, 'README.md'), 
               os.path.join(programdirname, 'readme.txt'))
-    shutil.rmtree('build')
+    atexit.register(shutil.rmtree, 'build')
 
     # Create the zip file for distribution.  Use 7-Zip if available
     if not os.path.isfile(exe7z):
@@ -127,8 +154,7 @@ def main():
                 archive_path = os.path.relpath(real_path, tempdir)
                 zip.write(real_path, archive_path)
         zip.close()
-    shutil.rmtree(tempdir)
-    
+
 if __name__ == '__main__':
     main()
     raw_input('\nPress enter to continue')

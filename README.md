@@ -74,12 +74,17 @@ enhancements to AvsP:
 Running AvsPmod
 ---------------
 
-AviSynth (Windows) or AvxSynth (*nix) is required.  When not using the 
-AvsPmod builds, currently only supplied for Windows, the following is 
-also needed:
+AviSynth, AviSynth+ (Windows) or AvxSynth (*nix) is required.  When 
+not using the AvsPmod builds, currently only supplied for Windows, 
+the following is also needed:
 
 - Python 2.6-2.7
 - wxPython 2.8-2.9
+- Additionally for AviSynth+ x86-64 (Windows):
+    - cffi module
+    - pycparser module
+    - Visual Studio 2008
+    - avisynth_c.h
 
 In that case start AvsPmod by running avsp.py, i.e. `python -O avsp.py`, 
 pythonw recommended on Windows.
