@@ -6026,7 +6026,7 @@ class MainFrame(wxp.Frame):
             'colourdata': '1',
             'zoomindex': 2,
             'exitstatus': 0,
-            'reservedshortcuts': ['Tab', 'Shift+Tab', 'Ctrl+Z', 'Ctrl+Y', 'Ctrl+X', 'Ctrl+C', 'Ctrl+V', 'Ctrl+A'],
+            'reservedshortcuts': ['Escape', 'Tab', 'Shift+Tab', 'Ctrl+Z', 'Ctrl+Y', 'Ctrl+X', 'Ctrl+C', 'Ctrl+V', 'Ctrl+A'],
             # GENERAL OPTIONS
             'altdir': os.path.join('%programdir%', 'tools'),
             'usealtdir': False,
