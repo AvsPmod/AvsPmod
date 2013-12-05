@@ -666,20 +666,8 @@ class AVS_Value(ctypes.Structure,object):
         if self.type!=118:self.Release()
         self.type=115#='s'tring
         if isinstance(s, unicode):
-            try:
-                s_enc = s.encode(encoding)
-                encoded = True
-            except:
-                encoded = False
-            else: # mbcs just replaces invalid characters
-                if encoding == 'mbcs':
-                    s2 = s_enc.decode(encoding)
-                    if s != s2:
-                        encoded = False
-            if not encoded:
-                s = s.encode('utf8')
-            else:
-                s = s_enc
+            # mbcs will replace invalid characters anyway
+            s = s.encode(encoding, 'backslashreplace')
         self.d.s=s
         self.array_size=1
     def SetBool(self,b):
