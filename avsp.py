@@ -139,7 +139,6 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
             #~ autocomplete=True,
             #~ autoparentheses=1,
             #~ usestringeol=False,
-            #~ syntaxhighlight=True,
             #~ calltips=True,
             #~ frequentcalltips=True,
             #~ usetabs=False,
@@ -292,13 +291,10 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
             #~ operators = ('-', '*', ',', '.', '/', ':', '?', '\\', '+', '<', '>', '=', '(', ')', '[', ']', '{', '}', '!', '%', '&', '|')
             #~ miscwords = []
             #~ keywordLists = (keywords, datatypes, operators, miscwords)
-        if self.app.options['syntaxhighlight']:
-            self.SetTextStyles(self.app.options['textstyles'], self.app.options['usemonospacedfont'])
-            if self.styling_refresh_needed:
-                self.styling_refresh_needed = False
-                self.Colourise(0, 0) # set self.GetEndStyled() to 0
-        else:
-            self.setStylesNoColor()
+        self.SetTextStyles(self.app.options['textstyles'], self.app.options['usemonospacedfont'])
+        if self.styling_refresh_needed:
+            self.styling_refresh_needed = False
+            self.Colourise(0, 0) # set self.GetEndStyled() to 0
         if self.app.options['autocompleteicons']:            
             self.RegisterImage(1, ok_icon.GetBitmap())
             self.RegisterImage(2, smile_icon.GetBitmap())
@@ -574,56 +570,6 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
         self.MarkerSetForeground(stc.STC_MARKNUM_FOLDERMIDTAIL, fore)
         self.MarkerSetBackground(stc.STC_MARKNUM_FOLDERMIDTAIL, back)
     
-    def setStylesNoColor(self):
-        # unfold and remove fold points if script is already existing
-        for lineNum in range(self.GetLineCount()):
-            if self.GetFoldLevel(lineNum) & stc.STC_FOLDLEVELHEADERFLAG and not self.GetFoldExpanded(lineNum):
-                self.SetFoldExpanded(lineNum, True)
-                self.Expand(lineNum, True)
-            self.SetFoldLevel(lineNum, stc.STC_FOLDLEVELBASE)
-        #~ self.SetKeyWords(0, ' '.join(self.FilterNames).lower())
-        self.SetLexer(stc.STC_LEX_NULL)
-        #~ self.commentStyle = stc.STC_MATLAB_COMMENT
-
-        #~ mainfont = 'Arial'
-        #~ mainsize = 10
-        #~ commentfont = 'Comic Sans MS'
-        #~ commentsize = 9
-        #~ s_text = {'font': mainfont, 'size': mainsize, 'color': '#000000'}
-        #~ s_comment = {'font': commentfont, 'size': commentsize, 'color': '#007F00'}
-        #~ s_string = {'font': 'Times New Roman', 'size': mainsize, 'color': '#7F007F'}
-        #~ s_filter = {'font': mainfont, 'size': mainsize, 'color': '#00007F'}
-        #~ s_function = {'font': mainfont, 'size': mainsize, 'color': '#0000AA'}
-
-        # Set markers
-        self.MarkerSetForeground(stc.STC_MARKNUM_FOLDEROPEN, 'white')
-        self.MarkerSetBackground(stc.STC_MARKNUM_FOLDEROPEN, 'black')
-        self.MarkerSetForeground(stc.STC_MARKNUM_FOLDER, 'white')
-        self.MarkerSetBackground(stc.STC_MARKNUM_FOLDER, 'black')
-        self.MarkerSetForeground(stc.STC_MARKNUM_FOLDERSUB, 'white')
-        self.MarkerSetBackground(stc.STC_MARKNUM_FOLDERSUB, 'black')
-        self.MarkerSetForeground(stc.STC_MARKNUM_FOLDERTAIL, 'white')
-        self.MarkerSetBackground(stc.STC_MARKNUM_FOLDERTAIL, 'black')
-        self.MarkerSetForeground(stc.STC_MARKNUM_FOLDEREND, 'white')
-        self.MarkerSetBackground(stc.STC_MARKNUM_FOLDEREND, 'black')
-        self.MarkerSetForeground(stc.STC_MARKNUM_FOLDEROPENMID, 'white')
-        self.MarkerSetBackground(stc.STC_MARKNUM_FOLDEROPENMID, 'black')
-        self.MarkerSetForeground(stc.STC_MARKNUM_FOLDERMIDTAIL, 'white')
-        self.MarkerSetBackground(stc.STC_MARKNUM_FOLDERMIDTAIL, 'black')
-
-        # Global default styles for all languages
-        default = 'font:Arial, size:10, fore:#000000, back:#FFFFFF'
-        self.StyleSetSpec(stc.STC_STYLE_DEFAULT, self.app.options['textstyles'].get('default', default))
-        if self.app.options['usemonospacedfont']:
-            for item in self.app.options['textstyles']['monospaced'].split(','):
-                if item.lower().startswith('face:'):
-                    face = item.split(':')[1]
-                if item.lower().startswith('size:'):
-                    size = int(item.split(':')[1])
-            self.StyleSetFaceName(stc.STC_STYLE_DEFAULT, face)
-            self.StyleSetSize(stc.STC_STYLE_DEFAULT, size)
-        self.StyleClearAll()  # Reset all to be like the default
-
     def numlinechars2pixels(self, numlinechars):
         return self.TextWidth(stc.STC_STYLE_LINENUMBER, '%s' % ('0'*numlinechars)) + 12
 
@@ -1850,30 +1796,28 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
         caretPos = self.GetCurrentPos()
         if caretPos > 0:
             charBefore = self.GetCharAt(caretPos - 1)
-        # Syntax highlighting
-        if self.app.options['syntaxhighlight']:
-            # Highlight braces
-            braceAtCaret = -1
-            braceOpposite = -1
-            # check before
-            if charBefore and unichr(charBefore) in "[]{}()":# and styleBefore == stc.STC_P_OPERATOR:
-                braceAtCaret = caretPos - 1
-            # check after
-            if braceAtCaret < 0:
-                charAfter = self.GetCharAt(caretPos)
-                #~ styleAfter = self.GetStyleAt(caretPos)
-                if charAfter and unichr(charAfter) in "[]{}()":# and styleAfter == stc.STC_P_OPERATOR:
-                    braceAtCaret = caretPos
-            if braceAtCaret >= 0:
-                braceOpposite = self.BraceMatch(braceAtCaret)
-            #~ if braceAtCaret != -1:
-            if braceOpposite == -1:
-                self.BraceBadLight(braceAtCaret)
-            else:
-                self.BraceHighlight(braceAtCaret, braceOpposite)
-            #~ if self.commentStyle in (self.GetStyleAt(braceAtCaret), self.GetStyleAt(braceAtCaret)):
-            if self.GetStyleAt(braceAtCaret) in self.nonBraceStyles or self.GetStyleAt(braceOpposite) in self.nonBraceStyles:
-                self.BraceHighlight(-1, -1)
+        # Highlight braces
+        braceAtCaret = -1
+        braceOpposite = -1
+        # check before
+        if charBefore and unichr(charBefore) in "[]{}()":# and styleBefore == stc.STC_P_OPERATOR:
+            braceAtCaret = caretPos - 1
+        # check after
+        if braceAtCaret < 0:
+            charAfter = self.GetCharAt(caretPos)
+            #~ styleAfter = self.GetStyleAt(caretPos)
+            if charAfter and unichr(charAfter) in "[]{}()":# and styleAfter == stc.STC_P_OPERATOR:
+                braceAtCaret = caretPos
+        if braceAtCaret >= 0:
+            braceOpposite = self.BraceMatch(braceAtCaret)
+        #~ if braceAtCaret != -1:
+        if braceOpposite == -1:
+            self.BraceBadLight(braceAtCaret)
+        else:
+            self.BraceHighlight(braceAtCaret, braceOpposite)
+        #~ if self.commentStyle in (self.GetStyleAt(braceAtCaret), self.GetStyleAt(braceAtCaret)):
+        if self.GetStyleAt(braceAtCaret) in self.nonBraceStyles or self.GetStyleAt(braceOpposite) in self.nonBraceStyles:
+            self.BraceHighlight(-1, -1)
         # Display call tips
         self.UpdateCalltip()
         self.flagTextChanged = False
@@ -6046,7 +5990,6 @@ class MainFrame(wxp.Frame):
             # TEXT OPTIONS
             'calltips': True,
             'frequentcalltips': False,
-            'syntaxhighlight': True,
             'syntaxhighlight_preferfunctions': False,
             'syntaxhighlight_styleinsidetriplequotes': False,
             'usestringeol': True,
@@ -6859,22 +6802,17 @@ class MainFrame(wxp.Frame):
                 ((_('Documentation search url:'), wxp.OPT_ELEM_STRING, 'docsearchurl', _("The web address to search if docs aren't found (the filter's name replaces %filtername%)"), dict() ), ),
             ),
             (_('Text'),
-                ((_('Show filter calltips'), wxp.OPT_ELEM_CHECK, 'calltips', _('Turn on/off automatic tips when typing filter names'), dict() ), ),
-                ((_('Frequent calltips'), wxp.OPT_ELEM_CHECK, 'frequentcalltips', _("Always show calltips any time the cursor is within the filter's arguments"), dict(ident=20) ), ),
-                ((_('Syntax highlighting'), wxp.OPT_ELEM_CHECK, 'syntaxhighlight', _('Turn on/off avisynth-specific text colors and fonts'), dict() ), ),
-                ((_('Prefer functions over variables'), wxp.OPT_ELEM_CHECK, 'syntaxhighlight_preferfunctions', _('When a word could be either a function or a variable, highlight it as function'), dict(ident=20) ), ),
-                ((_('Style inside triple-quoted strings'), wxp.OPT_ELEM_CHECK, 'syntaxhighlight_styleinsidetriplequotes', _("Highlight the text as if it wasn't enclosed by triple quotes"), dict(ident=20) ), ),
-                #~((_('Syntax highlight incomplete strings'), wxp.OPT_ELEM_CHECK, 'usestringeol', _('Syntax highlight strings which are not completed in a single line differently'), dict() ), ),
-                #~((_('Highlight current line'), wxp.OPT_ELEM_CHECK, 'highlightline', _('Highlight the line that the caret is currently in'), dict() ), ),
-                #~(('       '+_('Highlight line color'), wxp.OPT_ELEM_COLOR, 'highlightlinecolor', _('Change the the highlight line color'), dict() ), ),
-                ((_('Show autocomplete on capital letters'), wxp.OPT_ELEM_CHECK, 'autocomplete', _('Turn on/off automatic autocomplete list when typing words starting with capital letters'), dict() ), ),
-                (('       '+_('Amount of letters typed'), wxp.OPT_ELEM_SPIN, 'autocompletelength', _('Show autocomplete list when typing a certain amount of letters'), dict(min_val=0) ), ),
-                #~((_('Use monospaced font'), wxp.OPT_ELEM_CHECK, 'usemonospacedfont', _('Override all fonts to use a specified monospace font'), dict() ), ),
+                ((_('Style inside triple-quoted strings'), wxp.OPT_ELEM_CHECK, 'syntaxhighlight_styleinsidetriplequotes', _("Highlight the text as if it wasn't enclosed by triple quotes"), dict() ), ),
+                ((_('Prefer functions over variables'), wxp.OPT_ELEM_CHECK, 'syntaxhighlight_preferfunctions', _('When a word could be either a function or a variable, highlight it as function'), dict() ), ),
                 ((_('Wrap text'), wxp.OPT_ELEM_CHECK, 'wrap', _("Don't allow lines wider than the window"), dict() ), ),
                 ((_('Draw lines at fold points'), wxp.OPT_ELEM_CHECK, 'foldflag', _('For code folding, draw a line underneath if the fold point is not expanded'), dict() ), ),
                 ((_('Use tabs instead of spaces'), wxp.OPT_ELEM_CHECK, 'usetabs', _('Check to insert actual tabs instead of spaces when using the Tab key'), dict() ), ),
                 ((_('Tab width'), wxp.OPT_ELEM_SPIN, 'tabwidth', _('Set the size of the tabs in spaces'), dict(min_val=0) ), ),
                 ((_('Line margin width'), wxp.OPT_ELEM_SPIN, 'numlinechars', _('Initial space to reserve for the line margin in terms of number of digits. Set it to 0 to disable showing line numbers'), dict(min_val=0) ), ),
+                ((_('Show filter calltips'), wxp.OPT_ELEM_CHECK, 'calltips', _('Turn on/off automatic tips when typing filter names'), dict() ), ),
+                ((_('Frequent calltips'), wxp.OPT_ELEM_CHECK, 'frequentcalltips', _("Always show calltips any time the cursor is within the filter's arguments"), dict(ident=20) ), ),
+                ((_('Show autocomplete on capital letters'), wxp.OPT_ELEM_CHECK, 'autocomplete', _('Turn on/off automatic autocomplete list when typing words starting with capital letters'), dict() ), ),
+                (('       '+_('Amount of letters typed'), wxp.OPT_ELEM_SPIN, 'autocompletelength', _('Show autocomplete list when typing a certain amount of letters'), dict(min_val=0) ), ),
             ),
             (_('Autocomplete'),
                 ((_('AviSynth user function database'), wxp.OPT_ELEM_SEP, '', _('Select what functions beside internal and user-defined will be included in the database'), dict(adjust_width=True) ), ),
@@ -8039,7 +7977,6 @@ class MainFrame(wxp.Frame):
             #~ autocomplete=self.options['autocomplete'],
             #~ autoparentheses=self.options['autoparentheses'],
             #~ usestringeol=self.options['usestringeol'],
-            #~ syntaxhighlight=self.options['syntaxhighlight'],
             #~ calltips=self.options['calltips'],
             #~ frequentcalltips=self.options['frequentcalltips'],
             #~ usecustomlexer=True, #self.options['usecustomlexer'],
@@ -10018,10 +9955,7 @@ class MainFrame(wxp.Frame):
             menuItem.Check(False)
         for index in xrange(self.scriptNotebook.GetPageCount()):
             script = self.scriptNotebook.GetPage(index)
-            if self.options['syntaxhighlight']:
-                script.SetTextStyles(self.options['textstyles'], self.options['usemonospacedfont'])
-            else:
-                script.setStylesNoColor()
+            script.SetTextStyles(self.options['textstyles'], self.options['usemonospacedfont'])
 
     def OnMenuOptionsEnableParanoiaMode(self, event):
         id = event.GetId()
@@ -12598,10 +12532,6 @@ class MainFrame(wxp.Frame):
         If a filename is not specified, the user is asked for
         'ext_css' can be a filename for saving the style sheet
         """
-        if not self.options['syntaxhighlight']:
-            wx.MessageBox(_('Syntax highlighting is not active!'), _('Error'), 
-                          style=wx.OK|wx.ICON_ERROR)
-            return
         script, index = self.getScriptAtIndex(index)
         if script is None:
             return
@@ -16999,9 +16929,8 @@ class MainFrame(wxp.Frame):
                 os.chdir(self.initialworkdir)
             for i in xrange(self.scriptNotebook.GetPageCount()):
                 script = self.scriptNotebook.GetPage(i)
-                if self.options['syntaxhighlight'] and (
-                   self.options['syntaxhighlight_preferfunctions'] != old_prefer_functions or 
-                   self.options['syntaxhighlight_styleinsidetriplequotes'] != old_style_triple_quotes):
+                if (self.options['syntaxhighlight_preferfunctions'] != old_prefer_functions or 
+                    self.options['syntaxhighlight_styleinsidetriplequotes'] != old_style_triple_quotes):
                         script.styling_refresh_needed = True
                 script.SetUserOptions()
                 if not self.options['usetabimages']:
