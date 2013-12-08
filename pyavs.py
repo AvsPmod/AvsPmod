@@ -103,6 +103,8 @@ class AvsClipBase:
             if hasattr(self.env, 'GetError'):
                 self.error_message = self.env.GetError()
                 if self.error_message: return
+            if self.env.FunctionExists('AutoloadPlugins'): # AviSynth+
+                self.env.Invoke('AutoloadPlugins')    
         if isinstance(script,avisynth.PClip):
             self.clip=script
         else:
