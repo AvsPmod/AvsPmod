@@ -14404,8 +14404,22 @@ class MainFrame(wxp.Frame):
             self.frameTextCtrl2.Replace(0, -1, str(framenum))
         
         # Check for errors when retrieving the frame
-        script.AVI.clip.GetFrame(framenum)
-        error = script.AVI.clip.GetError()
+        try:
+            script.AVI.display_clip.GetFrame(framenum)
+        except Exception as err:
+            # In addition of showing an uncatched filter exception with the 
+            # same dialog as a catched one (below GetError gives the error 
+            # message), it's necessary to catch here the exception as this 
+            # avoids keeping an additional reference to script.AVI.display_clip 
+            # on the exception traceback, which would cause its destruction 
+            # to be postponed until the process finishes (if that's the last 
+            # exception). It would then cause a new exception as the env 
+            # doesn't exist anymore at that point (or maybe avisynth was 
+            # already unloaded).
+            error = ''.join(traceback.format_exception_only(type(err), err))
+            sys.exc_clear()
+        else:
+            error = script.AVI.clip.GetError()
         if error is not None:
             self.HidePreviewWindow()
             wx.MessageBox(u'\n\n'.join((_('Error requesting frame {number}').format(number=framenum), 
