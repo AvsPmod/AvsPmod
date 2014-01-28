@@ -228,6 +228,8 @@ class AvsClipBase:
     
     def __del__(self):
         if self.initialized:
+            self.display_frame = None
+            self.src_frame = None
             self.display_clip = None
             self.clip = None
             if __debug__:
@@ -355,22 +357,22 @@ class AvsClipBase:
             if frame >= self.Framecount:
                 frame = self.Framecount - 1
             # Original clip
-            src_frame = self.clip.GetFrame(frame)
+            self.src_frame = self.clip.GetFrame(frame)
             if self.clip.GetError():
                 return False
-            self.pitch = src_frame.GetPitch()
-            self.pitchUV = src_frame.GetPitch(avisynth.PLANAR_U)
-            self.ptrY = src_frame.GetReadPtr()
+            self.pitch = self.src_frame.GetPitch()
+            self.pitchUV = self.src_frame.GetPitch(avisynth.PLANAR_U)
+            self.ptrY = self.src_frame.GetReadPtr()
             if not self.IsY8:
-                self.ptrU = src_frame.GetReadPtr(plane=avisynth.PLANAR_U)
-                self.ptrV = src_frame.GetReadPtr(plane=avisynth.PLANAR_V)
+                self.ptrU = self.src_frame.GetReadPtr(plane=avisynth.PLANAR_U)
+                self.ptrV = self.src_frame.GetReadPtr(plane=avisynth.PLANAR_V)
             # Display clip
             if self.display_clip:
-                display_frame = self.display_clip.GetFrame(frame)
+                self.display_frame = self.display_clip.GetFrame(frame)
                 if self.display_clip.GetError():
                     return False
-                self.display_pitch = display_frame.GetPitch()
-                self.pBits = display_frame.GetReadPtr()
+                self.display_pitch = self.display_frame.GetPitch()
+                self.pBits = self.display_frame.GetReadPtr()
                 if self.RGB48: ## -> RGB24
                     pass
             self.current_frame = frame
