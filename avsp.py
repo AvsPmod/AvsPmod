@@ -9860,8 +9860,8 @@ class MainFrame(wxp.Frame):
         # Build and show the dialog
         def keyChecker(key):
             msg = None
-            if key.startswith('.'):
-                msg = '%s\n%s' % (_('Insert aborted:'), _('No dot required in file extension!'))
+            if '.' in key:
+                msg = '%s\n%s' % (_('Insert aborted:'), _("File extension shouldn't contain dots!"))
             return msg
         dlg = wxp.EditStringDictDialog(
             self,

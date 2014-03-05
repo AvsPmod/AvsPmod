@@ -2065,7 +2065,7 @@ class EditStringDictDialog(wx.Dialog):
         dlg.SetSizer(dlgSizer)
         # Show the dialog
         ID = dlg.ShowModal()
-        newKey = keyTextCtrl.GetValue()
+        newKey = keyTextCtrl.GetValue().lstrip('.')
         newValue = valueTextCtrl.GetValue()
         dlg.Destroy()
         # Add the new item to the dictionary as well as the listCtrl
