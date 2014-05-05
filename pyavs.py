@@ -103,8 +103,6 @@ class AvsClipBase:
             if hasattr(self.env, 'GetError'):
                 self.error_message = self.env.GetError()
                 if self.error_message: return
-            if self.env.FunctionExists('AutoloadPlugins'): # AviSynth+
-                self.env.Invoke('AutoloadPlugins')    
         if isinstance(script,avisynth.PClip):
             self.clip=script
         else:
@@ -114,6 +112,8 @@ class AvsClipBase:
                 f = script
             # vpy hack, remove when VapourSynth is supported
             if os.name == 'nt' and filename.endswith('.vpy'):
+                if self.env.FunctionExists('AutoloadPlugins'): # AviSynth+
+                    self.env.Invoke('AutoloadPlugins')    
                 if self.env.FunctionExists('VSImport'):
                     f = ur'VSImport("{0}", stacked=true)'.format(filename)
                 else:
@@ -149,6 +149,8 @@ class AvsClipBase:
                     raise
                 self.env.SetVar("last",avisynth.AVS_Value(self.clip))
             self.env.SetVar("avsp_raw_clip", avisynth.AVS_Value(self.clip))
+            if self.env.FunctionExists('AutoloadPlugins'): # AviSynth+
+                self.env.Invoke('AutoloadPlugins')    
         
         # Set the video properties
         self.vi=self.clip.GetVideoInfo()
