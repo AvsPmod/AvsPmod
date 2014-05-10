@@ -12088,16 +12088,15 @@ class MainFrame(wxp.Frame):
         '''Return text and encoding from a file'''
         with open(filename, mode='rb') as f:
             raw_txt = f.read()
-        if raw_txt.startswith(codecs.BOM_UTF8):
-            f_encoding = 'utf-8-sig'
-        elif raw_txt.startswith(codecs.BOM_UTF16_LE):
-            f_encoding = 'utf-16-le'
-        elif raw_txt.startswith(codecs.BOM_UTF16_BE):
-            f_encoding = 'utf-16-be'
-        elif raw_txt.startswith(codecs.BOM_UTF32_LE):
-            f_encoding = 'utf-32-le'
-        elif raw_txt.startswith(codecs.BOM_UTF32_BE):
-            f_encoding = 'utf-32-be'
+        boms = ((codecs.BOM_UTF8, 'utf-8-sig'),
+                (codecs.BOM_UTF16_LE, 'utf-16-le'),
+                (codecs.BOM_UTF16_BE, 'utf-16-be'),
+                (codecs.BOM_UTF32_LE, 'utf-32-le'),
+                (codecs.BOM_UTF32_BE, 'utf-32-be'))
+        for bom, f_encoding in boms:
+            if raw_txt.startswith(bom):
+                raw_txt = raw_txt[len(bom):]
+                break
         else:
             f_encoding = 'utf8'
         try:
