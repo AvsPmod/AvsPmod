@@ -9578,6 +9578,8 @@ class MainFrame(wxp.Frame):
         self.ToggleSliderWindow(vidrefresh=True)
     
     def OnMenuVideoRunAnalysisPass(self, event):
+        if self.playing_video:
+            self.PlayPauseVideo()
         self.refreshAVI = True
         if self.UpdateScriptAVI(forceRefresh=True) is None:
             wx.MessageBox(_('Error loading the script'), _('Error'), style=wx.OK|wx.ICON_ERROR)
