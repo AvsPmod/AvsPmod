@@ -9205,16 +9205,16 @@ class MainFrame(wxp.Frame):
     
     def OnMenuVideoCropEditor(self, event):
         script = self.currentScript
-        if script.AVI.DisplayWidth != script.AVI.Width or \
-                script.AVI.DisplayHeight != script.AVI.Height:
-            wx.MessageBox(_('Cannot use crop editor unless bit depth is set to 8'), 
-                          _('Error'), style=wx.OK|wx.ICON_ERROR)
-            return False
         dlg = self.cropDialog
         if dlg.IsShown():
             return
         # Show the video preview
         if not self.ShowVideoFrame():
+            return False
+        if script.AVI.DisplayWidth != script.AVI.Width or \
+                script.AVI.DisplayHeight != script.AVI.Height:
+            wx.MessageBox(_('Cannot use crop editor unless bit depth is set to 8'), 
+                          _('Error'), style=wx.OK|wx.ICON_ERROR)
             return False
         # Set the spin control ranges
         w = script.AVI.Width
