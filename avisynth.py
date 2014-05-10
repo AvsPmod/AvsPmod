@@ -28,6 +28,7 @@ import sys
 import os
 import os.path
 import sys
+import traceback
 
 # Initialization routines.  Assume AvxSynth/Linux if os.name is not NT.
 try:
@@ -444,6 +445,7 @@ class PClip:
     def __init__(self,pin):
         self.p=pin
         self._as_parameter_ = self.p
+        self._error = None # additional error info
 
     def from_param(obj):
         if not isinstance(obj,PClip):
@@ -461,7 +463,19 @@ class PClip:
     def __call__( self,val):
         self.Release()
         self.p=val.Copy().p
-    def GetFrame(self,n): return avs_get_frame(self,n)
+    def GetFrame(self,n):
+        self._error = None
+        try:
+            return avs_get_frame(self, n)
+        except Exception as err:
+            # Clear the exception traceback in order to avoid keeping an 
+            # additional reference to the clip, which would cause its 
+            # destruction to be postponed until the process finishes (if 
+            # that's the last exception). It would then cause a new exception 
+            # as the env doesn't exist anymore at that point (maybe even 
+            # avisynth was already unloaded).
+            self._error = ''.join(traceback.format_exception_only(type(err), err))
+            sys.exc_clear()
     def GetParity(self, n):
         """ return field parity if field_based, else parity of first field in frame"""
         return avs_get_parity(self, n)
@@ -477,7 +491,10 @@ class PClip:
                                  count) # start and count are in samples
     def SetCacheHints(self, cachehints, frame_range): 
         return avs_set_cache_hints(self, cachehints, frame_range)
-    def GetError(self): return avs_clip_get_error(self)
+    def GetError(self):
+        error = avs_clip_get_error(self) or self._error
+        self._error = None # avs_clip_get_error is used for more than GetFrame
+        return error
     def GetVideoInfo(self):return avs_get_video_info(self)
     def GetVersion(self): return avs_get_version(self)
 
