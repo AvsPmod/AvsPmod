@@ -2108,6 +2108,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                         if self.app.options['syntaxhighlight_styleinsidetriplequotes']:
                             self.ColourTo(pos, self.STC_AVS_TRIPLE)
                         else:
+                            triple_start = pos
                             state = self.STC_AVS_TRIPLE                        
                     else:
                         state = self.STC_AVS_STRING
@@ -2252,15 +2253,26 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                         state = self.STC_AVS_DEFAULT
                         isLoadPlugin = False
             elif state == self.STC_AVS_TRIPLE:
-                if isEOD or (ch in string_delimiters and unichr(self.GetCharAt(pos-1)) in string_delimiters and unichr(self.GetCharAt(pos-2)) in string_delimiters):
-                    self.ColourTo(pos, self.STC_AVS_TRIPLE)
-                    state = self.STC_AVS_DEFAULT
-                    if isLoadPlugin:
-                        if not isEOD:
-                            self.parseDllname(isLoadPlugin, pos)
-                        isLoadPlugin = False
-                elif isEOL:
-                    self.ColourTo(pos, self.STC_AVS_TRIPLE)
+                # AviSynth interprets """"""" as '"' etc.
+                triple_quote_quirk = False
+                if ch == '"' and pos - triple_start == 1:
+                    last_quote_pos = pos
+                    while unichr(self.GetCharAt(last_quote_pos)) == '"':
+                        last_quote_pos += 1
+                    quote_number = last_quote_pos - pos
+                    if quote_number > 3:
+                        pos += quote_number - 1 - 1
+                        triple_quote_quirk = True
+                if not triple_quote_quirk:
+                    if isEOD or ((pos - triple_start > 2) and ch in string_delimiters and unichr(self.GetCharAt(pos-1)) in string_delimiters and unichr(self.GetCharAt(pos-2)) in string_delimiters):
+                        self.ColourTo(pos, self.STC_AVS_TRIPLE)
+                        state = self.STC_AVS_DEFAULT
+                        if isLoadPlugin:
+                            if not isEOD:
+                                self.parseDllname(isLoadPlugin, pos)
+                            isLoadPlugin = False
+                    elif isEOL:
+                        self.ColourTo(pos, self.STC_AVS_TRIPLE)
             elif state == self.STC_AVS_NUMBER:
                 if not ch.isdigit():
                     pos -= 1
