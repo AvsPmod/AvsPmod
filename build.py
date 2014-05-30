@@ -72,8 +72,6 @@ def main():
         global_vars.version, platform.system(), 'x86-64' if x86_64 else 'x86-32')
     upx = os.path.join(os.environ['PROGRAMFILES'], 'upx', 'upx.exe')
     exe7z = os.path.join(os.environ['PROGRAMFILES'], '7-Zip', '7z.exe')
-    editbin = os.path.join(os.environ['PROGRAMFILES'], 'Microsoft Visual Studio 10.0', 
-                          'VC', 'bin', 'editbin.exe')
     
     tempdir = tempfile.mkdtemp()
     atexit.register(shutil.rmtree, tempdir)
@@ -96,16 +94,21 @@ def main():
     
     # Set the large address aware flag in the executable
     if not x86_64:
-        if not os.path.isfile(editbin):
-            editbin = isinpath('editbin.exe')
-        if editbin:
-            mspdb100_dir = os.path.join(os.environ['PROGRAMFILES'], 'Microsoft Visual Studio 10.0', 
-                                        'Common7', 'IDE')
-            if os.path.isdir(mspdb100_dir):
-                os.environ['PATH'] += os.pathsep + mspdb100_dir
-            print '\nSetting large address aware flag...'
-            if os.system('""%s" /LARGEADDRESSAWARE "%s""' % (editbin, os.path.join(programdirname, 'run.exe'))):
-                print 'Failed'
+        re_vs = re.compile('VS\d+COMNTOOLS', re.I)
+        for key, value in os.environ.iteritems():
+            match = re_vs.match(key)
+            if match:
+                vs_path = value.rsplit(os.sep, 3)[0]
+                editbin = os.path.join(vs_path, 'VC', 'bin', 'editbin.exe')
+                if os.path.isfile(editbin):
+                    dir = os.path.join(vs_path, 'Common7', 'IDE')
+                    if os.path.isdir(dir):
+                        os.environ['PATH'] += os.pathsep + dir
+                        print '\nSetting large address aware flag...'
+                        if os.system('""%s" /LARGEADDRESSAWARE "%s""' % 
+                                (editbin, os.path.join(programdirname, 'run.exe'))):
+                            print 'Failed'
+                        else: break
         else:
             print "\neditbin not found.  Large address aware flag not set"
     
