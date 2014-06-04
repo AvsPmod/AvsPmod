@@ -16532,12 +16532,12 @@ class MainFrame(wxp.Frame):
         else:
             try:
                 #~ index = choices.index(defaultValue)
-                index = choices.index(defaultValue)
+                index = choices.index(str(defaultValue))
                 choices2 = [str(i) for i in choices]
                 choices2[index] = choices2[index] + ' *'
             except ValueError:
-                pass
-            choiceBox = wx.Choice(parent, wx.ID_ANY, choices=choices)
+                choices2 = choices
+            choiceBox = wx.Choice(parent, wx.ID_ANY, choices=choices2)
             try:
                 choiceBox.SetSelection(choices.index(value))
             except ValueError:
