@@ -1023,7 +1023,6 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
         if arg_type is not None and arg_info is not None:
             value_list = self.GetParameterValues(arg_type, arg_info)
             if value_list:
-                value_list.sort(key=lambda s: s.upper())
                 self.autocomplete_case = 'parameter value'
                 self.AutoCompStops('')
                 self.AutoCompShow(0, '\n'.join(value_list))
