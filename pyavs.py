@@ -136,6 +136,8 @@ class AvsClipBase:
             self.env.set_global_var("$ScriptDir$", scriptdirname)
             try:
                 self.clip = self.env.invoke('Eval', [script, filename])
+                if not isinstance(self.clip, avisynth.AVS_Clip):
+                    raise avisynth.AvisynthError("Not a clip")
             except avisynth.AvisynthError, err:
                 self.Framecount = oldFramecount
                 if not self.CreateErrorClip(err):
@@ -161,6 +163,8 @@ class AvsClipBase:
             errText = 'MessageClip("No video")'
             try:
                 self.clip = self.env.invoke('Eval', errText)
+                if not isinstance(self.clip, avisynth.AVS_Clip):
+                    raise avisynth.AvisynthError("Not a clip")
             except avisynth.AvisynthError, err:
                 return
             try:
@@ -261,6 +265,8 @@ class AvsClipBase:
         errText = firstLine + '.'.join(lineList)
         try:
             clip = self.env.invoke('Eval', errText)
+            if not isinstance(clip, avisynth.AVS_Clip):
+                raise avisynth.AvisynthError("Not a clip")
             if display_clip_error:
                 self.display_clip = clip
                 vi = self.display_clip.get_video_info()
@@ -307,6 +313,8 @@ class AvsClipBase:
                             'avsp_raw_clip.AssumeBFF().TurnLeft().SeparateFields().TurnRight().AssumeFrameBased()\n'
                             'mt_lutxy(SelectOdd(), SelectEven(), "x 8 << y + 2 >>", chroma="process")')
                             self.display_clip = self.env.invoke('Eval', args)
+                    if not isinstance(self.display_clip, avisynth.AVS_Clip):
+                        raise avisynth.AvisynthError("Not a clip")
                     vi = self.display_clip.get_video_info()
                     self.DisplayWidth = vi.width
                     self.DisplayHeight = vi.height
@@ -843,9 +851,12 @@ if __name__ == '__main__':
     """
     env = avisynth.AVS_ScriptEnvironment(3)
     clip = env.invoke('Eval', script)
-    AVI = AvsClip(clip, env=env)
-    AVI._GetFrame(100)
-    AVI = None
+    if isinstance(clip, avisynth.AVS_Clip):
+        AVI = AvsClip(clip, env=env)
+        AVI._GetFrame(100)
+        AVI = None
+    else:
+        print clip.get_value()
     env = None
     
     print "Exit program."
