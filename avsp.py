@@ -15864,7 +15864,10 @@ class MainFrame(wxp.Frame):
                     else:
                         choices = rangeInfo.split('/')
                         if len(choices) > 1: # list of integers
-                            defaultValue = int(defaultValue)
+                            try:
+                                defaultValue = int(defaultValue)
+                            except TypeError:
+                                defaultValue = strDefaultValue
                             choices = [choice.strip() for choice in choices]
                             return (argtype, argname, 'intlist', defaultValue, choices)
                     if boolValueError:
