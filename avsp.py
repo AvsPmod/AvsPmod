@@ -10055,7 +10055,7 @@ class MainFrame(wxp.Frame):
                     f.write(txt.encode('utf16'))
                     f.close()
                     if ret == wx.YES:
-                        ctypes.windll.shell32.ShellExecuteW(None, u'runas', u'cmd', u'/k "regini "{f}" & del "{f}""'.format(f=f.name), None, 0)
+                        ctypes.windll.shell32.ShellExecuteW(None, u'runas', u'cmd', u'/k "regini "{f}" & del "{f}""'.format(f=f.name.decode(encoding)), None, 0)
                     else:
                         os.system('regini "{f}" & del "{f}"'.format(f=f.name))
         else:
