@@ -7585,6 +7585,9 @@ class MainFrame(wxp.Frame):
                     (''),
                     (_('Set selection startpoint'), 'Home', self.OnMenuVideoTrimEditorSetStartpoint, _('Set a selection startpoint (shows the trim editor if not visible)'), wx.ITEM_NORMAL, None, self.videoWindow),
                     (_('Set selection endpoint'), 'End', self.OnMenuVideoTrimEditorSetEndpoint, _('Set a selection endpoint (shows the trim editor if not visible)'), wx.ITEM_NORMAL, None, self.videoWindow),
+                    (''),
+                    (_('Move selections before the current frame'), 'Ctrl+Alt+V', self.OnMenuVideoMoveSelectionsBeforeCurrentFrame, _('The current selections are cut from the timeline and inserted before the current frame. Bookmarks are shifted accordingly.'), wx.ITEM_NORMAL, None, self.videoWindow),
+                    (_('Move selections after the current frame'), 'Ctrl+V', self.OnMenuVideoMoveSelectionsAfterCurrentFrame, _('The current selections are cut from the timeline and inserted after the current frame. Bookmarks are shifted accordingly.'), wx.ITEM_NORMAL, None, self.videoWindow),
                     ),
                 ),
                 (''),
@@ -9294,7 +9297,17 @@ class MainFrame(wxp.Frame):
 
     def OnMenuVideoTrimEditorSetEndpoint(self, event):
         self.SetSelectionEndPoint(2)
-
+    
+    def OnMenuVideoMoveSelectionsBeforeCurrentFrame(self, event):
+        selections = self.GetSliderSelections(self.invertSelection)
+        if selections:
+            self.MoveFrameRanges(selections, paste_before=True)
+    
+    def OnMenuVideoMoveSelectionsAfterCurrentFrame(self, event):
+        selections = self.GetSliderSelections(self.invertSelection)
+        if selections:
+            self.MoveFrameRanges(selections, paste_before=False)
+    
     def OnMenuVideoZoom(self, event=None, menuItem=None, zoomfactor=None, show=True, scroll=None):
         if zoomfactor is None:
             if True:#wx.VERSION > (2, 8):
@@ -13670,6 +13683,146 @@ class MainFrame(wxp.Frame):
         if not self.trimDialog.IsShown():
             self.OnMenuVideoTrimEditor(None)
         self.AddFrameBookmark(self.GetFrameNumber(), bmtype)
+    
+    def MoveFrameRanges(self, ranges, paste_frame=None, paste_before=False, 
+                        insert_in_script=True):
+        """Cut frames ranges from the timeline and paste them before or after a specified frame
+        
+        'ranges' is a sequence of (start, end) pairs. Return value is 
+        the new timeline in the same format.
+        
+        If 'paste_frame' is not given then the current frame is taken
+        
+        By default the ranges are inserted after 'paste_frame', set 
+        'paste_before' to True to insert them before.
+        
+        By default a line of Trims according to the new timeline is 
+        inserted at the end of the script and bookmarks are shifted, 
+        it can be disabled by setting 'insert_in_script' to False.
+        
+        """
+        script = self.currentScript
+        self.refreshAVI = True
+        if self.UpdateScriptAVI() is None:
+            wx.MessageBox(_('Error loading the script'), _('Error'), 
+                          style=wx.OK|wx.ICON_ERROR)
+            return False
+        
+        # Construct the new timeline
+        cut_ranges = []
+        new_timeline_left = []
+        new_timeline_right = []
+        last_end = -1
+        if paste_frame is None:
+            paste_frame = self.GetFrameNumber()
+        paste_frame_done = False
+        last_frame = script.AVI.Framecount - 1
+        if paste_before:
+            for (start, end) in sorted(ranges):
+                if start - last_end >= 2:
+                    if paste_frame_done:
+                        new_timeline_right.append((last_end + 1, start - 1))
+                    else:
+                        if paste_frame <= end:
+                            if paste_frame >= start:
+                                new_timeline_left.append((last_end + 1, start - 1))
+                            elif last_end + 1 == paste_frame:
+                                new_timeline_right.append((last_end + 1, start - 1))
+                            else:
+                                new_timeline_left.append((last_end + 1, paste_frame - 1))
+                                new_timeline_right.append((paste_frame, start - 1))
+                            paste_frame_done = True
+                        else:
+                            new_timeline_left.append((last_end + 1, start - 1))
+                elif not paste_frame_done and paste_frame <= end:
+                    paste_frame_done = True
+                cut_ranges.append((start, end))
+                last_end = end
+            if not paste_frame_done:
+                new_timeline_left.append((last_end + 1, paste_frame - 1))
+                new_timeline_right.append((paste_frame, last_frame))
+            elif last_end < last_frame:
+                new_timeline_right.append((last_end + 1, last_frame))
+        else:
+            for (start, end) in sorted(ranges):
+                if start - last_end >= 2:
+                    if paste_frame_done:
+                        new_timeline_right.append((last_end + 1, start - 1))
+                    else:
+                        if paste_frame <= end:
+                            if paste_frame >= start - 1:
+                                new_timeline_left.append((last_end + 1, start - 1))
+                            else:
+                                new_timeline_left.append((last_end + 1, paste_frame))
+                                new_timeline_right.append((paste_frame + 1, start - 1))
+                            paste_frame_done = True
+                        else:
+                            new_timeline_left.append((last_end + 1, start - 1))
+                elif not paste_frame_done and paste_frame <= end:
+                    paste_frame_done = True
+                cut_ranges.append((start, end))
+                last_end = end
+            if not paste_frame_done:
+                if paste_frame == last_frame:
+                    new_timeline_left.append((last_end + 1, last_frame))
+                else:
+                    new_timeline_left.append((last_end + 1, paste_frame))
+                    new_timeline_right.append((paste_frame + 1, last_frame))
+            elif last_end < last_frame:
+                new_timeline_right.append((last_end + 1, last_frame))
+        new_timeline = new_timeline_left + cut_ranges + new_timeline_right
+        
+        if not insert_in_script:
+            return new_timeline
+        
+        # Shift bookmarks as needed
+        
+        # Get a dictionary {frame range: bookmarks in that range}
+        range_bm_dict = collections.defaultdict(list)
+        for frame, bmtype in self.GetBookmarkFrameList().iteritems():
+            if bmtype != 0:
+                continue
+            for i, (start, end) in enumerate(new_timeline):
+                if start <= frame <= end:
+                    range_bm_dict[i].append(frame)
+                    break
+        
+        # Get the new bookmark list
+        new_bookmarks = []
+        frame_count = 0
+        new_frame = None
+        for i, (start, end) in enumerate(new_timeline):
+            offset = frame_count - start
+            new_bookmarks.extend([bm + offset for bm in range_bm_dict[i]])
+            frame_count += end - start + 1 
+            if new_frame is None and start <= paste_frame <= end:
+                new_frame = paste_frame + offset
+        
+        # Replace the current bookmarks with the new ones
+        self.DeleteAllFrameBookmarks(bmtype=0)
+        self.MacroSetBookmark(new_bookmarks)
+        
+        # Fix case Trim(0,0)
+        new_timeline2 = new_timeline[:]
+        try: # 'end' parameter is only available in avisynth v2.6+
+            new_timeline2[new_timeline.index((0,0))] = (0, -1)
+        except ValueError:
+            pass
+        
+        # Insert a line of Trims at the end of the script
+        pos = script.GetLength()
+        new_timeline_str = '++'.join(
+                     ['Trim({},{})'.format(*trim) for trim in new_timeline2])
+        script.InsertText(pos, '\n' + new_timeline_str)
+        script.GotoPos(pos + 1 + len(new_timeline_str))
+        
+        # Navigate to the initial frame and hide trim selection editor
+        self.refreshAVI = True
+        self.ShowVideoFrame(new_frame)
+        if self.trimDialog.IsShown():
+            self.OnTrimDialogCancel(None)
+        
+        return new_timeline
     
     @AsyncCallWrapper
     def GetFrameNumber(self):
