@@ -1,7 +1,7 @@
 # AvsP - an AviSynth editor
 # 
 # Copyright 2007 Peter Jang <http://www.avisynth.org/qwerpoi>
-#           2010-2014 the AvsPmod authors <https://github.com/avspmod/avspmod>
+#           2010-2015 the AvsPmod authors <https://github.com/avspmod/avspmod>
 #
 # Printing support based on stcprint.py from Peppy/Editra (wxWidgets license)
 # Copyright 2007 Cody Precord <staff@editra.org>
@@ -10637,6 +10637,7 @@ class MainFrame(wxp.Frame):
             self.replaceDialog.SetFocus()
         else:
             script.SetFocus()
+        self.SetVideoStatusText()
         self.UpdateProgramTitle()
         self.oldlinenum = None
 
@@ -14236,10 +14237,6 @@ class MainFrame(wxp.Frame):
             self.Freeze()
             self.scriptNotebook.SetSelection(index)
             self.Thaw()
-        if self.previewWindowVisible:
-            if self.FindFocus() == self.currentScript:
-                self.IdleCall.append((self.SetScriptStatusText, tuple(), {}))
-            self.IdleCall.append((self.OnMouseMotionVideoWindow, tuple(), {}))
         return True
 
     def ShowFunctionDefinitionDialog(self, functionName=None, functionArgs=None):
@@ -15074,6 +15071,7 @@ class MainFrame(wxp.Frame):
             script.autocrop_values = None
             if self.cropDialog.IsShown():
                 self.PaintCropWarnings()
+            self.SetVideoStatusText()
             if self.playing_video == '':
                 self.PlayPauseVideo()
 
