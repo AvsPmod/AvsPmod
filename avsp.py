@@ -2093,6 +2093,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
         self.endstyled = pos = start
         fragment = []
         hexfragment = []
+        triple_start = None
         # vpy hack, remove when VapourSynth is supported (with a custom Python lexer)
         string_delimiters = ['"', "'"] if self.filename.endswith('.vpy') else '"'
         self.StartStyling(pos, 31)
@@ -2259,6 +2260,8 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                         state = self.STC_AVS_DEFAULT
                         isLoadPlugin = False
             elif state == self.STC_AVS_TRIPLE:
+                if triple_start is None:
+                    triple_start = self.GetStringRange(pos)[0]
                 # AviSynth interprets """"""" as '"' etc.
                 triple_quote_quirk = False
                 if ch == '"' and pos - triple_start == 1:
@@ -2273,6 +2276,7 @@ class AvsStyledTextCtrl(stc.StyledTextCtrl):
                     if isEOD or ((pos - triple_start > 2) and ch in string_delimiters and unichr(self.GetCharAt(pos-1)) in string_delimiters and unichr(self.GetCharAt(pos-2)) in string_delimiters):
                         self.ColourTo(pos, self.STC_AVS_TRIPLE)
                         state = self.STC_AVS_DEFAULT
+                        triple_start = None
                         if isLoadPlugin:
                             if not isEOD:
                                 self.parseDllname(isLoadPlugin, pos)
