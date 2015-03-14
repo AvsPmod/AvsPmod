@@ -122,10 +122,10 @@ Discussion:
 <http://forum.doom9.org/showthread.php?t=153248>
 
 AvsP homepage: 
-<http://avisynth.org/qwerpoi/>
+<http://avisynth.nl/users/qwerpoi/>
 
 AviSynth wiki: 
-<http://avisynth.org/mediawiki/Main_Page>
+<http://avisynth.nl/index.php/Main_Page>
 
 AvxSynth wiki: 
 <https://github.com/avxsynth/avxsynth/wiki>

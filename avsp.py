@@ -10179,35 +10179,35 @@ class MainFrame(wxp.Frame):
         if os.path.isfile(filename):
             startfile(filename)
         else:
-            startfile('http://www.avisynth.org/qwerpoi/Demo.htm')
+            startfile('http://avisynth.nl/users/qwerpoi/Demo.htm')
 
     def OnMenuHelpTextFeatures(self, event):
         filename = os.path.join(self.helpdir, 'Text.html')
         if os.path.isfile(filename):
             startfile(filename)
         else:
-            startfile('http://avisynth.org/qwerpoi/Text.html')
+            startfile('http://avisynth.nl/users/qwerpoi/Text.html')
 
     def OnMenuHelpVideoFeatures(self, event):
         filename = os.path.join(self.helpdir, 'Video.html')
         if os.path.isfile(filename):
             startfile(filename)
         else:
-            startfile('http://avisynth.org/qwerpoi/Video.html')
+            startfile('http://avisynth.nl/users/qwerpoi/Video.html')
 
     def OnMenuHelpUserSliderFeatures(self, event):
         filename = os.path.join(self.helpdir, 'UserSliders.html')
         if os.path.isfile(filename):
             startfile(filename)
         else:
-            startfile('http://avisynth.org/qwerpoi/UserSliders.html')
+            startfile('http://avisynth.nl/users/qwerpoi/UserSliders.html')
 
     def OnMenuHelpMacroFeatures(self, event):
         filename = os.path.join(self.helpdir, 'Macros.html')
         if os.path.isfile(filename):
             startfile(filename)
         else:
-            startfile('http://avisynth.org/qwerpoi/Macros.html')
+            startfile('http://avisynth.nl/users/qwerpoi/Macros.html')
 
     def OnMenuHelpReadme(self, event):
         readme = os.path.join(self.programdir, 'readme.txt')
@@ -10242,7 +10242,7 @@ class MainFrame(wxp.Frame):
         link.SetFont(font)
         link.SetForegroundColour(wx.Colour(0,0,255))
         link.SetCursor(wx.StockCursor(wx.CURSOR_HAND))
-        url = 'http://www.avisynth.org/qwerpoi/'
+        url = 'http://avisynth.nl/users/qwerpoi/'
         def OnClick(event):
             startfile(url)
         link.SetToolTip(wx.ToolTip(url))

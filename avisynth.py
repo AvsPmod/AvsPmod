@@ -1,6 +1,6 @@
 # avisynth - Python AviSynth/AvxSynth wrapper
 # 
-# Copyright 2007 Peter Jang <http://www.avisynth.org/qwerpoi>
+# Copyright 2007 Peter Jang <http://avisynth.nl/users/qwerpoi>
 #           2010-2014 the AvsPmod authors <https://github.com/avspmod/avspmod>
 #
 #  This program is free software; you can redistribute it and/or modify

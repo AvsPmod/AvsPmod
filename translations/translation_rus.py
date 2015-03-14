@@ -25,7 +25,7 @@
 # НЕ ПЕРЕВОДИТЕ любые слова внутри форматированных строк (то есть, любые части
 # текста, которые выглядят подобно {...}, %(...)s, %(...)i, и т.п.)
 
-# Russian interface file for AvsP editor by qwerpoi, http://www.avisynth.org/qwerpoi
+# Russian interface file for AvsP editor by qwerpoi, http://avisynth.nl/users/qwerpoi
 # Translated by Fizick 19.09.2006-11.03.2007 for AvsP v1.3.7, http://avisynth.org.ru/avsp
 
 version = "2.5.1"

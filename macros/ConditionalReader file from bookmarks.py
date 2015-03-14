@@ -14,7 +14,7 @@ in the title of either the start or end frame.  When using interpolation the
 two values can be introduced both in the same bookmark or separately.
 
 More info on ConditionalReader:
-http://avisynth.org/mediawiki/ConditionalReader
+http://avisynth.nl/index.php/ConditionalReader
 
 
 Written by vdcrim
