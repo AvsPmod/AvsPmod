@@ -112,8 +112,8 @@ Links
 Development:
 <https://github.com/AvsPmod/AvsPmod>
 
-Windows builds:
-<http://www.amvhell.com/avspmod/>
+Releases:
+<https://github.com/AvsPmod/AvsPmod/releases>
 
 Filter database wiki:
 <https://github.com/AvsPmod/AvsPmod/wiki/Filter-database>
