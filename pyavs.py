@@ -1,7 +1,7 @@
 # AvsP - an AviSynth editor
 # 
 # Copyright 2007 Peter Jang <http://www.avisynth.org/qwerpoi>
-#           2010-2014 the AvsPmod authors <https://github.com/avspmod/avspmod>
+#           2010-2015 the AvsPmod authors <https://github.com/avspmod/avspmod>
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -133,7 +133,7 @@ class AvsClipBase:
                 self.env.set_working_dir(workdir)
             self.env.set_global_var("$ScriptFile$", scriptbasename)
             self.env.set_global_var("$ScriptName$", filename)
-            self.env.set_global_var("$ScriptDir$", scriptdirname)
+            self.env.set_global_var("$ScriptDir$", scriptdirname + os.path.sep)
             try:
                 self.clip = self.env.invoke('Eval', [script, filename])
                 if not isinstance(self.clip, avisynth.AVS_Clip):
