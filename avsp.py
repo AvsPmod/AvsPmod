@@ -5532,11 +5532,17 @@ class MainFrame(wxp.Frame):
         self.lastClosed = None
         if self.options['exitstatus']:
             self.IdleCall.append((wx.MessageBox, (_('A crash detected at the last running!'), _('Warning'), wx.OK|wx.ICON_EXCLAMATION, self), {})) 
-        if self.options['startupsession'] or self.options['exitstatus']:
-            if self.options['alwaysloadstartupsession'] or len(sys.argv) <= 1 or not self.options['promptexitsave'] or self.options['exitstatus']:
-                if os.path.isfile(self.lastSessionFilename) and not self.LoadSession(self.lastSessionFilename, saverecentdir=False, resize=False, backup=True, startup=True):
+        use_last_preview_placement = True
+        if ((self.options['exitstatus'] or self.options['startupsession'] and 
+                (self.options['alwaysloadstartupsession'] or len(sys.argv) <= 1 or not self.options['promptexitsave']))
+            and os.path.isfile(self.lastSessionFilename)):
+                if self.LoadSession(self.lastSessionFilename, saverecentdir=False, resize=False, backup=True, startup=True):
+                    use_last_preview_placement = False
+                else:
                     self.loaderror.append(os.path.basename(self.lastSessionFilename))
                     shutil.copy2(self.lastSessionFilename, os.path.splitext(self.lastSessionFilename)[0] + '.BAD')
+        if use_last_preview_placement and self.options['last_preview_placement'] != self.mainSplitter.GetSplitMode():
+            self.TogglePreviewPlacement()
         if not self.options['exitstatus']:
             self.options['exitstatus'] = 1
             f = open(self.optionsfilename, mode='wb')
@@ -6043,6 +6049,7 @@ class MainFrame(wxp.Frame):
             'hidepreview': False,
             'refreshpreview': True,
             'promptwhenpreview': False,
+            'last_preview_placement': wx.SPLIT_HORIZONTAL,
             'separatevideowindow': False,
             'previewontopofmain': True,
             #~ 'showvideopixelinfo': True,
@@ -11846,6 +11853,7 @@ class MainFrame(wxp.Frame):
                 frame=frame,
                 previewvisible=previewvisible,
             )
+        self.options['last_preview_placement'] = self.mainSplitter.GetSplitMode()
         # Save the text in the scrap window
         scrapCtrl = self.scrapWindow.textCtrl
         self.options['scraptext'] = (scrapCtrl.GetText(), scrapCtrl.GetAnchor(), scrapCtrl.GetCurrentPos())
@@ -12660,10 +12668,9 @@ class MainFrame(wxp.Frame):
             # Select the last selected script
             if selectedIndex is not None:
                 self.scriptNotebook.SetSelection(selectedIndex)
-            # Change preview placement if the session is not empty
-            if not (len(session['scripts']) == 1 and index is not None and not self.scriptNotebook.GetPage(index).GetText()):
-                if session.get('preview_placement', wx.SPLIT_HORIZONTAL) != self.mainSplitter.GetSplitMode():
-                    self.TogglePreviewPlacement()
+            # Change preview placement if needed
+            if session.get('preview_placement', wx.SPLIT_HORIZONTAL) != self.mainSplitter.GetSplitMode():
+                self.TogglePreviewPlacement()
             # Set the video slider to last shown frame number
             if startup:
                 self.previewWindowVisible = previewWindowVisible
