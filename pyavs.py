@@ -24,9 +24,9 @@
 # Dependencies:
 #     Python (tested on v2.6 and v2.7)
 #     wxPython (for *nix, tested on v2.8 and v2.9)
-#     cffi and its dependencies (only for x86-64, tested on v0.8.1)
+#     cffi and its dependencies (only for x86-64, tested on v0.9.2)
 #         pycparser
-#         Visual Studio 2008
+#         Visual C++
 #     avisynth_c.h (only for x86-64, interface 5, or at least 3 + colorspaces 
 #                   from 5, tested with the header used by x264)
 # Scripts:
