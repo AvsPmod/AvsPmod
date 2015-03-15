@@ -8507,20 +8507,8 @@ class MainFrame(wxp.Frame):
                     else:
                         self.videoWindow.SetFocus()
                 title = self.titleEntry.GetLineText(0)
-                if self.currentScript.filename:
-                    if os.path.splitext(title)[1] not in ('.avs', '.avsi', '.vpy'):
-                        title += '.avs'
-                    src = self.currentScript.filename
-                    dirname = os.path.dirname(src)
-                    dst = os.path.join(dirname, title)
-                    try:
-                        os.rename(src, dst)
-                        self.currentScript.filename = dst
-                    except OSError:
-                        wx.Bell()
-                        self.IdleCall.append((self.titleEntry.Destroy, tuple(), {}))
-                        return
-                self.SetScriptTabname(title, index=index)
+                if not self.RenameScript(title):
+                    wx.Bell()
                 self.IdleCall.append((self.titleEntry.Destroy, tuple(), {}))
                 
             def CheckTabPosition():
@@ -12552,6 +12540,34 @@ class MainFrame(wxp.Frame):
                         if sourceFilter.strip().lower() in sourceFilterList:
                             return s
         return ''
+    
+    @AsyncCallWrapper
+    def RenameScript(self, new_title, index=None):
+        """RenameScript(new_title, index=None)
+        
+        Renames the tab located at the integer 'index' to 'new_title'.  If 'index' is 
+        None, then the currently selected tab is used.
+        
+        If the script was saved to the filesystem the file is renamed as well.  Returns 
+        False if the file couldn't be renamed, True otherwise.
+        
+        """
+        if index is None:
+            index = self.scriptNotebook.GetSelection()
+        script = self.scriptNotebook.GetPage(index)
+        if script.filename:
+            if os.path.splitext(new_title)[1] not in ('.avs', '.avsi', '.vpy'):
+                new_title += '.avs'
+            src = script.filename
+            dirname = os.path.dirname(src)
+            dst = os.path.join(dirname, new_title)
+            try:
+                os.rename(src, dst)
+                script.filename = dst
+            except OSError:
+                return False
+        self.SetScriptTabname(new_title, index=index)
+        return True
     
     def RepositionTab(self, newIndex):
         if type(newIndex) is not int:        
@@ -18647,6 +18663,8 @@ class MainFrame(wxp.Frame):
             self.__doc__ += parent.FormatDocstring(self.SaveScriptAs)
             self.IsScriptSaved = parent.MacroIsScriptSaved
             self.__doc__ += parent.FormatDocstring(self.IsScriptSaved)
+            self.RenameScript = parent.RenameScript
+            self.__doc__ += parent.FormatDocstring(self.RenameScript)
             # Video related functions
             self.ShowVideoFrame = parent.MacroShowVideoFrame
             self.__doc__ += parent.FormatDocstring(self.ShowVideoFrame)
