@@ -6959,7 +6959,17 @@ class MainFrame(wxp.Frame):
         # Create the program's status bar
         statusBar = self.CreateStatusBar(2)
         statusBar.SetStatusWidths([-1, 0])
-
+        
+        class PartialFormatter(string.Formatter):
+            
+            def get_value(self, key, args, kwds):
+                try:
+                    return string.Formatter.get_value(self, key, args, kwds)
+                except KeyError:
+                    return '%' + key
+        
+        self.status_bar_formatter = PartialFormatter()
+        
         # Create the main subwindows
         if wx.VERSION < (2, 9):
             self.programSplitter = wx.SplitterWindow(self, wx.ID_ANY, style=wx.SP_NOBORDER)
@@ -13917,7 +13927,9 @@ class MainFrame(wxp.Frame):
             frame = self.videoSlider.GetValue()
         script = self.currentScript
         if script.AVI:
-            text = (' '+self.videoStatusBarInfoParsed+'      ') % self.GetVideoInfoDict(script, frame, addon)
+            text = self.status_bar_formatter.vformat(
+                                ' ' + self.videoStatusBarInfoParsed + '      ', 
+                                [], self.GetVideoInfoDict(script, frame, addon))
         else:
             text = ' %s %i'  % (_('Frame'), frame)
         text2 = text.rsplit('\\T\\T', 1)
@@ -14117,34 +14129,34 @@ class MainFrame(wxp.Frame):
                 showVideoPixelInfo = True
                 break
         keyList = [
-            ('%POS', '%(pixelpos)s'),
-            ('%HEX', '%(pixelhex)s'),
-            ('%RGB', '%(pixelrgb)s'),
-            ('%YUV', '%(pixelyuv)s'),
-            ('%CLR', '%(pixelclr)s'),
-            ('%FRN', '%(frameratenum)i'),
-            ('%FRD', '%(framerateden)i'),
-            ('%AUR', '%(audiorate).03f'),
-            ('%AUL', '%(audiolength)i'),
-            ('%AUC', '%(audiochannels)i'),
-            ('%AUB', '%(audiobits)i'),
-            ('%AUT', '%(audiotype)i'),
-            ('%FC', '%(framecount)i'),
-            ('%TT', '%(totaltime)s'),
-            ('%FR', '%(framerate).03f'),
-            ('%CS', '%(colorspace)s'),
-            ('%AR', '%(aspectratio)s'),
-            ('%FB', '%(fieldframebased)s'),
-            ('%PS', '%(parityshort)s'),
-            ('%EFT', '%(ffms_encodedframetype)s'),
-            ('%ST', '%(ffms_sourcetime)s'),
-            ('%BM', '%(bookmarktitle)s'),
-            ('%W', '%(width)i'),
-            ('%H', '%(height)i'),
-            ('%F', '%(frame)s'),
-            ('%T', '%(time)s'),
-            ('%P', '%(parity)s'),
-            ('%Z', '%(zoom)s'),
+            ('%POS', '{pixelpos}'),
+            ('%HEX', '{pixelhex}'),
+            ('%RGB', '{pixelrgb}'),
+            ('%YUV', '{pixelyuv}'),
+            ('%CLR', '{pixelclr}'),
+            ('%FRN', '{frameratenum}'),
+            ('%FRD', '{framerateden}'),
+            ('%AUR', '{audiorate:.3f}'),
+            ('%AUL', '{audiolength}'),
+            ('%AUC', '{audiochannels}'),
+            ('%AUB', '{audiobits}'),
+            ('%AUT', '{audiotype}'),
+            ('%FC', '{framecount}'),
+            ('%TT', '{totaltime}'),
+            ('%FR', '{framerate:.3f}'),
+            ('%CS', '{colorspace}'),
+            ('%AR', '{aspectratio}'),
+            ('%FB', '{fieldframebased}'),
+            ('%PS', '{parityshort}'),
+            ('%EFT', '{ffms_encodedframetype}'),
+            ('%ST', '{ffms_sourcetime}'),
+            ('%BM', '{bookmarktitle}'),
+            ('%W', '{width}'),
+            ('%H', '{height}'),
+            ('%F', '{frame}'),
+            ('%T', '{time}'),
+            ('%P', '{parity}'),
+            ('%Z', '{zoom}'),
         ]
         for key, item in keyList:
             info = info.replace(key, item)
