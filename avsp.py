@@ -6614,7 +6614,10 @@ class MainFrame(wxp.Frame):
         # retrieve existing filters (internal filters, autoloaded plugins and avsi files)
         self.avisynth_p = env.function_exists('AutoloadPlugins') # AviSynth+
         if self.avisynth_p:
-            env.invoke('AutoloadPlugins')
+            try:
+                env.invoke('AutoloadPlugins')
+            except avisynth.AvisynthError:
+                pass
         # internal filters
         try:
             intfunc = env.get_var("$InternalFunctions$")

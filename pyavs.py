@@ -121,7 +121,12 @@ class AvsClipBase:
             # vpy hack, remove when VapourSynth is supported
             if os.name == 'nt' and filename.endswith('.vpy'):
                 if self.env.function_exists('AutoloadPlugins'): # AviSynth+
-                    self.env.invoke('AutoloadPlugins')    
+                    try:
+                        self.env.invoke('AutoloadPlugins')
+                    except avisynth.AvisynthError, err:
+                        self.Framecount = oldFramecount
+                        if not self.CreateErrorClip(err):
+                            return
                 if self.env.function_exists('VSImport'):
                     script = ur'VSImport("{0}", stacked=true)'.format(filename)
                 else:
@@ -153,7 +158,12 @@ class AvsClipBase:
                 self.env.set_var("last", self.clip)
             self.env.set_var("avsp_raw_clip", self.clip)
             if self.env.function_exists('AutoloadPlugins'): # AviSynth+
-                self.env.invoke('AutoloadPlugins')    
+                try:
+                    self.env.invoke('AutoloadPlugins')
+                except avisynth.AvisynthError, err:
+                    self.Framecount = oldFramecount
+                    if not self.CreateErrorClip(err):
+                        return
         
         # Set the video properties
         self.vi = self.clip.get_video_info()
@@ -850,13 +860,17 @@ if __name__ == '__main__':
     FlipVertical()
     """
     env = avisynth.AVS_ScriptEnvironment(3)
-    clip = env.invoke('Eval', script)
-    if isinstance(clip, avisynth.AVS_Clip):
-        AVI = AvsClip(clip, env=env)
-        AVI._GetFrame(100)
-        AVI = None
+    try:
+        clip = env.invoke('Eval', script)
+    except avisynth.AvisynthError, err:
+        print err
     else:
-        print clip.get_value()
+        if isinstance(clip, avisynth.AVS_Clip):
+            AVI = AvsClip(clip, env=env)
+            AVI._GetFrame(100)
+            AVI = None
+        else:
+            print clip.get_value()
     env = None
     
     print "Exit program."
