@@ -1,6 +1,6 @@
 # avisynth - Python AviSynth wrapper
 # 
-# Copyright 2014 the AvsPmod authors <https://github.com/avspmod/avspmod>
+# Copyright 2014-2016 the AvsPmod authors <https://github.com/avspmod/avspmod>
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -147,7 +147,7 @@ enum {AVS_CS_BGR = ..., // 1<<28,
       AVS_CS_SAMPLE_BITS_16    = ..., // 1 << AVS_CS_SHIFT_SAMPLE_BITS,
       AVS_CS_SAMPLE_BITS_32    = ..., // 2 << AVS_CS_SHIFT_SAMPLE_BITS,
 
-      AVS_CS_PLANAR_MASK       = 0xFCE6ED07L, // TODO: converts to int, // AVS_CS_PLANAR | AVS_CS_INTERLEAVED | AVS_CS_YUV | AVS_CS_BGR | AVS_CS_SAMPLE_BITS_MASK | AVS_CS_SUB_HEIGHT_MASK | AVS_CS_SUB_WIDTH_MASK,
+      AVS_CS_PLANAR_MASK       = ..., // AVS_CS_PLANAR | AVS_CS_INTERLEAVED | AVS_CS_YUV | AVS_CS_BGR | AVS_CS_SAMPLE_BITS_MASK | AVS_CS_SUB_HEIGHT_MASK | AVS_CS_SUB_WIDTH_MASK,
       AVS_CS_PLANAR_FILTER     = ... // ~( AVS_CS_VPLANEFIRST | AVS_CS_UPLANEFIRST )
 };
 
