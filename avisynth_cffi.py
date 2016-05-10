@@ -1385,8 +1385,11 @@ class AVS_ScriptEnvironment(object):
         # align should be at least 16
         return avs.avs_new_video_frame_a(self.cdata, vi, align)
     
-    def make_writable(self, video_frame_p): # TODO
-        return avs.avs_make_writable(self.cdata, video_frame_p)
+    def make_writable(self, video_frame):
+        video_frame_p = ffi.new('AVS_VideoFrame * *', video_frame.cdata)
+        ret = avs.avs_make_writable(self.cdata, video_frame_p) 
+        video_frame.cdata = video_frame_p[0]
+        return ret
     
     def bit_blt(self, dstp, dst_pitch, srcp, src_pitch, row_size, height):
         avs.avs_bit_blt(self.cdata, dstp, dst_pitch, srcp, src_pitch, row_size, height)
