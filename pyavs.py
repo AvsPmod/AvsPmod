@@ -1,7 +1,7 @@
 # AvsP - an AviSynth editor
 # 
 # Copyright 2007 Peter Jang <http://www.avisynth.org/qwerpoi>
-#           2010-2015 the AvsPmod authors <https://github.com/avspmod/avspmod>
+#           2010-2016 the AvsPmod authors <https://github.com/avspmod/avspmod>
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -682,7 +682,7 @@ if os.name == 'nt':
             bmih.biBitCount = 24
         else: raise AvisynthError("Input colorspace is not RGB24 or RGB32")
         bmih.biCompression = BI_RGB
-        bmih.biSizeImage=vi.width * vi.height * bmih.biBitCount / 8
+        bmih.biSizeImage = 0 # ignored with biCompression == BI_RGB
         bmih.biXPelsPerMeter = 0
         bmih.biYPelsPerMeter = 0
         bmih.biClrUsed = 0
@@ -717,8 +717,6 @@ if os.name == 'nt':
             self.bmih = BITMAPINFOHEADER()
             CreateBitmapInfoHeader(self.display_clip, self.bmih)
             self.pInfo = ctypes.pointer(self.bmih)
-            #~ self.BUF=ctypes.c_ubyte*self.bmih.biSizeImage
-            #~ self.pBits=self.BUF()
             return True
         
         def _ConvertToRGB(self):
@@ -733,10 +731,6 @@ if os.name == 'nt':
         def _GetFrame(self, frame):
             if AvsClipBase._GetFrame(self, frame):
                 self.bmih.biWidth = self.display_pitch * 8 / self.bmih.biBitCount
-                #~ row_size=src.GetRowSize()
-                #~ height=self.bmih.biHeight
-                #~ dst_pitch=self.bmih.biWidth*self.bmih.biBitCount/8
-                #~ self.env.BitBlt(self.pBits,dst_pitch,src.GetReadPtr(),src_pitch,row_size,height)
                 return True
             return False
         
@@ -750,8 +744,15 @@ if os.name == 'nt':
                     h = self.DisplayHeight
                 else:
                     w, h = size 
+                row_size = self.display_frame.get_row_size()
+                if self.display_pitch == row_size: # the size of the vfb is not guaranteed to be pitch * height unless pitch == row_size
+                    pBits = self.pBits
+                else:
+                    buf = ctypes.create_string_buffer(self.display_pitch * self.DisplayHeight)
+                    pBits = ctypes.addressof(buf)
+                    ctypes.memmove(pBits, self.pBits, self.display_pitch * (self.DisplayHeight - 1) + row_size)
                 DrawDibDraw(handleDib[0], hdc, offset[0], offset[1], w, h, 
-                            self.pInfo, self.pBits, 0, 0, w, h, 0)
+                            self.pInfo, pBits, 0, 0, w, h, 0)
                 return True
 
 
