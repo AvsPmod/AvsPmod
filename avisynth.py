@@ -1,7 +1,7 @@
 # avisynth - Python AviSynth/AvxSynth wrapper
 # 
 # Copyright 2007 Peter Jang <http://avisynth.nl/users/qwerpoi>
-#           2010-2014 the AvsPmod authors <https://github.com/avspmod/avspmod>
+#           2010-2016 the AvsPmod authors <https://github.com/avspmod/avspmod>
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -294,7 +294,7 @@ class AVS_ScriptEnvironment(object):
         return avs_new_video_frame_a(self, vi, align)
     
     def make_writable(self, AVS_VideoFrame):
-        return avs_make_writable(self, ctypes.POINTER(AVS_VideoFrame.cdata))
+        return avs_make_writable(self, ctypes.byref(AVS_VideoFrame.cdata))
     
     def bit_blt(self, dstp, dst_pitch, srcp, src_pitch, row_size, height):
         avs_bit_blt(self, dstp, dst_pitch, srcp, src_pitch, row_size, height)
