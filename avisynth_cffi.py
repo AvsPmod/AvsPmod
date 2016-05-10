@@ -805,55 +805,55 @@ class AVS_VideoInfo(object):
         return avs.avs_has_audio(self.cdata)
     
     def is_rgb(self):
-        return avs.avs_is_rgb(self.cdata)
+        return bool(avs.avs_is_rgb(self.cdata))
     
     def is_rgb24(self):
-        return avs.avs_is_rgb24(self.cdata)
+        return bool(avs.avs_is_rgb24(self.cdata))
     
     def is_rgb32(self):
-        return avs.avs_is_rgb32(self.cdata)
+        return bool(avs.avs_is_rgb32(self.cdata))
     
     def is_yuv(self):
-        return avs.avs_is_yuv(self.cdata)
+        return bool(avs.avs_is_yuv(self.cdata))
     
     def is_yuy2(self):
-        return avs.avs_is_yuy2(self.cdata)
+        return bool(avs.avs_is_yuy2(self.cdata))
     
     def is_yv24(self):
-        return avs.avs_is_yv24(self.cdata)
+        return bool(avs.avs_is_yv24(self.cdata))
     
     def is_yv16(self):
-        return avs.avs_is_yv16(self.cdata)
+        return bool(avs.avs_is_yv16(self.cdata))
     
     def is_yv12(self):
-        return avs.avs_is_yv12(self.cdata)
+        return bool(avs.avs_is_yv12(self.cdata))
     
     def is_yv411(self):
-        return avs.avs_is_yv411(self.cdata)
+        return bool(avs.avs_is_yv411(self.cdata))
     
     def is_y8(self):
-        return avs.avs_is_y8(self.cdata)
+        return bool(avs.avs_is_y8(self.cdata))
     
     def is_property(self, property):
-        return avs.avs_is_yuy2(self.cdata, property)
+        return bool(avs.avs_is_yuy2(self.cdata, property))
     
     def is_planar(self):
-        return avs.avs_is_planar(self.cdata)
+        return bool(avs.avs_is_planar(self.cdata))
     
     def is_color_space(self, color_space):
-        return avs.avs_is_color_space(self.cdata, color_space)
+        return bool(avs.avs_is_color_space(self.cdata, color_space))
     
     def is_field_based(self):
-        return avs.avs_is_field_based(self.cdata)
+        return bool(avs.avs_is_field_based(self.cdata))
     
     def is_parity_known(self):
-        return avs.avs_is_parity_known(self.cdata)
+        return bool(avs.avs_is_parity_known(self.cdata))
     
     def is_bff(self):
-        return avs.avs_is_bff(self.cdata)
+        return bool(avs.avs_is_bff(self.cdata))
     
     def is_tff(self):
-        return avs.avs_is_tff(self.cdata)
+        return bool(avs.avs_is_tff(self.cdata))
     
     def is_v_plane_first(self): # interface.cpp
         return not self.is_y8() and self.is_planar() and (self.pixel_type & \
@@ -954,7 +954,7 @@ class AVS_VideoInfo(object):
         avs.avs_set_fps(self.cdata, numerator, denominator)
     
     def is_same_colorspace(self, vi):
-        return avs.avs_is_same_colorspace(self.cdata, vi)
+        return bool(avs.avs_is_same_colorspace(self.cdata, vi))
 
 
 class AVS_VideoFrame(object):
@@ -997,7 +997,7 @@ class AVS_VideoFrame(object):
         return avs.avs_get_read_ptr_p(self.cdata, plane)
     
     def is_writable(self):
-        return avs.avs_is_writable(self.cdata)
+        return bool(avs.avs_is_writable(self.cdata))
     
     def get_write_ptr(self, plane=avs.AVS_PLANAR_Y):
         return avs.avs_get_write_ptr_p(self.cdata, plane)
