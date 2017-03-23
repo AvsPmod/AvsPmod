@@ -1,7 +1,7 @@
 # AvsP - an AviSynth editor
 # 
 # Copyright 2007 Peter Jang <http://avisynth.nl/users/qwerpoi>
-#           2010-2015 the AvsPmod authors <https://github.com/avspmod/avspmod>
+#           2010-2017 the AvsPmod authors <https://github.com/avspmod/avspmod>
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -205,7 +205,8 @@ packages = []
 includes = ['glob', 'shutil']
 excludes = ["translation", "Tkconstants", "Tkinter", "tcl", 'pyreadline', 
             'win32api', 'win32con', 'win32pipe', 'pywintypes', 'pyexpat']
-dll_excludes = ['MSVCP90.dll', 'w9xpopen.exe', 'mswsock.dll', 'powrprof.dll']
+dll_excludes = ['MSVCP90.dll', 'w9xpopen.exe', 'mswsock.dll', 'powrprof.dll', 
+                'KERNELBASE.dll', 'MSASN1.dll', 'MPR.dll', 'CRYPT32.dll']
 if x86_64: # otherwise lextab and yacctab are generated on the working
     packages.extend(('pycparser',))  # directory on every start
 else:
