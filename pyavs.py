@@ -1,7 +1,7 @@
 # AvsP - an AviSynth editor
 # 
 # Copyright 2007 Peter Jang <http://www.avisynth.org/qwerpoi>
-#           2010-2016 the AvsPmod authors <https://github.com/avspmod/avspmod>
+#           2010-2017 the AvsPmod authors <https://github.com/avspmod/avspmod>
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -246,6 +246,7 @@ class AvsClipBase:
             self.display_frame = None
             self.src_frame = None
             self.display_clip = None
+            self.env.set_var("avsp_raw_clip", None)
             self.clip = None
             if __debug__:
                 print u"Deleting allocated video memory for '{0}'".format(self.name)
