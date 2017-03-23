@@ -1,7 +1,7 @@
 # avisynth - Python AviSynth/AvxSynth wrapper
 # 
 # Copyright 2007 Peter Jang <http://avisynth.nl/users/qwerpoi>
-#           2010-2016 the AvsPmod authors <https://github.com/avspmod/avspmod>
+#           2010-2017 the AvsPmod authors <https://github.com/avspmod/avspmod>
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -51,6 +51,8 @@ if os.name == 'nt':
         else:
             print 'Using AviSynth from PATH'
     path = os.path.join(directory, 'avisynth.dll')
+    if isinstance(path, unicode): # fix for https://bugs.python.org/issue29082
+        path = path.encode('mbcs')
     avidll = ctypes.WinDLL(path)
     FUNCTYPE = ctypes.WINFUNCTYPE
 else:
