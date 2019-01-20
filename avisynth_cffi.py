@@ -1,6 +1,6 @@
 # avisynth - Python AviSynth wrapper
 # 
-# Copyright 2014-2016 the AvsPmod authors <https://github.com/avspmod/avspmod>
+# Copyright 2013, 2016, 2019 the AvsPmod authors <https://github.com/avspmod/avspmod>
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -650,6 +650,8 @@ avs_vsprintf_func avs_vsprintf;
 
 AVS_Library * avs_load_library_w(){
     library = avs_load_library();
+    if (library == NULL)
+        return NULL;
     avs_add_function=library->avs_add_function;
     avs_at_exit=library->avs_at_exit;
     avs_bit_blt=library->avs_bit_blt;
@@ -783,6 +785,8 @@ else:
     avs = ffi.verify(verify_str, libraries=[], library_dirs=[],
         modulename=os.path.splitext(__file__)[0] + '_ext', # comment out on debugging
         )
+    if avs.avs_load_library_w() == ffi.NULL:
+        raise OSError(*ffi.getwinerror())
     avs.library = avs.avs_load_library_w()
 
 class AVS_VideoInfo(object):
