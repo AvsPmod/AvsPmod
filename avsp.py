@@ -17200,7 +17200,7 @@ class MainFrame(wxp.Frame):
                 f = tempfile.NamedTemporaryFile(delete=False)
                 txt = textwrap.dedent(u'''\
                 HKCU\\Software\\Avisynth
-                'plugindir2_5'= "{dir}"
+                'plugindir2_5'= DELETE
                 HKLM\\Software\\Avisynth
                 'plugindir2_5'= "{dir}"
                 ''').format(dir=pluginsdir_exp)
