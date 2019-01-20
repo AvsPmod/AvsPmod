@@ -1,7 +1,7 @@
 # AvsP - an AviSynth editor
 # 
 # Copyright 2007 Peter Jang <http://www.avisynth.org/qwerpoi>
-#           2010-2015 the AvsPmod authors <https://github.com/avspmod/avspmod>
+#           2010-2015, 2019 the AvsPmod authors <https://github.com/avspmod/avspmod>
 #
 # Printing support based on stcprint.py from Peppy/Editra (wxWidgets license)
 # Copyright 2007 Cody Precord <staff@editra.org>
@@ -6179,7 +6179,8 @@ class MainFrame(wxp.Frame):
             if (not os.path.isfile(self.ExpandVars(self.options['avisynthhelpfile'])) and 
                 os.path.isfile(os.path.join(avisynthdir_exp, 'docs', 'english', 'index.htm'))):
                     self.options['avisynthhelpfile'] = os.path.join('%avisynthdir%', 'docs', 'english', 'index.htm')
-            self.defaultpluginsdir = self.ExpandVars(os.path.join('%avisynthdir%', 'plugins'))
+            self.defaultpluginsdir = self.ExpandVars(
+                    os.path.join('%avisynthdir%', 'plugins64' if self.x86_64 else 'plugins'))
             try:
                 # Get the plugins directory from the registry (current user, only AviSynth 2.6)
                 key = _winreg.OpenKey(_winreg.HKEY_CURRENT_USER, 'Software\\AviSynth')
