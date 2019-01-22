@@ -6290,7 +6290,9 @@ class MainFrame(wxp.Frame):
         self.plugin_shortnames = collections.defaultdict(list)
         self.optionsFilters = self.getFilterInfoFromAvisynth()
         
-        if not self.avisynth_p: # parse avsi files for user script functions
+        # Parse avsi files for user script functions
+        # This info is already provided by AviSynth+
+        if not self.avisynth_p and self.options['pluginsdir']:
             
             parse_avsi = self.options['autoloadedavsi']
             pluginsdir = self.ExpandVars(self.options['pluginsdir'])
