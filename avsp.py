@@ -15067,14 +15067,14 @@ class MainFrame(wxp.Frame):
                     # vpy hack, remove when VapourSynth is supported
                     if os.name == 'nt' and filename.endswith('.vpy'):
                         self.SaveScript(filename)
-                    wx.BeginBusyCursor()
+                    busy_and_disabled = wx.BusyCursor(), wx.WindowDisabler()
                     script.AVI = None
                     script.AVI = pyavs.AvsClip(
                         self.getCleanText(scripttxt), filename, workdir=workdir, env=env, 
                         fitHeight=fitHeight, fitWidth=fitWidth, oldFramecount=oldFramecount, 
                         matrix=self.matrix, interlaced=self.interlaced, swapuv=self.swapuv, 
                         bit_depth=self.bit_depth)
-                    wx.EndBusyCursor()
+                    del busy_and_disabled
                 if not script.AVI.initialized:
                     if prompt:
                         self.HidePreviewWindow()
@@ -15101,10 +15101,10 @@ class MainFrame(wxp.Frame):
             script.display_clip_refresh_needed = False
             oldWidth, oldHeight = script.AVI.DisplayWidth, script.AVI.DisplayHeight
             boolOldAVI = True
-            wx.BeginBusyCursor()
+            busy_and_disabled = wx.BusyCursor(), wx.WindowDisabler()
             ok = script.AVI.CreateDisplayClip(matrix=self.matrix, interlaced=self.interlaced, 
                                               swapuv=self.swapuv, bit_depth=self.bit_depth)
-            wx.EndBusyCursor()
+            del busy_and_disabled
             if ok:
                 boolNewAVI = True
             else:
