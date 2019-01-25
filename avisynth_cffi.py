@@ -785,9 +785,9 @@ else:
     avs = ffi.verify(verify_str, libraries=[], library_dirs=[],
         modulename=os.path.splitext(__file__)[0] + '_ext', # comment out on debugging
         )
-    if avs.avs_load_library_w() == ffi.NULL:
-        raise OSError(*ffi.getwinerror())
     avs.library = avs.avs_load_library_w()
+    if avs.library == ffi.NULL:
+        raise OSError(*ffi.getwinerror())
 
 class AVS_VideoInfo(object):
     
